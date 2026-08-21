@@ -1,0 +1,32 @@
+workflows:
+  ios-kmp-workflow:
+    name: iOS Build (Kotlin Multiplatform / Xcode)
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      vars:
+        XCODE_PROJECT: "iosApp/iosApp.xcodeproj"
+        XCODE_SCHEME: "iosApp"
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Make gradlew executable
+        script: |
+          chmod +x gradlew
+      - name: Build iOS Archive (.xcarchive)
+        script: |
+          xcodebuild archive \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -destination "generic/platform=iOS" \
+            -archivePath build/ios/xcarchive/iosApp.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+      - name: Export IPA Payload from Archive
+        script: |
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/xcarchive/iosApp.xcarchive/Products/Applications/iosApp.app build/ios/ipa/Payload/
+          cd build/ios/ipa && zip -r iosApp_unsigned.ipa Payload
+    artifacts:
+      - build/ios/xcarchive/*.xcarchive
+      - build/ios/ipa/*.ipa

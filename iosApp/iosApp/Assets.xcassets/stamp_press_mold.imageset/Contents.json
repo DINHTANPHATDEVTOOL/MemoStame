@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "stamp_press_mold.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

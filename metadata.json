@@ -1,0 +1,6 @@
+{
+  "name": "MEMOSTAMP",
+  "description": "Create, stamp, and share vintage-styled photo memories",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

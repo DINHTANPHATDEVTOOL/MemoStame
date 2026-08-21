@@ -1,0 +1,198 @@
+import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+import shared
+
+struct StampVaultScreenView: View {
+    let repository: SharedMemoStampRepository
+    var onNavigateToCamera: () -> Void
+
+    @State private var searchText: String = ""
+    @State private var selectedFilter: String = "All"
+    @State private var selectedStamp: StampItem? = nil
+    @State private var showEnvelopeModal: Bool = false
+
+    let filters = ["All", "Vintage", "Travel ✈️", "Coffee ☕", "Special 🎉"]
+    
+    let columns = [
+        GridItem(.flexible(), spacing: 14),
+        GridItem(.flexible(), spacing: 14)
+    ]
+
+    var stamps: [StampItem] {
+        (repository.stamps.value as? [StampItem]) ?? []
+    }
+
+    var filteredStamps: [StampItem] {
+        var list = stamps
+        if !searchText.isEmpty {
+            list = list.filter { $0.title.localizedCaseInsensitiveContains(searchText) || ($0.location?.localizedCaseInsensitiveContains(searchText) ?? false) }
+        }
+        if selectedFilter != "All" {
+            if selectedFilter.contains("Travel") {
+                list = list.filter { $0.collectionId == "col_travel" }
+            } else if selectedFilter.contains("Coffee") {
+                list = list.filter { $0.collectionId == "col_coffee" }
+            }
+        }
+        return list
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header Title & Search
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("STAMP VAULT")
+                            .font(.title2.bold())
+                            .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                        Text("\(stamps.count) Collected Memories")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button(action: onNavigateToCamera) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    }
+                }
+
+                // Search Bar Input
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Search stamps or places...", text: $searchText)
+                        .font(.subheadline)
+                }
+                .padding(10)
+                .background(Color.white)
+                .cornerRadius(12)
+
+                // Category Chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(filters, id: \.self) { item in
+                            Button(action: { selectedFilter = item }) {
+                                Text(item)
+                                    .font(.caption.bold())
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(selectedFilter == item ? Color(red: 0.15, green: 0.15, blue: 0.18) : Color.white)
+                                    .foregroundColor(selectedFilter == item ? .white : .primary)
+                                    .cornerRadius(14)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+
+            Divider()
+
+            // Stamp Grid View
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 14) {
+                    ForEach(filteredStamps, id: \.id) { stamp in
+                        VStack {
+                            DieCutStampView(
+                                title: stamp.title,
+                                imageUrl: stamp.stampImagePath,
+                                location: stamp.location,
+                                dateStr: "2026.08.18",
+                                shape: stamp.shape,
+                                isInteractive: false
+                            )
+                        }
+                        .onTapGesture {
+                            selectedStamp = stamp
+                        }
+                    }
+                }
+                .padding()
+                .padding(.bottom, 90)
+            }
+        }
+        .background(Color(red: 0.98, green: 0.96, blue: 0.92).ignoresSafeArea())
+        .sheet(item: $selectedStamp) { stamp in
+            StampDetailModalView(
+                stamp: stamp,
+                onShare: { showEnvelopeModal = true },
+                onDismiss: { selectedStamp = nil }
+            )
+        }
+        .sheet(isPresented: $showEnvelopeModal) {
+            if let stamp = selectedStamp {
+                EnvelopeShareModalView(
+                    stampTitle: stamp.title,
+                    stampUrl: stamp.stampImagePath,
+                    onDismiss: { showEnvelopeModal = false }
+                )
+            }
+        }
+    }
+}
+
+
+struct StampDetailModalView: View {
+    let stamp: StampItem
+    let onShare: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Capsule()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 40, height: 5)
+                .padding(.top, 10)
+
+            HStack {
+                Text(stamp.title)
+                    .font(.title3.bold())
+                Spacer()
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.horizontal)
+
+            DieCutStampView(
+                title: stamp.title,
+                imageUrl: stamp.stampImagePath,
+                location: stamp.location,
+                dateStr: "2026.08.18",
+                shape: stamp.shape,
+                isInteractive: true
+            )
+            .padding(.horizontal)
+
+            Text("Tap stamp to flip & view memory note 🔄")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            VStack(spacing: 12) {
+                Button(action: onShare) {
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                        Text("Share via Vintage Envelope")
+                            .font(.body.bold())
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 20)
+        }
+    }
+}

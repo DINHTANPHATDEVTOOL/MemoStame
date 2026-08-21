@@ -1,0 +1,211 @@
+import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+import shared
+
+enum ActiveTab {
+    case home
+    case vault
+    case camera
+    case friends
+    case profile
+}
+
+struct ContentView: View {
+    @StateObject private var homeViewModel: HomeObservableViewModel
+    private let repository: SharedMemoStampRepository
+    
+    @State private var selectedTab: ActiveTab = .home
+    @State private var showCameraModal: Bool = false
+    @State private var replyToPostId: String? = nil
+    
+    let platform = Platform_iosKt.getPlatform()
+
+    init() {
+        let repo = SharedMemoStampRepository()
+        self.repository = repo
+        _homeViewModel = StateObject(wrappedValue: HomeObservableViewModel(repository: repo))
+    }
+
+    var body: some View {
+        NavigationView {
+            ZStack(alignment: .bottom) {
+                // Screen Switcher
+                Group {
+                    switch selectedTab {
+                    case .home:
+                        HomeScreenView(
+                            viewModel: homeViewModel,
+                            onNavigateToCamera: { targetReplyId in
+                                self.replyToPostId = targetReplyId
+                                self.showCameraModal = true
+                            }
+                        )
+                    case .vault:
+                        StampVaultScreenView(
+                            repository: repository,
+                            onNavigateToCamera: {
+                                self.replyToPostId = nil
+                                self.showCameraModal = true
+                            }
+                        )
+                    case .friends:
+                        FriendsAndTradeScreenView(repository: repository)
+                    case .profile:
+                        PassportScreenView(repository: repository)
+                    default:
+                        HomeScreenView(
+                            viewModel: homeViewModel,
+                            onNavigateToCamera: { targetReplyId in
+                                self.replyToPostId = targetReplyId
+                                self.showCameraModal = true
+                            }
+                        )
+                    }
+                }
+
+                // Custom Floating Bottom Navigation Bar
+                VStack {
+                    Spacer()
+                    
+                    HStack {
+                        // Home Tab Button
+                        BottomNavItem(
+                            iconName: "house.fill",
+                            label: "Home",
+                            isSelected: selectedTab == .home
+                        ) {
+                            selectedTab = .home
+                        }
+
+                        Spacer()
+
+                        // Vault Tab Button
+                        BottomNavItem(
+                            iconName: "square.grid.2x2.fill",
+                            label: "Vault",
+                            isSelected: selectedTab == .vault
+                        ) {
+                            selectedTab = .vault
+                        }
+
+                        Spacer()
+
+                        // Center Floating Camera Button
+                        Button(action: {
+                            self.replyToPostId = nil
+                            self.showCameraModal = true
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color(red: 0.15, green: 0.15, blue: 0.18))
+                                    .frame(width: 56, height: 56)
+                                    .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .offset(y: -16)
+
+                        Spacer()
+
+                        // Friends & Trade Tab Button
+                        BottomNavItem(
+                            iconName: "person.2.fill",
+                            label: "Trade",
+                            isSelected: selectedTab == .friends
+                        ) {
+                            selectedTab = .friends
+                        }
+
+                        Spacer()
+
+                        // Passport Profile Tab Button
+                        BottomNavItem(
+                            iconName: "person.crop.square.fill",
+                            label: "Profile",
+                            isSelected: selectedTab == .profile
+                        ) {
+                            selectedTab = .profile
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(Color.white.opacity(0.96))
+                            .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 4)
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                }
+            }
+            .navigationBarHidden(true)
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+        .fullScreenCover(isPresented: $showCameraModal) {
+            CameraFlowContainerView(
+                replyToPostId: replyToPostId,
+                repository: repository,
+                onComplete: {
+                    showCameraModal = false
+                    selectedTab = .home
+                }
+            )
+        }
+    }
+}
+
+// Subview: Bottom Navigation Bar Item
+struct BottomNavItem: View {
+    let iconName: String
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: iconName)
+                    .font(.system(size: 20))
+                    .foregroundColor(isSelected ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color.gray)
+                Text(label)
+                    .font(.caption2.bold())
+                    .foregroundColor(isSelected ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color.gray)
+            }
+        }
+    }
+}
+
+// Full Camera & Memory Note Flow Modal Container
+struct CameraFlowContainerView: View {
+    let replyToPostId: String?
+    let repository: SharedMemoStampRepository
+    let onComplete: () -> Void
+
+    @State private var capturedImageUrl: String? = nil
+
+    var body: some View {
+        Group {
+            if let imageUrl = capturedImageUrl {
+                MemoryNoteScreenView(
+                    imageUrl: imageUrl,
+                    repository: repository,
+                    onSavedSuccess: onComplete,
+                    onCancel: { capturedImageUrl = nil }
+                )
+            } else {
+                CameraScreenView(
+                    replyToPostId: replyToPostId,
+                    onNavigateToNote: { url in
+                        capturedImageUrl = url
+                    },
+                    onCancel: onComplete
+                )
+            }
+        }
+    }
+}
