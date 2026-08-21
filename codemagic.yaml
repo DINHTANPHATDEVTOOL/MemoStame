@@ -25,7 +25,7 @@ workflows:
       - name: Export IPA Payload from Archive
         script: |
           mkdir -p build/ios/ipa/Payload
-          cp -R build/ios/xcarchive/iosApp.xcarchive/Products/Applications/iosApp.app build/ios/ipa/Payload/
+          cp -R build/ios/xcarchive/iosApp.xcarchive/Products/Applications/*.app build/ios/ipa/Payload/
           cd build/ios/ipa && zip -r iosApp_unsigned.ipa Payload
     artifacts:
       - build/ios/xcarchive/*.xcarchive
