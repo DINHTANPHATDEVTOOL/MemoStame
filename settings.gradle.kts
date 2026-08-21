@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MEMOSTAMP"
 include(":app")
-// include(":shared")
+include(":shared")
