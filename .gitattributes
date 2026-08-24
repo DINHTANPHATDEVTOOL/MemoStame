@@ -1,0 +1,11 @@
+# GitHub Linguist Overrides & Language Statistics Calibration
+
+# Explicitly detect all Swift source files across iosApp features, view models, design system, and tests
+iosApp/**/*.swift linguist-detectable=true
+
+# Exclude generated Gradle wrappers and build scripts from language percentage calculation
+gradlew linguist-vendored
+*.gradle.kts linguist-vendored
+shared/build/** linguist-vendored
+androidApp/build/** linguist-vendored
+iosApp/build/** linguist-vendored

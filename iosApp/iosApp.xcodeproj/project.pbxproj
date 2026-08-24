@@ -22,6 +22,21 @@
 		1D3623452D00000100000001 /* PassportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623442D00000100000001 /* PassportScreenView.swift */; };
 		1D3623472D00000100000001 /* AuthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623462D00000100000001 /* AuthViews.swift */; };
 		1D3623492D00000100000001 /* ModelExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623482D00000100000001 /* ModelExtensions.swift */; };
+		1D3624012D00000100000001 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624002D00000100000001 /* HomeViewModel.swift */; };
+		1D3624032D00000100000001 /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624022D00000100000001 /* CameraViewModel.swift */; };
+		1D3624052D00000100000001 /* StampVaultViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624042D00000100000001 /* StampVaultViewModel.swift */; };
+		1D3624112D00000100000001 /* HapticFeedbackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624102D00000100000001 /* HapticFeedbackManager.swift */; };
+		1D3624132D00000100000001 /* MemoStampNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624122D00000100000001 /* MemoStampNotificationManager.swift */; };
+		1D3624152D00000100000001 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624142D00000100000001 /* LocationManager.swift */; };
+		1D3624172D00000100000001 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624162D00000100000001 /* ImageCacheManager.swift */; };
+		1D3624192D00000100000001 /* SoundEffectsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624182D00000100000001 /* SoundEffectsManager.swift */; };
+		1D36241B2D00000100000001 /* StampRenderEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36241A2D00000100000001 /* StampRenderEngine.swift */; };
+		1D3624212D00000100000001 /* MSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624202D00000100000001 /* MSTheme.swift */; };
+		1D3624232D00000100000001 /* MSButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624222D00000100000001 /* MSButton.swift */; };
+		1D3624252D00000100000001 /* MSTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624242D00000100000001 /* MSTextField.swift */; };
+		1D3624272D00000100000001 /* MSChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624262D00000100000001 /* MSChipView.swift */; };
+		1D3624292D00000100000001 /* MSLoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624282D00000100000001 /* MSLoadingOverlay.swift */; };
+		1D36242B2D00000100000001 /* MSRefreshableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36242A2D00000100000001 /* MSRefreshableScrollView.swift */; };
 		1D36234B2D00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D36234A2D00000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +57,21 @@
 		1D3623442D00000100000001 /* PassportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportScreenView.swift; sourceTree = "<group>"; };
 		1D3623462D00000100000001 /* AuthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViews.swift; sourceTree = "<group>"; };
 		1D3623482D00000100000001 /* ModelExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/ModelExtensions.swift; sourceTree = "<group>"; };
+		1D3624002D00000100000001 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModels/HomeViewModel.swift; sourceTree = "<group>"; };
+		1D3624022D00000100000001 /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModels/CameraViewModel.swift; sourceTree = "<group>"; };
+		1D3624042D00000100000001 /* StampVaultViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModels/StampVaultViewModel.swift; sourceTree = "<group>"; };
+		1D3624102D00000100000001 /* HapticFeedbackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HapticFeedbackManager.swift; sourceTree = "<group>"; };
+		1D3624122D00000100000001 /* MemoStampNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/MemoStampNotificationManager.swift; sourceTree = "<group>"; };
+		1D3624142D00000100000001 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LocationManager.swift; sourceTree = "<group>"; };
+		1D3624162D00000100000001 /* ImageCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ImageCacheManager.swift; sourceTree = "<group>"; };
+		1D3624182D00000100000001 /* SoundEffectsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/SoundEffectsManager.swift; sourceTree = "<group>"; };
+		1D36241A2D00000100000001 /* StampRenderEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/StampRenderEngine.swift; sourceTree = "<group>"; };
+		1D3624202D00000100000001 /* MSTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/MSTheme.swift; sourceTree = "<group>"; };
+		1D3624222D00000100000001 /* MSButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/MSButton.swift; sourceTree = "<group>"; };
+		1D3624242D00000100000001 /* MSTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/MSTextField.swift; sourceTree = "<group>"; };
+		1D3624262D00000100000001 /* MSChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/MSChipView.swift; sourceTree = "<group>"; };
+		1D3624282D00000100000001 /* MSLoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/MSLoadingOverlay.swift; sourceTree = "<group>"; };
+		1D36242A2D00000100000001 /* MSRefreshableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem/MSRefreshableScrollView.swift; sourceTree = "<group>"; };
 		1D36234A2D00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -288,6 +318,21 @@
 				1D3623452D00000100000001 /* PassportScreenView.swift in Sources */,
 				1D3623472D00000100000001 /* AuthViews.swift in Sources */,
 				1D3623492D00000100000001 /* ModelExtensions.swift in Sources */,
+				1D3624012D00000100000001 /* HomeViewModel.swift in Sources */,
+				1D3624032D00000100000001 /* CameraViewModel.swift in Sources */,
+				1D3624052D00000100000001 /* StampVaultViewModel.swift in Sources */,
+				1D3624112D00000100000001 /* HapticFeedbackManager.swift in Sources */,
+				1D3624132D00000100000001 /* MemoStampNotificationManager.swift in Sources */,
+				1D3624152D00000100000001 /* LocationManager.swift in Sources */,
+				1D3624172D00000100000001 /* ImageCacheManager.swift in Sources */,
+				1D3624192D00000100000001 /* SoundEffectsManager.swift in Sources */,
+				1D36241B2D00000100000001 /* StampRenderEngine.swift in Sources */,
+				1D3624212D00000100000001 /* MSTheme.swift in Sources */,
+				1D3624232D00000100000001 /* MSButton.swift in Sources */,
+				1D3624252D00000100000001 /* MSTextField.swift in Sources */,
+				1D3624272D00000100000001 /* MSChipView.swift in Sources */,
+				1D3624292D00000100000001 /* MSLoadingOverlay.swift in Sources */,
+				1D36242B2D00000100000001 /* MSRefreshableScrollView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
