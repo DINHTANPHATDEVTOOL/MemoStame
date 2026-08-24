@@ -209,28 +209,43 @@ struct DieCutStampView: View {
                 )
                 .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
             } else {
-                // Back Side: Vintage Postcard with Notes & Airmail Stamp
+                // Back Side: Vintage Postcard with Notes & Airmail Stamp (Counter-rotated for 3D flip)
                 VStack(spacing: 12) {
                     HStack {
                         Image(systemName: "envelope.badge.fill")
-                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                            .foregroundColor(MSColors.stamp)
                         Text("MEMOSTAMP AIRMAIL POSTCARD")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.50))
+                            .foregroundColor(MSColors.grey)
                         Spacer()
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(MSColors.grey)
                     }
 
                     Divider()
 
-                    Text("“" + (title.isEmpty ? "A captured moment in time." : title) + "”")
-                        .font(.system(size: 15, weight: .medium, design: .serif))
+                    VStack(spacing: 6) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(MSColors.stamp)
+                        Text("MỘC BƯU CHÍNH")
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .foregroundColor(MSColors.ink)
+                        Text(dateStr)
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .foregroundColor(MSColors.grey)
+                    }
+                    .padding(.top, 4)
+
+                    Divider()
+
+                    Text("“" + (title.isEmpty ? "Một buổi sáng nhiều mây tuyệt đẹp tại Hồ Xuân Hương." : title) + "”")
+                        .font(.system(size: 14, weight: .medium, design: .serif))
                         .italic()
-                        .foregroundColor(Color(red: 0.20, green: 0.20, blue: 0.25))
+                        .foregroundColor(MSColors.ink)
                         .multilineTextAlignment(.center)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 4)
 
                     Spacer()
 
@@ -238,28 +253,33 @@ struct DieCutStampView: View {
                         if let loc = location {
                             Text("📍 " + loc)
                                 .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(MSColors.grey)
                         }
                         Spacer()
                         Text("AUTHENTIC MEMOSTAMP #2026")
                             .font(.system(size: 9, weight: .bold, design: .monospaced))
-                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                            .foregroundColor(MSColors.stamp)
                     }
                 }
                 .padding(16)
                 .frame(height: 270)
-                .background(Color(red: 0.96, green: 0.94, blue: 0.88))
+                .background(MSColors.creamCard)
                 .clipShape(PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065))
                 .overlay(
                     PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
-                        .stroke(Color(red: 0.80, green: 0.74, blue: 0.65), lineWidth: 1.5)
+                        .stroke(MSColors.gold.opacity(0.8), lineWidth: 1.5)
                 )
                 .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 3)
+                .rotation3DEffect(.degrees(180), axis: (x: 0.0, y: 1.0, z: 0.0))
             }
         }
+        .rotation3DEffect(
+            .degrees(isFlipped ? 180 : 0),
+            axis: (x: 0.0, y: 1.0, z: 0.0)
+        )
         .onTapGesture {
             if isInteractive {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
                     isFlipped.toggle()
                 }
             }

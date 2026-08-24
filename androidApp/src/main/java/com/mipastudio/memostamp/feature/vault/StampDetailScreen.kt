@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -126,18 +127,70 @@ fun StampDetailScreen(
                         .padding(horizontal = 24.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    val formattedDate = remember(s.memoryDate) {
+                        SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(s.memoryDate))
+                    }
                     val imageModel = remember(s.stampImagePath) {
                         File(s.stampImagePath).takeIf { it.exists() && it.length() > 0 } ?: s.stampImagePath
                     }
-                    Image(
-                        painter = rememberAsyncImagePainter(imageModel),
-                        contentDescription = s.title,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxWidth(0.70f)
-                            .aspectRatio(StampGeometry.ASPECT_RATIO)
-                            .shadow(12.dp, RoundedCornerShape(8.dp))
+                    var isFlipped by remember { mutableStateOf(false) }
+                    val rotation by androidx.compose.animation.core.animateFloatAsState(
+                        targetValue = if (isFlipped) 180f else 0f,
+                        animationSpec = androidx.compose.animation.core.tween(durationMillis = 500),
+                        label = "stampFlip"
                     )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.75f)
+                            .aspectRatio(StampGeometry.ASPECT_RATIO)
+                            .clickable { isFlipped = !isFlipped }
+                            .graphicsLayer {
+                                rotationY = rotation
+                                cameraDistance = 12f * density
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (rotation <= 90f) {
+                            Image(
+                                painter = rememberAsyncImagePainter(imageModel),
+                                contentDescription = s.title,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .shadow(12.dp, RoundedCornerShape(8.dp))
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer { rotationY = 180f }
+                                    .background(SurfaceWhite, RoundedCornerShape(12.dp))
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        Icons.Outlined.Edit,
+                                        contentDescription = null,
+                                        tint = AccentRed,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text("MỘC BƯU CHÍNH", fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 14.sp)
+                                    Text(formattedDate, color = SecondaryText, fontSize = 11.sp)
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        if (s.note.isNotBlank()) "“${s.note}”" else "“Một buổi sáng nhiều mây tuyệt đẹp tại Hồ Xuân Hương.”",
+                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                        textAlign = TextAlign.Center,
+                                        color = PrimaryText,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(30.dp))
                     Text(
@@ -147,9 +200,6 @@ fun StampDetailScreen(
                     )
 
                     Spacer(modifier = Modifier.height(7.dp))
-                    val formattedDate = remember(s.memoryDate) {
-                        SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(s.memoryDate))
-                    }
                     Text(
                         listOfNotNull(formattedDate, s.location?.takeIf { it.isNotBlank() }).joinToString("  •  "),
                         color = SecondaryText,
