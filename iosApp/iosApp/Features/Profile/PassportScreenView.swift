@@ -54,20 +54,21 @@ struct PassportScreenView: View {
                 Button(action: { presentationMode.wrappedValue.dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.title3.bold())
-                        .foregroundColor(.primary)
+                        .foregroundColor(MSColors.ink)
                 }
 
                 Spacer()
 
                 Text("PASSPORT PROFILE")
                     .font(.headline.bold())
-                    .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                    .foregroundColor(MSColors.ink)
 
                 Spacer()
 
                 Button(action: { showEditProfile = true }) {
                     Image(systemName: "pencil")
-                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                        .font(.title3)
+                        .foregroundColor(MSColors.stamp)
                 }
             }
             .padding()
@@ -76,32 +77,37 @@ struct PassportScreenView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    // Profile Header Card
+                    // Profile Header Card (Golden Ring Viền mạ vàng)
                     VStack(spacing: 12) {
                         AsyncImage(url: URL(string: user.avatarUrl ?? "")) { phase in
                             if let img = phase.image {
                                 img.resizable().aspectRatio(contentMode: .fill)
                             } else {
-                                Circle().fill(Color.orange.opacity(0.3))
+                                Circle().fill(MSColors.lightGrey)
                             }
                         }
-                        .frame(width: 84, height: 84)
+                        .frame(width: 88, height: 88)
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color(red: 0.82, green: 0.65, blue: 0.35), lineWidth: 3))
-                        .shadow(radius: 4)
+                        .overlay(
+                            ZStack {
+                                Circle().stroke(MSColors.gold, lineWidth: 3)
+                                Circle().stroke(MSColors.gold.opacity(0.5), lineWidth: 1).padding(-4)
+                            }
+                        )
+                        .shadow(color: MSColors.gold.opacity(0.2), radius: 6, x: 0, y: 3)
 
                         Text(user.displayName)
                             .font(.title3.bold())
-                            .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                            .foregroundColor(MSColors.ink)
 
                         Text("@" + user.username)
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MSColors.grey)
 
                         Text("“" + user.bio + "”")
                             .font(.caption)
                             .italic()
-                            .foregroundColor(Color(red: 0.30, green: 0.30, blue: 0.35))
+                            .foregroundColor(MSColors.grey)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 20)
                     }
@@ -119,7 +125,7 @@ struct PassportScreenView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Text("PASSPORT STAMPS & BADGES")
                             .font(.caption2.bold())
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MSColors.grey)
                             .padding(.horizontal)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
@@ -135,12 +141,12 @@ struct PassportScreenView: View {
                                         Spacer()
                                         if badge.isUnlocked {
                                             Image(systemName: "checkmark.seal.fill")
-                                                .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                                .foregroundColor(MSColors.stamp)
                                         }
                                     }
                                     Text(badge.subtitle)
                                         .font(.caption2)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(MSColors.grey)
                                 }
                                 .padding(12)
                                 .background(Color.white)
@@ -166,10 +172,10 @@ struct StatBox: View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.title2.bold())
-                .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                .foregroundColor(MSColors.stamp)
             Text(title)
                 .font(.caption2.bold())
-                .foregroundColor(.secondary)
+                .foregroundColor(MSColors.grey)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
