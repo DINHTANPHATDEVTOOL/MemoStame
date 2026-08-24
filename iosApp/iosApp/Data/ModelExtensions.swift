@@ -9,6 +9,7 @@ struct MSColors {
     static let ink = Color(red: 0.09, green: 0.09, blue: 0.09)         // #171717 - rich dark ink
     static let paper = Color(red: 1.0, green: 0.984, blue: 0.957)      // #FFFBF4 - warm paper bg
     static let cream = Color(red: 0.957, green: 0.922, blue: 0.867)     // #F4EBDD - warm cream card
+    static let creamCard = Color(red: 0.957, green: 0.922, blue: 0.867) // #F4EBDD - alias for cream card
     static let stamp = Color(red: 0.847, green: 0.361, blue: 0.29)      // #D85C4A - terracotta postal red
     static let stampDark = Color(red: 0.725, green: 0.263, blue: 0.212) // #B94336 - dark postal red
     static let gold = Color(red: 0.82, green: 0.65, blue: 0.35)         // #D1A559 - vintage star/postmark gold
@@ -19,6 +20,8 @@ struct MSColors {
     static let grey = Color(red: 0.549, green: 0.533, blue: 0.506)       // #8C8881 - muted caption grey
     static let white = Color.white
 }
+
+typealias Circle = SwiftUI.Circle
 
 extension FeedPost: @retroactive Identifiable {}
 extension FeedReply: @retroactive Identifiable {}
