@@ -17,6 +17,16 @@ struct CollectionScreenView: View {
         (repository.collections.value as? [CollectionItem]) ?? []
     }
 
+    private func colIconName(_ key: String) -> String {
+        switch key {
+        case "coffee", "☕": return "cup.and.saucer.fill"
+        case "plane", "✈️": return "paperplane.fill"
+        case "tree", "🌲": return "leaf.fill"
+        case "palette", "🎨": return "paintpalette.fill"
+        default: return "folder.fill"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -24,10 +34,10 @@ struct CollectionScreenView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("STAMP ALBUMS")
                         .font(.title2.bold())
-                        .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                        .foregroundColor(MSColors.ink)
                     Text("Curated Memory Collections")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(MSColors.grey)
                 }
                 Spacer()
             }
@@ -40,32 +50,33 @@ struct CollectionScreenView: View {
                     ForEach(collections, id: \.id) { col in
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
-                                Text(col.iconEmoji)
-                                    .font(.system(size: 36))
+                                Image(systemName: colIconName(col.iconEmoji))
+                                    .font(.system(size: 26))
+                                    .foregroundColor(MSColors.stamp)
                                 Spacer()
                                 Text("\(col.stampsCount)/\(col.targetCount)")
                                     .font(.caption2.bold())
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.15))
-                                    .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                    .background(MSColors.stamp.opacity(0.15))
+                                    .foregroundColor(MSColors.stamp)
                                     .cornerRadius(10)
                             }
 
                             Text(col.name)
                                 .font(.headline.bold())
-                                .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                                .foregroundColor(MSColors.ink)
 
                             let desc = col.description_ ?? ""
                             if !desc.isEmpty {
                                 Text(desc)
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(MSColors.grey)
                                     .lineLimit(2)
                             }
 
                             ProgressView(value: Double(col.stampsCount), total: Double(col.targetCount))
-                                .accentColor(Color(red: 0.82, green: 0.65, blue: 0.35))
+                                .accentColor(MSColors.gold)
                         }
                         .padding(14)
                         .background(Color.white)

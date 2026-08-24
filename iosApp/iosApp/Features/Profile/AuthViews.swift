@@ -17,13 +17,17 @@ struct AuthLoginSheetView: View {
                 .padding(.top, 10)
 
             VStack(spacing: 8) {
-                Text("📮 Join MemoStamp")
-                    .font(.title2.bold())
-                    .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                HStack(spacing: 6) {
+                    Image(systemName: "seal.fill")
+                        .foregroundColor(MSColors.stamp)
+                    Text("Join MemoStamp")
+                        .font(.title2.bold())
+                        .foregroundColor(MSColors.ink)
+                }
 
                 Text("Keep memories with people you care about.")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(MSColors.grey)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
             }
@@ -40,22 +44,22 @@ struct AuthLoginSheetView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    .background(MSColors.stamp)
                     .cornerRadius(24)
-                    .shadow(color: Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.3), radius: 6, x: 0, y: 3)
+                    .shadow(color: MSColors.stamp.opacity(0.3), radius: 6, x: 0, y: 3)
                 }
 
                 Button(action: onDismiss) {
                     Text("Not now")
                         .font(.subheadline.bold())
-                        .foregroundColor(.secondary)
+                        .foregroundColor(MSColors.grey)
                         .padding(.vertical, 6)
                 }
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 20)
         }
-        .background(Color(red: 0.98, green: 0.96, blue: 0.92).ignoresSafeArea())
+        .background(MSColors.paper.ignoresSafeArea())
     }
 }
 

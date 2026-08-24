@@ -11,6 +11,7 @@ struct MSColors {
     static let cream = Color(red: 0.957, green: 0.922, blue: 0.867)     // #F4EBDD - warm cream card
     static let stamp = Color(red: 0.847, green: 0.361, blue: 0.29)      // #D85C4A - terracotta postal red
     static let stampDark = Color(red: 0.725, green: 0.263, blue: 0.212) // #B94336 - dark postal red
+    static let gold = Color(red: 0.82, green: 0.65, blue: 0.35)         // #D1A559 - vintage star/postmark gold
     static let mint = Color(red: 0.725, green: 0.847, blue: 0.8)        // #B9D8CC - soft mint avatar
     static let yellow = Color(red: 0.957, green: 0.788, blue: 0.365)     // #F4C95D - soft vintage yellow
     static let lavender = Color(red: 0.784, green: 0.757, blue: 0.91)   // #C8C1E8 - soft lavender

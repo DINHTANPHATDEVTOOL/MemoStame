@@ -32,10 +32,10 @@ struct FriendsAndTradeScreenView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("FRIENDS & STAMP TRADE")
                             .font(.title2.bold())
-                            .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                            .foregroundColor(MSColors.ink)
                         Text("Share & exchange vintage stamps")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MSColors.grey)
                     }
                     Spacer()
                 }
@@ -43,7 +43,7 @@ struct FriendsAndTradeScreenView: View {
                 // Search/Add Friend Code Input
                 HStack {
                     Image(systemName: "person.badge.plus")
-                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                        .foregroundColor(MSColors.stamp)
                     TextField("Enter Friend Code (e.g. #STAMP99)", text: $friendCode)
                         .font(.subheadline)
                     Button(action: {
@@ -56,7 +56,7 @@ struct FriendsAndTradeScreenView: View {
                             .font(.caption.bold())
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(friendCode.isEmpty ? Color.gray.opacity(0.4) : Color(red: 0.85, green: 0.25, blue: 0.20))
+                            .background(friendCode.isEmpty ? MSColors.lightGrey : MSColors.stamp)
                             .foregroundColor(.white)
                             .cornerRadius(12)
                     }
@@ -88,7 +88,7 @@ struct FriendsAndTradeScreenView: View {
                                         if let img = phase.image {
                                             img.resizable().aspectRatio(contentMode: .fill)
                                         } else {
-                                            Circle().fill(Color.gray.opacity(0.3))
+                                            Circle().fill(MSColors.lightGrey)
                                         }
                                     }
                                     .frame(width: 44, height: 44)
@@ -105,9 +105,10 @@ struct FriendsAndTradeScreenView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(friend.displayName)
                                         .font(.subheadline.bold())
+                                        .foregroundColor(MSColors.ink)
                                     Text("@" + friend.username + " • \(friend.tradeCount) trades")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(MSColors.grey)
                                 }
 
                                 Spacer()
@@ -123,8 +124,8 @@ struct FriendsAndTradeScreenView: View {
                                     }
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
-                                    .background(Color(red: 0.82, green: 0.65, blue: 0.35).opacity(0.2))
-                                    .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
+                                    .background(MSColors.gold.opacity(0.2))
+                                    .foregroundColor(MSColors.gold)
                                     .cornerRadius(12)
                                 }
                             }
@@ -142,16 +143,17 @@ struct FriendsAndTradeScreenView: View {
                                 HStack {
                                     Text(trade.senderName)
                                         .font(.subheadline.bold())
+                                        .foregroundColor(MSColors.ink)
                                     Text("sent a trade offer!")
                                         .font(.subheadline)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(MSColors.grey)
                                     Spacer()
                                     Text(trade.status)
                                         .font(.caption2.bold())
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : Color.orange.opacity(0.2))
-                                        .foregroundColor(trade.status == "ACCEPTED" ? .green : .orange)
+                                        .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : MSColors.gold.opacity(0.2))
+                                        .foregroundColor(trade.status == "ACCEPTED" ? .green : MSColors.gold)
                                         .cornerRadius(8)
                                 }
 
@@ -160,7 +162,7 @@ struct FriendsAndTradeScreenView: View {
                                         if let img = phase.image {
                                             img.resizable().aspectRatio(contentMode: .fill)
                                         } else {
-                                            Color.gray.opacity(0.3)
+                                            MSColors.lightGrey
                                         }
                                     }
                                     .frame(width: 60, height: 60)
@@ -169,9 +171,10 @@ struct FriendsAndTradeScreenView: View {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(trade.stampTitle)
                                             .font(.subheadline.bold())
+                                            .foregroundColor(MSColors.ink)
                                         Text("Rare Vintage Series #2026")
                                             .font(.caption)
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(MSColors.grey)
                                     }
                                 }
 
@@ -184,7 +187,7 @@ struct FriendsAndTradeScreenView: View {
                                                 .font(.caption.bold())
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 8)
-                                                .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                                .background(MSColors.stamp)
                                                 .foregroundColor(.white)
                                                 .cornerRadius(10)
                                         }

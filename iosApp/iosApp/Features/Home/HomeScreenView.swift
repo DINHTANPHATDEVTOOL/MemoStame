@@ -29,21 +29,21 @@ struct HomeScreenView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.3), lineWidth: 1)
+                            .stroke(MSColors.stamp.opacity(0.3), lineWidth: 1)
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text("MemoStamp")
                             .font(.title2.bold())
-                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                            .foregroundColor(MSColors.stamp)
                         Text("★")
                             .font(.caption2.bold())
-                            .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
+                            .foregroundColor(MSColors.gold)
                     }
                     Text("Intimate Memory Feed")
                         .font(.caption)
-                        .foregroundColor(Color(red: 0.45, green: 0.45, blue: 0.50))
+                        .foregroundColor(MSColors.grey)
                 }
 
                 Spacer()
@@ -57,13 +57,13 @@ struct HomeScreenView: View {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: "envelope.fill")
                                 .font(.system(size: 18))
-                                .foregroundColor(Color(red: 0.20, green: 0.20, blue: 0.25))
+                                .foregroundColor(MSColors.ink)
                                 .frame(width: 38, height: 38)
-                                .background(Color.gray.opacity(0.12))
+                                .background(MSColors.lightGrey.opacity(0.5))
                                 .clipShape(Circle())
 
                             Circle()
-                                .fill(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                .fill(MSColors.stamp)
                                 .frame(width: 8, height: 8)
                                 .offset(x: -2, y: 2)
                         }
@@ -74,12 +74,12 @@ struct HomeScreenView: View {
                             if let image = phase.image {
                                 image.resizable().aspectRatio(contentMode: .fill)
                             } else {
-                                Circle().fill(Color.orange.opacity(0.3))
+                                Circle().fill(MSColors.gold.opacity(0.3))
                             }
                         }
                         .frame(width: 38, height: 38)
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color(red: 0.85, green: 0.25, blue: 0.20), lineWidth: 1.5))
+                        .overlay(Circle().stroke(MSColors.stamp, lineWidth: 1.5))
                     }
                 }
             }
@@ -93,10 +93,10 @@ struct HomeScreenView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Friends")
                             .font(.title3.weight(activeTab == "Friends" ? .bold : .medium))
-                            .foregroundColor(activeTab == "Friends" ? Color(red: 0.15, green: 0.15, blue: 0.18) : .gray)
+                            .foregroundColor(activeTab == "Friends" ? MSColors.ink : MSColors.grey)
                         if activeTab == "Friends" {
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                .fill(MSColors.stamp)
                                 .frame(width: 28, height: 3)
                         }
                     }
@@ -106,10 +106,10 @@ struct HomeScreenView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Circles")
                             .font(.title3.weight(activeTab == "Circles" ? .bold : .medium))
-                            .foregroundColor(activeTab == "Circles" ? Color(red: 0.15, green: 0.15, blue: 0.18) : .gray)
+                            .foregroundColor(activeTab == "Circles" ? MSColors.ink : MSColors.grey)
                         if activeTab == "Circles" {
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                .fill(MSColors.stamp)
                                 .frame(width: 28, height: 3)
                         }
                     }
@@ -130,8 +130,8 @@ struct HomeScreenView: View {
                                     .font(.caption.bold())
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
-                                    .background(activeCircle == circle ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color.gray.opacity(0.12))
-                                    .foregroundColor(activeCircle == circle ? .white : Color(red: 0.20, green: 0.20, blue: 0.25))
+                                    .background(activeCircle == circle ? MSColors.stamp : MSColors.lightGrey.opacity(0.6))
+                                    .foregroundColor(activeCircle == circle ? .white : MSColors.ink)
                                     .cornerRadius(16)
                             }
                         }
@@ -341,7 +341,7 @@ struct PostCardView: View {
             if let caption = post.caption, !caption.isEmpty {
                 Text(caption)
                     .font(.body)
-                    .foregroundColor(Color(red: 0.20, green: 0.20, blue: 0.25))
+                    .foregroundColor(MSColors.ink)
                     .lineLimit(3)
                     .padding(.top, 2)
             }
@@ -351,10 +351,10 @@ struct PostCardView: View {
                 Button(action: onToggleLike) {
                     HStack(spacing: 6) {
                         Image(systemName: post.isLikedByMe ? "heart.fill" : "heart")
-                            .foregroundColor(post.isLikedByMe ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color(red: 0.15, green: 0.15, blue: 0.18))
+                            .foregroundColor(post.isLikedByMe ? MSColors.stamp : MSColors.ink)
                         Text("\(post.reactionCount)")
                             .font(.subheadline.bold())
-                            .foregroundColor(post.isLikedByMe ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color(red: 0.15, green: 0.15, blue: 0.18))
+                            .foregroundColor(post.isLikedByMe ? MSColors.stamp : MSColors.ink)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -363,10 +363,10 @@ struct PostCardView: View {
                 Button(action: onComment) {
                     HStack(spacing: 6) {
                         Image(systemName: "bubble.right")
-                            .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                            .foregroundColor(MSColors.ink)
                         Text("\(post.commentCount)")
                             .font(.subheadline.bold())
-                            .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                            .foregroundColor(MSColors.ink)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -376,20 +376,21 @@ struct PostCardView: View {
 
                 Button(action: onReply) {
                     HStack(spacing: 6) {
-                        Text("📮")
+                        Image(systemName: "seal.fill")
+                            .font(.system(size: 11))
                         Text("Reply \(post.replyCount)")
                             .font(.caption.bold())
-                            .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
                     }
+                    .foregroundColor(MSColors.stamp)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color(red: 0.20, green: 0.45, blue: 0.75).opacity(0.1))
+                    .background(MSColors.stamp.opacity(0.1))
                     .cornerRadius(14)
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color.gray.opacity(0.08))
+            .background(MSColors.lightGrey.opacity(0.3))
             .cornerRadius(12)
 
             // Inline Stamp Replies Row (Mini stamp + Author Name identity)
@@ -398,11 +399,11 @@ struct PostCardView: View {
                     HStack {
                         Text("Stamp replies")
                             .font(.caption.bold())
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MSColors.grey)
                         Spacer()
                         Text("\(post.replyCount)")
                             .font(.caption2.bold())
-                            .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
+                            .foregroundColor(MSColors.stamp)
                     }
 
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -415,16 +416,16 @@ struct PostCardView: View {
                                 VStack(spacing: 4) {
                                     ZStack {
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color(red: 0.20, green: 0.45, blue: 0.75).opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [4]))
+                                            .stroke(MSColors.stamp.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [4]))
                                             .frame(width: 68, height: 76)
-                                            .background(Color(red: 0.20, green: 0.45, blue: 0.75).opacity(0.05))
+                                            .background(MSColors.stamp.opacity(0.05))
 
                                         VStack(spacing: 2) {
                                             Image(systemName: "plus")
-                                                .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
+                                                .foregroundColor(MSColors.stamp)
                                             Text("Reply")
                                                 .font(.system(size: 10, weight: .bold))
-                                                .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
+                                                .foregroundColor(MSColors.stamp)
                                         }
                                     }
                                     Text("Your stamp")
