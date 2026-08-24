@@ -121,11 +121,11 @@ struct BookCoverPreviewView: View {
     var body: some View {
         ZStack {
             // Leather Book Cover Shape
-            UnevenRoundedRectangle(
-                topLeadingRadius: 4,
-                bottomLeadingRadius: 4,
-                bottomTrailingRadius: 16,
-                topTrailingRadius: 16
+            BookCoverShape(
+                topLeading: 4,
+                bottomLeading: 4,
+                topTrailing: 16,
+                bottomTrailing: 16
             )
             .fill(album.coverColor)
             .shadow(color: Color.black.opacity(0.28), radius: 12, x: 8, y: 8)
@@ -458,3 +458,33 @@ struct SafeAreaView<Content: View>: View {
         }
     }
 }
+
+// Custom Book Cover Shape compatible with iOS 15.0+
+struct BookCoverShape: Shape {
+    var topLeading: CGFloat = 4
+    var bottomLeading: CGFloat = 4
+    var topTrailing: CGFloat = 16
+    var bottomTrailing: CGFloat = 16
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+
+        path.move(to: CGPoint(x: topLeading, y: 0))
+        path.addLine(to: CGPoint(x: w - topTrailing, y: 0))
+        path.addQuadCurve(to: CGPoint(x: w, y: topTrailing), control: CGPoint(x: w, y: 0))
+
+        path.addLine(to: CGPoint(x: w, y: h - bottomTrailing))
+        path.addQuadCurve(to: CGPoint(x: w - bottomTrailing, y: h), control: CGPoint(x: w, y: h))
+
+        path.addLine(to: CGPoint(x: bottomLeading, y: h))
+        path.addQuadCurve(to: CGPoint(x: 0, y: h - bottomLeading), control: CGPoint(x: 0, y: h))
+
+        path.addLine(to: CGPoint(x: 0, y: topLeading))
+        path.addQuadCurve(to: CGPoint(x: topLeading, y: 0), control: CGPoint(x: 0, y: 0))
+
+        return path
+    }
+}
+
