@@ -2,7 +2,7 @@ import SwiftUI
 
 public struct MSTextField: View {
     let placeholder: String
-    @Binding text: String
+    @Binding var text: String
     let iconSystemName: String?
     let isSecure: Bool
 
