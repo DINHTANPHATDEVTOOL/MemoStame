@@ -64,6 +64,7 @@ struct DieCutStampView: View {
     let imageUrl: String
     let location: String?
     let dateStr: String
+    var note: String? = nil
     var shape: String = "classic"
     var isInteractive: Bool = true
     var stampColorHex: String = "#D32F2F"
@@ -240,7 +241,13 @@ struct DieCutStampView: View {
 
                     Divider()
 
-                    Text("“" + (title.isEmpty ? "Một buổi sáng nhiều mây tuyệt đẹp tại Hồ Xuân Hương." : title) + "”")
+                    let memoryContent: String = {
+                        if let n = note, !n.isEmpty { return n }
+                        if !title.isEmpty { return title }
+                        return "Một buổi sáng nhiều mây tuyệt đẹp tại Hồ Xuân Hương."
+                    }()
+
+                    Text("“" + memoryContent + "”")
                         .font(.system(size: 14, weight: .medium, design: .serif))
                         .italic()
                         .foregroundColor(MSColors.ink)

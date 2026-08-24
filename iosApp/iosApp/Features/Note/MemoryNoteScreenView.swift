@@ -143,14 +143,15 @@ struct MemoryNoteScreenView: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    // Preview Stamp
+                    // Preview Stamp (Tap to flip & view real-time memory note)
                     DieCutStampView(
                         title: title.isEmpty ? "Memory Stamp Title" : title,
                         imageUrl: imageUrl,
                         location: locationSearch.isEmpty ? "Location Tag" : locationSearch,
                         dateStr: "2026.08.18",
+                        note: caption,
                         shape: "classic",
-                        isInteractive: false
+                        isInteractive: true
                     )
                     .padding(.horizontal)
                     .padding(.top, 12)

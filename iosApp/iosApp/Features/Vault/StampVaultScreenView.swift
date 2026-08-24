@@ -106,6 +106,7 @@ struct StampVaultScreenView: View {
                                 imageUrl: stamp.stampImagePath,
                                 location: stamp.location,
                                 dateStr: "2026.08.18",
+                                note: stamp.note,
                                 shape: stamp.shape,
                                 isInteractive: false
                             )
@@ -168,6 +169,7 @@ struct StampDetailModalView: View {
                 imageUrl: stamp.stampImagePath,
                 location: stamp.location,
                 dateStr: "2026.08.18",
+                note: stamp.note,
                 shape: stamp.shape,
                 isInteractive: true
             )

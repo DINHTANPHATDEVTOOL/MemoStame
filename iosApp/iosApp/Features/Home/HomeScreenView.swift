@@ -313,6 +313,7 @@ struct PostCardView: View {
                     imageUrl: post.stampUrl,
                     location: post.location,
                     dateStr: "2026.08.18",
+                    note: post.caption,
                     shape: post.shape,
                     isInteractive: true
                 )
