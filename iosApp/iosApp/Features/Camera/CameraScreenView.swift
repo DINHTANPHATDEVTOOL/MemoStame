@@ -23,6 +23,10 @@ struct CameraScreenView: View {
     @State private var toastMessage: String? = nil
     @State private var showToast: Bool = false
 
+    @State private var showImagePicker: Bool = false
+    @State private var pickerSourceType: UIImagePickerController.SourceType = .camera
+    @State private var customCapturedImageUrl: String? = nil
+
     let filters = FilterPresets.shared.ALL
     let zoomOptions = ["1x", "2x", "3x", "5x"]
 
@@ -33,6 +37,10 @@ struct CameraScreenView: View {
         "https://images.unsplash.com/photo-1528127269322-539801943592?w=600"
     ]
     @State private var selectedImageIndex: Int = 0
+
+    var activePhotoUrl: String {
+        return customCapturedImageUrl ?? samplePhotos[selectedImageIndex]
+    }
 
     var currentFilter: CameraFilterSpec {
         if selectedFilterIndex >= 0 && selectedFilterIndex < filters.count {
@@ -92,7 +100,7 @@ struct CameraScreenView: View {
 
                 // Live Preview Box with Swipe & Pinch Gestures
                 ZStack {
-                    AsyncImage(url: URL(string: samplePhotos[selectedImageIndex])) { phase in
+                    AsyncImage(url: URL(string: activePhotoUrl)) { phase in
                         if let img = phase.image {
                             img.resizable()
                                 .aspectRatio(contentMode: .fill)
@@ -220,9 +228,11 @@ struct CameraScreenView: View {
 
                     // Shutter & Photo Picker Control Bar
                     HStack {
+                        // Open Device Gallery / Photo Picker
                         Button(action: {
-                            selectedImageIndex = (selectedImageIndex + 1) % samplePhotos.count
                             triggerHapticFeedback()
+                            pickerSourceType = .photoLibrary
+                            showImagePicker = true
                         }) {
                             ZStack {
                                 Circle()
@@ -236,14 +246,25 @@ struct CameraScreenView: View {
 
                         Spacer()
 
-                        // Master Shutter Button
+                        // Master Camera Shutter Button
                         Button(action: {
                             triggerHapticFeedback()
                             isCapturing = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            #if canImport(UIKit)
+                            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                                pickerSourceType = .camera
+                                showImagePicker = true
                                 isCapturing = false
-                                onNavigateToNote(samplePhotos[selectedImageIndex])
+                            } else {
+                                // Camera unavailable (Simulator / No Camera) -> Advance to note view
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                    isCapturing = false
+                                    onNavigateToNote(activePhotoUrl)
+                                }
                             }
+                            #else
+                            onNavigateToNote(activePhotoUrl)
+                            #endif
                         }) {
                             ZStack {
                                 Circle()
@@ -272,6 +293,16 @@ struct CameraScreenView: View {
                     .padding(.bottom, 24)
                 }
             }
+        }
+        .sheet(isPresented: $showImagePicker) {
+            #if canImport(UIKit)
+            SwiftUIImagePicker(sourceType: pickerSourceType) { pickedImage in
+                if let image = pickedImage, let savedUrl = saveImageToTmp(image) {
+                    self.customCapturedImageUrl = savedUrl
+                    self.onNavigateToNote(savedUrl)
+                }
+            }
+            #endif
         }
         .sheet(isPresented: $showTuneSheet) {
             CameraTuneAdjustmentView(
@@ -392,7 +423,6 @@ struct CameraTuneAdjustmentView: View {
             .padding(24)
             .navigationTitle("Preset Tune Controls")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         presentationMode.wrappedValue.dismiss()
@@ -403,3 +433,58 @@ struct CameraTuneAdjustmentView: View {
         }
     }
 }
+
+#if canImport(UIKit)
+struct SwiftUIImagePicker: UIViewControllerRepresentable {
+    var sourceType: UIImagePickerController.SourceType = .camera
+    var onImagePicked: (UIImage?) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        if UIImagePickerController.isSourceTypeAvailable(sourceType) {
+            picker.sourceType = sourceType
+        } else {
+            picker.sourceType = .photoLibrary
+        }
+        picker.delegate = context.coordinator
+        picker.allowsEditing = true
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: SwiftUIImagePicker
+
+        init(_ parent: SwiftUIImagePicker) {
+            self.parent = parent
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            let image = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage)
+            parent.onImagePicked(image)
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.onImagePicked(nil)
+            picker.dismiss(animated: true)
+        }
+    }
+}
+
+func saveImageToTmp(_ image: UIImage) -> String? {
+    guard let data = image.jpegData(compressionQuality: 0.85) else { return nil }
+    let filename = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
+    do {
+        try data.write(to: filename)
+        return filename.absoluteString
+    } catch {
+        return nil
+    }
+}
+#endif

@@ -501,6 +501,9 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MemoStamp;
+				INFOPLIST_KEY_NSCameraUsageDescription = "MemoStamp cần truy cập camera để chụp ảnh tạo tem kỷ niệm.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MemoStamp cần truy cập thư viện ảnh để chọn ảnh tạo tem.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MemoStamp cần vị trí để ghi nhận địa danh lên mộc tem.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -531,6 +534,9 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MemoStamp;
+				INFOPLIST_KEY_NSCameraUsageDescription = "MemoStamp cần truy cập camera để chụp ảnh tạo tem kỷ niệm.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MemoStamp cần truy cập thư viện ảnh để chọn ảnh tạo tem.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MemoStamp cần vị trí để ghi nhận địa danh lên mộc tem.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

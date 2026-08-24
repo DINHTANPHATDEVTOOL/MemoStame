@@ -306,7 +306,7 @@ struct PostCardView: View {
                     .rotationEffect(.degrees(-3))
             }
 
-            // Hero Stamp Center Piece with Double Tap Gesture (Strictly LIKE only)
+            // Hero Stamp Center Piece with Double Tap Gesture
             ZStack {
                 DieCutStampView(
                     title: post.stampTitle,
@@ -315,19 +315,19 @@ struct PostCardView: View {
                     dateStr: "2026.08.18",
                     note: post.caption,
                     shape: post.shape,
-                    isInteractive: true
+                    isInteractive: true,
+                    onDoubleTap: {
+                        if !post.isLikedByMe {
+                            onLikeOnly()
+                        }
+                        withAnimation(.spring()) {
+                            showHeartAnimation = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            showHeartAnimation = false
+                        }
+                    }
                 )
-                .onTapGesture(count: 2) {
-                    if !post.isLikedByMe {
-                        onLikeOnly()
-                    }
-                    withAnimation(.spring()) {
-                        showHeartAnimation = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        showHeartAnimation = false
-                    }
-                }
 
                 if showHeartAnimation {
                     Image(systemName: "heart.fill")
@@ -335,6 +335,7 @@ struct PostCardView: View {
                         .foregroundColor(MSColors.stamp)
                         .shadow(color: Color.black.opacity(0.2), radius: 8)
                         .transition(.scale.combined(with: .opacity))
+                        .allowsHitTesting(false)
                 }
             }
 

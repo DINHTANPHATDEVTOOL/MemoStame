@@ -354,6 +354,23 @@ class SharedMemoStampRepository {
         )
     }
 
+    fun addFriend(displayName: String, username: String): FriendItem {
+        val newFriend = FriendItem(
+            id = "user_${currentTimeMillis()}",
+            displayName = displayName,
+            username = username,
+            avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+            isOnline = true,
+            tradeCount = 0
+        )
+        _friends.value = listOf(newFriend) + _friends.value
+        return newFriend
+    }
+
+    fun removeFriend(friendId: String) {
+        _friends.value = _friends.value.filter { it.id != friendId }
+    }
+
     fun createCollection(name: String, description: String, iconEmoji: String): CollectionItem {
         val col = CollectionItem(
             id = "col_${currentTimeMillis()}",

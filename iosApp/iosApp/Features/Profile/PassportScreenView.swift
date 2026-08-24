@@ -161,6 +161,81 @@ struct PassportScreenView: View {
             }
         }
         .background(MSColors.paper.ignoresSafeArea())
+        .sheet(isPresented: $showEditProfile) {
+            EditProfileSheetView(repository: repository)
+        }
+    }
+}
+
+struct EditProfileSheetView: View {
+    let repository: SharedMemoStampRepository
+    @Environment(\.presentationMode) var presentationMode
+
+    @State private var displayName: String = ""
+    @State private var bio: String = ""
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Capsule()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 36, height: 4)
+                .padding(.top, 8)
+
+            Text("Edit Passport Profile")
+                .font(.headline.bold())
+                .foregroundColor(MSColors.ink)
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text("DISPLAY NAME")
+                    .font(.caption2.bold())
+                    .foregroundColor(MSColors.grey)
+
+                TextField("Enter Display Name", text: $displayName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                Text("BIO NOTE")
+                    .font(.caption2.bold())
+                    .foregroundColor(MSColors.grey)
+
+                TextEditor(text: $bio)
+                    .frame(height: 80)
+                    .padding(4)
+                    .background(Color.white)
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    )
+            }
+            .padding(.horizontal, 20)
+
+            Spacer()
+
+            Button(action: {
+                let current = (repository.currentUser.value as? UserProfile)
+                let name = displayName.isEmpty ? (current?.displayName ?? "") : displayName
+                let note = bio.isEmpty ? (current?.bio ?? "") : bio
+                repository.updateProfile(displayName: name, bio: note, avatarUrl: nil)
+                presentationMode.wrappedValue.dismiss()
+            }) {
+                Text("Save Profile Changes")
+                    .font(.body.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(MSColors.stamp)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+        .onAppear {
+            if let user = repository.currentUser.value as? UserProfile {
+                displayName = user.displayName
+                bio = user.bio
+            }
+        }
+        .background(MSColors.paper.ignoresSafeArea())
     }
 }
 

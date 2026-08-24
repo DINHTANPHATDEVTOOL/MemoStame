@@ -66,86 +66,83 @@ struct ContentView: View {
                 }
 
                 // Custom Floating Bottom Navigation Bar
-                VStack {
+                HStack {
+                    // Home Tab Button
+                    BottomNavItem(
+                        iconName: "house.fill",
+                        label: "Home",
+                        isSelected: selectedTab == .home
+                    ) {
+                        selectedTab = .home
+                    }
+
                     Spacer()
-                    
-                    HStack {
-                        // Home Tab Button
-                        BottomNavItem(
-                            iconName: "house.fill",
-                            label: "Home",
-                            isSelected: selectedTab == .home
-                        ) {
-                            selectedTab = .home
-                        }
 
-                        Spacer()
+                    // Vault Tab Button
+                    BottomNavItem(
+                        iconName: "square.grid.2x2.fill",
+                        label: "Vault",
+                        isSelected: selectedTab == .vault
+                    ) {
+                        selectedTab = .vault
+                    }
 
-                        // Vault Tab Button
-                        BottomNavItem(
-                            iconName: "square.grid.2x2.fill",
-                            label: "Vault",
-                            isSelected: selectedTab == .vault
-                        ) {
-                            selectedTab = .vault
-                        }
+                    Spacer()
 
-                        Spacer()
+                    // Center Floating Camera Button
+                    Button(action: {
+                        self.replyToPostId = nil
+                        self.showCameraModal = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(MSColors.stamp)
+                                .frame(width: 58, height: 58)
+                                .shadow(color: MSColors.stamp.opacity(0.4), radius: 8, x: 0, y: 4)
 
-                        // Center Floating Camera Button
-                        Button(action: {
-                            self.replyToPostId = nil
-                            self.showCameraModal = true
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .fill(MSColors.stamp)
-                                    .frame(width: 58, height: 58)
-                                    .shadow(color: MSColors.stamp.opacity(0.4), radius: 8, x: 0, y: 4)
-
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        .offset(y: -16)
-
-                        Spacer()
-
-                        // Friends & Trade Tab Button
-                        BottomNavItem(
-                            iconName: "person.2.fill",
-                            label: "Trade",
-                            isSelected: selectedTab == .friends
-                        ) {
-                            selectedTab = .friends
-                        }
-
-                        Spacer()
-
-                        // Passport Profile Tab Button
-                        BottomNavItem(
-                            iconName: "person.crop.square.fill",
-                            label: "Profile",
-                            isSelected: selectedTab == .profile
-                        ) {
-                            selectedTab = .profile
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.white)
                         }
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(MSColors.white.opacity(0.98))
-                            .shadow(color: Color.black.opacity(0.10), radius: 10, x: 0, y: 4)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 30)
-                                    .stroke(MSColors.lightGrey, lineWidth: 1)
-                            )
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
+                    .offset(y: -16)
+
+                    Spacer()
+
+                    // Friends & Trade Tab Button
+                    BottomNavItem(
+                        iconName: "person.2.fill",
+                        label: "Trade",
+                        isSelected: selectedTab == .friends
+                    ) {
+                        selectedTab = .friends
+                    }
+
+                    Spacer()
+
+                    // Passport Profile Tab Button
+                    BottomNavItem(
+                        iconName: "person.crop.square.fill",
+                        label: "Profile",
+                        isSelected: selectedTab == .profile
+                    ) {
+                        selectedTab = .profile
+                    }
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 30)
+                        .fill(MSColors.white.opacity(0.98))
+                        .shadow(color: Color.black.opacity(0.10), radius: 10, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 30)
+                                .stroke(MSColors.lightGrey, lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
             .navigationBarHidden(true)
         }

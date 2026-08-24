@@ -17,5 +17,7 @@ local.properties
 .artifacts/
 .env
 *.jks
+ipa/
+*.ipa
 
 .kotlin/

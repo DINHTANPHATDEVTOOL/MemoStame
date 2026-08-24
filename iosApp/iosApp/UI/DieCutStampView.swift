@@ -69,6 +69,7 @@ struct DieCutStampView: View {
     var isInteractive: Bool = true
     var stampColorHex: String = "#D32F2F"
     var showMoldOverlay: Bool = true
+    var onDoubleTap: (() -> Void)? = nil
     
     @State private var isFlipped: Bool = false
 
@@ -81,7 +82,7 @@ struct DieCutStampView: View {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color(red: 0.98, green: 0.96, blue: 0.92))
                     
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         // Stamp Header / Location
                         HStack {
                             if let loc = location, !loc.isEmpty {
@@ -101,7 +102,7 @@ struct DieCutStampView: View {
                                 .foregroundColor(Color(red: 0.55, green: 0.50, blue: 0.45))
                         }
                         .padding(.horizontal, 14)
-                        .padding(.top, 12)
+                        .padding(.top, 10)
 
                         // Central Photo in Die-Cut Perforated Window
                         ZStack {
@@ -127,7 +128,7 @@ struct DieCutStampView: View {
                                     Color.gray.opacity(0.2)
                                 }
                             }
-                            .frame(height: 190)
+                            .frame(height: 180)
                             .clipShape(PerforatedStampShape(notchRatio: 0.02, spacingRatio: 0.08))
                             .overlay(
                                 PerforatedStampShape(notchRatio: 0.02, spacingRatio: 0.08)
@@ -135,11 +136,13 @@ struct DieCutStampView: View {
                             )
                             .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
 
-                            // Mold overlay if available
+                            // Mold overlay strictly constrained to image box
                             if showMoldOverlay {
                                 Image("stamp_press_mold")
                                     .resizable()
-                                    .aspectRatio(contentMode: .fit)
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(height: 180)
+                                    .clipShape(PerforatedStampShape(notchRatio: 0.02, spacingRatio: 0.08))
                                     .opacity(0.15)
                                     .allowsHitTesting(false)
                             }
@@ -171,6 +174,8 @@ struct DieCutStampView: View {
                                 Spacer()
                             }
                         }
+                        .frame(height: 180)
+                        .clipped()
                         .padding(.horizontal, 10)
 
                         // Stamp Footer Information
@@ -200,9 +205,11 @@ struct DieCutStampView: View {
                             .cornerRadius(6)
                         }
                         .padding(.horizontal, 14)
-                        .padding(.bottom, 12)
+                        .padding(.bottom, 10)
                     }
                 }
+                .frame(height: 270)
+                .clipped()
                 .clipShape(PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065))
                 .overlay(
                     PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
@@ -270,6 +277,7 @@ struct DieCutStampView: View {
                 }
                 .padding(16)
                 .frame(height: 270)
+                .clipped()
                 .background(MSColors.creamCard)
                 .clipShape(PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065))
                 .overlay(
@@ -280,11 +288,17 @@ struct DieCutStampView: View {
                 .rotation3DEffect(.degrees(180), axis: (x: 0.0, y: 1.0, z: 0.0))
             }
         }
+        .frame(height: 270)
         .rotation3DEffect(
             .degrees(isFlipped ? 180 : 0),
             axis: (x: 0.0, y: 1.0, z: 0.0)
         )
-        .onTapGesture {
+        .onTapGesture(count: 2) {
+            if let onDoubleTap = onDoubleTap {
+                onDoubleTap()
+            }
+        }
+        .onTapGesture(count: 1) {
             if isInteractive {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
                     isFlipped.toggle()
