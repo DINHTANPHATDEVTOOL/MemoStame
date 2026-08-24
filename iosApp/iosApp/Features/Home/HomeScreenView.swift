@@ -705,9 +705,9 @@ class HomeObservableViewModel: ObservableObject {
             displayName: "Minh Nguyen",
             avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
             bio: "Capturing life memory stamps ☕✨",
-            stampsCreatedCount: 14,
-            stampsCollectedCount: 38,
-            placesVisitedCount: 9
+            stampsCreatedCount: Int32(14),
+            stampsCollectedCount: Int32(38),
+            placesVisitedCount: Int32(9)
         )
     }
 

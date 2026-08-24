@@ -29,7 +29,7 @@ public class StampVaultViewModel: ObservableObject {
             list = list.filter { stamp in
                 stamp.title.lowercased().contains(query) ||
                 (stamp.location?.lowercased().contains(query) ?? false) ||
-                (stamp.note?.lowercased().contains(query) ?? false)
+                stamp.note.lowercased().contains(query)
             }
         }
         if selectedFilter != "All" {

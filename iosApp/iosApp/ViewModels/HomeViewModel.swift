@@ -26,9 +26,9 @@ public class HomeViewModel: ObservableObject {
             displayName: "Minh Nguyen",
             avatarUrl: nil,
             bio: "Capturing life memory stamps",
-            stampsCreatedCount: 14,
-            stampsCollectedCount: 38,
-            placesVisitedCount: 9
+            stampsCreatedCount: Int32(14),
+            stampsCollectedCount: Int32(38),
+            placesVisitedCount: Int32(9)
         )
     }
 
