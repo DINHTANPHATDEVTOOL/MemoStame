@@ -41,7 +41,7 @@
 		1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAndTradeScreenView.swift; sourceTree = "<group>"; };
 		1D3623442D00000100000001 /* PassportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportScreenView.swift; sourceTree = "<group>"; };
 		1D3623462D00000100000001 /* AuthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViews.swift; sourceTree = "<group>"; };
-		1D3623482D00000100000001 /* ModelExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions/ModelExtensions.swift; sourceTree = "<group>"; };
+		1D3623482D00000100000001 /* ModelExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/ModelExtensions.swift; sourceTree = "<group>"; };
 		1D36234A2D00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -79,22 +79,22 @@
 				1D3623272D00000100000001 /* ContentView.swift */,
 				1D36234A2D00000100000001 /* Assets.xcassets */,
 				1D3623482D00000100000001 /* ModelExtensions.swift */,
-				1D3623502D00000100000001 /* Components */,
-				1D3623512D00000100000001 /* Views */,
+				1D3623502D00000100000001 /* UI */,
+				1D3623512D00000100000001 /* Features */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
 		};
-		1D3623502D00000100000001 /* Components */ = {
+		1D3623502D00000100000001 /* UI */ = {
 			isa = PBXGroup;
 			children = (
 				1D3623302D00000100000001 /* DieCutStampView.swift */,
 				1D3623322D00000100000001 /* EnvelopeShareModalView.swift */,
 			);
-			path = Components;
+			path = UI;
 			sourceTree = "<group>";
 		};
-		1D3623512D00000100000001 /* Views */ = {
+		1D3623512D00000100000001 /* Features */ = {
 			isa = PBXGroup;
 			children = (
 				1D3623522D00000100000001 /* Home */,
@@ -107,7 +107,7 @@
 				1D3623592D00000100000001 /* Friends */,
 				1D36235A2D00000100000001 /* Profile */,
 			);
-			path = Views;
+			path = Features;
 			sourceTree = "<group>";
 		};
 		1D3623522D00000100000001 /* Home */ = {

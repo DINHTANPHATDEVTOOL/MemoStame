@@ -10,9 +10,10 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Make gradlew executable
+      - name: Make gradlew executable & Build KMP Shared Framework
         script: |
           chmod +x gradlew
+          ./gradlew :shared:assemble
       - name: Build iOS Archive (.xcarchive)
         script: |
           xcodebuild archive \

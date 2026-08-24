@@ -99,12 +99,12 @@ struct ContentView: View {
                         }) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(red: 0.15, green: 0.15, blue: 0.18))
-                                    .frame(width: 56, height: 56)
-                                    .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                                    .fill(MSColors.stamp)
+                                    .frame(width: 58, height: 58)
+                                    .shadow(color: MSColors.stamp.opacity(0.4), radius: 8, x: 0, y: 4)
 
                                 Image(systemName: "camera.fill")
-                                    .font(.system(size: 22))
+                                    .font(.system(size: 22, weight: .bold))
                                     .foregroundColor(.white)
                             }
                         }
@@ -136,8 +136,12 @@ struct ContentView: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.white.opacity(0.96))
-                            .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 4)
+                            .fill(MSColors.white.opacity(0.98))
+                            .shadow(color: Color.black.opacity(0.10), radius: 10, x: 0, y: 4)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 30)
+                                    .stroke(MSColors.lightGrey, lineWidth: 1)
+                            )
                     )
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
@@ -171,10 +175,10 @@ struct BottomNavItem: View {
             VStack(spacing: 4) {
                 Image(systemName: iconName)
                     .font(.system(size: 20))
-                    .foregroundColor(isSelected ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color.gray)
+                    .foregroundColor(isSelected ? MSColors.stamp : MSColors.grey)
                 Text(label)
                     .font(.caption2.bold())
-                    .foregroundColor(isSelected ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color.gray)
+                    .foregroundColor(isSelected ? MSColors.stamp : MSColors.grey)
             }
         }
     }

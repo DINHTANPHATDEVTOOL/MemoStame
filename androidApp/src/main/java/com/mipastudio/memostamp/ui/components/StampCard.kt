@@ -1,0 +1,32 @@
+package com.mipastudio.memostamp.ui.components
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.mipastudio.memostamp.domain.model.Stamp
+import com.mipastudio.memostamp.core.processor.MemoImageProcessor
+
+@Composable
+fun StampCard(
+    stamp: Stamp,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    Box(
+        modifier = modifier
+            .aspectRatio(0.8f)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = MemoImageProcessor.resolveImageModel(stamp.imageUrl),
+            contentDescription = stamp.title,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}

@@ -25,6 +25,9 @@ kotlin {
         commonMain.dependencies {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
     }
 }
 
