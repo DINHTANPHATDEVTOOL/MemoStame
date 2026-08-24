@@ -10,7 +10,7 @@ public class StampVaultViewModel: ObservableObject {
     @Published public var showEnvelopeModal: Bool = false
     @Published public var isGridColumnCompact: Bool = false
 
-    public let filters = ["All", "Vintage", "Travel ✈️", "Coffee ☕", "Special 🎉"]
+    public let filters = ["All", "Vintage", "Travel", "Coffee", "Special"]
 
     private let repository: SharedMemoStampRepository
 

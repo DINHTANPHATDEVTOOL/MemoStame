@@ -16,7 +16,7 @@ struct HomeScreenView: View {
     @State private var newCommentText: String = ""
     @State private var activeLightboxReply: FeedReply? = nil
 
-    let circleOptions = ["All Friends", "Best Friends 💖", "Da Lat Trip 🌲", "Class 22DTHB3 🎓"]
+    let circleOptions = ["All Friends", "Best Friends", "Da Lat Trip", "Class 22DTHB3"]
 
     var body: some View {
         VStack(spacing: 0) {

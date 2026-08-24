@@ -13,7 +13,7 @@ struct StampVaultScreenView: View {
     @State private var selectedStamp: StampItem? = nil
     @State private var showEnvelopeModal: Bool = false
 
-    let filters = ["All", "Vintage", "Travel ✈️", "Coffee ☕", "Special 🎉"]
+    let filters = ["All", "Vintage", "Travel", "Coffee", "Special"]
     
     let columns = [
         GridItem(.flexible(), spacing: 14),

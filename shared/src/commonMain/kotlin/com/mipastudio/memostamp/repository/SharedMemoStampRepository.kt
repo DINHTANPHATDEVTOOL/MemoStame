@@ -26,19 +26,19 @@ class SharedMemoStampRepository {
 
     private val _circles = MutableStateFlow<List<Circle>>(
         listOf(
-            Circle("c_1", "user_me", "Best Friends 💖", "💖", listOf("user_huy", "user_linh"), currentTimeMillis()),
-            Circle("c_2", "user_me", "Da Lat Trip 🌲", "🌲", listOf("user_huy", "user_phat"), currentTimeMillis()),
-            Circle("c_3", "user_me", "Class 22DTHB3 🎓", "🎓", listOf("user_linh", "user_phat"), currentTimeMillis())
+            Circle("c_1", "user_me", "Best Friends", "heart", listOf("user_huy", "user_linh"), currentTimeMillis()),
+            Circle("c_2", "user_me", "Da Lat Trip", "tree", listOf("user_huy", "user_phat"), currentTimeMillis()),
+            Circle("c_3", "user_me", "Class 22DTHB3", "academic", listOf("user_linh", "user_phat"), currentTimeMillis())
         )
     )
     val circles: StateFlow<List<Circle>> = _circles.asStateFlow()
 
     private val _badges = MutableStateFlow<List<PassportBadge>>(
         listOf(
-            PassportBadge("Explorer ✈️", "Visited 5+ countries & cities", "✈️", true),
-            PassportBadge("Coffee Lover ☕", "Created 10+ coffee memory stamps", "☕", true),
-            PassportBadge("Master Crafter 🎨", "Customized 15+ die-cut stamps", "🎨", true),
-            PassportBadge("Trade King 👑", "Completed 5+ stamp exchanges", "👑", false)
+            PassportBadge("Explorer", "Visited 5+ countries & cities", "plane", true),
+            PassportBadge("Coffee Lover", "Created 10+ coffee memory stamps", "coffee", true),
+            PassportBadge("Master Crafter", "Customized 15+ die-cut stamps", "palette", true),
+            PassportBadge("Trade King", "Completed 5+ stamp exchanges", "crown", false)
         )
     )
     val badges: StateFlow<List<PassportBadge>> = _badges.asStateFlow()
@@ -54,7 +54,7 @@ class SharedMemoStampRepository {
                 authorId = "user_me",
                 authorName = "Minh Nguyen",
                 authorAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-                caption = "Một chiều chẳng có kế hoạch. Cà phê góc phố Đà Lạt ☕",
+                caption = "Một chiều chẳng có kế hoạch. Cà phê góc phố Đà Lạt.",
                 audienceType = AudienceType.FRIENDS,
                 createdAt = currentTimeMillis() - 120000,
                 type = FeedPostType.MEMORY,
@@ -64,12 +64,12 @@ class SharedMemoStampRepository {
                 replyCount = 1,
                 isLikedByMe = true,
                 reactions = listOf(
-                    FeedReaction("r1", "post_1", "user_huy", "Huy Tran", "❤️", currentTimeMillis() - 60000),
-                    FeedReaction("r2", "post_1", "user_linh", "Linh Pham", "❤️", currentTimeMillis() - 50000)
+                    FeedReaction("r1", "post_1", "user_huy", "Huy Tran", "heart", currentTimeMillis() - 60000),
+                    FeedReaction("r2", "post_1", "user_linh", "Linh Pham", "heart", currentTimeMillis() - 50000)
                 ),
                 comments = listOf(
-                    FeedComment("c1", "post_1", "user_huy", "Huy Tran", "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150", "Cảnh này chill quá bạn ơi! 🔥", currentTimeMillis() - 40000),
-                    FeedComment("c2", "post_1", "user_linh", "Linh Pham", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150", "Góc này quán nào vậy ạ? 😍", currentTimeMillis() - 20000)
+                    FeedComment("c1", "post_1", "user_huy", "Huy Tran", "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150", "Cảnh này chill quá bạn ơi!", currentTimeMillis() - 40000),
+                    FeedComment("c2", "post_1", "user_linh", "Linh Pham", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150", "Góc này quán nào vậy ạ?", currentTimeMillis() - 20000)
                 ),
                 replies = listOf(
                     FeedReply("rep1", "post_1", "user_huy", "Huy Tran", "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150", "stamp_reply_1", "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600", "classic", "Góp 1 chiếc tem cà phê nè!", currentTimeMillis() - 30000)
@@ -84,7 +84,7 @@ class SharedMemoStampRepository {
                 authorId = "user_huy",
                 authorName = "Huy Tran",
                 authorAvatar = "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150",
-                caption = "Coffee after class ☕ nạp lại năng lượng chạy deadline.",
+                caption = "Coffee after class, nạp lại năng lượng chạy deadline.",
                 audienceType = AudienceType.FRIENDS,
                 createdAt = currentTimeMillis() - 1080000,
                 type = FeedPostType.MEMORY,
@@ -103,7 +103,7 @@ class SharedMemoStampRepository {
                 authorId = "user_linh",
                 authorName = "Linh Pham",
                 authorAvatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-                caption = "Cuối tuần bình yên bên bờ biển 🌿🌊",
+                caption = "Cuối tuần bình yên bên bờ biển.",
                 audienceType = AudienceType.FRIENDS,
                 createdAt = currentTimeMillis() - 3600000,
                 type = FeedPostType.MEMORY,
@@ -124,11 +124,11 @@ class SharedMemoStampRepository {
                 originalImagePath = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
                 stampImagePath = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
                 title = "Đà Lạt chiều mưa",
-                note = "Một chiều chẳng có kế hoạch. Cà phê góc phố Đà Lạt ☕",
+                note = "Một chiều chẳng có kế hoạch. Cà phê góc phố Đà Lạt.",
                 createdAt = currentTimeMillis() - 86400000,
                 memoryDate = currentTimeMillis() - 86400000,
                 location = "Đà Lạt, Lâm Đồng",
-                mood = "🌧️",
+                mood = "rain",
                 collectionId = "col_travel",
                 favorite = true,
                 shape = "heart"
@@ -142,7 +142,7 @@ class SharedMemoStampRepository {
                 createdAt = currentTimeMillis() - 172800000,
                 memoryDate = currentTimeMillis() - 172800000,
                 location = "Quận 1, Hồ Chí Minh",
-                mood = "☕",
+                mood = "coffee",
                 collectionId = "col_coffee",
                 favorite = false,
                 shape = "classic"
@@ -156,7 +156,7 @@ class SharedMemoStampRepository {
                 createdAt = currentTimeMillis() - 259200000,
                 memoryDate = currentTimeMillis() - 259200000,
                 location = "Vũng Tàu",
-                mood = "🌅",
+                mood = "sun",
                 collectionId = "col_travel",
                 favorite = true,
                 shape = "oval"
@@ -167,10 +167,10 @@ class SharedMemoStampRepository {
 
     private val _collections = MutableStateFlow<List<CollectionItem>>(
         listOf(
-            CollectionItem("col_travel", "Travel & Places", "Destinations & journeys", "✈️", "SPECIAL", 12, 8),
-            CollectionItem("col_coffee", "Coffee & Food", "Cafes and meals", "☕", "NORMAL", 10, 5),
-            CollectionItem("col_daily", "Daily Life", "Everyday moments", "🌿", "NORMAL", 15, 12),
-            CollectionItem("col_special", "Special Moments", "Anniversaries & milestones", "🎉", "SERIES", 8, 4)
+            CollectionItem("col_travel", "Travel & Places", "Destinations & journeys", "plane", "SPECIAL", 12, 8),
+            CollectionItem("col_coffee", "Coffee & Food", "Cafes and meals", "coffee", "NORMAL", 10, 5),
+            CollectionItem("col_daily", "Daily Life", "Everyday moments", "leaf", "NORMAL", 15, 12),
+            CollectionItem("col_special", "Special Moments", "Anniversaries & milestones", "star", "SERIES", 8, 4)
         )
     )
     val collections: StateFlow<List<CollectionItem>> = _collections.asStateFlow()

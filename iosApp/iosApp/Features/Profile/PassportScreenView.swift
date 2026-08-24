@@ -35,6 +35,18 @@ struct PassportScreenView: View {
         ((repository.collections.value as? [CollectionItem]) ?? []).count
     }
 
+    private func badgeIconName(_ key: String) -> String {
+        switch key {
+        case "plane", "✈️": return "paperplane.fill"
+        case "coffee", "☕": return "cup.and.saucer.fill"
+        case "palette", "🎨": return "paintpalette.fill"
+        case "crown", "👑": return "crown.fill"
+        case "tree", "🌲": return "leaf.fill"
+        case "heart", "💖": return "heart.fill"
+        default: return "star.fill"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -113,9 +125,13 @@ struct PassportScreenView: View {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                             ForEach(badges, id: \.title) { badge in
                                 VStack(alignment: .leading, spacing: 6) {
-                                    HStack {
-                                        Text("\(badge.iconEmoji) \(badge.title)")
+                                    HStack(spacing: 6) {
+                                        Image(systemName: badgeIconName(badge.iconEmoji))
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(MSColors.stamp)
+                                        Text(badge.title)
                                             .font(.subheadline.bold())
+                                            .foregroundColor(MSColors.ink)
                                         Spacer()
                                         if badge.isUnlocked {
                                             Image(systemName: "checkmark.seal.fill")

@@ -23,65 +23,65 @@ struct MemoryNoteScreenView: View {
     @State private var caption: String = ""
     @State private var locationSearch: String = ""
     @State private var selectedCategory: String = "Tất cả"
-    @State private var selectedAudience: String = "Friends 👥"
+    @State private var selectedAudience: String = "Friends"
     @State private var isGpsLocating: Bool = false
 
-    let locationCategories = ["Tất cả", "Biểu tượng 🏛️", "Cà phê ☕", "Thiên nhiên 🌲", "Di tích 📮"]
+    let locationCategories = ["Tất cả", "Biểu tượng", "Cà phê", "Thiên nhiên", "Di tích"]
     
     let groundedPlaces: [GroundedPlaceItem] = [
         GroundedPlaceItem(
             name: "Quảng trường Lâm Viên",
             address: "Trần Quốc Toản, P.10, Đà Lạt",
-            category: "Biểu tượng 🏛️",
+            category: "Biểu tượng",
             stampTitle: "Nụ Hoa Atisô Đà Lạt",
             rating: "4.7★"
         ),
         GroundedPlaceItem(
             name: "Hồ Xuân Hương",
             address: "Trung tâm TP. Đà Lạt, Lâm Đồng",
-            category: "Thiên nhiên 🌲",
+            category: "Thiên nhiên",
             stampTitle: "Sương Mù Hồ Xuân Hương",
             rating: "4.8★"
         ),
         GroundedPlaceItem(
             name: "Tiệm Cà Phê Túi Mơ To",
             address: "Hẻm 31 Sào Nam, P.11, Đà Lạt",
-            category: "Cà phê ☕",
+            category: "Cà phê",
             stampTitle: "Cúc Họa Mi Mơ Màng",
             rating: "4.6★"
         ),
         GroundedPlaceItem(
             name: "Bưu Điện Trung Tâm Sài Gòn",
             address: "2 Công xã Paris, Q.1, TP.HCM",
-            category: "Di tích 📮",
+            category: "Di tích",
             stampTitle: "Bưu Chính Sài Gòn 1891",
             rating: "4.8★"
         ),
         GroundedPlaceItem(
             name: "Chợ Bến Thành",
             address: "Lê Lợi, P. Bến Thành, Q.1, TP.HCM",
-            category: "Di tích 📮",
+            category: "Di tích",
             stampTitle: "Tháp Đồng Hồ Bến Thành",
             rating: "4.6★"
         ),
         GroundedPlaceItem(
             name: "Hồ Hoàn Kiếm (Hồ Gươm)",
             address: "Hoàn Kiếm, Hà Nội",
-            category: "Biểu tượng 🏛️",
+            category: "Biểu tượng",
             stampTitle: "Mùa Thu Hà Nội",
             rating: "4.9★"
         ),
         GroundedPlaceItem(
             name: "Phố Cổ Hội An",
             address: "TP. Hội An, Quảng Nam",
-            category: "Di tích 📮",
+            category: "Di tích",
             stampTitle: "Đèn Lồng Phố Cổ",
             rating: "4.9★"
         ),
         GroundedPlaceItem(
             name: "Cầu Vàng Bà Nà Hills",
             address: "Hòa Vang, Đà Nẵng",
-            category: "Biểu tượng 🏛️",
+            category: "Biểu tượng",
             stampTitle: "Dải Lụa Mây Ngàn",
             rating: "4.7★"
         )
@@ -95,7 +95,7 @@ struct MemoryNoteScreenView: View {
         }
     }
 
-    let audienceTypes = ["Public 🌍", "Friends 👥", "Only Me 🔒"]
+    let audienceTypes = ["Public", "Friends", "Only Me"]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -293,9 +293,13 @@ struct MemoryNoteScreenView: View {
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                                 .lineLimit(1)
-                                            Text("🏷️ Gợi ý tem: \(place.stampTitle)")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(Color(red: 0.7, green: 0.5, blue: 0.1))
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "tag.fill")
+                                                    .font(.system(size: 10))
+                                                Text("Gợi ý tem: \(place.stampTitle)")
+                                                    .font(.system(size: 11, weight: .medium))
+                                            }
+                                            .foregroundColor(Color(red: 0.7, green: 0.5, blue: 0.1))
                                         }
                                         Image(systemName: locationSearch == place.name ? "checkmark.circle.fill" : "chevron.right")
                                             .foregroundColor(locationSearch == place.name ? Color(red: 0.85, green: 0.25, blue: 0.20) : .gray.opacity(0.5))
