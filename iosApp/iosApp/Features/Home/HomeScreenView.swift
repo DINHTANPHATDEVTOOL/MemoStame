@@ -11,6 +11,7 @@ struct HomeScreenView: View {
     @State private var activeTab: String = "Friends"
     @State private var activeCircle: String = "All Friends"
     @State private var showCommentSheet: Bool = false
+    @State private var showTradeInboxSheet: Bool = false
     @State private var selectedPostForComments: FeedPost? = nil
     @State private var newCommentText: String = ""
     @State private var activeLightboxReply: FeedReply? = nil
@@ -49,7 +50,10 @@ struct HomeScreenView: View {
 
                 // Inbox Envelope & Profile
                 HStack(spacing: 12) {
-                    Button(action: {}) {
+                    Button(action: {
+                        HapticFeedbackManager.shared.playImpact(style: .medium)
+                        showTradeInboxSheet = true
+                    }) {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: "envelope.fill")
                                 .font(.system(size: 18))
@@ -186,6 +190,9 @@ struct HomeScreenView: View {
                     }
                 )
             }
+        }
+        .sheet(isPresented: $showTradeInboxSheet) {
+            TradeInboxSheetView(repository: viewModel.repository)
         }
         .sheet(item: $activeLightboxReply) { reply in
             ReplyLightboxView(reply: reply)
@@ -726,3 +733,122 @@ class HomeObservableViewModel: ObservableObject {
         self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
     }
 }
+
+// Subview: Trade Inbox Sheet Modal for responding to stamp trade requests
+struct TradeInboxSheetView: View {
+    let repository: SharedMemoStampRepository
+    @Environment(\.presentationMode) var presentationMode
+    @State private var trades: [TradeRequest] = []
+
+    var body: some View {
+        VStack {
+            Capsule()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 36, height: 4)
+                .padding(.top, 8)
+
+            HStack {
+                Text("📮 Stamp Trade Inbox")
+                    .font(.headline.bold())
+                    .foregroundColor(MSColors.ink)
+                Spacer()
+                Button("Done") { presentationMode.wrappedValue.dismiss() }
+                    .font(.subheadline.bold())
+                    .foregroundColor(MSColors.stamp)
+            }
+            .padding(.horizontal)
+            .padding(.top, 4)
+
+            Divider()
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    if trades.isEmpty {
+                        VStack(spacing: 8) {
+                            Text("📬 No active trade offers")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            Text("When friends send you stamp trade requests, they will appear here.")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 60)
+                        .padding(.horizontal, 20)
+                    } else {
+                        ForEach(trades, id: \.id) { trade in
+                            HStack(spacing: 12) {
+                                AsyncImage(url: URL(string: trade.senderAvatar)) { phase in
+                                    if let img = phase.image {
+                                        img.resizable().aspectRatio(contentMode: .fill)
+                                    } else {
+                                        Circle().fill(Color.gray.opacity(0.2))
+                                    }
+                                }
+                                .frame(width: 44, height: 44)
+                                .clipShape(Circle())
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(trade.senderName)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(MSColors.ink)
+                                    Text("Offered: \(trade.stampTitle)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+
+                                Spacer()
+
+                                if trade.status == "PENDING" {
+                                    HStack(spacing: 6) {
+                                        Button(action: {
+                                            repository.acceptTrade(tradeId: trade.id)
+                                            trades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
+                                            HapticFeedbackManager.shared.playNotification(type: .success)
+                                        }) {
+                                            Text("Accept")
+                                                .font(.caption.bold())
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(MSColors.stamp)
+                                                .cornerRadius(12)
+                                        }
+
+                                        Button(action: {
+                                            repository.rejectTrade(tradeId: trade.id)
+                                            trades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
+                                            HapticFeedbackManager.shared.playImpact(style: .light)
+                                        }) {
+                                            Text("Decline")
+                                                .font(.caption.bold())
+                                                .foregroundColor(.gray)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 6)
+                                                .background(Color.gray.opacity(0.12))
+                                                .cornerRadius(12)
+                                        }
+                                    }
+                                } else {
+                                    Text(trade.status)
+                                        .font(.caption.bold())
+                                        .foregroundColor(trade.status == "ACCEPTED" ? .green : .red)
+                                }
+                            }
+                            .padding(12)
+                            .background(Color.white)
+                            .cornerRadius(14)
+                            .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+                        }
+                    }
+                }
+                .padding()
+            }
+        }
+        .background(MSColors.paper.ignoresSafeArea())
+        .onAppear {
+            trades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
+        }
+    }
+}
+
