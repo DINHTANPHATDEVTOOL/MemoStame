@@ -1,7 +1,7 @@
 import SwiftUI
 
-public struct MSButton: View {
-    public enum Variant {
+struct MSButton: View {
+    enum Variant {
         case primary
         case secondary
         case gold
@@ -13,7 +13,7 @@ public struct MSButton: View {
     let variant: Variant
     let action: () -> Void
 
-    public init(
+    init(
         title: String,
         iconSystemName: String? = nil,
         variant: Variant = .primary,
@@ -25,7 +25,7 @@ public struct MSButton: View {
         self.action = action
     }
 
-    public var body: some View {
+    var body: some View {
         Button(action: {
             HapticFeedbackManager.shared.playImpact(style: .medium)
             action()

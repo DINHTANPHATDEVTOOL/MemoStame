@@ -4,12 +4,12 @@ import UIKit
 #endif
 
 /// Native Swift Haptic Feedback Manager wrapping UIImpactFeedbackGenerator & UINotificationFeedbackGenerator
-public final class HapticFeedbackManager {
-    public static let shared = HapticFeedbackManager()
+final class HapticFeedbackManager {
+    static let shared = HapticFeedbackManager()
 
     private init() {}
 
-    public enum ImpactStyle {
+    enum ImpactStyle {
         case light
         case medium
         case heavy
@@ -17,13 +17,13 @@ public final class HapticFeedbackManager {
         case rigid
     }
 
-    public enum NotificationType {
+    enum NotificationType {
         case success
         case warning
         case error
     }
 
-    public func playImpact(style: ImpactStyle) {
+    func playImpact(style: ImpactStyle) {
         #if canImport(UIKit)
         let uiStyle: UIImpactFeedbackGenerator.FeedbackStyle
         switch style {
@@ -41,7 +41,7 @@ public final class HapticFeedbackManager {
         #endif
     }
 
-    public func playNotification(type: NotificationType) {
+    func playNotification(type: NotificationType) {
         #if canImport(UIKit)
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
@@ -53,7 +53,7 @@ public final class HapticFeedbackManager {
         #endif
     }
 
-    public func playSelection() {
+    func playSelection() {
         #if canImport(UIKit)
         let generator = UISelectionFeedbackGenerator()
         generator.prepare()

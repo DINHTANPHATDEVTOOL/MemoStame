@@ -2,14 +2,14 @@ import Foundation
 import UserNotifications
 
 /// Native Swift Notification Manager for scheduling daily memory reminders and stamp trade alerts.
-public final class MemoStampNotificationManager: NSObject, UNUserNotificationCenterDelegate {
-    public static let shared = MemoStampNotificationManager()
+final class MemoStampNotificationManager: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = MemoStampNotificationManager()
 
     private override init() {
         super.init()
     }
 
-    public func requestAuthorization(completion: @escaping (Bool) -> Void) {
+    func requestAuthorization(completion: @escaping (Bool) -> Void) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             DispatchQueue.main.async {
                 completion(granted && error == nil)
@@ -17,7 +17,7 @@ public final class MemoStampNotificationManager: NSObject, UNUserNotificationCen
         }
     }
 
-    public func scheduleDailyMemoryReminder(at hour: Int = 18, minute: Int = 30) {
+    func scheduleDailyMemoryReminder(at hour: Int = 18, minute: Int = 30) {
         let content = UNMutableNotificationContent()
         content.title = "📮 Daily Memory Stamp"
         content.body = "What memory did you capture today? Tap to stamp your moment! ✨"
@@ -37,7 +37,7 @@ public final class MemoStampNotificationManager: NSObject, UNUserNotificationCen
         }
     }
 
-    public func sendTradeRequestAlert(friendName: String, stampTitle: String) {
+    func sendTradeRequestAlert(friendName: String, stampTitle: String) {
         let content = UNMutableNotificationContent()
         content.title = "📬 New Stamp Trade Offer!"
         content.body = "\(friendName) sent you a trade request for '\(stampTitle)'."
@@ -50,7 +50,7 @@ public final class MemoStampNotificationManager: NSObject, UNUserNotificationCen
     }
 
     // MARK: - UNUserNotificationCenterDelegate
-    public func userNotificationCenter(
+    func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void

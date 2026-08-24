@@ -3,13 +3,13 @@ import CoreLocation
 import Combine
 
 /// Native Swift CoreLocation Manager providing GPS location tracking and Dalat fallback tag.
-public final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    public static let shared = LocationManager()
+final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    static let shared = LocationManager()
 
-    @Published public var currentCityName: String = "Đà Lạt, Lâm Đồng"
-    @Published public var currentCoordinate: CLLocationCoordinate2D? = nil
-    @Published public var isLocating: Bool = false
-    @Published public var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    @Published var currentCityName: String = "Đà Lạt, Lâm Đồng"
+    @Published var currentCoordinate: CLLocationCoordinate2D? = nil
+    @Published var isLocating: Bool = false
+    @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
     private let clManager = CLLocationManager()
     private let geocoder = CLGeocoder()
@@ -20,11 +20,11 @@ public final class LocationManager: NSObject, ObservableObject, CLLocationManage
         clManager.desiredAccuracy = kCLLocationAccuracyBest
     }
 
-    public func requestLocationPermission() {
+    func requestLocationPermission() {
         clManager.requestWhenInUseAuthorization()
     }
 
-    public func fetchCurrentLocation(completion: @escaping (String) -> Void) {
+    func fetchCurrentLocation(completion: @escaping (String) -> Void) {
         isLocating = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
             guard let self = self else { return }
@@ -36,14 +36,14 @@ public final class LocationManager: NSObject, ObservableObject, CLLocationManage
     }
 
     // MARK: - CLLocationManagerDelegate
-    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         self.authorizationStatus = status
         if status == .authorizedWhenInUse || status == .authorizedAlways {
             clManager.startUpdatingLocation()
         }
     }
 
-    public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         self.currentCoordinate = location.coordinate
         clManager.stopUpdatingLocation()

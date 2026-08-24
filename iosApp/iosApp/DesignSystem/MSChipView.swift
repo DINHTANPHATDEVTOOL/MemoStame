@@ -1,17 +1,17 @@
 import SwiftUI
 
-public struct MSChipView: View {
+struct MSChipView: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
 
-    public init(title: String, isSelected: Bool, action: @escaping () -> Void) {
+    init(title: String, isSelected: Bool, action: @escaping () -> Void) {
         self.title = title
         self.isSelected = isSelected
         self.action = action
     }
 
-    public var body: some View {
+    var body: some View {
         Button(action: {
             HapticFeedbackManager.shared.playImpact(style: .light)
             action()

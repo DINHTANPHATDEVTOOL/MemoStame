@@ -2,19 +2,19 @@ import SwiftUI
 import CoreGraphics
 
 /// Native Swift Stamp Rendering Engine calculating perforation geometry, notch ratios, and die-cut paths.
-public final class StampRenderEngine {
-    public static let shared = StampRenderEngine()
+final class StampRenderEngine {
+    static let shared = StampRenderEngine()
 
     private init() {}
 
-    public struct StampNotchSpecs {
-        public let notchRadius: CGFloat
-        public let spacing: CGFloat
-        public let notchCountHorizontal: Int
-        public let notchCountVertical: Int
+    struct StampNotchSpecs {
+        let notchRadius: CGFloat
+        let spacing: CGFloat
+        let notchCountHorizontal: Int
+        let notchCountVertical: Int
     }
 
-    public func calculateNotchSpecs(for size: CGSize, notchRatio: CGFloat = 0.025, spacingRatio: CGFloat = 0.07) -> StampNotchSpecs {
+    func calculateNotchSpecs(for size: CGSize, notchRatio: CGFloat = 0.025, spacingRatio: CGFloat = 0.07) -> StampNotchSpecs {
         let minDim = min(size.width, size.height)
         let radius = minDim * notchRatio
         let spacing = minDim * spacingRatio
@@ -30,7 +30,7 @@ public final class StampRenderEngine {
         )
     }
 
-    public func colorFromHex(_ hex: String) -> Color {
+    func colorFromHex(_ hex: String) -> Color {
         var cleanHex = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if cleanHex.hasPrefix("#") {
             cleanHex.removeFirst()

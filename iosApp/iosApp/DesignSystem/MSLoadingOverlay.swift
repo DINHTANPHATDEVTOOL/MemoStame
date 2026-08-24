@@ -1,14 +1,14 @@
 import SwiftUI
 
-public struct MSLoadingOverlay: View {
+struct MSLoadingOverlay: View {
     let message: String
     @State private var rotation: Double = 0.0
 
-    public init(message: String = "Stamping Memory...") {
+    init(message: String = "Stamping Memory...") {
         self.message = message
     }
 
-    public var body: some View {
+    var body: some View {
         ZStack {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()

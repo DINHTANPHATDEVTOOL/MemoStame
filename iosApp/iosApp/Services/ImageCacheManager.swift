@@ -4,8 +4,8 @@ import UIKit
 #endif
 
 /// Native Swift Thread-Safe NSCache Image Downloader and Memory Cache Manager
-public final class ImageCacheManager {
-    public static let shared = ImageCacheManager()
+final class ImageCacheManager {
+    static let shared = ImageCacheManager()
 
     #if canImport(UIKit)
     private let cache = NSCache<NSString, UIImage>()
@@ -19,15 +19,15 @@ public final class ImageCacheManager {
     }
 
     #if canImport(UIKit)
-    public func image(forKey key: String) -> UIImage? {
+    func image(forKey key: String) -> UIImage? {
         cache.object(forKey: key as NSString)
     }
 
-    public func setImage(_ image: UIImage, forKey key: String) {
+    func setImage(_ image: UIImage, forKey key: String) {
         cache.setObject(image, forKey: key as NSString)
     }
 
-    public func fetchImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
+    func fetchImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
         if let cached = image(forKey: urlString) {
             completion(cached)
             return

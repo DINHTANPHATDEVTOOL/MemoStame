@@ -1,12 +1,12 @@
 import SwiftUI
 
-public struct MSTextField: View {
+struct MSTextField: View {
     let placeholder: String
     @Binding var text: String
     let iconSystemName: String?
     let isSecure: Bool
 
-    public init(
+    init(
         _ placeholder: String,
         text: Binding<String>,
         iconSystemName: String? = nil,
@@ -18,7 +18,7 @@ public struct MSTextField: View {
         self.isSecure = isSecure
     }
 
-    public var body: some View {
+    var body: some View {
         HStack(spacing: 12) {
             if let icon = iconSystemName {
                 Image(systemName: icon)
