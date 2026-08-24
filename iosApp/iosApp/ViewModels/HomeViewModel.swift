@@ -45,8 +45,8 @@ class HomeViewModel: ObservableObject {
         }
     }
 
-    var circles: [Circle] {
-        (repository.circles.value as? [Circle]) ?? []
+    var circles: [shared.Circle] {
+        (repository.circles.value as? [shared.Circle]) ?? []
     }
 
     func toggleLike(postId: String) {

@@ -27,4 +27,5 @@ extension StampItem: @retroactive Identifiable {}
 extension CollectionItem: @retroactive Identifiable {}
 extension FriendItem: @retroactive Identifiable {}
 extension TradeRequest: @retroactive Identifiable {}
+extension shared.Circle: @retroactive Identifiable {}
 
