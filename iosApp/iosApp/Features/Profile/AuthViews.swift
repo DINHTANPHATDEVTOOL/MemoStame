@@ -141,7 +141,7 @@ struct ProfileSetupScreenView: View {
                             TextField("username", text: $username)
                                 .autocapitalization(.none)
                                 .disableAutocorrection(true)
-                                .onChange(of: username) { _, newValue in
+                                .onChange(of: username) { newValue in
                                     checkUsernameAvailability(newValue)
                                 }
                         }
