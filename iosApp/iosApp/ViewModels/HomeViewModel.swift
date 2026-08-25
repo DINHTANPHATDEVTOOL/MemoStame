@@ -17,6 +17,13 @@ class HomeViewModel: ObservableObject {
 
     init(repository: SharedMemoStampRepository) {
         self.repository = repository
+
+        Timer.publish(every: 0.5, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     var currentUser: UserProfile {

@@ -349,6 +349,8 @@ struct ProfileSettingsSheetView: View {
     @State private var newPassword: String = ""
     @State private var confirmPassword: String = ""
     @State private var passwordToastMessage: String? = nil
+    @State private var showPhotoPicker: Bool = false
+    @State private var selectedAvatarImage: UIImage? = nil
 
     var body: some View {
         NavigationView {
@@ -421,17 +423,58 @@ struct ProfileSettingsSheetView: View {
                                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
                         }
 
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(langManager.string(vi: "Link Ảnh Đại Diện (Avatar URL)", en: "Avatar Image URL"))
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(langManager.string(vi: "Ảnh Đại Diện", en: "Profile Avatar"))
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
-                            TextField("https://...", text: $avatarUrl)
-                                .font(.subheadline)
+
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    if let img = selectedAvatarImage {
+                                        Image(uiImage: img)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 60, height: 60)
+                                            .clipShape(Circle())
+                                    } else {
+                                        AsyncImage(url: URL(string: avatarUrl)) { phase in
+                                            if let image = phase.image {
+                                                image.resizable().aspectRatio(contentMode: .fill)
+                                            } else {
+                                                Circle().fill(MSColors.mint)
+                                                    .overlay(Text(String(displayName.prefix(1)).uppercased()).font(.title2.bold()).foregroundColor(MSColors.ink))
+                                            }
+                                        }
+                                        .frame(width: 60, height: 60)
+                                        .clipShape(Circle())
+                                    }
+                                    Circle()
+                                        .stroke(MSColors.stamp, lineWidth: 2)
+                                        .frame(width: 62, height: 62)
+                                }
+
+                                Button(action: { showPhotoPicker = true }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "photo.on.rectangle.angled")
+                                            .font(.subheadline)
+                                        Text(langManager.string(vi: "Chọn từ Thư Viện", en: "Choose from Library"))
+                                            .font(.caption.bold())
+                                    }
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(MSColors.stamp.opacity(0.12))
+                                    .foregroundColor(MSColors.stamp)
+                                    .cornerRadius(10)
+                                }
+                            }
+
+                            TextField("Hoặc nhập URL: https://...", text: $avatarUrl)
+                                .font(.caption)
                                 .foregroundColor(MSColors.ink)
-                                .padding(12)
+                                .padding(10)
                                 .background(Color.white)
-                                .cornerRadius(10)
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                                .cornerRadius(8)
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.2), lineWidth: 1))
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
@@ -586,12 +629,60 @@ struct ProfileSettingsSheetView: View {
                 }
             }
         }
+        }
+        .sheet(isPresented: $showPhotoPicker) {
+            PhotoLibraryPicker { img in
+                selectedAvatarImage = img
+                if let data = img.jpegData(compressionQuality: 0.8) {
+                    let fileUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("user_avatar_\(Date().timeIntervalSince1970).jpg")
+                    try? data.write(to: fileUrl)
+                    avatarUrl = fileUrl.absoluteString
+                }
+            }
+        }
         .onAppear {
             if let user = repository.currentUser.value as? UserProfile {
                 displayName = user.displayName
                 bio = user.bio
                 avatarUrl = user.avatarUrl ?? ""
             }
+        }
+    }
+}
+
+struct PhotoLibraryPicker: UIViewControllerRepresentable {
+    @Environment(\.presentationMode) var presentationMode
+    var onImagePicked: (UIImage) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = .photoLibrary
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: PhotoLibraryPicker
+
+        init(_ parent: PhotoLibraryPicker) {
+            self.parent = parent
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.onImagePicked(image)
+            }
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.presentationMode.wrappedValue.dismiss()
         }
     }
 }

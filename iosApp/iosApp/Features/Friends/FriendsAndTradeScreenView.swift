@@ -546,16 +546,14 @@ struct FriendsAndTradeScreenView: View {
                 )
             }
         }
-        .sheet(isPresented: $showChatModal) {
-            if let friend = selectedFriendForChat {
-                ChatScreenView(
-                    recipientUserId: friend.id,
-                    recipientName: friend.displayName,
-                    currentUserId: (repository.currentUser.value as? UserProfile)?.uid ?? "user_me",
-                    repository: repository,
-                    onDismiss: { showChatModal = false }
-                )
-            }
+        .sheet(item: $selectedFriendForChat) { friend in
+            ChatScreenView(
+                recipientUserId: friend.id,
+                recipientName: friend.displayName,
+                currentUserId: (repository.currentUser.value as? UserProfile)?.uid ?? "user_me",
+                repository: repository,
+                onDismiss: { selectedFriendForChat = nil }
+            )
         }
         .sheet(isPresented: $showQrCodeModal) {
             FriendQrCodeSheetView(repository: repository)
