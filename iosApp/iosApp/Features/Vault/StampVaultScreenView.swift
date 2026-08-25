@@ -355,6 +355,69 @@ enum VaultModalItem: Identifiable {
     }
 }
 
+struct StampDetailModalView: View {
+    let stamp: StampItem
+    var onShare: () -> Void
+    var onDismiss: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Capsule()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 40, height: 5)
+                .padding(.top, 10)
+
+            HStack {
+                Text(stamp.title)
+                    .font(.title3.bold())
+                Spacer()
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.horizontal)
+
+            DieCutStampView(
+                title: stamp.title,
+                imageUrl: stamp.stampImagePath,
+                location: stamp.location,
+                dateStr: "2026.08.18",
+                note: stamp.note,
+                shape: stamp.shape,
+                isInteractive: true
+            )
+            .padding(.horizontal)
+
+            HStack(spacing: 4) {
+                Text("Tap stamp to flip & view memory note")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.caption)
+                    .foregroundColor(MSColors.stamp)
+            }
+
+            VStack(spacing: 12) {
+                Button(action: onShare) {
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                        Text("Share via Vintage Envelope")
+                            .font(.body.bold())
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 20)
+        }
+    }
+}
+
 struct CreateAlbumSheetView: View {
     let repository: SharedMemoStampRepository
     @Environment(\.presentationMode) var presentationMode
