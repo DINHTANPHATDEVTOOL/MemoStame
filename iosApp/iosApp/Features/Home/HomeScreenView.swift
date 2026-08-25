@@ -816,8 +816,11 @@ class HomeObservableViewModel: ObservableObject {
             bio: "Sưu tầm ký ức qua từng con tem bưu chính 📮",
             stampsCreatedCount: Int32(0),
             stampsCollectedCount: Int32(0),
-            placesVisitedCount: Int32(0)
         )
+    }
+
+    func refreshFeed() {
+        self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
     }
 
     func like(postId: String) {
