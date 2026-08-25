@@ -236,7 +236,7 @@ struct DieCutStampView: View {
 
                     // Authentic Metal Mold Overlay (Camera / Editor preview mode)
                     if showMoldOverlay {
-                        Image("khuon_tem_template")
+                        Image("stamp_press_mold")
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .allowsHitTesting(false)

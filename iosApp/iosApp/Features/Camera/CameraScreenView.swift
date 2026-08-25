@@ -323,9 +323,9 @@ struct CameraScreenView: View {
 
                 Spacer()
 
-                // Authentic Floating Metal Mold Frame Overlay
+                // Authentic Floating Metal Mold Frame Overlay (Crisp Sharp Stamp Press Mold matching Android)
                 ZStack {
-                    Image("khuon_tem_template")
+                    Image("stamp_press_mold")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .allowsHitTesting(false)
