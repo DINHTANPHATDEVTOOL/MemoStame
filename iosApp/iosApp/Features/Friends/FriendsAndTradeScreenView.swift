@@ -198,7 +198,7 @@ struct FriendsAndTradeScreenView: View {
                                             Spacer()
 
                                             Button(action: {
-                                                repository.acceptFriendRequest(req.id)
+                                                repository.acceptFriendRequest(requestId: req.id)
                                                 refreshTrigger.toggle()
                                                 triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
                                             }) {
@@ -212,7 +212,7 @@ struct FriendsAndTradeScreenView: View {
                                             }
 
                                             Button(action: {
-                                                repository.rejectFriendRequest(req.id)
+                                                repository.rejectFriendRequest(requestId: req.id)
                                                 refreshTrigger.toggle()
                                                 triggerToast("Đã từ chối lời mời kết bạn.")
                                             }) {
