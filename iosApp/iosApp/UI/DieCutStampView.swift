@@ -99,127 +99,112 @@ struct DieCutStampView: View {
     var body: some View {
         ZStack {
             if !isFlipped {
-                // FRONT SIDE: Perforated Postage Stamp Card
+                // FRONT SIDE: Authentic Die-Cut Photo Stamp (NO EXTRA OUTER PAPER BORDER!)
                 ZStack {
-                    // Vintage paper card background
-                    RoundedRectangle(cornerRadius: fittedInGrid ? 4 : 6)
-                        .fill(Color(red: 0.98, green: 0.96, blue: 0.92))
-                    
-                    VStack(spacing: fittedInGrid ? 2 : 4) {
-                        // Stamp Header: Location & Date
+                    // Layer 1: Captured Photo filling 100% of the stamp viewport
+                    AsyncImage(url: URL(string: imageUrl)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure(_), .empty:
+                            ZStack {
+                                Color(red: 0.94, green: 0.91, blue: 0.84)
+                                VStack(spacing: 4) {
+                                    Image(systemName: "photo.artframe")
+                                        .font(.system(size: fittedInGrid ? 18 : 28))
+                                        .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
+                                    Text("MEMOSTAMP")
+                                        .font(.system(size: fittedInGrid ? 6 : 8, weight: .bold, design: .monospaced))
+                                        .foregroundColor(Color(red: 0.65, green: 0.55, blue: 0.45))
+                                }
+                            }
+                        @unknown default:
+                            Color.gray.opacity(0.2)
+                        }
+                    }
+                    .frame(width: cardWidth, height: cardHeight)
+
+                    // Layer 2: Subtle Top/Bottom Gradient Shadows for High-Contrast Overlay Legibility
+                    VStack {
+                        LinearGradient(colors: [Color.black.opacity(0.65), Color.clear], startPoint: .top, endPoint: .bottom)
+                            .frame(height: fittedInGrid ? 32 : 55)
+                        Spacer()
+                        LinearGradient(colors: [Color.clear, Color.black.opacity(0.70)], startPoint: .top, endPoint: .bottom)
+                            .frame(height: fittedInGrid ? 40 : 65)
+                    }
+                    .allowsHitTesting(false)
+
+                    // Layer 3: Stamp Information & Postmark Overlays directly ON top of photo
+                    VStack {
+                        // Stamp Header: Location & Date Badges
                         HStack {
                             if let loc = location, !loc.isEmpty {
                                 HStack(spacing: 3) {
                                     Image(systemName: "mappin.circle.fill")
                                         .font(.system(size: fittedInGrid ? 8 : 10))
-                                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                        .foregroundColor(Color(red: 0.95, green: 0.35, blue: 0.30))
                                     Text(loc.uppercased())
                                         .font(.system(size: fittedInGrid ? 7 : 9, weight: .bold, design: .monospaced))
-                                        .foregroundColor(Color(red: 0.35, green: 0.30, blue: 0.25))
+                                        .foregroundColor(.white)
                                         .lineLimit(1)
                                 }
+                                .padding(.horizontal, fittedInGrid ? 6 : 8)
+                                .padding(.vertical, fittedInGrid ? 3 : 4)
+                                .background(Color.black.opacity(0.45))
+                                .cornerRadius(fittedInGrid ? 6 : 8)
                             }
                             Spacer()
                             Text(dateStr)
                                 .font(.system(size: fittedInGrid ? 7 : 9, weight: .semibold, design: .monospaced))
-                                .foregroundColor(Color(red: 0.55, green: 0.50, blue: 0.45))
+                                .foregroundColor(.white.opacity(0.9))
+                                .padding(.horizontal, fittedInGrid ? 6 : 8)
+                                .padding(.vertical, fittedInGrid ? 3 : 4)
+                                .background(Color.black.opacity(0.45))
+                                .cornerRadius(fittedInGrid ? 6 : 8)
                         }
                         .padding(.horizontal, fittedInGrid ? 8 : 12)
-                        .padding(.top, fittedInGrid ? 4 : 8)
+                        .padding(.top, fittedInGrid ? 8 : 12)
 
-                        // Central Photo Window with Direct Die-Cut Perforated Edge Clipping
-                        ZStack {
-                            // Photo Layer clipped directly into Perforated Stamp Shape
-                            AsyncImage(url: URL(string: imageUrl)) { phase in
-                                switch phase {
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                case .failure(_), .empty:
-                                    ZStack {
-                                        Color(red: 0.94, green: 0.91, blue: 0.84)
-                                        VStack(spacing: 2) {
-                                            Image(systemName: "photo.artframe")
-                                                .font(.system(size: fittedInGrid ? 18 : 28))
-                                                .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
-                                            Text("MEMOSTAMP")
-                                                .font(.system(size: fittedInGrid ? 6 : 8, weight: .bold, design: .monospaced))
-                                                .foregroundColor(Color(red: 0.65, green: 0.55, blue: 0.45))
-                                        }
+                        Spacer()
+
+                        // Postmark Cancel Stamp (Corner Overlay)
+                        if !fittedInGrid {
+                            HStack {
+                                Spacer()
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.85), lineWidth: 1.5)
+                                        .frame(width: 42, height: 42)
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.5), lineWidth: 1.0)
+                                        .frame(width: 34, height: 34)
+                                    VStack(spacing: 0) {
+                                        Text("MEMO")
+                                            .font(.system(size: 7, weight: .black))
+                                        Text("★ AIR ★")
+                                            .font(.system(size: 5, weight: .bold))
+                                        Text("POST")
+                                            .font(.system(size: 6, weight: .black))
                                     }
-                                @unknown default:
-                                    Color.gray.opacity(0.2)
+                                    .foregroundColor(Color.white.opacity(0.95))
                                 }
-                            }
-                            .frame(
-                                width: cardWidth - (fittedInGrid ? 16 : 24),
-                                height: cardHeight - (fittedInGrid ? 48 : 80)
-                            )
-                            .clipShape(PerforatedStampShape(notchRatio: 0.03, spacingRatio: 0.08))
-                            .overlay(
-                                PerforatedStampShape(notchRatio: 0.03, spacingRatio: 0.08)
-                                    .stroke(Color.white.opacity(0.7), lineWidth: 1.0)
-                            )
-                            .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1.5)
-
-                            // Authentic Metal Mold Overlay (Camera / Editor preview only)
-                            if showMoldOverlay {
-                                Image("khuon_tem_template")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(
-                                        width: cardWidth - (fittedInGrid ? 10 : 16),
-                                        height: cardHeight - (fittedInGrid ? 40 : 60)
-                                    )
-                                    .allowsHitTesting(false)
-                            }
-
-                            // Postmark Cancel Stamp (Corner Overlay)
-                            if !fittedInGrid {
-                                VStack {
-                                    HStack {
-                                        Spacer()
-                                        ZStack {
-                                            Circle()
-                                                .stroke(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.85), lineWidth: 1.5)
-                                                .frame(width: 40, height: 40)
-                                            Circle()
-                                                .stroke(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.5), lineWidth: 1.0)
-                                                .frame(width: 32, height: 32)
-                                            VStack(spacing: 0) {
-                                                Text("MEMO")
-                                                    .font(.system(size: 7, weight: .black))
-                                                Text("★ AIR ★")
-                                                    .font(.system(size: 5, weight: .bold))
-                                                Text("POST")
-                                                    .font(.system(size: 6, weight: .black))
-                                            }
-                                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.9))
-                                        }
-                                        .rotationEffect(.degrees(-15))
-                                        .padding(6)
-                                    }
-                                    Spacer()
-                                }
+                                .rotationEffect(.degrees(-15))
+                                .padding(.trailing, 10)
                             }
                         }
-                        .frame(
-                            width: cardWidth - (fittedInGrid ? 16 : 24),
-                            height: cardHeight - (fittedInGrid ? 48 : 80)
-                        )
-                        .clipped()
 
-                        // Stamp Footer: Title & Value Badge
+                        // Stamp Footer: Title & Value Denomination Badge
                         HStack(alignment: .center) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(title.isEmpty ? "Untitled Memory" : title)
                                     .font(.system(size: fittedInGrid ? 9 : 12, weight: .bold, design: .serif))
-                                    .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                                    .foregroundColor(.white)
                                     .lineLimit(1)
                                 Text("OFFICIAL DIE-CUT STAMP")
                                     .font(.system(size: fittedInGrid ? 5 : 7, weight: .bold, design: .monospaced))
-                                    .foregroundColor(Color(red: 0.65, green: 0.55, blue: 0.45))
+                                    .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.65))
                             }
                             Spacer()
 
@@ -232,22 +217,29 @@ struct DieCutStampView: View {
                             }
                             .padding(.horizontal, fittedInGrid ? 4 : 6)
                             .padding(.vertical, 2)
-                            .background(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.12))
-                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                            .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+                            .foregroundColor(.white)
                             .cornerRadius(3)
                         }
                         .padding(.horizontal, fittedInGrid ? 8 : 12)
-                        .padding(.bottom, fittedInGrid ? 4 : 8)
+                        .padding(.bottom, fittedInGrid ? 8 : 12)
+                    }
+
+                    // Authentic Metal Mold Overlay (Camera / Editor preview mode)
+                    if showMoldOverlay {
+                        Image("khuon_tem_template")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .allowsHitTesting(false)
                     }
                 }
                 .frame(width: cardWidth, height: cardHeight)
-                .clipped()
-                .clipShape(PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065))
+                .clipShape(PerforatedStampShape(notchRatio: 0.024, spacingRatio: 0.068))
                 .overlay(
-                    PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
-                        .stroke(Color(red: 0.80, green: 0.74, blue: 0.65), lineWidth: 1.5)
+                    PerforatedStampShape(notchRatio: 0.024, spacingRatio: 0.068)
+                        .stroke(Color.white.opacity(0.85), lineWidth: 1.5)
                 )
-                .shadow(color: Color.black.opacity(0.15), radius: fittedInGrid ? 3 : 6, x: 0, y: fittedInGrid ? 2 : 3)
+                .shadow(color: Color.black.opacity(0.25), radius: fittedInGrid ? 4 : 8, x: 0, y: fittedInGrid ? 2 : 4)
             } else {
                 // BACK SIDE: Postcard Card matching EXACT FRONT ORIENTATION & ASPECT RATIO
                 VStack(spacing: fittedInGrid ? 4 : (effectiveLandscape ? 6 : 10)) {
