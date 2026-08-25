@@ -10,7 +10,9 @@ struct FriendsAndTradeScreenView: View {
     @State private var friendCode: String = ""
     @State private var selectedTab: Int = 0 // 0: Friends, 1: Trade Requests
     @State private var selectedFriendForTrade: FriendItem? = nil
+    @State private var selectedFriendForChat: FriendItem? = nil
     @State private var showTradeModal: Bool = false
+    @State private var showChatModal: Bool = false
     @State private var showQrCodeModal: Bool = false
     @State private var toastMessage: String? = nil
     @State private var showToast: Bool = false
@@ -96,8 +98,9 @@ struct FriendsAndTradeScreenView: View {
 
                     // Segment Picker
                     Picker("", selection: $selectedTab) {
-                        Text("My Friends (\(friends.count))").tag(0)
-                        Text("Trade Requests (\(tradeRequests.count))").tag(1)
+                        Text("Friends (\(friends.count))").tag(0)
+                        Text("Trades (\(tradeRequests.count))").tag(1)
+                        Text("💬 Chat").tag(2)
                     }
                     .pickerStyle(SegmentedPickerStyle())
                 }
@@ -152,17 +155,35 @@ struct FriendsAndTradeScreenView: View {
 
                                         Spacer()
 
-                                        HStack(spacing: 8) {
+                                        HStack(spacing: 6) {
+                                            // Direct Chat Button
+                                            Button(action: {
+                                                selectedFriendForChat = friend
+                                                showChatModal = true
+                                            }) {
+                                                HStack(spacing: 3) {
+                                                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                                                    Text("Chat")
+                                                        .font(.caption.bold())
+                                                }
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 6)
+                                                .background(MSColors.stamp.opacity(0.12))
+                                                .foregroundColor(MSColors.stamp)
+                                                .cornerRadius(12)
+                                            }
+
+                                            // Trade Button
                                             Button(action: {
                                                 selectedFriendForTrade = friend
                                                 showTradeModal = true
                                             }) {
-                                                HStack(spacing: 4) {
+                                                HStack(spacing: 3) {
                                                     Image(systemName: "arrow.triangle.2.circlepath")
                                                     Text("Trade")
                                                         .font(.caption.bold())
                                                 }
-                                                .padding(.horizontal, 10)
+                                                .padding(.horizontal, 8)
                                                 .padding(.vertical, 6)
                                                 .background(MSColors.gold.opacity(0.2))
                                                 .foregroundColor(MSColors.gold)
@@ -177,7 +198,7 @@ struct FriendsAndTradeScreenView: View {
                                                 Image(systemName: "person.badge.minus")
                                                     .font(.system(size: 14))
                                                     .foregroundColor(.gray.opacity(0.7))
-                                                    .padding(6)
+                                                    .padding(4)
                                             }
                                         }
                                     }
@@ -277,6 +298,68 @@ struct FriendsAndTradeScreenView: View {
                         }
                         .padding()
                         .padding(.bottom, 140)
+                    } else if selectedTab == 2 {
+                        // Tab 2: Direct Chat Conversations
+                        VStack(spacing: 12) {
+                            if friends.isEmpty {
+                                Text("💬 Chưa có cuộc trò chuyện nào.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .padding(.top, 40)
+                            } else {
+                                ForEach(friends, id: \.id) { friend in
+                                    HStack(spacing: 12) {
+                                        ZStack(alignment: .bottomTrailing) {
+                                            AsyncImage(url: URL(string: friend.avatarUrl)) { phase in
+                                                if let img = phase.image {
+                                                    img.resizable().aspectRatio(contentMode: .fill)
+                                                } else {
+                                                    Circle().fill(MSColors.lightGrey)
+                                                }
+                                            }
+                                            .frame(width: 48, height: 48)
+                                            .clipShape(Circle())
+
+                                            if friend.isOnline {
+                                                Circle()
+                                                    .fill(Color.green)
+                                                    .frame(width: 10, height: 10)
+                                                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                                            }
+                                        }
+
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            HStack {
+                                                Text(friend.displayName)
+                                                    .font(.subheadline.bold())
+                                                    .foregroundColor(MSColors.ink)
+                                                Spacer()
+                                                Text("Mới đây")
+                                                    .font(.caption2)
+                                                    .foregroundColor(MSColors.grey)
+                                            }
+                                            Text("Sẵn sàng nhắn tin và trao đổi tem kỷ niệm!")
+                                                .font(.caption)
+                                                .foregroundColor(MSColors.grey)
+                                                .lineLimit(1)
+                                        }
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption.bold())
+                                            .foregroundColor(MSColors.grey)
+                                    }
+                                    .padding(14)
+                                    .background(Color.white)
+                                    .cornerRadius(16)
+                                    .onTapGesture {
+                                        selectedFriendForChat = friend
+                                        showChatModal = true
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                        .padding(.bottom, 140)
                     }
                 }
             }
@@ -309,6 +392,16 @@ struct FriendsAndTradeScreenView: View {
                         showTradeModal = false
                         triggerToast("Sent trade offer to \(friend.displayName)!")
                     }
+                )
+            }
+        }
+        .sheet(isPresented: $showChatModal) {
+            if let friend = selectedFriendForChat {
+                ChatScreenView(
+                    recipientUserId: friend.id,
+                    recipientName: friend.displayName,
+                    currentUserId: "user_me",
+                    onDismiss: { showChatModal = false }
                 )
             }
         }

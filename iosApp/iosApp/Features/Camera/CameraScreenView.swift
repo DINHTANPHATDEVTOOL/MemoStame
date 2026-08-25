@@ -185,6 +185,10 @@ struct CameraScreenView: View {
     @State private var showToast: Bool = false
     @State private var isCameraAvailable: Bool = true
 
+    @State private var pressOffset: CGFloat = 0
+    @State private var showFlashOverlay: Bool = false
+    @State private var showPunchReveal: Bool = false
+
     @State private var showImagePicker: Bool = false
     @State private var pickerSourceType: UIImagePickerController.SourceType = .camera
     @State private var customCapturedImageUrl: String? = nil
@@ -430,6 +434,7 @@ struct CameraScreenView: View {
                 )
                 .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
                 .padding(.horizontal, 20)
+                .offset(y: pressOffset)
                 .gesture(
                     DragGesture(minimumDistance: 30)
                         .onEnded { value in
@@ -528,17 +533,39 @@ struct CameraScreenView: View {
                         // Master Camera Shutter / Confirm Button
                         Button(action: {
                             triggerHapticFeedback()
+                            #if canImport(UIKit)
+                            AudioServicesPlaySystemSound(1108) // Stamp Press Shutter Chime
+                            #endif
+
                             if let img = selectedUIImage {
                                 handleImageSelected(img)
                             } else {
                                 isCapturing = true
                                 captureTrigger = true
-                                #if targetEnvironment(simulator)
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    isCapturing = false
-                                    onNavigateToNote(activePhotoUrl)
+
+                                // Trigger Stamp Press Impact Animation & Flash
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    pressOffset = 30
+                                    showFlashOverlay = true
                                 }
-                                #endif
+
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        pressOffset = 0
+                                        showFlashOverlay = false
+                                        showPunchReveal = true
+                                    }
+                                }
+
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                                    showPunchReveal = false
+                                    isCapturing = false
+                                    if let img = selectedUIImage {
+                                        handleImageSelected(img)
+                                    } else {
+                                        onNavigateToNote(activePhotoUrl)
+                                    }
+                                }
                             }
                         }) {
                             ZStack {
@@ -588,6 +615,40 @@ struct CameraScreenView: View {
                     }
                     .padding(.horizontal, 34)
                     .padding(.bottom, 24)
+                }
+            }
+
+            // Screen Flash Impact Overlay
+            if showFlashOverlay {
+                Color.white
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
+
+            // Stamp Reveal Die-Cut Punch Banner Overlay
+            if showPunchReveal {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(MSColors.gold)
+                        Text("✦ STAMPED MEMORY ✦")
+                            .font(.headline.bold())
+                            .foregroundColor(MSColors.gold)
+                        Image(systemName: "sparkles")
+                            .foregroundColor(MSColors.gold)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.black.opacity(0.85))
+                    .cornerRadius(24)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(MSColors.gold, lineWidth: 1.5)
+                    )
+                    .shadow(color: MSColors.gold.opacity(0.4), radius: 10, x: 0, y: 4)
+                    .padding(.bottom, 120)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
         }

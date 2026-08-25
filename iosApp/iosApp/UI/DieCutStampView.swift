@@ -212,8 +212,15 @@ struct DieCutStampView: View {
                 .clipped()
                 .clipShape(PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065))
                 .overlay(
-                    PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
-                        .stroke(Color(red: 0.80, green: 0.74, blue: 0.65), lineWidth: 1.5)
+                    ZStack {
+                        PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
+                            .stroke(Color(red: 0.80, green: 0.74, blue: 0.65), lineWidth: 1.5)
+                        Image("stamp_press_mold")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .opacity(0.12)
+                            .allowsHitTesting(false)
+                    }
                 )
                 .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
             } else {

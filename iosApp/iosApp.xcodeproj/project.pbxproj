@@ -19,6 +19,7 @@
 		1D36233F2D00000100000001 /* StampEditorScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36233E2D00000100000001 /* StampEditorScreenView.swift */; };
 		1D3623412D00000100000001 /* CollectionScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623402D00000100000001 /* CollectionScreenView.swift */; };
 		1D3623432D00000100000001 /* FriendsAndTradeScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */; };
+		1D3623992D00000100000001 /* ChatScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623982D00000100000001 /* ChatScreenView.swift */; };
 		1D3623452D00000100000001 /* PassportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623442D00000100000001 /* PassportScreenView.swift */; };
 		1D3623472D00000100000001 /* AuthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623462D00000100000001 /* AuthViews.swift */; };
 		1D3623492D00000100000001 /* ModelExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623482D00000100000001 /* ModelExtensions.swift */; };
@@ -54,6 +55,7 @@
 		1D36233E2D00000100000001 /* StampEditorScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StampEditorScreenView.swift; sourceTree = "<group>"; };
 		1D3623402D00000100000001 /* CollectionScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionScreenView.swift; sourceTree = "<group>"; };
 		1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAndTradeScreenView.swift; sourceTree = "<group>"; };
+		1D3623982D00000100000001 /* ChatScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat/ChatScreenView.swift; sourceTree = "<group>"; };
 		1D3623442D00000100000001 /* PassportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportScreenView.swift; sourceTree = "<group>"; };
 		1D3623462D00000100000001 /* AuthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViews.swift; sourceTree = "<group>"; };
 		1D3623482D00000100000001 /* ModelExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/ModelExtensions.swift; sourceTree = "<group>"; };
@@ -203,6 +205,7 @@
 			isa = PBXGroup;
 			children = (
 				1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */,
+				1D3623982D00000100000001 /* ChatScreenView.swift */,
 			);
 			path = Friends;
 			sourceTree = "<group>";
@@ -355,6 +358,7 @@
 				1D36233F2D00000100000001 /* StampEditorScreenView.swift in Sources */,
 				1D3623412D00000100000001 /* CollectionScreenView.swift in Sources */,
 				1D3623432D00000100000001 /* FriendsAndTradeScreenView.swift in Sources */,
+				1D3623992D00000100000001 /* ChatScreenView.swift in Sources */,
 				1D3623452D00000100000001 /* PassportScreenView.swift in Sources */,
 				1D3623472D00000100000001 /* AuthViews.swift in Sources */,
 				1D3623492D00000100000001 /* ModelExtensions.swift in Sources */,

@@ -104,27 +104,131 @@ struct StampVaultScreenView: View {
 
             Divider()
 
-            // Stamp Grid View
+            // Stamp Collector Album Banner (Sổ Tay Bộ Sưu Tập Tem Kỷ Niệm)
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 14) {
-                    ForEach(filteredStamps, id: \.id) { stamp in
-                        VStack {
-                            DieCutStampView(
-                                title: stamp.title,
-                                imageUrl: stamp.stampImagePath,
-                                location: stamp.location,
-                                dateStr: "2026.08.18",
-                                note: stamp.note,
-                                shape: stamp.shape,
-                                isInteractive: false
-                            )
+                VStack(spacing: 16) {
+                    // Collector Album Header Card
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("📖 SỔ TAY BỘ SƯU TẬP TEM KỶ NIỆM")
+                                        .font(.caption.bold())
+                                        .foregroundColor(MSColors.gold)
+                                    Text("• 2026 EDITION")
+                                        .font(.caption2.bold())
+                                        .foregroundColor(MSColors.grey)
+                                }
+                                Text("MEMOSTAMP COLLECTOR ALBUM")
+                                    .font(.headline.bold())
+                                    .foregroundColor(MSColors.ink)
+                            }
+                            Spacer()
+                            ZStack {
+                                Circle()
+                                    .fill(MSColors.stamp.opacity(0.12))
+                                    .frame(width: 44, height: 44)
+                                Image(systemName: "book.closed.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(MSColors.stamp)
+                            }
                         }
-                        .onTapGesture {
-                            activeModal = .detail(stamp)
+
+                        // Progress Bar & Stats
+                        VStack(spacing: 6) {
+                            HStack {
+                                Text("Tiến độ sưu tập")
+                                    .font(.caption.bold())
+                                    .foregroundColor(MSColors.ink)
+                                Spacer()
+                                Text("\(filteredStamps.count) / 24 Tem")
+                                    .font(.caption.bold())
+                                    .foregroundColor(MSColors.stamp)
+                            }
+
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(MSColors.lightGrey)
+                                        .frame(height: 8)
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(MSColors.stamp)
+                                        .frame(width: min(geo.size.width * CGFloat(filteredStamps.count) / 24.0, geo.size.width), height: 8)
+                                }
+                            }
+                            .frame(height: 8)
+                        }
+
+                        HStack(spacing: 16) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "mappin.and.ellipse")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.stamp)
+                                Text("3 Địa điểm")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.grey)
+                            }
+                            HStack(spacing: 4) {
+                                Image(systemName: "sparkles")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.gold)
+                                Text("Tem Hiếm #2026")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.grey)
+                            }
+                        }
+                    }
+                    .padding(14)
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+
+                    // Stamp Grid View
+                    LazyVGrid(columns: columns, spacing: 14) {
+                        ForEach(filteredStamps, id: \.id) { stamp in
+                            VStack {
+                                DieCutStampView(
+                                    title: stamp.title,
+                                    imageUrl: stamp.stampImagePath,
+                                    location: stamp.location,
+                                    dateStr: "2026.08.18",
+                                    note: stamp.note,
+                                    shape: stamp.shape,
+                                    isInteractive: false
+                                )
+                            }
+                            .onTapGesture {
+                                activeModal = .detail(stamp)
+                            }
+                        }
+
+                        // Placeholder Empty Album Slots for remaining collection
+                        ForEach(0..<max(0, 6 - filteredStamps.count), id: \.self) { index in
+                            VStack(spacing: 8) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [4]))
+                                        .foregroundColor(MSColors.grey.opacity(0.5))
+                                        .background(Color.black.opacity(0.02))
+
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(MSColors.stamp.opacity(0.4))
+                                        Text("Kỷ niệm #0\(filteredStamps.count + index + 1)")
+                                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                            .foregroundColor(MSColors.grey)
+                                    }
+                                }
+                                .frame(height: 200)
+                            }
+                            .onTapGesture {
+                                onNavigateToCamera()
+                            }
                         }
                     }
                 }
-                .padding()
+                .padding(.horizontal)
                 .padding(.bottom, 140)
             }
         }
