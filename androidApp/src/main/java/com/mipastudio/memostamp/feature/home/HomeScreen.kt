@@ -312,23 +312,24 @@ fun HomeScreen(
     }
 
     if (showEnvelopeModal) {
-        val sampleStamp = Stamp(
-            id = "gift_stamp_1",
-            stampNumber = "#STAMP-GIFT-001",
-            title = "Welcome Memory Stamp",
-            imageUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
-            creatorId = "user_minh_dalat",
-            creatorName = "Minh Nguyễn",
+        val firstPost = feedPosts.firstOrNull()
+        val activeStamp = Stamp(
+            id = firstPost?.id ?: "gift_stamp_1",
+            stampNumber = "#STAMP-${firstPost?.id?.takeLast(4) ?: "001"}",
+            title = firstPost?.stampTitle ?: "Memory Stamp",
+            imageUrl = firstPost?.stampUrl ?: "",
+            creatorId = firstPost?.authorId ?: currentUser.userId,
+            creatorName = firstPost?.authorName ?: currentUser.displayName,
             ownerId = currentUser.userId,
             ownerName = currentUser.displayName,
             createdDate = "Today",
-            memoryDate = "13.08.26",
-            location = "Đà Lạt, Việt Nam",
-            caption = "Chào mừng bạn đến với MemoStamp!"
+            memoryDate = "2026.08.25",
+            location = firstPost?.location ?: "Local Memory",
+            caption = firstPost?.caption ?: ""
         )
         EnvelopeModal(
-            senderName = "Minh Nguyễn",
-            stamp = sampleStamp,
+            senderName = firstPost?.authorName ?: currentUser.displayName,
+            stamp = activeStamp,
             onDismiss = { showEnvelopeModal = false },
             onCollectStamp = { }
         )

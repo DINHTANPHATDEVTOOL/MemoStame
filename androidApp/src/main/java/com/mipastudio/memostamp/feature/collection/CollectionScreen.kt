@@ -22,6 +22,8 @@ import androidx.compose.material.icons.outlined.LocalCafe
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +42,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.mipastudio.memostamp.ui.theme.*
+import com.mipastudio.memostamp.data.local.StampEntity
+import com.mipastudio.memostamp.data.repository.StampRepository
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
 
@@ -68,49 +72,6 @@ data class AlbumData(
     val stamps: List<AlbumStampData>
 )
 
-val sampleAlbumsList = listOf(
-    AlbumData(
-        id = "dalat",
-        title = "Da Lat Trip",
-        desc = "Sương mù, Đồi thông & Đỉnh Lang Biang",
-        progress = "5/10",
-        icon = Icons.Outlined.FlightTakeoff,
-        coverColor = VintageLeatherRed,
-        stamps = listOf(
-            AlbumStampData("11", "Hồ Xuân Hương", "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300"),
-            AlbumStampData("12", "Đỉnh Lang Biang", "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300"),
-            AlbumStampData("13", "Ga Đà Lạt", "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=300"),
-            AlbumStampData("14", "Đồi Chè Cầu Đất", "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=300"),
-            AlbumStampData("15", "Dinh I Đà Lạt", "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=300")
-        )
-    ),
-    AlbumData(
-        id = "coffee",
-        title = "Coffee Lovers",
-        desc = "Cà phê vợt Sài Gòn & Quán xưa",
-        progress = "8/15",
-        icon = Icons.Outlined.LocalCafe,
-        coverColor = ClassicCoffeeBrown,
-        stamps = listOf(
-            AlbumStampData("21", "Cà Phê Tùng", "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300"),
-            AlbumStampData("22", "Cheo Leo Cafe", "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300"),
-            AlbumStampData("23", "Vợt Phan Đình Phùng", "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300")
-        )
-    ),
-    AlbumData(
-        id = "hanoi",
-        title = "Di Tích Hà Nội",
-        desc = "Dấu ấn nghìn năm Thăng Long",
-        progress = "3/8",
-        icon = Icons.Outlined.AccountBalance,
-        coverColor = ThangLongEarth,
-        stamps = listOf(
-            AlbumStampData("31", "Tháp Rùa", "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?w=300"),
-            AlbumStampData("32", "Chùa Một Cột", "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=300")
-        )
-    )
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionScreen(
@@ -118,7 +79,35 @@ fun CollectionScreen(
     onStampClick: (String) -> Unit = {}
 ) {
     var selectedAlbum by remember { mutableStateOf<AlbumData?>(null) }
-    val pagerState = rememberPagerState(pageCount = { sampleAlbumsList.size })
+    val context = LocalContext.current
+    val stampRepo = remember(context) { StampRepository.getInstance(context) }
+    val cloudStamps by stampRepo.observeStamps().collectAsState(initial = emptyList())
+
+    val albumsList: List<AlbumData> = remember(cloudStamps) {
+        if (cloudStamps.isEmpty()) {
+            emptyList()
+        } else {
+            val grouped: Map<String, List<StampEntity>> = cloudStamps.groupBy { stamp ->
+                if (stamp.location.isNullOrEmpty()) "Kỷ niệm chung" else stamp.location!!
+            }
+            val coverColors = listOf(VintageLeatherRed, ClassicCoffeeBrown, ThangLongEarth)
+            val icons = listOf(Icons.Outlined.FlightTakeoff, Icons.Outlined.LocalCafe, Icons.Outlined.AccountBalance)
+
+            grouped.entries.mapIndexed { index, entry ->
+                AlbumData(
+                    id = "album_$index",
+                    title = entry.key,
+                    desc = "Bộ sưu tập tem kỷ niệm tại ${entry.key}",
+                    progress = "${entry.value.size}/${entry.value.size}",
+                    icon = icons[index % icons.size],
+                    coverColor = coverColors[index % coverColors.size],
+                    stamps = entry.value.map { stamp -> AlbumStampData(stamp.id, stamp.title, stamp.stampImagePath) }
+                )
+            }
+        }
+    }
+
+    val pagerState = rememberPagerState(pageCount = { albumsList.size })
 
     Scaffold(
         containerColor = WarmPaperBg,
@@ -149,17 +138,39 @@ fun CollectionScreen(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            HorizontalPager(
-                state = pagerState,
-                contentPadding = PaddingValues(horizontal = 42.dp),
-                pageSpacing = 18.dp,
-                modifier = Modifier.fillMaxHeight(0.85f)
-            ) { page ->
-                val album = sampleAlbumsList[page]
-                BookCoverPreview(
-                    item = album,
-                    onClick = { selectedAlbum = album }
-                )
+            if (albumsList.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = "Chưa có bộ sưu tập tem nào",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryText
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Hãy chụp và lưu tem từ máy ảnh để tự động tạo bộ sưu tập theo địa điểm!",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SecondaryText,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(horizontal = 42.dp),
+                    pageSpacing = 18.dp,
+                    modifier = Modifier.fillMaxHeight(0.85f)
+                ) { page ->
+                    val album = albumsList[page]
+                    BookCoverPreview(
+                        item = album,
+                        onClick = { selectedAlbum = album }
+                    )
+                }
             }
         }
     }

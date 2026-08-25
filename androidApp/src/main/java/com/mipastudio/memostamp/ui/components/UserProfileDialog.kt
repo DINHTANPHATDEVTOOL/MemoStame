@@ -171,12 +171,11 @@ fun UserProfileDialog(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            val sampleFriendCollections = listOf(
-                                "✈️ Travel & Places" to "12 tem",
-                                "☕ Coffee & Food" to "8 tem",
-                                "🌿 Daily Life" to "15 tem"
+                            val friendCollections = listOf(
+                                "✈️ Vị trí" to user.city,
+                                "📮 Tổng số tem" to "${user.totalStampsCount} tem"
                             )
-                            sampleFriendCollections.forEach { (name, count) ->
+                            friendCollections.forEach { (name, count) ->
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
                                     color = WarmPaperBg,

@@ -197,7 +197,7 @@ struct CameraScreenView: View {
     let zoomOptions = ["1x", "2x", "3x", "5x"]
 
     var activePhotoUrl: String {
-        return customCapturedImageUrl ?? "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600"
+        return customCapturedImageUrl ?? ""
     }
 
     var currentFilter: CameraFilterSpec {
