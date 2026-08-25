@@ -109,9 +109,9 @@ struct FriendsAndTradeScreenView: View {
                 Divider()
 
                 ScrollView {
-                    if selectedTab == 0 {
-                        // Friends List
-                        VStack(spacing: 12) {
+                    VStack(spacing: 12) {
+                        if selectedTab == 0 {
+                            // Friends List
                             if friends.isEmpty {
                                 VStack(spacing: 8) {
                                     Text("👥 No friends added yet")
@@ -207,12 +207,8 @@ struct FriendsAndTradeScreenView: View {
                                     .cornerRadius(14)
                                 }
                             }
-                        }
-                        .padding()
-                        .padding(.bottom, 140)
-                    } else {
-                        // Trade Requests
-                        VStack(spacing: 12) {
+                        } else if selectedTab == 1 {
+                            // Trade Requests
                             if tradeRequests.isEmpty {
                                 Text("📬 No active trade requests.")
                                     .font(.subheadline)
@@ -295,12 +291,8 @@ struct FriendsAndTradeScreenView: View {
                                     .cornerRadius(16)
                                 }
                             }
-                        }
-                        .padding()
-                        .padding(.bottom, 140)
-                    } else if selectedTab == 2 {
-                        // Tab 2: Direct Chat Conversations
-                        VStack(spacing: 12) {
+                        } else {
+                            // Tab 2: Direct Chat Conversations
                             if friends.isEmpty {
                                 Text("💬 Chưa có cuộc trò chuyện nào.")
                                     .font(.subheadline)
@@ -358,9 +350,9 @@ struct FriendsAndTradeScreenView: View {
                                 }
                             }
                         }
-                        .padding()
-                        .padding(.bottom, 140)
                     }
+                    .padding()
+                    .padding(.bottom, 140)
                 }
             }
             .background(MSColors.paper.ignoresSafeArea())

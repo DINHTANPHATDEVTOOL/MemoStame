@@ -177,6 +177,11 @@ struct StampVaultScreenView: View {
                                     .foregroundColor(MSColors.grey)
                             }
                         }
+                    }
+                    .padding(14)
+                    .background(Color.white)
+                    .cornerRadius(16)
+
                     // Album Collections & Privacy Management Row
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
