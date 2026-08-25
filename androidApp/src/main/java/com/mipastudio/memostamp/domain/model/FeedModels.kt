@@ -1,21 +1,21 @@
 package com.mipastudio.memostamp.domain.model
 
 enum class AudienceType(val label: String, val icon: String, val description: String) {
-    EVERYONE("Mọi người", "🌍", "Ai cũng xem được"),
-    FRIENDS("Bạn bè", "👥", "Kết bạn mới xem"),
-    ONLY_ME("Chỉ mình tôi", "🔒", "Chỉ mình tôi");
+    FRIENDS("Tất cả bạn bè", "👥", "Chỉ tất cả bạn bè xem được"),
+    SPECIFIC_FRIENDS("Bạn bè chọn lọc", "🎯", "Chỉ hiển thị với bạn bè được chọn"),
+    ONLY_ME("Chỉ mình tôi", "🔒", "Chỉ mình tôi xem được");
 
     companion object {
         fun fromString(value: String?): AudienceType {
-            if (value == null) return EVERYONE
+            if (value == null) return FRIENDS
             return try {
                 valueOf(value)
             } catch (e: Exception) {
                 when (value.uppercase()) {
-                    "EVERYONE", "PUBLIC", "ALL" -> EVERYONE
-                    "FRIENDS", "CIRCLE" -> FRIENDS
+                    "EVERYONE", "PUBLIC", "ALL", "FRIENDS" -> FRIENDS
+                    "SPECIFIC_FRIENDS", "SPECIFIC", "CUSTOM" -> SPECIFIC_FRIENDS
                     "ONLY_ME", "PRIVATE" -> ONLY_ME
-                    else -> EVERYONE
+                    else -> FRIENDS
                 }
             }
         }
@@ -80,6 +80,7 @@ data class FeedPost(
     val authorAvatar: String,
     val caption: String? = null,
     val audienceType: AudienceType = AudienceType.FRIENDS,
+    val targetFriendIds: List<String> = emptyList(),
     val circleId: String? = null,
     val circleName: String? = null,
     val createdAt: Long,

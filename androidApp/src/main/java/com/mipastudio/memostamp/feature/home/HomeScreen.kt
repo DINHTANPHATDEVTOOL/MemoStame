@@ -86,7 +86,7 @@ fun HomeScreen(
     var showEnvelopeModal by remember { mutableStateOf(false) }
     var showQuickPostModal by remember { mutableStateOf(false) }
     var quickPostCaption by remember { mutableStateOf("") }
-    var quickPostAudience by remember { mutableStateOf(AudienceType.EVERYONE) }
+    var quickPostAudience by remember { mutableStateOf(AudienceType.FRIENDS) }
     var selectedStampEntity by remember { mutableStateOf<StampEntity?>(null) }
     val myStamps by stampRepo.observeStamps().collectAsState(initial = emptyList())
 
@@ -110,17 +110,16 @@ fun HomeScreen(
         when (selectedFilter) {
             0 -> feedPosts.filter { post ->
                 when (post.audienceType) {
-                    AudienceType.EVERYONE -> true
                     AudienceType.FRIENDS -> post.authorId == currentUser.userId || friendIds.contains(post.authorId)
+                    AudienceType.SPECIFIC_FRIENDS -> post.authorId == currentUser.userId || post.targetFriendIds.contains(currentUser.userId)
                     AudienceType.ONLY_ME -> post.authorId == currentUser.userId
                 }
             }
-            1 -> feedPosts.filter { post -> post.audienceType == AudienceType.EVERYONE }
-            2 -> feedPosts.filter { post -> 
-                post.audienceType == AudienceType.FRIENDS && (post.authorId == currentUser.userId || friendIds.contains(post.authorId)) 
+            1 -> feedPosts.filter { post -> 
+                post.audienceType == AudienceType.SPECIFIC_FRIENDS && (post.authorId == currentUser.userId || post.targetFriendIds.contains(currentUser.userId)) 
             }
-            3 -> feedPosts.filter { post -> post.audienceType == AudienceType.ONLY_ME && post.authorId == currentUser.userId }
-            4 -> feedPosts.filter { post -> post.authorId == currentUser.userId }
+            2 -> feedPosts.filter { post -> post.audienceType == AudienceType.ONLY_ME && post.authorId == currentUser.userId }
+            3 -> feedPosts.filter { post -> post.authorId == currentUser.userId }
             else -> feedPosts
         }
     }
@@ -198,9 +197,9 @@ fun HomeScreen(
                                 color = WarmPaperBg,
                                 modifier = Modifier.clickable {
                                     quickPostAudience = when (quickPostAudience) {
-                                        AudienceType.EVERYONE -> AudienceType.FRIENDS
-                                        AudienceType.FRIENDS -> AudienceType.ONLY_ME
-                                        AudienceType.ONLY_ME -> AudienceType.EVERYONE
+                                        AudienceType.FRIENDS -> AudienceType.SPECIFIC_FRIENDS
+                                        AudienceType.SPECIFIC_FRIENDS -> AudienceType.ONLY_ME
+                                        AudienceType.ONLY_ME -> AudienceType.FRIENDS
                                     }
                                 }
                             ) {
@@ -628,7 +627,7 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val filterOptions = listOf("🔥 Tất cả", "🌍 Mọi người", "👥 Bạn bè", "🔒 Chỉ mình tôi", "👤 Bài viết của tôi")
+                    val filterOptions = listOf("👥 Tất cả bạn bè", "🎯 Bạn bè chọn lọc", "🔒 Chỉ mình tôi", "👤 Bài viết của tôi")
                     items(filterOptions.size) { idx ->
                         val isSelected = selectedFilter == idx
                         Surface(

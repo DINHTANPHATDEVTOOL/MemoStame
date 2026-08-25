@@ -1,9 +1,21 @@
 package com.mipastudio.memostamp.domain.model
 
-enum class AudienceType(val label: String, val icon: String) {
-    ONLY_ME("Only me", "🔒"),
-    FRIENDS("Friends", "👥"),
-    CIRCLE("Circle", "⭕")
+enum class AudienceType(val label: String, val icon: String, val description: String) {
+    FRIENDS("Tất cả bạn bè", "👥", "Chỉ tất cả bạn bè xem được"),
+    SPECIFIC_FRIENDS("Bạn bè chọn lọc", "🎯", "Chỉ hiển thị với bạn bè được chọn"),
+    ONLY_ME("Chỉ mình tôi", "🔒", "Chỉ mình tôi xem được");
+
+    companion object {
+        fun fromString(value: String?): AudienceType {
+            if (value == null) return FRIENDS
+            return when (value.uppercase()) {
+                "EVERYONE", "PUBLIC", "ALL", "FRIENDS" -> FRIENDS
+                "SPECIFIC_FRIENDS", "SPECIFIC", "CUSTOM" -> SPECIFIC_FRIENDS
+                "ONLY_ME", "PRIVATE" -> ONLY_ME
+                else -> FRIENDS
+            }
+        }
+    }
 }
 
 enum class FeedPostType {
@@ -64,6 +76,7 @@ data class FeedPost(
     val authorAvatar: String,
     val caption: String? = null,
     val audienceType: AudienceType = AudienceType.FRIENDS,
+    val targetFriendIds: List<String> = emptyList(),
     val circleId: String? = null,
     val circleName: String? = null,
     val createdAt: Long,
@@ -103,7 +116,8 @@ data class CollectionItem(
     val iconEmoji: String = "📁",
     val collectionType: String = "NORMAL",
     val targetCount: Int = 12,
-    val stampsCount: Int = 0
+    val stampsCount: Int = 0,
+    val privacy: String = "FRIENDS" // "FRIENDS" (Công khai cho bạn bè) or "ONLY_ME" (Chỉ mình tôi)
 )
 
 data class UserProfile(

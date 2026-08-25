@@ -196,7 +196,7 @@ fun StampVaultScreen(
                                 fontWeight = FontWeight.Medium
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                listOf("All", "Favorites", "Albums").forEachIndexed { index, label ->
+                                listOf("Tất cả", "Yêu thích", "Albums").forEachIndexed { index, label ->
                                     val selected = selectedFilter == index
                                     Text(
                                         text = label,
@@ -209,6 +209,61 @@ fun StampVaultScreen(
                                             .clickable { selectedFilter = index }
                                             .padding(horizontal = 11.dp, vertical = 6.dp)
                                     )
+                                }
+                            }
+                        }
+
+                        if (selectedFilter == 2) {
+                            val repository = remember(context) { com.mipastudio.memostamp.data.repository.StampRepository.getInstance(context) }
+                            val roomCollections by repository.observeCollections().collectAsState(initial = emptyList())
+                            val scope = rememberCoroutineScope()
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            androidx.compose.foundation.lazy.LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(roomCollections.size) { idx ->
+                                    val col = roomCollections[idx]
+                                    val isPrivate = col.privacy == "ONLY_ME"
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = SurfaceWhite,
+                                        shadowElevation = 1.dp,
+                                        modifier = Modifier.width(140.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(10.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(col.iconEmoji ?: "📁", fontSize = 18.sp)
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = if (isPrivate) AccentRedSoft else SurfaceSoft,
+                                                    modifier = Modifier.clickable {
+                                                        scope.launch {
+                                                            repository.toggleCollectionPrivacy(col.id)
+                                                        }
+                                                    }
+                                                ) {
+                                                    Text(
+                                                        text = if (isPrivate) "🔒 Mình tôi" else "👥 Bạn bè",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isPrivate) AccentRed else SuccessGreen,
+                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(col.name, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = PrimaryText, maxLines = 1)
+                                            Text("${col.targetCount} tem mộc", fontSize = 10.sp, color = SecondaryText)
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -144,9 +144,59 @@ fun UserProfileDialog(
                             Text("🟢 ONLINE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
                         }
                     }
+                if (isFriend) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(SurfaceWhite, shape = RoundedCornerShape(16.dp))
+                            .border(1.dp, StampBorderDefault, shape = RoundedCornerShape(16.dp))
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.CollectionsBookmark, contentDescription = null, tint = PostalRed, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Kho Tem & Album (${user.displayName})",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = StampDarkInk
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            val sampleFriendCollections = listOf(
+                                "✈️ Travel & Places" to "12 tem",
+                                "☕ Coffee & Food" to "8 tem",
+                                "🌿 Daily Life" to "15 tem"
+                            )
+                            sampleFriendCollections.forEach { (name, count) ->
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = WarmPaperBg,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(6.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(name, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StampDarkInk, maxLines = 1)
+                                        Text(count, fontSize = 9.sp, color = StampSubtleInk)
+                                        Text("👥 Bạn bè", fontSize = 8.sp, color = SuccessGreen, fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Action Buttons
                 Column(

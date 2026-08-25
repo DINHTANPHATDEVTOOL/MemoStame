@@ -102,7 +102,7 @@ struct HomeScreenView: View {
             // Feed Filter Options (100% Matching Android Filter Options)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(["🔥 Tất cả", "🌍 Mọi người", "👥 Bạn bè", "🔒 Chỉ mình tôi", "👤 Bài viết của tôi"], id: \.self) { filter in
+                    ForEach(["👥 Tất cả bạn bè", "🎯 Bạn bè chọn lọc", "🔒 Chỉ mình tôi", "👤 Bài viết của tôi"], id: \.self) { filter in
                         Button(action: { activeCircle = filter }) {
                             Text(filter)
                                 .font(.caption.bold())

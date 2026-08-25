@@ -13,5 +13,6 @@ data class CollectionEntity(
     val createdAt: Long = System.currentTimeMillis(),
     val sortOrder: Int = 0,
     val collectionType: String = "NORMAL", // NORMAL, CHALLENGE
-    val targetCount: Int = 12
+    val targetCount: Int = 12,
+    val privacy: String = "FRIENDS" // "FRIENDS" or "ONLY_ME"
 )

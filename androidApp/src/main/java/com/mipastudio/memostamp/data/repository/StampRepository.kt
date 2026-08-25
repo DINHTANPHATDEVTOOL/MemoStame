@@ -272,6 +272,20 @@ class StampRepository private constructor(
         }
     }
 
+    suspend fun toggleCollectionPrivacy(collectionId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val col = collectionDao.getCollectionById(collectionId)
+                ?: return@withContext Result.failure(IllegalArgumentException("Collection not found"))
+            val newPrivacy = if (col.privacy == "ONLY_ME") "FRIENDS" else "ONLY_ME"
+            val updated = col.copy(privacy = newPrivacy)
+            collectionDao.updateCollection(updated)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
     companion object {
         @Volatile
         private var INSTANCE: StampRepository? = null

@@ -371,7 +371,7 @@ class SharedMemoStampRepository {
         _friends.value = _friends.value.filter { it.id != friendId }
     }
 
-    fun createCollection(name: String, description: String, iconEmoji: String): CollectionItem {
+    fun createCollection(name: String, description: String, iconEmoji: String, privacy: String = "FRIENDS"): CollectionItem {
         val col = CollectionItem(
             id = "col_${currentTimeMillis()}",
             name = name,
@@ -379,9 +379,21 @@ class SharedMemoStampRepository {
             iconEmoji = iconEmoji,
             collectionType = "NORMAL",
             targetCount = 12,
-            stampsCount = 0
+            stampsCount = 0,
+            privacy = privacy
         )
         _collections.value = _collections.value + col
         return col
+    }
+
+    fun toggleCollectionPrivacy(collectionId: String) {
+        _collections.value = _collections.value.map { col ->
+            if (col.id == collectionId) {
+                val newPrivacy = if (col.privacy == "ONLY_ME") "FRIENDS" else "ONLY_ME"
+                col.copy(privacy = newPrivacy)
+            } else {
+                col
+            }
+        }
     }
 }

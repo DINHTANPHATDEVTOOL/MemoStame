@@ -177,11 +177,59 @@ struct StampVaultScreenView: View {
                                     .foregroundColor(MSColors.grey)
                             }
                         }
+                    // Album Collections & Privacy Management Row
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("BỘ SƯU TẬP & ALBUM CỦA TÔI")
+                                .font(.caption.bold())
+                                .foregroundColor(MSColors.ink)
+                            Spacer()
+                            Text("Nhấn vào nhãn để chỉnh quyền xem")
+                                .font(.caption2)
+                                .foregroundColor(MSColors.grey)
+                        }
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach((repository.collections.value as? [CollectionItem]) ?? [], id: \.id) { col in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Text(col.iconEmoji)
+                                                .font(.system(size: 18))
+                                            Spacer()
+                                            Button(action: {
+                                                repository.toggleCollectionPrivacy(collectionId: col.id)
+                                            }) {
+                                                HStack(spacing: 3) {
+                                                    Text(col.privacy == "ONLY_ME" ? "🔒 Mình tôi" : "👥 Bạn bè")
+                                                        .font(.system(size: 9, weight: .bold))
+                                                }
+                                                .padding(.horizontal, 7)
+                                                .padding(.vertical, 3)
+                                                .background(col.privacy == "ONLY_ME" ? Color.red.opacity(0.12) : Color.green.opacity(0.12))
+                                                .foregroundColor(col.privacy == "ONLY_ME" ? Color.red : Color.green)
+                                                .cornerRadius(10)
+                                            }
+                                        }
+
+                                        Text(col.name)
+                                            .font(.caption.bold())
+                                            .foregroundColor(MSColors.ink)
+                                            .lineLimit(1)
+
+                                        Text("\(col.targetCount) tem kỷ niệm")
+                                            .font(.caption2)
+                                            .foregroundColor(MSColors.grey)
+                                    }
+                                    .padding(10)
+                                    .frame(width: 140)
+                                    .background(Color.white)
+                                    .cornerRadius(14)
+                                    .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 2)
+                                }
+                            }
+                        }
                     }
-                    .padding(14)
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
 
                     // Stamp Grid View
                     LazyVGrid(columns: columns, spacing: 14) {
