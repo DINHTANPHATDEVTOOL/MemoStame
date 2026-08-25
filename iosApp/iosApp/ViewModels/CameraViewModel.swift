@@ -1,8 +1,12 @@
 import SwiftUI
 import Combine
+#if canImport(UIKit)
+import UIKit
+import AVFoundation
+#endif
 import shared
 
-/// Native Swift ViewModel for CameraScreen managing filter presets, zoom scales, tune adjustments, and shutter captures.
+/// Native Swift ViewModel for CameraScreen managing filter presets, zoom scales, tune adjustments, shutter captures, and camera states.
 class CameraViewModel: ObservableObject {
     @Published var selectedFilterIndex: Int = 5 // Film 35mm
     @Published var zoomScale: CGFloat = 1.0
@@ -12,9 +16,14 @@ class CameraViewModel: ObservableObject {
     @Published var saturation: Double = 1.0
     @Published var grain: Double = 0.2
     @Published var flashOn: Bool = false
+    #if canImport(UIKit)
+    @Published var cameraPosition: AVCaptureDevice.Position = .back
+    @Published var capturedImage: UIImage? = nil
+    #endif
     @Published var isCapturing: Bool = false
     @Published var toastMessage: String? = nil
     @Published var showToast: Bool = false
+    @Published var showPhotoPicker: Bool = false
     @Published var selectedImageIndex: Int = 0
 
     let filters = FilterPresets.shared.ALL
@@ -37,6 +46,13 @@ class CameraViewModel: ObservableObject {
 
     var currentPhotoUrl: String {
         samplePhotos[selectedImageIndex]
+    }
+
+    func toggleCameraPosition() {
+        #if canImport(UIKit)
+        cameraPosition = (cameraPosition == .back) ? .front : .back
+        #endif
+        HapticFeedbackManager.shared.playImpact(style: .medium)
     }
 
     func selectFilter(index: Int) {

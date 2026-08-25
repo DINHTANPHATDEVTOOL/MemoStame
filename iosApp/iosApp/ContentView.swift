@@ -31,7 +31,7 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .bottom) {
-                // Screen Switcher
+                // Screen Switcher Content
                 Group {
                     switch selectedTab {
                     case .home:

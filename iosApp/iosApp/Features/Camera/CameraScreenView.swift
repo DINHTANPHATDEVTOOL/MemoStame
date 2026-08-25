@@ -2,8 +2,165 @@ import SwiftUI
 #if canImport(UIKit)
 import UIKit
 import AVFoundation
+import PhotosUI
 #endif
 import shared
+
+#if canImport(UIKit)
+// MARK: - Native AVFoundation Live Camera Preview Layer
+struct CameraPreviewView: UIViewRepresentable {
+    @Binding var cameraPosition: AVCaptureDevice.Position
+    @Binding var flashOn: Bool
+    @Binding var captureTrigger: Bool
+    var onPhotoCaptured: ((UIImage) -> Void)?
+
+    class Coordinator: NSObject, AVCapturePhotoCaptureDelegate {
+        var parent: CameraPreviewView
+
+        init(_ parent: CameraPreviewView) {
+            self.parent = parent
+        }
+
+        func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+            guard error == nil,
+                  let data = photo.fileDataRepresentation(),
+                  let image = UIImage(data: data) else {
+                return
+            }
+            DispatchQueue.main.async {
+                self.parent.onPhotoCaptured?(image)
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> CameraPreviewContainerView {
+        let view = CameraPreviewContainerView()
+        view.setupSession(position: cameraPosition, coordinator: context.coordinator)
+        return view
+    }
+
+    func updateUIView(_ uiView: CameraPreviewContainerView, context: Context) {
+        uiView.updateCamera(position: cameraPosition, flashOn: flashOn)
+        if captureTrigger {
+            DispatchQueue.main.async {
+                captureTrigger = false
+            }
+            uiView.capturePhoto(coordinator: context.coordinator)
+        }
+    }
+}
+
+class CameraPreviewContainerView: UIView {
+    private var captureSession: AVCaptureSession?
+    private var videoPreviewLayer: AVCaptureVideoPreviewLayer?
+    private var photoOutput = AVCapturePhotoOutput()
+    private var currentPosition: AVCaptureDevice.Position = .back
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        videoPreviewLayer?.frame = self.bounds
+    }
+
+    func setupSession(position: AVCaptureDevice.Position, coordinator: CameraPreviewView.Coordinator) {
+        self.currentPosition = position
+        let session = AVCaptureSession()
+        session.beginConfiguration()
+        session.sessionPreset = .photo
+
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+              let input = try? AVCaptureDeviceInput(device: device) else {
+            session.commitConfiguration()
+            return
+        }
+
+        if session.canAddInput(input) {
+            session.addInput(input)
+        }
+
+        if session.canAddOutput(photoOutput) {
+            session.addOutput(photoOutput)
+        }
+
+        session.commitConfiguration()
+
+        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.videoGravity = .resizeAspectFill
+        previewLayer.frame = self.bounds
+        self.layer.addSublayer(previewLayer)
+
+        self.captureSession = session
+        self.videoPreviewLayer = previewLayer
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            session.startRunning()
+        }
+    }
+
+    func updateCamera(position: AVCaptureDevice.Position, flashOn: Bool) {
+        guard position != currentPosition, let session = captureSession else { return }
+        currentPosition = position
+        DispatchQueue.global(qos: .userInitiated).async {
+            session.beginConfiguration()
+            for input in session.inputs {
+                session.removeInput(input)
+            }
+            if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+               let input = try? AVCaptureDeviceInput(device: device),
+               session.canAddInput(input) {
+                session.addInput(input)
+            }
+            session.commitConfiguration()
+        }
+    }
+
+    func capturePhoto(coordinator: CameraPreviewView.Coordinator) {
+        let settings = AVCapturePhotoSettings()
+        photoOutput.capturePhoto(with: settings, delegate: coordinator)
+    }
+}
+
+// MARK: - Native Photo Library Picker
+struct ImagePickerView: UIViewControllerRepresentable {
+    @Environment(\.presentationMode) var presentationMode
+    var onImagePicked: (UIImage) -> Void
+
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let parent: ImagePickerView
+
+        init(_ parent: ImagePickerView) {
+            self.parent = parent
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let uiImage = info[.originalImage] as? UIImage {
+                parent.onImagePicked(uiImage)
+            }
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = .photoLibrary
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+}
+#endif
 
 struct CameraScreenView: View {
     let replyToPostId: String?
@@ -19,9 +176,14 @@ struct CameraScreenView: View {
     @State private var grain: Double = 0.2
     @State private var showTuneSheet: Bool = false
     @State private var flashOn: Bool = false
+    @State private var cameraPosition: AVCaptureDevice.Position = .back
+    @State private var captureTrigger: Bool = false
     @State private var isCapturing: Bool = false
+    @State private var showPhotoPicker: Bool = false
+    @State private var selectedUIImage: UIImage? = nil
     @State private var toastMessage: String? = nil
     @State private var showToast: Bool = false
+    @State private var isCameraAvailable: Bool = true
 
     @State private var showImagePicker: Bool = false
     @State private var pickerSourceType: UIImagePickerController.SourceType = .camera
@@ -82,23 +244,39 @@ struct CameraScreenView: View {
                         Spacer()
                     }
 
-                    Button(action: {
-                        flashOn.toggle()
-                        triggerHapticFeedback()
-                    }) {
-                        Image(systemName: flashOn ? "bolt.fill" : "bolt.slash.fill")
-                            .font(.title2)
-                            .foregroundColor(flashOn ? .yellow : .white)
-                            .frame(width: 40, height: 40)
-                            .background(Color.white.opacity(0.15))
-                            .clipShape(Circle())
+                    HStack(spacing: 12) {
+                        // Camera Position Switch (Front / Back)
+                        Button(action: {
+                            cameraPosition = (cameraPosition == .back) ? .front : .back
+                            triggerHapticFeedback()
+                        }) {
+                            Image(systemName: "camera.rotate.fill")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                                .frame(width: 40, height: 40)
+                                .background(Color.white.opacity(0.15))
+                                .clipShape(Circle())
+                        }
+
+                        // Flash Toggle
+                        Button(action: {
+                            flashOn.toggle()
+                            triggerHapticFeedback()
+                        }) {
+                            Image(systemName: flashOn ? "bolt.fill" : "bolt.slash.fill")
+                                .font(.title3)
+                                .foregroundColor(flashOn ? .yellow : .white)
+                                .frame(width: 40, height: 40)
+                                .background(Color.white.opacity(0.15))
+                                .clipShape(Circle())
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
                 .padding(.bottom, 6)
 
-                // Live Preview Box with Swipe & Pinch Gestures
+                // Live Camera / Selected Photo Preview Box inside Die-Cut Stamp Frame
                 ZStack {
                     AsyncImage(url: URL(string: activePhotoUrl)) { phase in
                         if let img = phase.image {
@@ -108,14 +286,8 @@ struct CameraScreenView: View {
                         } else {
                             Color.gray.opacity(0.4)
                         }
+                        #endif
                     }
-                    .frame(height: 390)
-                    .clipped()
-                    .cornerRadius(24)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color(red: 0.82, green: 0.65, blue: 0.35), lineWidth: 2)
-                    )
 
                     // Stamp Die-Cut Golden Frame Guidelines
                     PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
@@ -148,6 +320,13 @@ struct CameraScreenView: View {
                         }
                     }
                 }
+                .frame(height: 390)
+                .clipped()
+                .cornerRadius(24)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color(red: 0.82, green: 0.65, blue: 0.35), lineWidth: 2)
+                )
                 .padding(.horizontal, 16)
                 .gesture(
                     DragGesture(minimumDistance: 30)
@@ -278,6 +457,7 @@ struct CameraScreenView: View {
 
                         Spacer()
 
+                        // Fine-Tune Controls Sheet Button
                         Button(action: { showTuneSheet = true }) {
                             ZStack {
                                 Circle()
@@ -312,6 +492,39 @@ struct CameraScreenView: View {
                 grain: $grain
             )
         }
+        #if canImport(UIKit)
+        .sheet(isPresented: $showPhotoPicker) {
+            ImagePickerView { pickedImage in
+                selectedUIImage = pickedImage
+            }
+        }
+        #endif
+        .onAppear {
+            checkCameraAvailability()
+        }
+    }
+
+    private func checkCameraAvailability() {
+        #if canImport(UIKit)
+        if AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) == nil {
+            isCameraAvailable = false
+        }
+        #else
+        isCameraAvailable = false
+        #endif
+    }
+
+    private func handleImageSelected(_ image: UIImage) {
+        #if canImport(UIKit)
+        if let data = image.jpegData(compressionQuality: 0.85) {
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent("stamp_photo_\(UUID().uuidString).jpg")
+            try? data.write(to: fileURL)
+            onNavigateToNote(fileURL.absoluteString)
+            return
+        }
+        #endif
+        onNavigateToNote(samplePhotos[selectedImageIndex])
     }
 
     private func showFilterToast(_ filterName: String) {

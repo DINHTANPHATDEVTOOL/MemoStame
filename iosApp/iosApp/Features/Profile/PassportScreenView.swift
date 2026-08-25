@@ -157,7 +157,7 @@ struct PassportScreenView: View {
                         .padding(.horizontal)
                     }
                 }
-                .padding(.bottom, 40)
+                .padding(.bottom, 110)
             }
         }
         .background(MSColors.paper.ignoresSafeArea())

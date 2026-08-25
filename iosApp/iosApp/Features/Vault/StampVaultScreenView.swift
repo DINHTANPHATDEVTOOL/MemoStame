@@ -10,8 +10,7 @@ struct StampVaultScreenView: View {
 
     @State private var searchText: String = ""
     @State private var selectedFilter: String = "All"
-    @State private var selectedStamp: StampItem? = nil
-    @State private var showEnvelopeModal: Bool = false
+    @State private var activeModal: VaultModalItem? = nil
 
     let filters = ["All", "Vintage", "Travel", "Coffee", "Special"]
     
@@ -112,30 +111,47 @@ struct StampVaultScreenView: View {
                             )
                         }
                         .onTapGesture {
-                            selectedStamp = stamp
+                            activeModal = .detail(stamp)
                         }
                     }
                 }
                 .padding()
-                .padding(.bottom, 90)
+                .padding(.bottom, 110)
             }
         }
         .background(MSColors.paper.ignoresSafeArea())
-        .sheet(item: $selectedStamp) { stamp in
-            StampDetailModalView(
-                stamp: stamp,
-                onShare: { showEnvelopeModal = true },
-                onDismiss: { selectedStamp = nil }
-            )
-        }
-        .sheet(isPresented: $showEnvelopeModal) {
-            if let stamp = selectedStamp {
+        .sheet(item: $activeModal) { item in
+            switch item {
+            case .detail(let stamp):
+                StampDetailModalView(
+                    stamp: stamp,
+                    onShare: {
+                        activeModal = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            activeModal = .share(stamp)
+                        }
+                    },
+                    onDismiss: { activeModal = nil }
+                )
+            case .share(let stamp):
                 EnvelopeShareModalView(
                     stampTitle: stamp.title,
                     stampUrl: stamp.stampImagePath,
-                    onDismiss: { showEnvelopeModal = false }
+                    onDismiss: { activeModal = nil }
                 )
             }
+        }
+    }
+}
+
+enum VaultModalItem: Identifiable {
+    case detail(StampItem)
+    case share(StampItem)
+
+    var id: String {
+        switch self {
+        case .detail(let s): return "detail_\(s.id)"
+        case .share(let s): return "share_\(s.id)"
         }
     }
 }
