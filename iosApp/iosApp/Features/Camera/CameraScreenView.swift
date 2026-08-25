@@ -345,7 +345,7 @@ struct CameraScreenView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .aspectRatio(885.0 / 1163.0, contentMode: .fit)
+                .aspectRatio(881.0 / 1159.0, contentMode: .fit)
                 .shadow(color: Color.black.opacity(0.5), radius: 16, x: 0, y: 8)
                 .padding(.horizontal, 20)
                 .offset(y: pressOffset)
@@ -646,7 +646,8 @@ struct CameraScreenView: View {
         let normalizedImage = UIGraphicsGetImageFromCurrentImageContext() ?? image
         UIGraphicsEndImageContext()
 
-        let targetRatio: CGFloat = 885.0 / 1163.0
+        // Authentic Stamp Inner Window Aspect Ratio matching Android StampGeometry (1200 x 1500 -> 0.8)
+        let targetRatio: CGFloat = 4.0 / 5.0
         let width = normalizedImage.size.width
         let height = normalizedImage.size.height
         let currentRatio = width / height
@@ -660,6 +661,10 @@ struct CameraScreenView: View {
             let cropHeight = width / targetRatio
             let originY = (height - cropHeight) / 2.0
             cropRect = CGRect(x: 0, y: originY, width: width, height: cropHeight)
+        }
+
+        if let cgImage = normalizedImage.cgImage?.cropping(to: cropRect) {
+            return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: normalizedImage.imageOrientation)
         }
 
         UIGraphicsBeginImageContextWithOptions(cropRect.size, false, normalizedImage.scale)

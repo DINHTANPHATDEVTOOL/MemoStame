@@ -90,9 +90,9 @@ struct DieCutStampView: View {
 
     private var cardHeight: CGFloat {
         if fittedInGrid {
-            return effectiveLandscape ? 120 : 200
+            return effectiveLandscape ? 120 : 193.75
         } else {
-            return effectiveLandscape ? 230 : 350
+            return effectiveLandscape ? 230 : 337.5
         }
     }
 
