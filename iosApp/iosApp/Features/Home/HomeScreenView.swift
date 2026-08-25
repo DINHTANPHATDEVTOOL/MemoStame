@@ -21,24 +21,23 @@ struct HomeScreenView: View {
         switch activeCircle {
         case "👥 Tất cả bạn bè":
             return viewModel.posts.filter { post in
-                switch post.audienceType {
-                case .friends:
+                if post.audienceType == AudienceType.friends {
                     return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
-                case .specificFriends:
+                } else if post.audienceType == AudienceType.specificFriends {
                     return post.authorId == viewModel.currentUser.uid || post.targetFriendIds.contains(viewModel.currentUser.uid)
-                case .onlyMe:
+                } else if post.audienceType == AudienceType.onlyMe {
                     return post.authorId == viewModel.currentUser.uid
-                default:
+                } else {
                     return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
                 }
             }
         case "🎯 Bạn bè chọn lọc":
             return viewModel.posts.filter { post in
-                post.audienceType == .specificFriends && (post.authorId == viewModel.currentUser.uid || post.targetFriendIds.contains(viewModel.currentUser.uid))
+                post.audienceType == AudienceType.specificFriends && (post.authorId == viewModel.currentUser.uid || post.targetFriendIds.contains(viewModel.currentUser.uid))
             }
         case "🔒 Chỉ mình tôi":
             return viewModel.posts.filter { post in
-                post.audienceType == .onlyMe && post.authorId == viewModel.currentUser.uid
+                post.audienceType == AudienceType.onlyMe && post.authorId == viewModel.currentUser.uid
             }
         case "👤 Bài viết của tôi":
             return viewModel.posts.filter { post in
