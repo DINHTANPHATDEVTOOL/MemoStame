@@ -327,7 +327,7 @@ struct CameraScreenView: View {
                 ZStack {
                     Image("khuon_tem_template")
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .aspectRatio(contentMode: .fit)
                         .allowsHitTesting(false)
 
                     // Swipe Toast Notification
