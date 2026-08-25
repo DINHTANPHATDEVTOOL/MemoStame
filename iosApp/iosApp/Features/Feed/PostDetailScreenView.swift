@@ -15,7 +15,7 @@ struct PostDetailScreenView: View {
     @State private var activeLightboxReply: FeedReply? = nil
     @State private var showHeartAnimation: Bool = false
 
-    private let repository = SharedMemoStampRepository.companion.getInstance()
+    private let repository = SharedMemoStampRepository()
 
     var isInputValid: Bool {
         let trimmed = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
