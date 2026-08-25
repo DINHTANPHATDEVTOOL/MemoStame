@@ -15,6 +15,8 @@ struct PostDetailScreenView: View {
     @State private var activeLightboxReply: FeedReply? = nil
     @State private var showHeartAnimation: Bool = false
 
+    private let repository = SharedMemoStampRepository.companion.getInstance()
+
     var isInputValid: Bool {
         let trimmed = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmed.isEmpty && trimmed.count <= 500
@@ -205,13 +207,14 @@ struct PostDetailScreenView: View {
 
                 Button(action: {
                     if isInputValid {
+                        let currentUser = repository.currentUser.value as? UserProfile
                         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
                         let c = FeedComment(
                             id: "c_\(nowMs)",
                             postId: post.id,
-                            authorId: "user_me",
-                            authorName: "Minh Nguyen",
-                            authorAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+                            authorId: currentUser?.uid ?? "user_me",
+                            authorName: currentUser?.displayName ?? "User",
+                            authorAvatar: currentUser?.avatarUrl ?? "",
                             content: commentText.trimmingCharacters(in: .whitespacesAndNewlines),
                             createdAt: nowMs
                         )

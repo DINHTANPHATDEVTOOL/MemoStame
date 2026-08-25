@@ -87,7 +87,7 @@ struct StampEditorScreenView: View {
                     VStack(spacing: 8) {
                         DieCutStampView(
                             title: stampTitle,
-                            imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
+                            imageUrl: "",
                             location: stampLocation,
                             dateStr: stampDate,
                             shape: selectedMoldId,

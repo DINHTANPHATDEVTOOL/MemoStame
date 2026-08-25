@@ -496,13 +496,13 @@ struct FriendQrCodeSheetView: View {
     var user: UserProfile {
         (repository.currentUser.value as? UserProfile) ?? UserProfile(
             uid: "user_me",
-            username: "minh_nguyen",
-            displayName: "Minh Nguyen",
+            username: "user_memostamp",
+            displayName: "MemoStamp Collector",
             avatarUrl: nil,
             bio: "",
-            stampsCreatedCount: 14,
-            stampsCollectedCount: 38,
-            placesVisitedCount: 9
+            stampsCreatedCount: 0,
+            stampsCollectedCount: 0,
+            placesVisitedCount: 0
         )
     }
 

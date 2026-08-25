@@ -807,13 +807,13 @@ class HomeObservableViewModel: ObservableObject {
         self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
         self.currentUser = (repository.currentUser.value as? UserProfile) ?? UserProfile(
             uid: "user_me",
-            username: "minh_nguyen",
-            displayName: "Minh Nguyen",
-            avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-            bio: "Capturing life memory stamps ☕✨",
-            stampsCreatedCount: Int32(14),
-            stampsCollectedCount: Int32(38),
-            placesVisitedCount: Int32(9)
+            username: "user_memostamp",
+            displayName: "MemoStamp Collector",
+            avatarUrl: nil,
+            bio: "Sưu tầm ký ức qua từng con tem bưu chính 📮",
+            stampsCreatedCount: Int32(0),
+            stampsCollectedCount: Int32(0),
+            placesVisitedCount: Int32(0)
         )
     }
 

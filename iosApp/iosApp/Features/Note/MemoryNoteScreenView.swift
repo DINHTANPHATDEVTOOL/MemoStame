@@ -28,71 +28,12 @@ struct MemoryNoteScreenView: View {
 
     let locationCategories = ["Tất cả", "Biểu tượng", "Cà phê", "Thiên nhiên", "Di tích"]
     
-    let groundedPlaces: [GroundedPlaceItem] = [
-        GroundedPlaceItem(
-            name: "Quảng trường Lâm Viên",
-            address: "Trần Quốc Toản, P.10, Đà Lạt",
-            category: "Biểu tượng",
-            stampTitle: "Nụ Hoa Atisô Đà Lạt",
-            rating: "4.7★"
-        ),
-        GroundedPlaceItem(
-            name: "Hồ Xuân Hương",
-            address: "Trung tâm TP. Đà Lạt, Lâm Đồng",
-            category: "Thiên nhiên",
-            stampTitle: "Sương Mù Hồ Xuân Hương",
-            rating: "4.8★"
-        ),
-        GroundedPlaceItem(
-            name: "Tiệm Cà Phê Túi Mơ To",
-            address: "Hẻm 31 Sào Nam, P.11, Đà Lạt",
-            category: "Cà phê",
-            stampTitle: "Cúc Họa Mi Mơ Màng",
-            rating: "4.6★"
-        ),
-        GroundedPlaceItem(
-            name: "Bưu Điện Trung Tâm Sài Gòn",
-            address: "2 Công xã Paris, Q.1, TP.HCM",
-            category: "Di tích",
-            stampTitle: "Bưu Chính Sài Gòn 1891",
-            rating: "4.8★"
-        ),
-        GroundedPlaceItem(
-            name: "Chợ Bến Thành",
-            address: "Lê Lợi, P. Bến Thành, Q.1, TP.HCM",
-            category: "Di tích",
-            stampTitle: "Tháp Đồng Hồ Bến Thành",
-            rating: "4.6★"
-        ),
-        GroundedPlaceItem(
-            name: "Hồ Hoàn Kiếm (Hồ Gươm)",
-            address: "Hoàn Kiếm, Hà Nội",
-            category: "Biểu tượng",
-            stampTitle: "Mùa Thu Hà Nội",
-            rating: "4.9★"
-        ),
-        GroundedPlaceItem(
-            name: "Phố Cổ Hội An",
-            address: "TP. Hội An, Quảng Nam",
-            category: "Di tích",
-            stampTitle: "Đèn Lồng Phố Cổ",
-            rating: "4.9★"
-        ),
-        GroundedPlaceItem(
-            name: "Cầu Vàng Bà Nà Hills",
-            address: "Hòa Vang, Đà Nẵng",
-            category: "Biểu tượng",
-            stampTitle: "Dải Lụa Mây Ngàn",
-            rating: "4.7★"
-        )
-    ]
+    var groundedPlaces: [GroundedPlaceItem] {
+        return []
+    }
 
     var filteredPlaces: [GroundedPlaceItem] {
-        groundedPlaces.filter { place in
-            let matchCat = (selectedCategory == "Tất cả" || place.category == selectedCategory)
-            let matchQuery = locationSearch.isEmpty || place.name.localizedCaseInsensitiveContains(locationSearch) || place.address.localizedCaseInsensitiveContains(locationSearch)
-            return matchCat && matchQuery
-        }
+        return groundedPlaces
     }
 
     let audienceTypes = ["Public", "Friends", "Only Me"]

@@ -39,7 +39,7 @@ class CameraViewModel: ObservableObject {
     }
 
     var currentPhotoUrl: String {
-        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600"
+        ""
     }
 
     func toggleCameraPosition() {

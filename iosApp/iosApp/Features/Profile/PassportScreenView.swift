@@ -13,13 +13,13 @@ struct PassportScreenView: View {
     var user: UserProfile {
         (repository.currentUser.value as? UserProfile) ?? UserProfile(
             uid: "user_me",
-            username: "minh_nguyen",
-            displayName: "Minh Nguyen",
+            username: "user_memostamp",
+            displayName: "MemoStamp Collector",
             avatarUrl: nil,
-            bio: "Capturing life memory stamps",
-            stampsCreatedCount: Int32(14),
-            stampsCollectedCount: Int32(38),
-            placesVisitedCount: Int32(9)
+            bio: "Sưu tầm ký ức qua từng con tem bưu chính 📮",
+            stampsCreatedCount: Int32(0),
+            stampsCollectedCount: Int32(0),
+            placesVisitedCount: Int32(0)
         )
     }
 
