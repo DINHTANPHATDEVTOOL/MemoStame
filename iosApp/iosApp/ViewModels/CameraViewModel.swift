@@ -28,13 +28,7 @@ class CameraViewModel: ObservableObject {
 
     let filters = FilterPresets.shared.ALL
     let zoomOptions = ["1x", "2x", "3x", "5x"]
-    let samplePhotos = [
-        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
-        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600",
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600",
-        "https://images.unsplash.com/photo-1528127269322-539801943592?w=600"
-    ]
-
+    
     init() {}
 
     var currentFilter: CameraFilterSpec {
@@ -45,7 +39,7 @@ class CameraViewModel: ObservableObject {
     }
 
     var currentPhotoUrl: String {
-        samplePhotos[selectedImageIndex]
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600"
     }
 
     func toggleCameraPosition() {
@@ -89,11 +83,6 @@ class CameraViewModel: ObservableObject {
     func toggleFlash() {
         flashOn.toggle()
         HapticFeedbackManager.shared.playImpact(style: .medium)
-    }
-
-    func cycleSamplePhoto() {
-        selectedImageIndex = (selectedImageIndex + 1) % samplePhotos.count
-        HapticFeedbackManager.shared.playImpact(style: .light)
     }
 
     func capturePhoto(completion: @escaping (String) -> Void) {
