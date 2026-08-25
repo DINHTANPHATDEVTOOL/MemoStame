@@ -127,9 +127,9 @@ struct DieCutStampView: View {
                         .padding(.horizontal, fittedInGrid ? 8 : 12)
                         .padding(.top, fittedInGrid ? 4 : 8)
 
-                        // Central Photo Window
+                        // Central Photo Window with Direct Die-Cut Perforated Edge Clipping
                         ZStack {
-                            // Photo Layer
+                            // Photo Layer clipped directly into Perforated Stamp Shape
                             AsyncImage(url: URL(string: imageUrl)) { phase in
                                 switch phase {
                                 case .success(let image):
@@ -156,7 +156,12 @@ struct DieCutStampView: View {
                                 width: cardWidth - (fittedInGrid ? 16 : 24),
                                 height: cardHeight - (fittedInGrid ? 48 : 80)
                             )
-                            .clipped()
+                            .clipShape(PerforatedStampShape(notchRatio: 0.03, spacingRatio: 0.08))
+                            .overlay(
+                                PerforatedStampShape(notchRatio: 0.03, spacingRatio: 0.08)
+                                    .stroke(Color.white.opacity(0.7), lineWidth: 1.0)
+                            )
+                            .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1.5)
 
                             // Authentic Metal Mold Overlay (Camera / Editor preview only)
                             if showMoldOverlay {

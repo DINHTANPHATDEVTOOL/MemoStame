@@ -541,10 +541,27 @@ struct CameraScreenView: View {
                     .transition(.opacity)
             }
 
-            // Stamp Reveal Die-Cut Punch Banner Overlay
+            // Stamp Reveal Die-Cut Punch Pop-Up & Banner Overlay
             if showPunchReveal {
-                VStack {
+                VStack(spacing: 18) {
                     Spacer()
+
+                    #if canImport(UIKit)
+                    if let img = selectedUIImage {
+                        Image(uiImage: img)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 220, height: 289)
+                            .clipShape(PerforatedStampShape(notchRatio: 0.025, spacingRatio: 0.075))
+                            .overlay(
+                                PerforatedStampShape(notchRatio: 0.025, spacingRatio: 0.075)
+                                    .stroke(Color.white.opacity(0.85), lineWidth: 1.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.65), radius: 18, x: 0, y: 10)
+                            .transition(.scale(scale: 0.85).combined(with: .opacity))
+                    }
+                    #endif
+
                     HStack(spacing: 8) {
                         Image(systemName: "sparkles")
                             .foregroundColor(MSColors.gold)
@@ -563,7 +580,7 @@ struct CameraScreenView: View {
                             .stroke(MSColors.gold, lineWidth: 1.5)
                     )
                     .shadow(color: MSColors.gold.opacity(0.4), radius: 10, x: 0, y: 4)
-                    .padding(.bottom, 120)
+                    .padding(.bottom, 60)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
