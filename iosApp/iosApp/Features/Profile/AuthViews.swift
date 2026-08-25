@@ -314,12 +314,6 @@ struct AuthLoginScreenView: View {
            let dict = try? JSONDecoder().decode([String: UserAccountData].self, from: data) {
             return dict
         }
-        let initial: [String: UserAccountData] = [
-    private func getRegisteredAccounts() -> [String: UserAccountData] {
-        if let data = UserDefaults.standard.data(forKey: "registered_accounts_db"),
-           let dict = try? JSONDecoder().decode([String: UserAccountData].self, from: data) {
-            return dict
-        }
         return [:]
     }
 

@@ -59,67 +59,6 @@ struct PerforatedStampShape: Shape {
     }
 }
 
-import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
-
-/// Authentic postage stamp scallop perforation shape matching Android PerforatedStampShape
-struct PerforatedStampShape: Shape {
-    var notchRatio: CGFloat = 0.025
-    var spacingRatio: CGFloat = 0.072
-
-    func path(in rect: CGRect) -> Path {
-        let w = rect.width
-        let h = rect.height
-        let minDim = min(w, h)
-        let r = minDim * notchRatio
-        let spacing = minDim * spacingRatio
-
-        var path = Path()
-
-        // TOP Edge (inward notches)
-        path.move(to: CGPoint(x: 0, y: 0))
-        var x = spacing / 2.0
-        while x < w - spacing / 2.0 {
-            path.addLine(to: CGPoint(x: x - r, y: 0))
-            path.addQuadCurve(to: CGPoint(x: x + r, y: 0), control: CGPoint(x: x, y: r * 1.8))
-            x += spacing
-        }
-        path.addLine(to: CGPoint(x: w, y: 0))
-
-        // RIGHT Edge
-        var y = spacing / 2.0
-        while y < h - spacing / 2.0 {
-            path.addLine(to: CGPoint(x: w, y: y - r))
-            path.addQuadCurve(to: CGPoint(x: w, y: y + r), control: CGPoint(x: w - r * 1.8, y: y))
-            y += spacing
-        }
-        path.addLine(to: CGPoint(x: w, y: h))
-
-        // BOTTOM Edge
-        x = w - spacing / 2.0
-        while x > spacing / 2.0 {
-            path.addLine(to: CGPoint(x: x + r, y: h))
-            path.addQuadCurve(to: CGPoint(x: x - r, y: h), control: CGPoint(x: x, y: h - r * 1.8))
-            x -= spacing
-        }
-        path.addLine(to: CGPoint(x: 0, y: h))
-
-        // LEFT Edge
-        y = h - spacing / 2.0
-        while y > spacing / 2.0 {
-            path.addLine(to: CGPoint(x: 0, y: y + r))
-            path.addQuadCurve(to: CGPoint(x: 0, y: y - r), control: CGPoint(x: r * 1.8, y: y))
-            y -= spacing
-        }
-        path.addLine(to: CGPoint(x: 0, y: 0))
-        path.closeSubpath()
-
-        return path
-    }
-}
-
 struct DieCutStampView: View {
     let title: String
     let imageUrl: String
@@ -400,8 +339,5 @@ struct DieCutStampView: View {
                 }
             }
         }
-        }
     }
 }
-
-
