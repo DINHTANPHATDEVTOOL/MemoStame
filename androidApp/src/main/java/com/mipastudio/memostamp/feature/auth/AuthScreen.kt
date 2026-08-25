@@ -172,10 +172,15 @@ fun AuthScreen(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Color(0xFFEA4335).copy(alpha = 0.1f)),
+                        .background(AccentRed.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("📮", fontSize = 36.sp)
+                    Icon(
+                        imageVector = Icons.Outlined.MarkunreadMailbox,
+                        contentDescription = null,
+                        tint = AccentRed,
+                        modifier = Modifier.size(36.dp)
+                    )
                 }
             }
 

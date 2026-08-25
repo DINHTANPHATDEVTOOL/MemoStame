@@ -26,6 +26,22 @@ struct ContentView: View {
 
     init() {
         let repo = SharedMemoStampRepository()
+        if let name = UserDefaults.standard.string(forKey: "user_displayName"), !name.isEmpty,
+           let username = UserDefaults.standard.string(forKey: "user_username"), !username.isEmpty {
+            let avatar = UserDefaults.standard.string(forKey: "user_avatarUrl") ?? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300"
+            let bio = UserDefaults.standard.string(forKey: "user_bio") ?? "Sưu tầm ký ức qua từng con tem bưu chính 📮"
+            let profile = UserProfile(
+                uid: "user_" + username,
+                username: username,
+                displayName: name,
+                avatarUrl: avatar,
+                bio: bio,
+                stampsCreatedCount: Int32(14),
+                stampsCollectedCount: Int32(38),
+                placesVisitedCount: Int32(9)
+            )
+            repo.setCurrentUser(profile: profile)
+        }
         self.repository = repo
         _homeViewModel = StateObject(wrappedValue: HomeObservableViewModel(repository: repo))
     }
@@ -33,11 +49,14 @@ struct ContentView: View {
     var body: some View {
         Group {
             if !isAuthenticated {
-                AuthLoginScreenView(onLoginSuccess: {
-                    withAnimation {
-                        isAuthenticated = true
+                AuthLoginScreenView(
+                    repository: repository,
+                    onLoginSuccess: {
+                        withAnimation {
+                            isAuthenticated = true
+                        }
                     }
-                })
+                )
             } else {
                 NavigationView {
                     ZStack(alignment: .bottom) {

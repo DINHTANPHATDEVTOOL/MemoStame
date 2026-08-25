@@ -45,7 +45,8 @@ struct PostDetailScreenView: View {
 
                 Button(action: onReply) {
                     HStack(spacing: 4) {
-                        Text("📮")
+                        Image(systemName: "envelope.fill")
+                            .font(.caption)
                         Text("Reply")
                             .font(.caption.bold())
                     }
@@ -80,9 +81,13 @@ struct PostDetailScreenView: View {
                                 .font(.subheadline.bold())
                                 .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
                             if let loc = post.location, !loc.isEmpty {
-                                Text("📍 " + loc)
-                                    .font(.caption.bold())
-                                    .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
+                                HStack(spacing: 4) {
+                                    Image(systemName: "mappin.and.ellipse")
+                                        .font(.caption)
+                                    Text(loc)
+                                        .font(.caption.bold())
+                                }
+                                .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
                             }
                         }
                         Spacer()
@@ -97,7 +102,8 @@ struct PostDetailScreenView: View {
                             dateStr: "2026.08.18",
                             note: post.caption,
                             shape: post.shape,
-                            isInteractive: true
+                            isInteractive: true,
+                            showMoldOverlay: false
                         )
                         .onTapGesture(count: 2) {
                             if !post.isLikedByMe {

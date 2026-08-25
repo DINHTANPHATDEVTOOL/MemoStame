@@ -17,6 +17,7 @@ struct FriendsAndTradeScreenView: View {
     @State private var toastMessage: String? = nil
     @State private var showToast: Bool = false
     @State private var refreshTrigger: Bool = false
+    @StateObject private var langManager = AppLanguageManager.shared
 
     var friends: [FriendItem] {
         _ = refreshTrigger
@@ -39,10 +40,10 @@ struct FriendsAndTradeScreenView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("FRIENDS & STAMP TRADE")
+                            Text(langManager.string(vi: "BẠN BÈ & TRAO ĐỔI TEM", en: "FRIENDS & STAMP TRADE"))
                                 .font(.title2.bold())
                                 .foregroundColor(MSColors.ink)
-                            Text("Share & exchange vintage stamps")
+                            Text(langManager.string(vi: "Chia sẻ & giao lưu tem bưu chính độc bản", en: "Share & exchange vintage stamps"))
                                 .font(.caption)
                                 .foregroundColor(MSColors.grey)
                         }
@@ -53,7 +54,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "qrcode")
                                     .font(.system(size: 16, weight: .bold))
-                                Text("My QR")
+                                Text(langManager.string(vi: "Mã QR", en: "My QR"))
                                     .font(.caption.bold())
                             }
                             .padding(.horizontal, 10)
@@ -68,7 +69,7 @@ struct FriendsAndTradeScreenView: View {
                     HStack {
                         Image(systemName: "person.badge.plus")
                             .foregroundColor(MSColors.stamp)
-                        TextField("Enter Friend Code (e.g. #STAMP99 or Username)", text: $friendCode)
+                        TextField(langManager.string(vi: "Nhập mã kết bạn (ví dụ #STAMP99 hoặc Tên)", en: "Enter Friend Code (e.g. #STAMP99 or Username)"), text: $friendCode)
                             .font(.subheadline)
                             .foregroundColor(MSColors.ink)
                         Button(action: {
@@ -79,10 +80,10 @@ struct FriendsAndTradeScreenView: View {
                                 _ = repository.addFriend(displayName: name, username: username)
                                 friendCode = ""
                                 refreshTrigger.toggle()
-                                triggerToast("Added \(name) to friends list! 🎉")
+                                triggerToast(langManager.string(vi: "Đã thêm \(name) vào danh sách bạn bè! 🎉", en: "Added \(name) to friends list! 🎉"))
                             }
                         }) {
-                            Text("Add")
+                            Text(langManager.string(vi: "Thêm", en: "Add"))
                                 .font(.caption.bold())
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 7)
@@ -98,9 +99,9 @@ struct FriendsAndTradeScreenView: View {
 
                     // Segment Picker
                     Picker("", selection: $selectedTab) {
-                        Text("Friends (\(friends.count))").tag(0)
-                        Text("Trades (\(tradeRequests.count))").tag(1)
-                        Text("💬 Chat").tag(2)
+                        Text("\(langManager.string(vi: "Bạn bè", en: "Friends")) (\(friends.count))").tag(0)
+                        Text("\(langManager.string(vi: "Trao đổi", en: "Trades")) (\(tradeRequests.count))").tag(1)
+                        Text(langManager.string(vi: "Trò chuyện", en: "Chat")).tag(2)
                     }
                     .pickerStyle(SegmentedPickerStyle())
                 }
@@ -113,8 +114,11 @@ struct FriendsAndTradeScreenView: View {
                         if selectedTab == 0 {
                             // Friends List
                             if friends.isEmpty {
-                                VStack(spacing: 8) {
-                                    Text("👥 No friends added yet")
+                                VStack(spacing: 10) {
+                                    Image(systemName: "person.2.slash")
+                                        .font(.system(size: 38))
+                                        .foregroundColor(MSColors.stamp.opacity(0.6))
+                                    Text("No friends added yet")
                                         .font(.headline)
                                         .foregroundColor(.secondary)
                                     Text("Add friends using their friend code or username above.")
@@ -161,16 +165,19 @@ struct FriendsAndTradeScreenView: View {
                                                 selectedFriendForChat = friend
                                                 showChatModal = true
                                             }) {
-                                                HStack(spacing: 3) {
+                                                HStack(spacing: 4) {
                                                     Image(systemName: "bubble.left.and.bubble.right.fill")
+                                                        .font(.system(size: 11))
                                                     Text("Chat")
                                                         .font(.caption.bold())
+                                                        .lineLimit(1)
                                                 }
-                                                .padding(.horizontal, 8)
+                                                .padding(.horizontal, 10)
                                                 .padding(.vertical, 6)
                                                 .background(MSColors.stamp.opacity(0.12))
                                                 .foregroundColor(MSColors.stamp)
                                                 .cornerRadius(12)
+                                                .fixedSize()
                                             }
 
                                             // Trade Button
@@ -178,16 +185,19 @@ struct FriendsAndTradeScreenView: View {
                                                 selectedFriendForTrade = friend
                                                 showTradeModal = true
                                             }) {
-                                                HStack(spacing: 3) {
+                                                HStack(spacing: 4) {
                                                     Image(systemName: "arrow.triangle.2.circlepath")
+                                                        .font(.system(size: 11))
                                                     Text("Trade")
                                                         .font(.caption.bold())
+                                                        .lineLimit(1)
                                                 }
-                                                .padding(.horizontal, 8)
+                                                .padding(.horizontal, 10)
                                                 .padding(.vertical, 6)
                                                 .background(MSColors.gold.opacity(0.2))
                                                 .foregroundColor(MSColors.gold)
                                                 .cornerRadius(12)
+                                                .fixedSize()
                                             }
 
                                             Button(action: {
@@ -201,6 +211,8 @@ struct FriendsAndTradeScreenView: View {
                                                     .padding(4)
                                             }
                                         }
+                                        .fixedSize(horizontal: true, vertical: false)
+                                        .layoutPriority(1)
                                     }
                                     .padding(12)
                                     .background(Color.white)
@@ -210,10 +222,15 @@ struct FriendsAndTradeScreenView: View {
                         } else if selectedTab == 1 {
                             // Trade Requests
                             if tradeRequests.isEmpty {
-                                Text("📬 No active trade requests.")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .padding(.top, 40)
+                                VStack(spacing: 10) {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.system(size: 38))
+                                        .foregroundColor(MSColors.gold.opacity(0.6))
+                                    Text("No active trade requests")
+                                        .font(.headline)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.top, 40)
                             } else {
                                 ForEach(tradeRequests, id: \.id) { trade in
                                     VStack(alignment: .leading, spacing: 10) {
@@ -294,10 +311,15 @@ struct FriendsAndTradeScreenView: View {
                         } else {
                             // Tab 2: Direct Chat Conversations
                             if friends.isEmpty {
-                                Text("💬 Chưa có cuộc trò chuyện nào.")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .padding(.top, 40)
+                                VStack(spacing: 10) {
+                                    Image(systemName: "bubble.left.and.bubble.right")
+                                        .font(.system(size: 38))
+                                        .foregroundColor(MSColors.stamp.opacity(0.6))
+                                    Text("Chưa có cuộc trò chuyện nào.")
+                                        .font(.headline)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.top, 40)
                             } else {
                                 ForEach(friends, id: \.id) { friend in
                                     HStack(spacing: 12) {

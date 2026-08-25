@@ -8,8 +8,9 @@ struct HomeScreenView: View {
     @ObservedObject var viewModel: HomeObservableViewModel
     var onNavigateToCamera: (String?) -> Void
 
+    @StateObject private var langManager = AppLanguageManager.shared
     @State private var activeTab: String = "Friends"
-    @State private var activeCircle: String = "👥 Tất cả bạn bè"
+    @State private var activeCircle: String = "Tất cả bạn bè"
     @State private var showCommentSheet: Bool = false
     @State private var showTradeInboxSheet: Bool = false
     @State private var selectedPostForComments: FeedPost? = nil
@@ -19,7 +20,7 @@ struct HomeScreenView: View {
         let friendItems = (viewModel.repository.friends.value as? [FriendItem]) ?? []
         let friendIds = friendItems.map { $0.id }
         switch activeCircle {
-        case "👥 Tất cả bạn bè":
+        case "Tất cả bạn bè", "All Friends":
             return viewModel.posts.filter { post in
                 if post.audienceType == AudienceType.friends {
                     return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
@@ -31,15 +32,15 @@ struct HomeScreenView: View {
                     return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
                 }
             }
-        case "🎯 Bạn bè chọn lọc":
+        case "Bạn bè chọn lọc", "Selected Friends":
             return viewModel.posts.filter { post in
                 post.audienceType == AudienceType.specificFriends && (post.authorId == viewModel.currentUser.uid || post.targetFriendIds.contains(viewModel.currentUser.uid))
             }
-        case "🔒 Chỉ mình tôi":
+        case "Chỉ mình tôi", "Only Me":
             return viewModel.posts.filter { post in
                 post.audienceType == AudienceType.onlyMe && post.authorId == viewModel.currentUser.uid
             }
-        case "👤 Bài viết của tôi":
+        case "Bài viết của tôi", "My Posts":
             return viewModel.posts.filter { post in
                 post.authorId == viewModel.currentUser.uid
             }
@@ -129,23 +130,34 @@ struct HomeScreenView: View {
             .padding(.top, 10)
             .padding(.bottom, 8)
 
-            // Feed Filter Options (100% Matching Android Filter Options)
+            // Feed Filter Options (Designed Custom SF Symbol Vector Icons)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(["👥 Tất cả bạn bè", "🎯 Bạn bè chọn lọc", "🔒 Chỉ mình tôi", "👤 Bài viết của tôi"], id: \.self) { filter in
-                        Button(action: { activeCircle = filter }) {
-                            Text(filter)
-                                .font(.caption.bold())
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(activeCircle == filter ? MSColors.stamp : MSColors.white)
-                                .foregroundColor(activeCircle == filter ? .white : MSColors.ink)
-                                .cornerRadius(20)
-                                .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(activeCircle == filter ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1)
-                                )
+                    let filterItems: [(id: String, key: String, title: String, icon: String)] = [
+                        ("Tất cả bạn bè", "Tất cả bạn bè", langManager.string(vi: "Tất cả bạn bè", en: "All Friends"), "person.2.fill"),
+                        ("Bạn bè chọn lọc", "Bạn bè chọn lọc", langManager.string(vi: "Bạn bè chọn lọc", en: "Selected Friends"), "target"),
+                        ("Chỉ mình tôi", "Chỉ mình tôi", langManager.string(vi: "Chỉ mình tôi", en: "Only Me"), "lock.fill"),
+                        ("Bài viết của tôi", "Bài viết của tôi", langManager.string(vi: "Bài viết của tôi", en: "My Posts"), "person.fill")
+                    ]
+                    ForEach(filterItems, id: \.id) { item in
+                        let isActive = (activeCircle == item.key || activeCircle == item.title)
+                        Button(action: { activeCircle = item.title }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: item.icon)
+                                    .font(.system(size: 12, weight: .bold))
+                                Text(item.title)
+                                    .font(.caption.bold())
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(isActive ? MSColors.stamp : MSColors.white)
+                            .foregroundColor(isActive ? .white : MSColors.ink)
+                            .cornerRadius(20)
+                            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(isActive ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1)
+                            )
                         }
                     }
                 }
@@ -221,6 +233,7 @@ struct HomeScreenView: View {
 // Subview: Daily Memory Chain Prompt Banner (Matching Android Today's Memory Hero Banner)
 struct DailyMemoryChainBanner: View {
     let onStampNow: () -> Void
+    @StateObject private var langManager = AppLanguageManager.shared
 
     var body: some View {
         Button(action: onStampNow) {
@@ -238,11 +251,11 @@ struct DailyMemoryChainBanner: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Today’s memory")
+                    Text(langManager.string(vi: "Hôm nay ghi tem gì?", en: "Today’s memory"))
                         .font(.system(size: 20, weight: .black))
                         .foregroundColor(MSColors.ink)
 
-                    Text("Capture something worth keeping.")
+                    Text(langManager.string(vi: "Lưu giữ ký ức qua từng con tem bưu chính.", en: "Capture something worth keeping."))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(MSColors.grey)
                 }
@@ -266,11 +279,11 @@ struct DailyMemoryChainBanner: View {
     }
 }
 
-// Subview: Post Card View with strict double-tap like, comments preview, and signature stamp badge
 // Subview: Facebook-style Quick Post Creation Box (100% Matching Android)
 struct QuickPostCreationBoxView: View {
     let userAvatarUrl: String?
     let onOpenCamera: () -> Void
+    @StateObject private var langManager = AppLanguageManager.shared
 
     var body: some View {
         VStack(spacing: 12) {
@@ -287,7 +300,7 @@ struct QuickPostCreationBoxView: View {
 
                 Button(action: onOpenCamera) {
                     HStack {
-                        Text("Chia sẻ khoảnh khắc tem kỷ niệm hôm nay... 📮")
+                        Text(langManager.string(vi: "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay... 📮", en: "Share today's stamp memory moment... 📮"))
                             .font(.system(size: 13, weight: .regular))
                             .foregroundColor(MSColors.grey)
                         Spacer()
@@ -308,7 +321,7 @@ struct QuickPostCreationBoxView: View {
                         Image(systemName: "camera.fill")
                             .font(.caption.bold())
                             .foregroundColor(MSColors.stamp)
-                        Text("Chụp tem mới")
+                        Text(langManager.string(vi: "Chụp tem mới", en: "New stamp"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                     }
@@ -321,7 +334,7 @@ struct QuickPostCreationBoxView: View {
                         Image(systemName: "bookmark.fill")
                             .font(.caption.bold())
                             .foregroundColor(Color.blue)
-                        Text("Kho tem")
+                        Text(langManager.string(vi: "Kho tem", en: "Stamp vault"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                     }
@@ -334,7 +347,7 @@ struct QuickPostCreationBoxView: View {
                         Image(systemName: "globe")
                             .font(.caption.bold())
                             .foregroundColor(Color.green)
-                        Text("Đăng ngay")
+                        Text(langManager.string(vi: "Đăng ngay", en: "Post now"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                     }
@@ -366,6 +379,7 @@ struct PostCardView: View {
     let onReplyClick: (FeedReply) -> Void
 
     @State private var showHeartAnimation: Bool = false
+    @StateObject private var langManager = AppLanguageManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -423,6 +437,7 @@ struct PostCardView: View {
                     note: post.caption,
                     shape: post.shape,
                     isInteractive: true,
+                    showMoldOverlay: false,
                     onDoubleTap: {
                         if !post.isLikedByMe {
                             onLikeOnly()
@@ -487,7 +502,7 @@ struct PostCardView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "seal.fill")
                             .font(.system(size: 11))
-                        Text("Reply \(post.replyCount)")
+                        Text(langManager.string(vi: "Phản hồi \(post.replyCount)", en: "Reply \(post.replyCount)"))
                             .font(.caption.bold())
                     }
                     .foregroundColor(MSColors.stamp)
@@ -506,7 +521,7 @@ struct PostCardView: View {
             if !post.replies.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Stamp replies")
+                        Text(langManager.string(vi: "Tem phản hồi", en: "Stamp replies"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.grey)
                         Spacer()
@@ -532,12 +547,12 @@ struct PostCardView: View {
                                         VStack(spacing: 2) {
                                             Image(systemName: "plus")
                                                 .foregroundColor(MSColors.stamp)
-                                            Text("Reply")
+                                            Text(langManager.string(vi: "Phản hồi", en: "Reply"))
                                                 .font(.system(size: 10, weight: .bold))
                                                 .foregroundColor(MSColors.stamp)
                                         }
                                     }
-                                    Text("Your stamp")
+                                    Text(langManager.string(vi: "Tem của bạn", en: "Your stamp"))
                                         .font(.system(size: 10))
                                         .foregroundColor(.secondary)
                                 }
@@ -861,8 +876,11 @@ struct TradeInboxSheetView: View {
                 .frame(width: 36, height: 4)
                 .padding(.top, 8)
 
-            HStack {
-                Text("📮 Stamp Trade Inbox")
+            HStack(spacing: 6) {
+                Image(systemName: "envelope.badge.fill")
+                    .font(.headline)
+                    .foregroundColor(MSColors.stamp)
+                Text("Stamp Trade Inbox")
                     .font(.headline.bold())
                     .foregroundColor(MSColors.ink)
                 Spacer()
@@ -878,8 +896,11 @@ struct TradeInboxSheetView: View {
             ScrollView {
                 VStack(spacing: 12) {
                     if trades.isEmpty {
-                        VStack(spacing: 8) {
-                            Text("📬 No active trade offers")
+                        VStack(spacing: 10) {
+                            Image(systemName: "tray.fill")
+                                .font(.system(size: 38))
+                                .foregroundColor(MSColors.stamp.opacity(0.6))
+                            Text("No active trade offers")
                                 .font(.headline)
                                 .foregroundColor(.secondary)
                             Text("When friends send you stamp trade requests, they will appear here.")

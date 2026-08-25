@@ -13,16 +13,20 @@ class SharedMemoStampRepository {
     private val _currentUser = MutableStateFlow(
         UserProfile(
             uid = "user_me",
-            username = "minh_nguyen",
-            displayName = "Minh Nguyen",
-            avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-            bio = "Capturing vintage memories & coffee moments ☕✨",
+            username = "phat_memostamp",
+            displayName = "Phat Nguyen",
+            avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
+            bio = "Sưu tầm ký ức qua từng con tem bưu chính 📮",
             stampsCreatedCount = 14,
             stampsCollectedCount = 38,
             placesVisitedCount = 9
         )
     )
     val currentUser: StateFlow<UserProfile> = _currentUser.asStateFlow()
+
+    fun setCurrentUser(profile: UserProfile) {
+        _currentUser.value = profile
+    }
 
     private val _circles = MutableStateFlow<List<Circle>>(
         listOf(

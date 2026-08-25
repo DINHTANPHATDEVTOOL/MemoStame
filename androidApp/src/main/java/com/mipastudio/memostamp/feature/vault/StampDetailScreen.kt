@@ -142,7 +142,7 @@ fun StampDetailScreen(
 
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(0.75f)
+                            .fillMaxWidth(0.82f)
                             .aspectRatio(StampGeometry.ASPECT_RATIO)
                             .clickable { isFlipped = !isFlipped }
                             .graphicsLayer {
@@ -152,41 +152,99 @@ fun StampDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         if (rotation <= 90f) {
-                            Image(
-                                painter = rememberAsyncImagePainter(imageModel),
-                                contentDescription = s.title,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .shadow(12.dp, RoundedCornerShape(8.dp))
-                            )
-                        } else {
+                            // FRONT SIDE: Authentic Mold & Photo
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .graphicsLayer { rotationY = 180f }
-                                    .background(SurfaceWhite, RoundedCornerShape(12.dp))
-                                    .padding(16.dp),
+                                    .shadow(10.dp, RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        Icons.Outlined.Edit,
-                                        contentDescription = null,
-                                        tint = AccentRed,
-                                        modifier = Modifier.size(36.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text("MỘC BƯU CHÍNH", fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 14.sp)
-                                    Text(formattedDate, color = SecondaryText, fontSize = 11.sp)
-                                    Spacer(modifier = Modifier.height(10.dp))
+                                Image(
+                                    painter = rememberAsyncImagePainter(imageModel),
+                                    contentDescription = s.title,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        } else {
+                            // BACK SIDE: Authentic Vintage Postcard matching front side shape
+                            Surface(
+                                color = SurfaceWhite,
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, StampBorderDefault),
+                                shadowElevation = 10.dp,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer { rotationY = 180f }
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    // Airmail Header
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("MEMOSTAMP POSTCARD", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = SecondaryText)
+                                        Text("★ AIRMAIL ★", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = AccentRed)
+                                    }
+
+                                    HorizontalDivider(color = StampBorderDefault, thickness = 1.dp)
+
+                                    // Postmark Seal & Date
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(CircleShape)
+                                                .background(AccentRed.copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Edit,
+                                                contentDescription = null,
+                                                tint = AccentRed,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("MỘC BƯU CHÍNH", fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 13.sp)
+                                        Text(formattedDate, color = SecondaryText, fontSize = 11.sp)
+                                    }
+
+                                    HorizontalDivider(color = StampBorderDefault, thickness = 1.dp)
+
+                                    // Note Quote
                                     Text(
-                                        if (s.note.isNotBlank()) "“${s.note}”" else "“Một buổi sáng nhiều mây tuyệt đẹp tại Hồ Xuân Hương.”",
+                                        text = if (s.note.isNotBlank()) "“${s.note}”" else "“Một buổi sáng nhiều mây tuyệt đẹp tại Hồ Xuân Hương.”",
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                                         textAlign = TextAlign.Center,
                                         color = PrimaryText,
-                                        fontSize = 13.sp
+                                        fontSize = 13.sp,
+                                        lineHeight = 18.sp,
+                                        maxLines = 4
                                     )
+
+                                    // Footer Info
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = if (!s.location.isNullOrBlank()) "📍 ${s.location}" else "MEMOSTAMP",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = AccentBlue,
+                                            maxLines = 1
+                                        )
+                                        Text("#2026", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = SecondaryText)
+                                    }
                                 }
                             }
                         }

@@ -19,8 +19,8 @@ final class MemoStampNotificationManager: NSObject, UNUserNotificationCenterDele
 
     func scheduleDailyMemoryReminder(at hour: Int = 18, minute: Int = 30) {
         let content = UNMutableNotificationContent()
-        content.title = "📮 Daily Memory Stamp"
-        content.body = "What memory did you capture today? Tap to stamp your moment! ✨"
+        content.title = "Daily Memory Stamp"
+        content.body = "What memory did you capture today? Tap to stamp your moment!"
         content.sound = .default
 
         var dateComponents = DateComponents()
@@ -39,7 +39,7 @@ final class MemoStampNotificationManager: NSObject, UNUserNotificationCenterDele
 
     func sendTradeRequestAlert(friendName: String, stampTitle: String) {
         let content = UNMutableNotificationContent()
-        content.title = "📬 New Stamp Trade Offer!"
+        content.title = "New Stamp Trade Offer!"
         content.body = "\(friendName) sent you a trade request for '\(stampTitle)'."
         content.sound = .default
 

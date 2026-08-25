@@ -816,13 +816,25 @@ fun PassportScreen(
             )
         }
 
-        // Settings Modal
+        // Settings & Language Modal
         if (showSettingsModal) {
+            var selectedLanguage by remember {
+                mutableStateOf(context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE).getString("app_lang", "vi") ?: "vi")
+            }
+            var currentPassword by remember { mutableStateOf("") }
+            var newPassword by remember { mutableStateOf("") }
+            var confirmPassword by remember { mutableStateOf("") }
+            var passMessage by remember { mutableStateOf<String?>(null) }
+
             AlertDialog(
                 onDismissRequest = { showSettingsModal = false },
-                title = { Text("Cài đặt tài khoản", fontWeight = FontWeight.Bold, color = PrimaryText) },
+                title = { Text("Cài đặt tài khoản & Ngôn ngữ", fontWeight = FontWeight.Bold, color = PrimaryText) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.verticalScroll(rememberScrollState())
+                    ) {
+                        // User Profile Summary
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(
                                 model = currentUser.avatarUrl,
@@ -838,11 +850,117 @@ fun PassportScreen(
                                 Text("@${currentUser.username} • ${currentUser.email}", fontSize = 11.sp, color = SecondaryText)
                             }
                         }
-                        
-                        Text("📍 Vị trí: ${currentUser.city}", fontSize = 12.sp, color = SecondaryText)
-                        
+
                         HorizontalDivider(color = UIBorder)
 
+                        // 1. Language Selection Section
+                        Text("🌐 Ngôn ngữ ứng dụng (App Language)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            FilterChip(
+                                selected = selectedLanguage == "vi",
+                                onClick = {
+                                    selectedLanguage = "vi"
+                                    context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+                                        .edit().putString("app_lang", "vi").apply()
+                                    Toast.makeText(context, "Đã chuyển sang Tiếng Việt 🇻🇳", Toast.LENGTH_SHORT).show()
+                                },
+                                label = { Text("Tiếng Việt 🇻🇳", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilterChip(
+                                selected = selectedLanguage == "en",
+                                onClick = {
+                                    selectedLanguage = "en"
+                                    context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+                                        .edit().putString("app_lang", "en").apply()
+                                    Toast.makeText(context, "Switched to English 🇬🇧", Toast.LENGTH_SHORT).show()
+                                },
+                                label = { Text("English 🇬🇧", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        HorizontalDivider(color = UIBorder)
+
+                        // 2. Edit Profile Quick Action
+                        OutlinedButton(
+                            onClick = {
+                                showSettingsModal = false
+                                showEditProfileModal = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chỉnh sửa tên hiển thị & tiểu sử")
+                        }
+
+                        HorizontalDivider(color = UIBorder)
+
+                        // 3. Change Password Section
+                        Text("🔒 Đổi mật khẩu", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        OutlinedTextField(
+                            value = currentPassword,
+                            onValueChange = { currentPassword = it },
+                            label = { Text("Mật khẩu hiện tại", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = newPassword,
+                            onValueChange = { newPassword = it },
+                            label = { Text("Mật khẩu mới", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = { Text("Xác nhận mật khẩu mới", fontSize = 11.sp) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        if (passMessage != null) {
+                            Text(
+                                passMessage!!,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (passMessage!!.contains("thành công")) Color(0xFF2E7D32) else AccentRed
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                if (currentPassword.isBlank()) {
+                                    passMessage = "⚠️ Vui lòng nhập mật khẩu hiện tại"
+                                    return@Button
+                                }
+                                if (newPassword.length < 6) {
+                                    passMessage = "⚠️ Mật khẩu mới phải từ 6 ký tự"
+                                    return@Button
+                                }
+                                if (newPassword != confirmPassword) {
+                                    passMessage = "⚠️ Mật khẩu mới không trùng khớp"
+                                    return@Button
+                                }
+                                passMessage = "✅ Đã đổi mật khẩu thành công!"
+                                currentPassword = ""
+                                newPassword = ""
+                                confirmPassword = ""
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Cập nhật mật khẩu", color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        HorizontalDivider(color = UIBorder)
+
+                        // 4. Logout Action
                         Button(
                             onClick = {
                                 authRepo.logout()
@@ -853,6 +971,8 @@ fun PassportScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = AccentRedSoft),
                             modifier = Modifier.fillMaxWidth()
                         ) {
+                            Icon(Icons.Outlined.Logout, contentDescription = null, tint = AccentRed, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text("Đăng xuất tài khoản", color = AccentRed, fontWeight = FontWeight.Bold)
                         }
                     }

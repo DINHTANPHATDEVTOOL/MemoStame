@@ -112,7 +112,10 @@ struct StampVaultScreenView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 6) {
-                                    Text("📖 SỔ TAY BỘ SƯU TẬP TEM KỶ NIỆM")
+                                    Image(systemName: "book.fill")
+                                        .font(.caption.bold())
+                                        .foregroundColor(MSColors.gold)
+                                    Text("SỔ TAY BỘ SƯU TẬP TEM KỶ NIỆM")
                                         .font(.caption.bold())
                                         .foregroundColor(MSColors.gold)
                                     Text("• 2026 EDITION")
@@ -206,7 +209,9 @@ struct StampVaultScreenView: View {
                                                 repository.toggleCollectionPrivacy(collectionId: col.id)
                                             }) {
                                                 HStack(spacing: 3) {
-                                                    Text(col.privacy == "ONLY_ME" ? "🔒 Mình tôi" : "👥 Bạn bè")
+                                                    Image(systemName: col.privacy == "ONLY_ME" ? "lock.fill" : "person.2.fill")
+                                                        .font(.system(size: 9))
+                                                    Text(col.privacy == "ONLY_ME" ? "Mình tôi" : "Bạn bè")
                                                         .font(.system(size: 9, weight: .bold))
                                                 }
                                                 .padding(.horizontal, 7)
@@ -247,7 +252,9 @@ struct StampVaultScreenView: View {
                                     dateStr: "2026.08.18",
                                     note: stamp.note,
                                     shape: stamp.shape,
-                                    isInteractive: false
+                                    isInteractive: false,
+                                    showMoldOverlay: false,
+                                    fittedInGrid: true
                                 )
                             }
                             .onTapGesture {
@@ -357,9 +364,14 @@ struct StampDetailModalView: View {
             )
             .padding(.horizontal)
 
-            Text("Tap stamp to flip & view memory note 🔄")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            HStack(spacing: 4) {
+                Text("Tap stamp to flip & view memory note")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.caption)
+                    .foregroundColor(MSColors.stamp)
+            }
 
             VStack(spacing: 12) {
                 Button(action: onShare) {

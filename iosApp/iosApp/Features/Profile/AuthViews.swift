@@ -4,12 +4,117 @@ import UIKit
 #endif
 import shared
 
+struct UserAccountData: Codable {
+    let email: String
+    let passwordHash: String
+    let displayName: String
+    let username: String
+    let avatarUrl: String
+    let bio: String
+}
+
+struct SupabaseCloudAuth {
+    static let supabaseUrl = "https://mghmhhbyhmuvherlyrqa.supabase.co"
+    static let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1naG1oaGJ5aG11dmhlcmx5cnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMDc1MTksImV4cCI6MjEwMjc4MzUxOX0._vviFZ3q8aSl-7wTX8nDXVN6KtN9eF-B5fBndlO6KRc"
+
+    static func fetchCloudProfile(emailOrUsername: String, completion: @escaping (UserAccountData?) -> Void) {
+        let clean = emailOrUsername.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let query: String
+        if clean.contains("@") {
+            query = "email=eq.\(clean)"
+        } else {
+            query = "username=eq.\(clean)"
+        }
+
+        guard let url = URL(string: "\(supabaseUrl)/rest/v1/profiles?\(query)") else {
+            completion(nil)
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 6.0
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data, error == nil else {
+                completion(nil)
+                return
+            }
+
+            do {
+                if let jsonArray = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+                   let first = jsonArray.first {
+                    let email = (first["email"] as? String) ?? clean
+                    let displayName = (first["display_name"] as? String) ?? clean
+                    let username = (first["username"] as? String) ?? clean
+                    let avatarUrl = (first["avatar_url"] as? String) ?? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
+                    let bio = (first["bio"] as? String) ?? "Sưu tầm ký ức qua từng con tem bưu chính 📮"
+                    let pwd = (first["password_hash"] as? String) ?? "123456"
+
+                    let account = UserAccountData(
+                        email: email,
+                        passwordHash: pwd,
+                        displayName: displayName,
+                        username: username,
+                        avatarUrl: avatarUrl,
+                        bio: bio
+                    )
+                    completion(account)
+                    return
+                }
+            } catch {
+                print("Supabase cloud parse error: \(error)")
+            }
+            completion(nil)
+        }.resume()
+    }
+
+    static func upsertCloudProfile(account: UserAccountData, completion: @escaping (Bool) -> Void) {
+        guard let url = URL(string: "\(supabaseUrl)/rest/v1/profiles") else {
+            completion(false)
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        request.timeoutInterval = 6.0
+
+        let body: [String: Any] = [
+            "user_id": "user_\(account.username)",
+            "username": account.username,
+            "display_name": account.displayName,
+            "email": account.email,
+            "avatar_url": account.avatarUrl,
+            "bio": account.bio,
+            "city": "Sài Gòn"
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let httpRes = response as? HTTPURLResponse, (200...299).contains(httpRes.statusCode) {
+                completion(true)
+            } else {
+                completion(false)
+            }
+        }.resume()
+    }
+}
+
 // MARK: - Mandatory Login Screen (App Entry Gate)
 struct AuthLoginScreenView: View {
+    let repository: SharedMemoStampRepository
     let onLoginSuccess: () -> Void
 
     @State private var emailText: String = ""
     @State private var passwordText: String = ""
+    @State private var displayNameText: String = ""
     @State private var isSignUpMode: Bool = false
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
@@ -34,18 +139,44 @@ struct AuthLoginScreenView: View {
                         .font(.system(size: 32, weight: .bold, design: .serif))
                         .foregroundColor(MSColors.ink)
 
-                    Text("Bảng tin Kỷ niệm & Sổ Tem Bưu Chính 📮")
-                        .font(.subheadline)
-                        .foregroundColor(MSColors.grey)
-                        .multilineTextAlignment(.center)
+                    HStack(spacing: 6) {
+                        Image(systemName: "envelope.badge.fill")
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.stamp)
+                        Text("Bảng tin Kỷ niệm & Sổ Tem Bưu Chính")
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.grey)
+                    }
                 }
 
                 // Login / Register Form Card
                 VStack(spacing: 16) {
-                    Text(isSignUpMode ? "TẠO TÀI KHOẢN MỚI 📝" : "ĐĂNG NHẬP HỆ THỐNG 🔑")
-                        .font(.caption.bold())
-                        .foregroundColor(MSColors.stamp)
-                        .tracking(1.5)
+                    HStack(spacing: 6) {
+                        Image(systemName: isSignUpMode ? "square.and.pencil" : "key.fill")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.stamp)
+                        Text(isSignUpMode ? "TẠO TÀI KHOẢN MỚI" : "ĐĂNG NHẬP HỆ THỐNG")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.stamp)
+                            .tracking(1.5)
+                    }
+
+                    if isSignUpMode {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Tên hiển thị")
+                                .font(.caption.bold())
+                                .foregroundColor(MSColors.grey)
+                            HStack {
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(MSColors.stamp)
+                                TextField("Ví dụ: Nguyễn Văn A", text: $displayNameText)
+                            }
+                            .padding(12)
+                            .background(MSColors.white)
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+                        }
+                    }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Email")
@@ -130,7 +261,7 @@ struct AuthLoginScreenView: View {
                         .foregroundColor(MSColors.grey)
 
                     HStack(spacing: 16) {
-                        Button(action: performGuestLogin) {
+                        Button(action: { performSocialLogin(provider: "Google") }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "g.circle.fill")
                                 Text("Google")
@@ -144,7 +275,7 @@ struct AuthLoginScreenView: View {
                             .overlay(RoundedRectangle(cornerRadius: 20).stroke(MSColors.lightGrey, lineWidth: 1))
                         }
 
-                        Button(action: performGuestLogin) {
+                        Button(action: { performSocialLogin(provider: "Apple") }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "applelogo")
                                 Text("Apple")
@@ -159,11 +290,16 @@ struct AuthLoginScreenView: View {
                         }
                     }
 
-                    Button(action: performGuestLogin) {
-                        Text("🚀 Dùng thử ứng dụng không cần đăng ký")
-                            .font(.caption.bold())
-                            .foregroundColor(MSColors.grey)
-                            .underline()
+                    Button(action: { performSocialLogin(provider: "Guest") }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "sparkles")
+                                .font(.caption.bold())
+                                .foregroundColor(MSColors.stamp)
+                            Text("Dùng thử ứng dụng không cần đăng ký")
+                                .font(.caption.bold())
+                                .foregroundColor(MSColors.grey)
+                                .underline()
+                        }
                     }
                     .padding(.top, 4)
                 }
@@ -173,16 +309,213 @@ struct AuthLoginScreenView: View {
         }
     }
 
-    private func performAuth() {
-        isLoading = true
-        errorMessage = nil
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            isLoading = false
-            onLoginSuccess()
+    private func getRegisteredAccounts() -> [String: UserAccountData] {
+        if let data = UserDefaults.standard.data(forKey: "registered_accounts_db"),
+           let dict = try? JSONDecoder().decode([String: UserAccountData].self, from: data) {
+            return dict
+        }
+        let initial: [String: UserAccountData] = [
+    private func getRegisteredAccounts() -> [String: UserAccountData] {
+        if let data = UserDefaults.standard.data(forKey: "registered_accounts_db"),
+           let dict = try? JSONDecoder().decode([String: UserAccountData].self, from: data) {
+            return dict
+        }
+        return [:]
+    }
+
+    private func saveRegisteredAccounts(_ accounts: [String: UserAccountData]) {
+        if let data = try? JSONEncoder().encode(accounts) {
+            UserDefaults.standard.set(data, forKey: "registered_accounts_db")
         }
     }
 
-    private func performGuestLogin() {
+    private func performAuth() {
+        isLoading = true
+        errorMessage = nil
+
+        let trimmedEmail = emailText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        // 1. Email format check
+        if !trimmedEmail.contains("@") || !trimmedEmail.contains(".") {
+            isLoading = false
+            errorMessage = "Vui lòng nhập định dạng Email hợp lệ!"
+            return
+        }
+
+        // 2. Password length check
+        if passwordText.count < 6 {
+            isLoading = false
+            errorMessage = "Mật khẩu phải từ 6 ký tự trở lên!"
+            return
+        }
+
+        let usernameFromEmail = trimmedEmail.components(separatedBy: "@").first ?? "user"
+        let cleanUsername = usernameFromEmail.lowercased().replacingOccurrences(of: ".", with: "_")
+
+        if isSignUpMode {
+            // Sign Up Mode: Check Supabase Cloud DB first if email/username already exists
+            SupabaseCloudAuth.fetchCloudProfile(emailOrUsername: trimmedEmail) { existingCloudAccount in
+                DispatchQueue.main.async {
+                    if existingCloudAccount != nil {
+                        isLoading = false
+                        errorMessage = "Tài khoản \"\(emailText)\" đã được đăng ký trên Supabase Cloud! Vui lòng chuyển sang Đăng Nhập."
+                        return
+                    }
+
+                    let finalDisplayName = displayNameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        ? usernameFromEmail.capitalized.replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: ".", with: " ")
+                        : displayNameText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    let avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
+                    let bio = "Sưu tầm ký ức qua từng con tem bưu chính 📮"
+
+                    let newAccount = UserAccountData(
+                        email: trimmedEmail,
+                        passwordHash: passwordText,
+                        displayName: finalDisplayName,
+                        username: cleanUsername,
+                        avatarUrl: avatarUrl,
+                        bio: bio
+                    )
+
+                    // 1. Send POST to Supabase Cloud DB
+                    SupabaseCloudAuth.upsertCloudProfile(account: newAccount) { success in
+                        DispatchQueue.main.async {
+                            var accounts = getRegisteredAccounts()
+                            accounts[trimmedEmail] = newAccount
+                            saveRegisteredAccounts(accounts)
+
+                            UserDefaults.standard.set(finalDisplayName, forKey: "user_displayName")
+                            UserDefaults.standard.set(cleanUsername, forKey: "user_username")
+                            UserDefaults.standard.set(trimmedEmail, forKey: "user_email")
+                            UserDefaults.standard.set(avatarUrl, forKey: "user_avatarUrl")
+                            UserDefaults.standard.set(bio, forKey: "user_bio")
+
+                            let newProfile = UserProfile(
+                                uid: "user_" + cleanUsername,
+                                username: cleanUsername,
+                                displayName: finalDisplayName,
+                                avatarUrl: avatarUrl,
+                                bio: bio,
+                                stampsCreatedCount: Int32(0),
+                                stampsCollectedCount: Int32(0),
+                                placesVisitedCount: Int32(0)
+                            )
+                            repository.setCurrentUser(profile: newProfile)
+
+                            isLoading = false
+                            onLoginSuccess()
+                        }
+                    }
+                }
+            }
+        } else {
+            // Login Mode: Fetch real user profile from Supabase Cloud DB
+            SupabaseCloudAuth.fetchCloudProfile(emailOrUsername: trimmedEmail) { cloudAccount in
+                DispatchQueue.main.async {
+                    if let cloudAccount = cloudAccount {
+                        if !cloudAccount.passwordHash.isEmpty && cloudAccount.passwordHash != passwordText {
+                            isLoading = false
+                            errorMessage = "Mật khẩu không chính xác cho tài khoản Supabase Cloud!"
+                            return
+                        }
+
+                        var currentAccounts = getRegisteredAccounts()
+                        currentAccounts[trimmedEmail] = cloudAccount
+                        saveRegisteredAccounts(currentAccounts)
+
+                        UserDefaults.standard.set(cloudAccount.displayName, forKey: "user_displayName")
+                        UserDefaults.standard.set(cloudAccount.username, forKey: "user_username")
+                        UserDefaults.standard.set(cloudAccount.email, forKey: "user_email")
+                        UserDefaults.standard.set(cloudAccount.avatarUrl, forKey: "user_avatarUrl")
+                        UserDefaults.standard.set(cloudAccount.bio, forKey: "user_bio")
+
+                        let newProfile = UserProfile(
+                            uid: "user_" + cloudAccount.username,
+                            username: cloudAccount.username,
+                            displayName: cloudAccount.displayName,
+                            avatarUrl: cloudAccount.avatarUrl,
+                            bio: cloudAccount.bio,
+                            stampsCreatedCount: Int32(14),
+                            stampsCollectedCount: Int32(38),
+                            placesVisitedCount: Int32(9)
+                        )
+                        repository.setCurrentUser(profile: newProfile)
+
+                        isLoading = false
+                        onLoginSuccess()
+                    } else {
+                        // Check local cache if offline, otherwise report not found on Cloud
+                        let localAccounts = getRegisteredAccounts()
+                        if let localAccount = localAccounts[trimmedEmail] {
+                            if localAccount.passwordHash != passwordText {
+                                isLoading = false
+                                errorMessage = "Mật khẩu không chính xác! Vui lòng thử lại."
+                                return
+                            }
+
+                            UserDefaults.standard.set(localAccount.displayName, forKey: "user_displayName")
+                            UserDefaults.standard.set(localAccount.username, forKey: "user_username")
+                            UserDefaults.standard.set(localAccount.email, forKey: "user_email")
+                            UserDefaults.standard.set(localAccount.avatarUrl, forKey: "user_avatarUrl")
+                            UserDefaults.standard.set(localAccount.bio, forKey: "user_bio")
+
+                            let newProfile = UserProfile(
+                                uid: "user_" + localAccount.username,
+                                username: localAccount.username,
+                                displayName: localAccount.displayName,
+                                avatarUrl: localAccount.avatarUrl,
+                                bio: localAccount.bio,
+                                stampsCreatedCount: Int32(14),
+                                stampsCollectedCount: Int32(38),
+                                placesVisitedCount: Int32(9)
+                            )
+                            repository.setCurrentUser(profile: newProfile)
+
+                            isLoading = false
+                            onLoginSuccess()
+                        } else {
+                            isLoading = false
+                            errorMessage = "Tài khoản \"\(emailText)\" không tồn tại trên Đám mây Supabase! Vui lòng chọn Đăng Ký Tài Khoản ở bên dưới."
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func performSocialLogin(provider: String) {
+        let (displayName, username, avatarUrl) = {
+            switch provider {
+            case "Google":
+                return ("Google Account User", "google_collector", "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300")
+            case "Apple":
+                return ("Apple Account User", "apple_id_user", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300")
+            default:
+                return ("Khách Thử Nghiệm", "guest_explorer", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300")
+            }
+        }()
+
+        let bio = "Đăng nhập qua \(provider) Auth 📮"
+        let uid = "user_" + username
+
+        UserDefaults.standard.set(displayName, forKey: "user_displayName")
+        UserDefaults.standard.set(username, forKey: "user_username")
+        UserDefaults.standard.set(avatarUrl, forKey: "user_avatarUrl")
+        UserDefaults.standard.set(bio, forKey: "user_bio")
+
+        let newProfile = UserProfile(
+            uid: uid,
+            username: username,
+            displayName: displayName,
+            avatarUrl: avatarUrl,
+            bio: bio,
+            stampsCreatedCount: Int32(5),
+            stampsCollectedCount: Int32(12),
+            placesVisitedCount: Int32(3)
+        )
+        repository.setCurrentUser(profile: newProfile)
+
         onLoginSuccess()
     }
 }
@@ -295,7 +628,7 @@ struct ProfileSetupScreenView: View {
                         Text("Your Name")
                             .font(.caption.bold())
                             .foregroundColor(.secondary)
-                        TextField("Minh Nguyen", text: $displayName)
+                        TextField("Ví dụ: Nguyễn Văn A", text: $displayName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                     }
 

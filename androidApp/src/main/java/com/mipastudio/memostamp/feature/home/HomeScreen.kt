@@ -628,22 +628,39 @@ fun HomeScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val filterOptions = listOf("👥 Tất cả bạn bè", "🎯 Bạn bè chọn lọc", "🔒 Chỉ mình tôi", "👤 Bài viết của tôi")
+                    val filterOptions = listOf(
+                        "Tất cả bạn bè" to Icons.Outlined.People,
+                        "Bạn bè chọn lọc" to Icons.Outlined.CheckCircle,
+                        "Chỉ mình tôi" to Icons.Outlined.Lock,
+                        "Bài viết của tôi" to Icons.Outlined.Person
+                    )
                     items(filterOptions.size) { idx ->
                         val isSelected = selectedFilter == idx
+                        val item = filterOptions[idx]
                         Surface(
                             shape = RoundedCornerShape(20.dp),
                             color = if (isSelected) AccentRed else SurfaceWhite,
                             shadowElevation = if (isSelected) 2.dp else 0.dp,
                             modifier = Modifier.clickable { selectedFilter = idx }
                         ) {
-                            Text(
-                                text = filterOptions[idx],
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else PrimaryText,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = item.second,
+                                    contentDescription = null,
+                                    tint = if (isSelected) Color.White else PrimaryText,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = item.first,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else PrimaryText
+                                )
+                            }
                         }
                     }
                 }
