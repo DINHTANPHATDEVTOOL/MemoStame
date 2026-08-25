@@ -150,6 +150,15 @@ data class TradeRequest(
     val createdAt: Long
 )
 
+data class FriendRequestItem(
+    val id: String,
+    val senderName: String,
+    val senderUsername: String,
+    val senderAvatar: String,
+    val status: String = "PENDING", // PENDING, ACCEPTED, REJECTED
+    val createdAt: Long
+)
+
 data class StampElement(
     val id: String,
     val type: String, // "text", "sticker", "doodle", "badge", "date", "location"

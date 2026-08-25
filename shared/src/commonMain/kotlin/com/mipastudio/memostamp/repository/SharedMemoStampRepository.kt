@@ -188,15 +188,6 @@ class SharedMemoStampRepository {
     )
     val friends: StateFlow<List<FriendItem>> = _friends.asStateFlow()
 
-data class FriendRequestItem(
-    val id: String,
-    val senderName: String,
-    val senderUsername: String,
-    val senderAvatar: String,
-    val status: String = "PENDING",
-    val createdAt: Long = currentTimeMillis()
-)
-
     private val _friendRequests = MutableStateFlow<List<FriendRequestItem>>(
         listOf(
             FriendRequestItem("freq_1", "Minh Thu", "minh_thu", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150", "PENDING", currentTimeMillis() - 7200000)
