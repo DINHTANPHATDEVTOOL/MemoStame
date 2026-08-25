@@ -12,6 +12,9 @@ struct HomeScreenView: View {
     @State private var activeCircle: String = "👥 Tất cả bạn bè"
     @State private var showCommentSheet: Bool = false
     @State private var showTradeInboxSheet: Bool = false
+    @State private var selectedPostForComments: FeedPost? = nil
+    @State private var newCommentText: String = ""
+    @State private var activeLightboxReply: FeedReply? = nil
     var filteredPosts: [FeedPost] {
         let friendItems = (viewModel.repository.friends.value as? [FriendItem]) ?? []
         let friendIds = friendItems.map { $0.id }

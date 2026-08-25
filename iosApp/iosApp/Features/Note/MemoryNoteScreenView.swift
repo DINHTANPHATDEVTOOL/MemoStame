@@ -57,7 +57,7 @@ struct MemoryNoteScreenView: View {
                 Button(action: {
                     var audience = AudienceType.friends
                     if selectedAudience.contains("Public") {
-                        audience = AudienceType.circle
+                        audience = AudienceType.friends
                     } else if selectedAudience.contains("Only Me") {
                         audience = AudienceType.onlyMe
                     }
