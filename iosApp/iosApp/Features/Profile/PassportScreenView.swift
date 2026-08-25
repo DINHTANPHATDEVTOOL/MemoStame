@@ -155,6 +155,27 @@ struct PassportScreenView: View {
                             }
                         }
                         .padding(.horizontal)
+
+                        // Logout Button (Đăng Xuất)
+                        Button(action: {
+                            UserDefaults.standard.set(false, forKey: "isAuthenticated")
+                            presentationMode.wrappedValue.dismiss()
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .font(.system(size: 16, weight: .bold))
+                                Text("Đăng Xuất Tài Khoản")
+                                    .font(.system(size: 14, weight: .bold))
+                            }
+                            .foregroundColor(Color.red)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color.red.opacity(0.08))
+                            .cornerRadius(16)
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red.opacity(0.3), lineWidth: 1))
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 10)
                     }
                 }
                 .padding(.bottom, 140)

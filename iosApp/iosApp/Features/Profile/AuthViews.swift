@@ -4,6 +4,189 @@ import UIKit
 #endif
 import shared
 
+// MARK: - Mandatory Login Screen (App Entry Gate)
+struct AuthLoginScreenView: View {
+    let onLoginSuccess: () -> Void
+
+    @State private var emailText: String = ""
+    @State private var passwordText: String = ""
+    @State private var isSignUpMode: Bool = false
+    @State private var isLoading: Bool = false
+    @State private var errorMessage: String? = nil
+
+    var body: some View {
+        ZStack {
+            MSColors.paper.ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                // App Logo & Vintage Header
+                VStack(spacing: 12) {
+                    Image("app_logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 84, height: 84)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .shadow(color: MSColors.stamp.opacity(0.3), radius: 10, x: 0, y: 5)
+
+                    Text("MemoStamp")
+                        .font(.system(size: 32, weight: .bold, design: .serif))
+                        .foregroundColor(MSColors.ink)
+
+                    Text("Bảng tin Kỷ niệm & Sổ Tem Bưu Chính 📮")
+                        .font(.subheadline)
+                        .foregroundColor(MSColors.grey)
+                        .multilineTextAlignment(.center)
+                }
+
+                // Login / Register Form Card
+                VStack(spacing: 16) {
+                    Text(isSignUpMode ? "TẠO TÀI KHOẢN MỚI 📝" : "ĐĂNG NHẬP HỆ THỐNG 🔑")
+                        .font(.caption.bold())
+                        .foregroundColor(MSColors.stamp)
+                        .letterSpacing(1.5)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Email")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.grey)
+                        HStack {
+                            Image(systemName: "envelope.fill")
+                                .foregroundColor(MSColors.stamp)
+                            TextField("nhap_email@memostamp.com", text: $emailText)
+                                .autocapitalization(.none)
+                                .keyboardType(.emailAddress)
+                        }
+                        .padding(12)
+                        .background(MSColors.white)
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Mật khẩu")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.grey)
+                        HStack {
+                            Image(systemName: "lock.fill")
+                                .foregroundColor(MSColors.stamp)
+                            SecureField("••••••••", text: $passwordText)
+                        }
+                        .padding(12)
+                        .background(MSColors.white)
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+                    }
+
+                    if let err = errorMessage {
+                        Text(err)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .padding(.vertical, 2)
+                    }
+
+                    Button(action: performAuth) {
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text(isSignUpMode ? "Đăng Ký Tài Khoản" : "Đăng Nhập Ngay")
+                                    .font(.body.bold())
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(MSColors.stamp)
+                        .cornerRadius(24)
+                        .shadow(color: MSColors.stamp.opacity(0.3), radius: 6, x: 0, y: 3)
+                    }
+                    .disabled(isLoading || emailText.isEmpty || passwordText.isEmpty)
+
+                    // Toggle Login / Sign Up
+                    Button(action: {
+                        isSignUpMode.toggle()
+                        errorMessage = nil
+                    }) {
+                        Text(isSignUpMode ? "Đã có tài khoản? Đăng nhập ngay" : "Chưa có tài khoản? Đăng ký tại đây")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.stamp)
+                    }
+                }
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(MSColors.white)
+                        .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
+                )
+                .padding(.horizontal, 24)
+
+                // Or Continue with Social Logins
+                VStack(spacing: 12) {
+                    Text("hoặc đăng nhập nhanh bằng")
+                        .font(.caption2)
+                        .foregroundColor(MSColors.grey)
+
+                    HStack(spacing: 16) {
+                        Button(action: performGuestLogin) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "g.circle.fill")
+                                Text("Google")
+                                    .font(.subheadline.bold())
+                            }
+                            .foregroundColor(MSColors.ink)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(MSColors.white)
+                            .cornerRadius(20)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(MSColors.lightGrey, lineWidth: 1))
+                        }
+
+                        Button(action: performGuestLogin) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "applelogo")
+                                Text("Apple")
+                                    .font(.subheadline.bold())
+                            }
+                            .foregroundColor(MSColors.ink)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(MSColors.white)
+                            .cornerRadius(20)
+                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(MSColors.lightGrey, lineWidth: 1))
+                        }
+                    }
+
+                    Button(action: performGuestLogin) {
+                        Text("🚀 Dùng thử ứng dụng không cần đăng ký")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.grey)
+                            .underline()
+                    }
+                    .padding(.top, 4)
+                }
+
+                Spacer()
+            }
+        }
+    }
+
+    private func performAuth() {
+        isLoading = true
+        errorMessage = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            isLoading = false
+            onLoginSuccess()
+        }
+    }
+
+    private func performGuestLogin() {
+        onLoginSuccess()
+    }
+}
+
 // Sheet shown when user tries to perform social actions while offline / unauthenticated
 struct AuthLoginSheetView: View {
     let onContinueWithGoogle: () -> Void

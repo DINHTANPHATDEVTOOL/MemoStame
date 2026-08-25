@@ -16,10 +16,12 @@ struct ContentView: View {
     @StateObject private var homeViewModel: HomeObservableViewModel
     private let repository: SharedMemoStampRepository
     
+    @AppStorage("isAuthenticated") private var isAuthenticated: Bool = false
     @State private var selectedTab: ActiveTab = .home
     @State private var showCameraModal: Bool = false
     @State private var replyToPostId: String? = nil
-    
+    @State private var showOfflineToast: Bool = false
+
     let platform = Platform_iosKt.getPlatform()
 
     init() {
@@ -29,9 +31,38 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ZStack(alignment: .bottom) {
-                // Screen Switcher Content
+        Group {
+            if !isAuthenticated {
+                AuthLoginScreenView(onLoginSuccess: {
+                    withAnimation {
+                        isAuthenticated = true
+                    }
+                })
+            } else {
+                NavigationView {
+                    ZStack(alignment: .bottom) {
+                        // Top Offline Toast Alert
+                        if showOfflineToast {
+                            VStack {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "wifi.slash")
+                                        .foregroundColor(.white)
+                                    Text("📡 Ngoại Tuyến: Kết nối Wi-Fi/4G để đồng bộ đám mây Supabase")
+                                        .font(.caption.bold())
+                                        .foregroundColor(.white)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                .cornerRadius(20)
+                                .shadow(radius: 4)
+                                .padding(.top, 40)
+                                Spacer()
+                            }
+                            .zIndex(10)
+                        }
+
+                        // Screen Switcher Content
                 Group {
                     switch selectedTab {
                     case .home:
@@ -145,17 +176,22 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
             .navigationBarHidden(true)
-        }
-        .navigationViewStyle(StackNavigationViewStyle())
-        .fullScreenCover(isPresented: $showCameraModal) {
-            CameraFlowContainerView(
-                replyToPostId: replyToPostId,
-                repository: repository,
-                onComplete: {
-                    showCameraModal = false
-                    selectedTab = .home
                 }
-            )
+                .navigationViewStyle(StackNavigationViewStyle())
+                .fullScreenCover(isPresented: $showCameraModal) {
+                    CameraFlowContainerView(
+                        replyToPostId: replyToPostId,
+                        repository: repository,
+                        onComplete: {
+                            showCameraModal = false
+                            selectedTab = .home
+                        }
+                    )
+                }
+                .onAppear {
+                    LocationManager.shared.requestLocationPermission()
+                }
+            }
         }
     }
 }

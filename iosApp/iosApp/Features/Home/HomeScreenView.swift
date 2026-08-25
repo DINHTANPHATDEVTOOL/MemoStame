@@ -48,17 +48,29 @@ struct HomeScreenView: View {
 
                 Spacer()
 
-                // Inbox Envelope & Profile
-                HStack(spacing: 12) {
+                // Top Actions: Refresh Feed, Theme Palette, Inbox, Profile
+                HStack(spacing: 10) {
+                    Button(action: {
+                        HapticFeedbackManager.shared.playImpact(style: .light)
+                        viewModel.refreshFeed()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(MSColors.ink)
+                            .frame(width: 36, height: 36)
+                            .background(MSColors.lightGrey.opacity(0.5))
+                            .clipShape(Circle())
+                    }
+
                     Button(action: {
                         HapticFeedbackManager.shared.playImpact(style: .medium)
                         showTradeInboxSheet = true
                     }) {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: "envelope.fill")
-                                .font(.system(size: 18))
+                                .font(.system(size: 16))
                                 .foregroundColor(MSColors.ink)
-                                .frame(width: 38, height: 38)
+                                .frame(width: 36, height: 36)
                                 .background(MSColors.lightGrey.opacity(0.5))
                                 .clipShape(Circle())
 
@@ -77,7 +89,7 @@ struct HomeScreenView: View {
                                 Circle().fill(MSColors.gold.opacity(0.3))
                             }
                         }
-                        .frame(width: 38, height: 38)
+                        .frame(width: 36, height: 36)
                         .clipShape(Circle())
                         .overlay(Circle().stroke(MSColors.stamp, lineWidth: 1.5))
                     }
@@ -87,58 +99,28 @@ struct HomeScreenView: View {
             .padding(.top, 10)
             .padding(.bottom, 8)
 
-            // Feed Tabs: Friends / Circles
-            HStack(spacing: 20) {
-                Button(action: { activeTab = "Friends" }) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Friends")
-                            .font(.title3.weight(activeTab == "Friends" ? .bold : .medium))
-                            .foregroundColor(activeTab == "Friends" ? MSColors.ink : MSColors.grey)
-                        if activeTab == "Friends" {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(MSColors.stamp)
-                                .frame(width: 28, height: 3)
+            // Feed Filter Options (100% Matching Android Filter Options)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(["🔥 Tất cả", "🌍 Mọi người", "👥 Bạn bè", "🔒 Chỉ mình tôi", "👤 Bài viết của tôi"], id: \.self) { filter in
+                        Button(action: { activeCircle = filter }) {
+                            Text(filter)
+                                .font(.caption.bold())
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(activeCircle == filter ? MSColors.stamp : MSColors.white)
+                                .foregroundColor(activeCircle == filter ? .white : MSColors.ink)
+                                .cornerRadius(20)
+                                .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 2)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(activeCircle == filter ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1)
+                                )
                         }
                     }
                 }
-
-                Button(action: { activeTab = "Circles" }) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Circles")
-                            .font(.title3.weight(activeTab == "Circles" ? .bold : .medium))
-                            .foregroundColor(activeTab == "Circles" ? MSColors.ink : MSColors.grey)
-                        if activeTab == "Circles" {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(MSColors.stamp)
-                                .frame(width: 28, height: 3)
-                        }
-                    }
-                }
-
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 4)
-
-            // Circle Filter Chips if Circles tab selected
-            if activeTab == "Circles" {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(circleOptions, id: \.self) { circle in
-                            Button(action: { activeCircle = circle }) {
-                                Text(circle)
-                                    .font(.caption.bold())
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(activeCircle == circle ? MSColors.stamp : MSColors.lightGrey.opacity(0.6))
-                                    .foregroundColor(activeCircle == circle ? .white : MSColors.ink)
-                                    .cornerRadius(16)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 6)
-                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 6)
             }
 
             Divider()
@@ -146,9 +128,15 @@ struct HomeScreenView: View {
 
             // Memory Feed Scroll Stream
             ScrollView {
-                LazyVStack(spacing: 20) {
-                    // Daily Memory Chain Prompter
+                LazyVStack(spacing: 16) {
+                    // 1. Daily Memory Hero Banner
                     DailyMemoryChainBanner(onStampNow: { onNavigateToCamera(nil) })
+
+                    // 2. Facebook-style Quick Post Box
+                    QuickPostCreationBoxView(
+                        userAvatarUrl: viewModel.currentUser.avatarUrl,
+                        onOpenCamera: { onNavigateToCamera(nil) }
+                    )
 
                     ForEach(viewModel.posts, id: \.id) { post in
                         PostCardView(
@@ -249,6 +237,95 @@ struct DailyMemoryChainBanner: View {
 }
 
 // Subview: Post Card View with strict double-tap like, comments preview, and signature stamp badge
+// Subview: Facebook-style Quick Post Creation Box (100% Matching Android)
+struct QuickPostCreationBoxView: View {
+    let userAvatarUrl: String?
+    let onOpenCamera: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                AsyncImage(url: URL(string: userAvatarUrl ?? "")) { phase in
+                    if let img = phase.image {
+                        img.resizable().aspectRatio(contentMode: .fill)
+                    } else {
+                        Circle().fill(MSColors.stamp.opacity(0.2))
+                    }
+                }
+                .frame(width: 42, height: 42)
+                .clipShape(Circle())
+
+                Button(action: onOpenCamera) {
+                    HStack {
+                        Text("Chia sẻ khoảnh khắc tem kỷ niệm hôm nay... 📮")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(MSColors.grey)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 11)
+                    .background(MSColors.paper)
+                    .cornerRadius(24)
+                }
+            }
+
+            Divider()
+                .background(MSColors.lightGrey)
+
+            HStack {
+                Button(action: onOpenCamera) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "camera.fill")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.stamp)
+                        Text("Chụp tem mới")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.ink)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                }
+
+                Button(action: onOpenCamera) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bookmark.fill")
+                            .font(.caption.bold())
+                            .foregroundColor(Color.blue)
+                        Text("Kho tem")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.ink)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                }
+
+                Button(action: onOpenCamera) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "globe")
+                            .font(.caption.bold())
+                            .foregroundColor(Color.green)
+                        Text("Đăng ngay")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.ink)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(MSColors.white)
+                .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(MSColors.lightGrey, lineWidth: 1)
+                )
+        )
+    }
+}
+
 struct PostCardView: View {
     let post: FeedPost
     let currentUserId: String
