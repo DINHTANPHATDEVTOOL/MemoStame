@@ -361,22 +361,22 @@ class SharedMemoStampRepository {
         )
     }
 
-    fun sendFriendRequest(usernameOrCode: String): Pair<Boolean, String> {
+    fun sendFriendRequest(usernameOrCode: String): FriendRequestResult {
         val trimmed = usernameOrCode.trim().lowercase().replace("#", "")
         if (trimmed.length < 3) {
-            return Pair(false, "Mã/Tên người dùng phải từ 3 ký tự trở lên!")
+            return FriendRequestResult(false, "Mã/Tên người dùng phải từ 3 ký tự trở lên!")
         }
         val me = _currentUser.value
         if (trimmed == me.username.lowercase()) {
-            return Pair(false, "Không thể tự kết bạn với chính mình!")
+            return FriendRequestResult(false, "Không thể tự kết bạn với chính mình!")
         }
         val existingFriend = _friends.value.find { it.username.lowercase() == trimmed }
         if (existingFriend != null) {
-            return Pair(false, "${existingFriend.displayName} đã có trong danh sách bạn bè!")
+            return FriendRequestResult(false, "${existingFriend.displayName} đã có trong danh sách bạn bè!")
         }
         val existingRequest = _friendRequests.value.find { it.senderUsername.lowercase() == trimmed }
         if (existingRequest != null) {
-            return Pair(false, "Đã gửi hoặc đã nhận lời mời kết bạn từ người này!")
+            return FriendRequestResult(false, "Đã gửi hoặc đã nhận lời mời kết bạn từ người này!")
         }
 
         val formattedName = usernameOrCode.trim().replace("#", "").split(" ").joinToString(" ") { word ->
@@ -391,7 +391,7 @@ class SharedMemoStampRepository {
             createdAt = currentTimeMillis()
         )
         _friendRequests.value = listOf(request) + _friendRequests.value
-        return Pair(true, "Đã gửi lời mời kết bạn tới @$trimmed! 📩")
+        return FriendRequestResult(true, "Đã gửi lời mời kết bạn tới @$trimmed! 📩")
     }
 
     fun acceptFriendRequest(requestId: String) {

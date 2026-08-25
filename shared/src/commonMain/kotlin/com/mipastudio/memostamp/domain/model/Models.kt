@@ -159,6 +159,11 @@ data class FriendRequestItem(
     val createdAt: Long
 )
 
+data class FriendRequestResult(
+    val success: Boolean,
+    val message: String
+)
+
 data class StampElement(
     val id: String,
     val type: String, // "text", "sticker", "doodle", "badge", "date", "location"

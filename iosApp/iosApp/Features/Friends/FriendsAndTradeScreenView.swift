@@ -79,9 +79,9 @@ struct FriendsAndTradeScreenView: View {
                             .font(.subheadline)
                             .foregroundColor(MSColors.ink)
                         Button(action: {
-                            let (success, msg) = repository.sendFriendRequest(friendCode)
-                            triggerToast(msg)
-                            if success {
+                            let result = repository.sendFriendRequest(usernameOrCode: friendCode)
+                            triggerToast(result.message)
+                            if result.success {
                                 friendCode = ""
                                 refreshTrigger.toggle()
                             }
@@ -724,9 +724,9 @@ struct FriendQrCodeSheetView: View {
                         .font(.subheadline)
                         .foregroundColor(MSColors.ink)
                     Button(action: {
-                        let (success, msg) = repository.sendFriendRequest(scannedCode)
-                        toastMsg = msg
-                        if success {
+                        let result = repository.sendFriendRequest(usernameOrCode: scannedCode)
+                        toastMsg = result.message
+                        if result.success {
                             scannedCode = ""
                         }
                     }) {
