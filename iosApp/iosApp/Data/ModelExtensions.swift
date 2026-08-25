@@ -23,6 +23,7 @@ struct MSColors {
 
 typealias Circle = SwiftUI.Circle
 
+#if compiler(>=6.0)
 extension FeedPost: @retroactive Identifiable {}
 extension FeedReply: @retroactive Identifiable {}
 extension FeedComment: @retroactive Identifiable {}
@@ -31,4 +32,14 @@ extension CollectionItem: @retroactive Identifiable {}
 extension FriendItem: @retroactive Identifiable {}
 extension TradeRequest: @retroactive Identifiable {}
 extension shared.Circle: @retroactive Identifiable {}
+#else
+extension FeedPost: Identifiable {}
+extension FeedReply: Identifiable {}
+extension FeedComment: Identifiable {}
+extension StampItem: Identifiable {}
+extension CollectionItem: Identifiable {}
+extension FriendItem: Identifiable {}
+extension TradeRequest: Identifiable {}
+extension shared.Circle: Identifiable {}
+#endif
 
