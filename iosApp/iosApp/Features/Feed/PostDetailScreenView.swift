@@ -6,6 +6,7 @@ import shared
 
 struct PostDetailScreenView: View {
     let post: FeedPost
+    let repository: SharedMemoStampRepository
     let onLike: () -> Void
     let onReply: () -> Void
 
@@ -15,7 +16,17 @@ struct PostDetailScreenView: View {
     @State private var activeLightboxReply: FeedReply? = nil
     @State private var showHeartAnimation: Bool = false
 
-    private let repository = SharedMemoStampRepository()
+    private var formattedDate: String {
+        guard post.createdAt > 0 else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy.MM.dd"
+            return formatter.string(from: Date())
+        }
+        let date = Date(timeIntervalSince1970: TimeInterval(post.createdAt) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
+        return formatter.string(from: date)
+    }
 
     var isInputValid: Bool {
         let trimmed = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -99,7 +110,7 @@ struct PostDetailScreenView: View {
                             title: post.stampTitle,
                             imageUrl: post.stampUrl,
                             location: post.location,
-                            dateStr: "2026.08.18",
+                            dateStr: formattedDate,
                             note: post.caption,
                             shape: post.shape,
                             isInteractive: true,

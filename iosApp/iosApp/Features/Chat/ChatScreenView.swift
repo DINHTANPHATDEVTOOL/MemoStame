@@ -28,6 +28,18 @@ struct ChatScreenView: View {
     @State private var showStampPicker: Bool = false
     @State private var selectedStampToAttach: StampItem? = nil
 
+    private func formatDate(_ timestamp: Int64) -> String {
+        guard timestamp > 0 else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy.MM.dd"
+            return formatter.string(from: Date())
+        }
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
+        return formatter.string(from: date)
+    }
+
     var userStamps: [StampItem] {
         if !availableStamps.isEmpty {
             return availableStamps
@@ -206,7 +218,7 @@ struct ChatScreenView: View {
                                         title: stamp.title,
                                         imageUrl: stamp.stampImagePath,
                                         location: stamp.location,
-                                        dateStr: "2026.08.25",
+                                        dateStr: formatDate(stamp.createdAt),
                                         note: stamp.note,
                                         shape: stamp.shape,
                                         isInteractive: false

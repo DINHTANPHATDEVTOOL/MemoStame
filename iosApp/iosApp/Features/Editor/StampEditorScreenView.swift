@@ -18,7 +18,11 @@ struct StampEditorScreenView: View {
     @State private var selectedColorHex: String = "#D32F2F"
     @State private var stampTitle: String = "Khoảnh khắc Đà Lạt"
     @State private var stampLocation: String = "Đà Lạt, Lâm Đồng"
-    @State private var stampDate: String = "2026.08.19"
+    @State private var stampDate: String = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
+        return formatter.string(from: Date())
+    }()
     @State private var showMoldOverlay: Bool = true
 
     let moldTemplates: [StampMoldTemplate] = [

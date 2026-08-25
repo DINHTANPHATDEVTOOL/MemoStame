@@ -38,6 +38,12 @@ struct MemoryNoteScreenView: View {
 
     let audienceTypes = ["Public", "Friends", "Only Me"]
 
+    private var todayFormattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
+        return formatter.string(from: Date())
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -64,7 +70,7 @@ struct MemoryNoteScreenView: View {
                     _ = repository.addStamp(
                         title: title.isEmpty ? "Memory Stamp" : title,
                         note: caption,
-                        location: locationSearch.isEmpty ? "Đà Lạt, Lâm Đồng" : locationSearch,
+                        location: locationSearch.isEmpty ? nil : locationSearch,
                         imageUrl: imageUrl,
                         shape: "classic",
                         collectionId: nil,
@@ -88,8 +94,8 @@ struct MemoryNoteScreenView: View {
                     DieCutStampView(
                         title: title.isEmpty ? "Memory Stamp Title" : title,
                         imageUrl: imageUrl,
-                        location: locationSearch.isEmpty ? "Location Tag" : locationSearch,
-                        dateStr: "2026.08.18",
+                        location: locationSearch.isEmpty ? nil : locationSearch,
+                        dateStr: todayFormattedDate,
                         note: caption,
                         shape: "classic",
                         isInteractive: true

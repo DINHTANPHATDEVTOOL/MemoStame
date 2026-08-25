@@ -23,6 +23,18 @@ struct StampVaultScreenView: View {
         (repository.stamps.value as? [StampItem]) ?? []
     }
 
+    private func formatDate(_ timestamp: Int64) -> String {
+        guard timestamp > 0 else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy.MM.dd"
+            return formatter.string(from: Date())
+        }
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
+        return formatter.string(from: date)
+    }
+
     var filteredStamps: [StampItem] {
         var list = stamps
         if !searchText.isEmpty {
@@ -249,7 +261,7 @@ struct StampVaultScreenView: View {
                                     title: stamp.title,
                                     imageUrl: stamp.stampImagePath,
                                     location: stamp.location,
-                                    dateStr: "2026.08.18",
+                                    dateStr: formatDate(stamp.createdAt),
                                     note: stamp.note,
                                     shape: stamp.shape,
                                     isInteractive: false,

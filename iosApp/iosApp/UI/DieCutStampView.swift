@@ -96,6 +96,15 @@ struct DieCutStampView: View {
         }
     }
 
+    private var effectiveDateStr: String {
+        if dateStr.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy.MM.dd"
+            return formatter.string(from: Date())
+        }
+        return dateStr
+    }
+
     var body: some View {
         ZStack {
             if !isFlipped {
@@ -156,7 +165,7 @@ struct DieCutStampView: View {
                                 .cornerRadius(fittedInGrid ? 6 : 8)
                             }
                             Spacer()
-                            Text(dateStr)
+                            Text(effectiveDateStr)
                                 .font(.system(size: fittedInGrid ? 7 : 9, weight: .semibold, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.9))
                                 .padding(.horizontal, fittedInGrid ? 6 : 8)

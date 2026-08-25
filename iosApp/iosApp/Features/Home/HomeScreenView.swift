@@ -205,6 +205,9 @@ struct HomeScreenView: View {
             }
         }
         .background(MSColors.paper.ignoresSafeArea())
+        .onAppear {
+            viewModel.refreshFeed()
+        }
         .sheet(isPresented: $showCommentSheet) {
             if let post = selectedPostForComments {
                 CommentSheetView(
@@ -381,6 +384,18 @@ struct PostCardView: View {
     @State private var showHeartAnimation: Bool = false
     @StateObject private var langManager = AppLanguageManager.shared
 
+    private var formattedDateString: String {
+        guard post.createdAt > 0 else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy.MM.dd"
+            return formatter.string(from: Date())
+        }
+        let date = Date(timeIntervalSince1970: TimeInterval(post.createdAt) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd"
+        return formatter.string(from: date)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Author & Header Region
@@ -400,7 +415,7 @@ struct PostCardView: View {
                         Text(post.authorName)
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(MSColors.ink)
-                        Text("• Just now")
+                        Text("• " + formattedDateString)
                             .font(.caption2)
                             .foregroundColor(MSColors.grey)
                     }
@@ -433,7 +448,7 @@ struct PostCardView: View {
                     title: post.stampTitle,
                     imageUrl: post.stampUrl,
                     location: post.location,
-                    dateStr: "2026.08.18",
+                    dateStr: formattedDateString,
                     note: post.caption,
                     shape: post.shape,
                     isInteractive: true,

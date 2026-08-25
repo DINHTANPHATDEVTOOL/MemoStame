@@ -204,6 +204,7 @@ struct ContentView: View {
                         onComplete: {
                             showCameraModal = false
                             selectedTab = .home
+                            homeViewModel.refreshFeed()
                         }
                     )
                 }
