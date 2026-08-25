@@ -55,7 +55,7 @@
 		1D36233E2D00000100000001 /* StampEditorScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StampEditorScreenView.swift; sourceTree = "<group>"; };
 		1D3623402D00000100000001 /* CollectionScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionScreenView.swift; sourceTree = "<group>"; };
 		1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAndTradeScreenView.swift; sourceTree = "<group>"; };
-		1D3623982D00000100000001 /* ChatScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat/ChatScreenView.swift; sourceTree = "<group>"; };
+		1D3623982D00000100000001 /* ChatScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatScreenView.swift; sourceTree = "<group>"; };
 		1D3623442D00000100000001 /* PassportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportScreenView.swift; sourceTree = "<group>"; };
 		1D3623462D00000100000001 /* AuthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViews.swift; sourceTree = "<group>"; };
 		1D3623482D00000100000001 /* ModelExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/ModelExtensions.swift; sourceTree = "<group>"; };
@@ -140,6 +140,7 @@
 				1D3623572D00000100000001 /* Editor */,
 				1D3623582D00000100000001 /* Collection */,
 				1D3623592D00000100000001 /* Friends */,
+				1D36235B2D00000100000001 /* Chat */,
 				1D36235A2D00000100000001 /* Profile */,
 			);
 			path = Features;
@@ -205,9 +206,16 @@
 			isa = PBXGroup;
 			children = (
 				1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */,
-				1D3623982D00000100000001 /* ChatScreenView.swift */,
 			);
 			path = Friends;
+			sourceTree = "<group>";
+		};
+		1D36235B2D00000100000001 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				1D3623982D00000100000001 /* ChatScreenView.swift */,
+			);
+			path = Chat;
 			sourceTree = "<group>";
 		};
 		1D36235A2D00000100000001 /* Profile */ = {
