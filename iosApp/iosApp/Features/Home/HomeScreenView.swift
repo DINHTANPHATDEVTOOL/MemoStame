@@ -9,14 +9,41 @@ struct HomeScreenView: View {
     var onNavigateToCamera: (String?) -> Void
 
     @State private var activeTab: String = "Friends"
-    @State private var activeCircle: String = "All Friends"
+    @State private var activeCircle: String = "👥 Tất cả bạn bè"
     @State private var showCommentSheet: Bool = false
     @State private var showTradeInboxSheet: Bool = false
-    @State private var selectedPostForComments: FeedPost? = nil
-    @State private var newCommentText: String = ""
-    @State private var activeLightboxReply: FeedReply? = nil
-
-    let circleOptions = ["All Friends", "Best Friends", "Da Lat Trip", "Class 22DTHB3"]
+    var filteredPosts: [FeedPost] {
+        let friendIds = ["user_huy", "user_linh"]
+        switch activeCircle {
+        case "👥 Tất cả bạn bè":
+            return viewModel.posts.filter { post in
+                switch post.audienceType {
+                case .friends:
+                    return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
+                case .specificFriends:
+                    return post.authorId == viewModel.currentUser.uid || post.targetFriendIds.contains(viewModel.currentUser.uid)
+                case .onlyMe:
+                    return post.authorId == viewModel.currentUser.uid
+                default:
+                    return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
+                }
+            }
+        case "🎯 Bạn bè chọn lọc":
+            return viewModel.posts.filter { post in
+                post.audienceType == .specificFriends && (post.authorId == viewModel.currentUser.uid || post.targetFriendIds.contains(viewModel.currentUser.uid))
+            }
+        case "🔒 Chỉ mình tôi":
+            return viewModel.posts.filter { post in
+                post.audienceType == .onlyMe && post.authorId == viewModel.currentUser.uid
+            }
+        case "👤 Bài viết của tôi":
+            return viewModel.posts.filter { post in
+                post.authorId == viewModel.currentUser.uid
+            }
+        default:
+            return viewModel.posts
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -138,7 +165,7 @@ struct HomeScreenView: View {
                         onOpenCamera: { onNavigateToCamera(nil) }
                     )
 
-                    ForEach(viewModel.posts, id: \.id) { post in
+                    ForEach(filteredPosts, id: \.id) { post in
                         PostCardView(
                             post: post,
                             currentUserId: viewModel.currentUser.uid,
