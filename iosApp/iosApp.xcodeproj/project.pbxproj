@@ -31,6 +31,7 @@
 		1D3624152D00000100000001 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624142D00000100000001 /* LocationManager.swift */; };
 		1D3624172D00000100000001 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624162D00000100000001 /* ImageCacheManager.swift */; };
 		1D3624192D00000100000001 /* SoundEffectsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624182D00000100000001 /* SoundEffectsManager.swift */; };
+		E9A811002D8B990200000001 /* AppLanguageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A811002D8B990100000001 /* AppLanguageManager.swift */; };
 		1D36241B2D00000100000001 /* StampRenderEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36241A2D00000100000001 /* StampRenderEngine.swift */; };
 		1D3624212D00000100000001 /* MSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624202D00000100000001 /* MSTheme.swift */; };
 		1D3624232D00000100000001 /* MSButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624222D00000100000001 /* MSButton.swift */; };
@@ -67,6 +68,7 @@
 		1D3624142D00000100000001 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		1D3624162D00000100000001 /* ImageCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheManager.swift; sourceTree = "<group>"; };
 		1D3624182D00000100000001 /* SoundEffectsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEffectsManager.swift; sourceTree = "<group>"; };
+		E9A811002D8B990100000001 /* AppLanguageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguageManager.swift; sourceTree = "<group>"; };
 		1D36241A2D00000100000001 /* StampRenderEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StampRenderEngine.swift; sourceTree = "<group>"; };
 		1D3624202D00000100000001 /* MSTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSTheme.swift; sourceTree = "<group>"; };
 		1D3624222D00000100000001 /* MSButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSButton.swift; sourceTree = "<group>"; };
@@ -245,6 +247,7 @@
 				1D3624142D00000100000001 /* LocationManager.swift */,
 				1D3624162D00000100000001 /* ImageCacheManager.swift */,
 				1D3624182D00000100000001 /* SoundEffectsManager.swift */,
+				E9A811002D8B990100000001 /* AppLanguageManager.swift */,
 				1D36241A2D00000100000001 /* StampRenderEngine.swift */,
 			);
 			path = Services;
@@ -378,6 +381,7 @@
 				1D3624152D00000100000001 /* LocationManager.swift in Sources */,
 				1D3624172D00000100000001 /* ImageCacheManager.swift in Sources */,
 				1D3624192D00000100000001 /* SoundEffectsManager.swift in Sources */,
+				E9A811002D8B990200000001 /* AppLanguageManager.swift in Sources */,
 				1D36241B2D00000100000001 /* StampRenderEngine.swift in Sources */,
 				1D3624212D00000100000001 /* MSTheme.swift in Sources */,
 				1D3624232D00000100000001 /* MSButton.swift in Sources */,
