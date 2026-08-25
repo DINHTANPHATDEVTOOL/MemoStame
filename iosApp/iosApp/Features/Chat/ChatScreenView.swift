@@ -192,32 +192,33 @@ struct ChatScreenView: View {
                     ScrollView {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                             ForEach(userStamps, id: \.id) { stamp in
-                            VStack {
-                                DieCutStampView(
-                                    title: stamp.title,
-                                    imageUrl: stamp.stampImagePath,
-                                    location: stamp.location,
-                                    dateStr: "2026.08.25",
-                                    note: stamp.note,
-                                    shape: stamp.shape,
-                                    isInteractive: false
-                                )
-                                Button(action: {
-                                    sendStampMessage(stamp: stamp)
-                                    showStampPicker = false
-                                }) {
-                                    Text("Gửi Tem Này")
-                                        .font(.caption.bold())
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(MSColors.stamp)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(8)
+                                VStack {
+                                    DieCutStampView(
+                                        title: stamp.title,
+                                        imageUrl: stamp.stampImagePath,
+                                        location: stamp.location,
+                                        dateStr: "2026.08.25",
+                                        note: stamp.note,
+                                        shape: stamp.shape,
+                                        isInteractive: false
+                                    )
+                                    Button(action: {
+                                        sendStampMessage(stamp: stamp)
+                                        showStampPicker = false
+                                    }) {
+                                        Text("Gửi Tem Này")
+                                            .font(.caption.bold())
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(MSColors.stamp)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(8)
+                                    }
                                 }
                             }
                         }
+                        .padding()
                     }
-                    .padding()
                 }
             }
             .background(MSColors.paper.ignoresSafeArea())
