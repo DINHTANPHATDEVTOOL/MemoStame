@@ -45,7 +45,7 @@ struct AuthLoginScreenView: View {
                     Text(isSignUpMode ? "TẠO TÀI KHOẢN MỚI 📝" : "ĐĂNG NHẬP HỆ THỐNG 🔑")
                         .font(.caption.bold())
                         .foregroundColor(MSColors.stamp)
-                        .letterSpacing(1.5)
+                        .tracking(1.5)
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Email")
