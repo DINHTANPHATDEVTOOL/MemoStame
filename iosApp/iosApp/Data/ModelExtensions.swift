@@ -21,6 +21,8 @@ struct MSColors {
     static let white = Color.white
 }
 
+typealias SharedCircle = shared.Circle
+
 #if compiler(>=6.0)
 extension FeedPost: @retroactive Identifiable {}
 extension FeedReply: @retroactive Identifiable {}
@@ -29,7 +31,7 @@ extension StampItem: @retroactive Identifiable {}
 extension CollectionItem: @retroactive Identifiable {}
 extension FriendItem: @retroactive Identifiable {}
 extension TradeRequest: @retroactive Identifiable {}
-extension shared.Circle: @retroactive Identifiable {}
+extension SharedCircle: @retroactive Identifiable {}
 #else
 extension FeedPost: Identifiable {}
 extension FeedReply: Identifiable {}
@@ -38,6 +40,7 @@ extension StampItem: Identifiable {}
 extension CollectionItem: Identifiable {}
 extension FriendItem: Identifiable {}
 extension TradeRequest: Identifiable {}
-extension shared.Circle: Identifiable {}
+extension SharedCircle: Identifiable {}
 #endif
+
 
