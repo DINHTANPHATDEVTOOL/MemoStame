@@ -19,6 +19,9 @@ struct ChatScreenView: View {
     let currentUserId: String
     var repository: SharedMemoStampRepository? = nil
     var availableStamps: [StampItem] = []
+    var onDismiss: (() -> Void)? = nil
+
+    @Environment(\.presentationMode) var presentationMode
 
     @State private var messageText: String = ""
     @State private var messages: [ChatMessage] = []
@@ -64,7 +67,13 @@ struct ChatScreenView: View {
 
                 Spacer()
 
-                Button(action: onDismiss) {
+                Button(action: {
+                    if let dismiss = onDismiss {
+                        dismiss()
+                    } else {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
                         .foregroundColor(MSColors.grey)
