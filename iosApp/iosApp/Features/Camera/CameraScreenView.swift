@@ -278,6 +278,25 @@ struct CameraScreenView: View {
 
                 // Live Camera / Selected Photo Preview Box inside Die-Cut Stamp Frame
                 ZStack {
+                    #if canImport(UIKit)
+                    if let uiImage = selectedUIImage {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .scaleEffect(zoomScale)
+                    } else {
+                        CameraPreviewView(
+                            cameraPosition: $cameraPosition,
+                            flashOn: $flashOn,
+                            captureTrigger: $captureTrigger,
+                            onPhotoCaptured: { img in
+                                self.selectedUIImage = img
+                                self.isCapturing = false
+                            }
+                        )
+                        .scaleEffect(zoomScale)
+                    }
+                    #else
                     AsyncImage(url: URL(string: activePhotoUrl)) { phase in
                         if let img = phase.image {
                             img.resizable()
@@ -286,8 +305,8 @@ struct CameraScreenView: View {
                         } else {
                             Color.gray.opacity(0.4)
                         }
-                        #endif
                     }
+                    #endif
 
                     // Stamp Die-Cut Golden Frame Guidelines
                     PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
@@ -636,6 +655,7 @@ struct CameraTuneAdjustmentView: View {
             .padding(24)
             .navigationTitle("Preset Tune Controls")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         presentationMode.wrappedValue.dismiss()
