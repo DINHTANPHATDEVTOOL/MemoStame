@@ -129,9 +129,9 @@ struct DieCutStampView: View {
                                 }
                             }
                             .frame(height: 180)
-                            .clipShape(PerforatedStampShape(notchRatio: 0.02, spacingRatio: 0.08))
+                            .cornerRadius(6)
                             .overlay(
-                                PerforatedStampShape(notchRatio: 0.02, spacingRatio: 0.08)
+                                RoundedRectangle(cornerRadius: 6)
                                     .stroke(Color(red: 0.85, green: 0.80, blue: 0.70), lineWidth: 1.5)
                             )
                             .shadow(color: Color.black.opacity(0.12), radius: 4, x: 0, y: 2)
@@ -142,7 +142,7 @@ struct DieCutStampView: View {
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
                                     .frame(height: 180)
-                                    .clipShape(PerforatedStampShape(notchRatio: 0.02, spacingRatio: 0.08))
+                                    .cornerRadius(6)
                                     .opacity(0.15)
                                     .allowsHitTesting(false)
                             }

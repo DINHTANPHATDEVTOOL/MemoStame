@@ -276,86 +276,167 @@ struct CameraScreenView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 6)
 
-                // Live Camera / Selected Photo Preview Box inside Die-Cut Stamp Frame
+                // Authentic Die-Cut Stamp Viewfinder Card (Parity with Android CameraScreen)
                 ZStack {
-                    #if canImport(UIKit)
-                    if let uiImage = selectedUIImage {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .scaleEffect(zoomScale)
-                    } else {
-                        CameraPreviewView(
-                            cameraPosition: $cameraPosition,
-                            flashOn: $flashOn,
-                            captureTrigger: $captureTrigger,
-                            onPhotoCaptured: { img in
-                                self.selectedUIImage = img
-                                self.isCapturing = false
+                    // Vintage Stamp Cream Paper Card Base
+                    Color(red: 0.98, green: 0.96, blue: 0.92)
+
+                    VStack(spacing: 6) {
+                        // Stamp Viewfinder Header
+                        HStack {
+                            HStack(spacing: 4) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                Text("ĐÀ LẠT, VIỆT NAM")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundColor(Color(red: 0.35, green: 0.30, blue: 0.25))
+                                    .lineLimit(1)
                             }
-                        )
-                        .scaleEffect(zoomScale)
-                    }
-                    #else
-                    AsyncImage(url: URL(string: activePhotoUrl)) { phase in
-                        if let img = phase.image {
-                            img.resizable()
-                                .aspectRatio(contentMode: .fill)
+                            Spacer()
+                            Text(DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .none))
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .foregroundColor(Color(red: 0.55, green: 0.50, blue: 0.45))
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.top, 10)
+
+                        // Central Live Camera Viewport
+                        ZStack {
+                            #if canImport(UIKit)
+                            if let uiImage = selectedUIImage {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .scaleEffect(zoomScale)
+                            } else {
+                                CameraPreviewView(
+                                    cameraPosition: $cameraPosition,
+                                    flashOn: $flashOn,
+                                    captureTrigger: $captureTrigger,
+                                    onPhotoCaptured: { img in
+                                        self.selectedUIImage = img
+                                        self.isCapturing = false
+                                    }
+                                )
                                 .scaleEffect(zoomScale)
-                        } else {
-                            Color.gray.opacity(0.4)
+                            }
+                            #else
+                            AsyncImage(url: URL(string: activePhotoUrl)) { phase in
+                                if let img = phase.image {
+                                    img.resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .scaleEffect(zoomScale)
+                                } else {
+                                    Color.gray.opacity(0.4)
+                                }
+                            }
+                            #endif
+
+                            // Color Filter Grading Overlay
+                            FilterOverlayView(filter: currentFilter)
+                                .allowsHitTesting(false)
+
+                            // Texture mold overlay
+                            Image("stamp_press_mold")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .opacity(0.15)
+                                .allowsHitTesting(false)
+
+                            // Postmark Cancel Stamp (Top Right)
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    ZStack {
+                                        Circle()
+                                            .stroke(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.75), lineWidth: 1.5)
+                                            .frame(width: 44, height: 44)
+                                        Circle()
+                                            .stroke(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.5), lineWidth: 1.0)
+                                            .frame(width: 36, height: 36)
+                                        VStack(spacing: 0) {
+                                            Text("MEMO")
+                                                .font(.system(size: 8, weight: .black))
+                                            Text("★ AIR ★")
+                                                .font(.system(size: 6, weight: .bold))
+                                            Text("POST")
+                                                .font(.system(size: 7, weight: .black))
+                                        }
+                                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.8))
+                                    }
+                                    .rotationEffect(.degrees(-15))
+                                    .padding(8)
+                                }
+                                Spacer()
+                            }
+
+                            // Swipe Toast Notification
+                            if showToast, let msg = toastMessage {
+                                VStack {
+                                    Text(msg)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(Color.black.opacity(0.75))
+                                        .cornerRadius(20)
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                }
+                            }
                         }
-                    }
-                    #endif
+                        .frame(height: 250)
+                        .cornerRadius(6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color(red: 0.85, green: 0.80, blue: 0.70), lineWidth: 1.5)
+                        )
+                        .padding(.horizontal, 10)
 
-                    // Stamp Die-Cut Golden Frame Guidelines
-                    PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
-                        .stroke(Color(red: 0.82, green: 0.65, blue: 0.35), lineWidth: 2)
-                        .padding(20)
+                        // Stamp Footer Information
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("STAMPED MEMORY")
+                                    .font(.system(size: 13, weight: .bold, design: .serif))
+                                    .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                                    .lineLimit(1)
+                                Text("OFFICIAL DIE-CUT STAMP")
+                                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                                    .foregroundColor(Color(red: 0.65, green: 0.55, blue: 0.45))
+                            }
+                            Spacer()
 
-                    // Stamp mold texture overlay
-                    Image("stamp_press_mold")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .opacity(0.12)
-                        .padding(24)
-                        .allowsHitTesting(false)
-
-                    // Filter Color Grading Overlay Tint
-                    FilterOverlayView(filter: currentFilter)
-                        .allowsHitTesting(false)
-
-                    // Toast Overlay Confirmation when swiping filters
-                    if showToast, let msg = toastMessage {
-                        VStack {
-                            Text(msg)
-                                .font(.subheadline.bold())
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.black.opacity(0.75))
-                                .cornerRadius(20)
-                                .transition(.move(edge: .top).combined(with: .opacity))
+                            // Vintage Denomination badge
+                            HStack(spacing: 2) {
+                                Text("₫")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text("2026")
+                                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.12))
+                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                            .cornerRadius(6)
                         }
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 10)
                     }
                 }
-                .frame(height: 390)
-                .clipped()
-                .cornerRadius(24)
+                .clipShape(PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 24)
+                    PerforatedStampShape(notchRatio: 0.022, spacingRatio: 0.065)
                         .stroke(Color(red: 0.82, green: 0.65, blue: 0.35), lineWidth: 2)
                 )
-                .padding(.horizontal, 16)
+                .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
+                .padding(.horizontal, 20)
                 .gesture(
                     DragGesture(minimumDistance: 30)
                         .onEnded { value in
                             if value.translation.width < -40 {
-                                // Swipe Left -> Next Filter
                                 selectedFilterIndex = (selectedFilterIndex + 1) % filters.count
                                 showFilterToast(currentFilter.name)
                             } else if value.translation.width > 40 {
-                                // Swipe Right -> Previous Filter
                                 selectedFilterIndex = (selectedFilterIndex - 1 + filters.count) % filters.count
                                 showFilterToast(currentFilter.name)
                             }
