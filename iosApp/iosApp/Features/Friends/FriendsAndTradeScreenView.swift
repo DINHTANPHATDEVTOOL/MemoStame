@@ -392,7 +392,8 @@ struct FriendsAndTradeScreenView: View {
                 ChatScreenView(
                     recipientUserId: friend.id,
                     recipientName: friend.displayName,
-                    currentUserId: "user_me",
+                    currentUserId: (repository.currentUser.value as? UserProfile)?.uid ?? "user_me",
+                    repository: repository,
                     onDismiss: { showChatModal = false }
                 )
             }

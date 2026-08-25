@@ -17,19 +17,23 @@ struct ChatScreenView: View {
     let recipientUserId: String
     let recipientName: String
     let currentUserId: String
-    let onDismiss: () -> Void
+    var repository: SharedMemoStampRepository? = nil
+    var availableStamps: [StampItem] = []
 
     @State private var messageText: String = ""
     @State private var messages: [ChatMessage] = []
     @State private var showStampPicker: Bool = false
     @State private var selectedStampToAttach: StampItem? = nil
 
-    // Sample stamps for attaching in chat
-    let sampleStamps: [StampItem] = [
-        StampItem(id: "s1", title: "Đà Lạt Sunset", location: "Lâm Đồng", stampImagePath: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500", shape: "classic", isFavorite: true, note: "Chiều mưa Đà Lạt"),
-        StampItem(id: "s2", title: "Phố Cổ Hội An", location: "Quảng Nam", stampImagePath: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=500", shape: "round", isFavorite: false, note: "Đèn lồng rực rỡ"),
-        StampItem(id: "s3", title: "Vịnh Hạ Long", location: "Quảng Ninh", stampImagePath: "https://images.unsplash.com/photo-1528127269322-539801943592?w=500", shape: "classic", isFavorite: true, note: "Kỳ quan thiên nhiên")
-    ]
+    var userStamps: [StampItem] {
+        if !availableStamps.isEmpty {
+            return availableStamps
+        }
+        if let repo = repository {
+            return (repo.stamps.value as? [StampItem]) ?? []
+        }
+        return []
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -172,9 +176,22 @@ struct ChatScreenView: View {
                 }
                 .padding()
 
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                        ForEach(sampleStamps, id: \.id) { stamp in
+                if userStamps.isEmpty {
+                    VStack(spacing: 8) {
+                        Text("Chưa có tem kỷ niệm nào")
+                            .font(.headline)
+                            .foregroundColor(MSColors.ink)
+                        Text("Hãy chụp và lưu tem kỷ niệm từ camera trước khi chia sẻ trong tin nhắn!")
+                            .font(.caption)
+                            .foregroundColor(MSColors.grey)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 40)
+                    .padding(.horizontal, 20)
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                            ForEach(userStamps, id: \.id) { stamp in
                             VStack {
                                 DieCutStampView(
                                     title: stamp.title,

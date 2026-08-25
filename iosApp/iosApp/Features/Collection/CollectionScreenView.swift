@@ -21,52 +21,42 @@ struct AlbumStampItem: Identifiable {
     let imageUrl: String
 }
 
-let sampleAlbums: [AlbumItem] = [
-    AlbumItem(
-        id: "dalat",
-        title: "Da Lat Trip",
-        desc: "Sương mù, Đồi thông & Đỉnh Lang Biang",
-        progress: "5/10",
-        iconName: "airplane",
-        coverColor: Color(red: 0.62, green: 0.24, blue: 0.18), // Vintage Leather Red #9E3E2F
-        stamps: [
-            AlbumStampItem(id: "11", name: "Hồ Xuân Hương", imageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300"),
-            AlbumStampItem(id: "12", name: "Đỉnh Lang Biang", imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300"),
-            AlbumStampItem(id: "13", name: "Ga Đà Lạt", imageUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=300"),
-            AlbumStampItem(id: "14", name: "Đồi Chè Cầu Đất", imageUrl: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=300"),
-            AlbumStampItem(id: "15", name: "Dinh I Đà Lạt", imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=300")
-        ]
-    ),
-    AlbumItem(
-        id: "coffee",
-        title: "Coffee Lovers",
-        desc: "Cà phê vợt Sài Gòn & Quán xưa",
-        progress: "8/15",
-        iconName: "cup.and.saucer.fill",
-        coverColor: Color(red: 0.43, green: 0.30, blue: 0.25), // Classic Coffee Brown #6D4C41
-        stamps: [
-            AlbumStampItem(id: "21", name: "Cà Phê Tùng", imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300"),
-            AlbumStampItem(id: "22", name: "Cheo Leo Cafe", imageUrl: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=300"),
-            AlbumStampItem(id: "23", name: "Vợt Phan Đình Phùng", imageUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300")
-        ]
-    ),
-    AlbumItem(
-        id: "hanoi",
-        title: "Di Tích Hà Nội",
-        desc: "Dấu ấn nghìn năm Thăng Long",
-        progress: "3/8",
-        iconName: "building.columns.fill",
-        coverColor: Color(red: 0.55, green: 0.43, blue: 0.39), // Thang Long Brown #8D6E63
-        stamps: [
-            AlbumStampItem(id: "31", name: "Tháp Rùa", imageUrl: "https://images.unsplash.com/photo-1477959858617-67f30ac4ce78?w=300"),
-            AlbumStampItem(id: "32", name: "Chùa Một Cột", imageUrl: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=300")
-        ]
-    )
-]
+
 
 struct CollectionScreenView: View {
     let repository: SharedMemoStampRepository
     @State private var selectedAlbum: AlbumItem? = nil
+
+    var cloudStamps: [StampItem] {
+        (repository.stamps.value as? [StampItem]) ?? []
+    }
+
+    var albums: [AlbumItem] {
+        if cloudStamps.isEmpty {
+            return []
+        }
+        // Group cloud stamps dynamically by location
+        let grouped = Dictionary(grouping: cloudStamps) { $0.location.isEmpty ? "Kỷ niệm chung" : $0.location }
+        return grouped.enumerated().map { index, entry in
+            let coverColors: [Color] = [
+                Color(red: 0.62, green: 0.24, blue: 0.18),
+                Color(red: 0.43, green: 0.30, blue: 0.25),
+                Color(red: 0.55, green: 0.43, blue: 0.39),
+                Color(red: 0.22, green: 0.38, blue: 0.35)
+            ]
+            let icons = ["airplane", "cup.and.saucer.fill", "building.columns.fill", "map.fill", "sparkles"]
+            
+            return AlbumItem(
+                id: "album_\(index)",
+                title: entry.key,
+                desc: "Bộ sưu tập tem kỷ niệm tại \(entry.key)",
+                progress: "\(entry.value.count)/\(entry.value.count)",
+                iconName: icons[index % icons.count],
+                coverColor: coverColors[index % coverColors.count],
+                stamps: entry.value.map { AlbumStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
+            )
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -88,20 +78,38 @@ struct CollectionScreenView: View {
 
             Divider()
 
-            // PageView Carousel of Book Covers
-            GeometryReader { geo in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 20) {
-                        ForEach(sampleAlbums) { album in
-                            BookCoverPreviewView(album: album)
-                                .frame(width: geo.size.width * 0.78, height: geo.size.height * 0.85)
-                                .onTapGesture {
-                                    selectedAlbum = album
-                                }
+            if albums.isEmpty {
+                VStack(spacing: 16) {
+                    Spacer()
+                    Image(systemName: "books.vertical.fill")
+                        .font(.system(size: 54))
+                        .foregroundColor(MSColors.stamp.opacity(0.6))
+                    Text("Chưa có bộ sưu tập tem nào")
+                        .font(.headline.bold())
+                        .foregroundColor(MSColors.ink)
+                    Text("Tất cả tem dán từ cloud sẽ tự động nhóm thành album theo địa điểm tại đây!")
+                        .font(.subheadline)
+                        .foregroundColor(MSColors.grey)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                    Spacer()
+                }
+            } else {
+                // PageView Carousel of Book Covers
+                GeometryReader { geo in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 20) {
+                            ForEach(albums) { album in
+                                BookCoverPreviewView(album: album)
+                                    .frame(width: geo.size.width * 0.78, height: geo.size.height * 0.85)
+                                    .onTapGesture {
+                                        selectedAlbum = album
+                                    }
+                            }
                         }
+                        .padding(.horizontal, geo.size.width * 0.11)
+                        .padding(.vertical, 24)
                     }
-                    .padding(.horizontal, geo.size.width * 0.11)
-                    .padding(.vertical, 24)
                 }
             }
         }
