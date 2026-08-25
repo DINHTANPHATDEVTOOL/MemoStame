@@ -171,7 +171,7 @@ struct HomeScreenView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
-                .padding(.bottom, 100)
+                .padding(.bottom, 140)
             }
         }
         .background(MSColors.paper.ignoresSafeArea())

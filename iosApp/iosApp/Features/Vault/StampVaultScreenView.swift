@@ -64,13 +64,18 @@ struct StampVaultScreenView: View {
                 // Search Bar Input
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
+                        .foregroundColor(MSColors.grey)
                     TextField("Search stamps or places...", text: $searchText)
                         .font(.subheadline)
+                        .foregroundColor(MSColors.ink)
                 }
                 .padding(10)
                 .background(Color.white)
                 .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(MSColors.lightGrey, lineWidth: 1)
+                )
 
                 // Category Chips
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -79,11 +84,15 @@ struct StampVaultScreenView: View {
                             Button(action: { selectedFilter = item }) {
                                 Text(item)
                                     .font(.caption.bold())
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(selectedFilter == item ? Color(red: 0.15, green: 0.15, blue: 0.18) : Color.white)
-                                    .foregroundColor(selectedFilter == item ? .white : .primary)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(selectedFilter == item ? MSColors.ink : Color.white)
+                                    .foregroundColor(selectedFilter == item ? Color.white : MSColors.ink)
                                     .cornerRadius(14)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .stroke(selectedFilter == item ? MSColors.ink : MSColors.lightGrey, lineWidth: 1)
+                                    )
                             }
                         }
                     }
@@ -116,7 +125,7 @@ struct StampVaultScreenView: View {
                     }
                 }
                 .padding()
-                .padding(.bottom, 110)
+                .padding(.bottom, 140)
             }
         }
         .background(MSColors.paper.ignoresSafeArea())

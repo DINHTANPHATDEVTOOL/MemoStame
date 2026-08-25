@@ -28,9 +28,11 @@ struct MSTextField: View {
             if isSecure {
                 SecureField(placeholder, text: $text)
                     .font(.body)
+                    .foregroundColor(MSColors.ink)
             } else {
                 TextField(placeholder, text: $text)
                     .font(.body)
+                    .foregroundColor(MSColors.ink)
             }
             if !text.isEmpty {
                 Button(action: {

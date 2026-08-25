@@ -444,25 +444,21 @@ struct CameraScreenView: View {
 
                         Spacer()
 
-                        // Master Camera Shutter Button
+                        // Master Camera Shutter / Confirm Button
                         Button(action: {
                             triggerHapticFeedback()
-                            isCapturing = true
-                            #if canImport(UIKit)
-                            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                                pickerSourceType = .camera
-                                showImagePicker = true
-                                isCapturing = false
+                            if let img = selectedUIImage {
+                                handleImageSelected(img)
                             } else {
-                                // Camera unavailable (Simulator / No Camera) -> Advance to note view
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                isCapturing = true
+                                captureTrigger = true
+                                #if targetEnvironment(simulator)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                     isCapturing = false
                                     onNavigateToNote(activePhotoUrl)
                                 }
+                                #endif
                             }
-                            #else
-                            onNavigateToNote(activePhotoUrl)
-                            #endif
                         }) {
                             ZStack {
                                 Circle()
@@ -471,6 +467,27 @@ struct CameraScreenView: View {
                                 Circle()
                                     .fill(isCapturing ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color.white)
                                     .frame(width: 64, height: 64)
+                                if selectedUIImage != nil {
+                                    Image(systemName: "checkmark")
+                                        .font(.title2.bold())
+                                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                }
+                            }
+                        }
+
+                        if selectedUIImage != nil {
+                            Button(action: {
+                                triggerHapticFeedback()
+                                selectedUIImage = nil
+                            }) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.white.opacity(0.18))
+                                        .frame(width: 44, height: 44)
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .font(.title3)
+                                        .foregroundColor(.white)
+                                }
                             }
                         }
 

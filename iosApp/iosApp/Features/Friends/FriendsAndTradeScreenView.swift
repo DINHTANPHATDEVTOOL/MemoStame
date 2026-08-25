@@ -68,6 +68,7 @@ struct FriendsAndTradeScreenView: View {
                             .foregroundColor(MSColors.stamp)
                         TextField("Enter Friend Code (e.g. #STAMP99 or Username)", text: $friendCode)
                             .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
                         Button(action: {
                             let code = friendCode.trimmingCharacters(in: .whitespacesAndNewlines)
                             if !code.isEmpty {
@@ -187,6 +188,7 @@ struct FriendsAndTradeScreenView: View {
                             }
                         }
                         .padding()
+                        .padding(.bottom, 140)
                     } else {
                         // Trade Requests
                         VStack(spacing: 12) {
@@ -274,6 +276,7 @@ struct FriendsAndTradeScreenView: View {
                             }
                         }
                         .padding()
+                        .padding(.bottom, 140)
                     }
                 }
             }
