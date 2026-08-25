@@ -19,6 +19,11 @@ struct FriendsAndTradeScreenView: View {
     @State private var refreshTrigger: Bool = false
     @StateObject private var langManager = AppLanguageManager.shared
 
+    var friendRequests: [FriendRequestItem] {
+        _ = refreshTrigger
+        return (repository.friendRequests.value as? [FriendRequestItem]) ?? []
+    }
+
     var friends: [FriendItem] {
         _ = refreshTrigger
         return (repository.friends.value as? [FriendItem]) ?? []
@@ -65,7 +70,7 @@ struct FriendsAndTradeScreenView: View {
                         }
                     }
 
-                    // Search/Add Friend Code Input Box
+                    // Search/Add Friend Code Input Box with Validation & Friend Request Workflow
                     HStack(spacing: 10) {
                         Image(systemName: "person.badge.plus")
                             .font(.system(size: 18, weight: .semibold))
@@ -74,19 +79,16 @@ struct FriendsAndTradeScreenView: View {
                             .font(.subheadline)
                             .foregroundColor(MSColors.ink)
                         Button(action: {
-                            let code = friendCode.trimmingCharacters(in: .whitespacesAndNewlines)
-                            if !code.isEmpty {
-                                let name = code.replacingOccurrences(of: "#", with: "").capitalized
-                                let username = code.lowercased().replacingOccurrences(of: " ", with: "_")
-                                _ = repository.addFriend(displayName: name, username: username)
+                            let (success, msg) = repository.sendFriendRequest(friendCode)
+                            triggerToast(msg)
+                            if success {
                                 friendCode = ""
                                 refreshTrigger.toggle()
-                                triggerToast(langManager.string(vi: "Đã thêm \(name) vào danh sách bạn bè! 🎉", en: "Added \(name) to friends list! 🎉"))
                             }
                         }) {
-                            Text(langManager.string(vi: "Thêm", en: "Add"))
+                            Text(langManager.string(vi: "Gửi Mời", en: "Invite"))
                                 .font(.caption.bold())
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
                                 .background(friendCode.isEmpty ? MSColors.stamp.opacity(0.3) : MSColors.stamp)
                                 .foregroundColor(.white)
@@ -160,6 +162,77 @@ struct FriendsAndTradeScreenView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         if selectedTab == 0 {
+                            // Incoming Friend Requests Notification Section
+                            if !friendRequests.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "envelope.badge.fill")
+                                            .foregroundColor(MSColors.stamp)
+                                        Text("LỜI MỜI KẾT BẠN MỚI (\(friendRequests.count))")
+                                            .font(.caption2.bold())
+                                            .foregroundColor(MSColors.grey)
+                                    }
+                                    .padding(.horizontal, 4)
+
+                                    ForEach(friendRequests, id: \.id) { req in
+                                        HStack(spacing: 10) {
+                                            AsyncImage(url: URL(string: req.senderAvatar)) { phase in
+                                                if let img = phase.image {
+                                                    img.resizable().aspectRatio(contentMode: .fill)
+                                                } else {
+                                                    Circle().fill(MSColors.stamp.opacity(0.15))
+                                                }
+                                            }
+                                            .frame(width: 40, height: 40)
+                                            .clipShape(Circle())
+
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(req.senderName)
+                                                    .font(.subheadline.bold())
+                                                    .foregroundColor(MSColors.ink)
+                                                Text("@" + req.senderUsername)
+                                                    .font(.caption)
+                                                    .foregroundColor(MSColors.grey)
+                                            }
+
+                                            Spacer()
+
+                                            Button(action: {
+                                                repository.acceptFriendRequest(req.id)
+                                                refreshTrigger.toggle()
+                                                triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
+                                            }) {
+                                                Text("Chấp nhận")
+                                                    .font(.caption.bold())
+                                                    .padding(.horizontal, 10)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color.green)
+                                                    .foregroundColor(.white)
+                                                    .cornerRadius(10)
+                                            }
+
+                                            Button(action: {
+                                                repository.rejectFriendRequest(req.id)
+                                                refreshTrigger.toggle()
+                                                triggerToast("Đã từ chối lời mời kết bạn.")
+                                            }) {
+                                                Text("Từ chối")
+                                                    .font(.caption.bold())
+                                                    .padding(.horizontal, 10)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color.gray.opacity(0.15))
+                                                    .foregroundColor(MSColors.ink)
+                                                    .cornerRadius(10)
+                                            }
+                                        }
+                                        .padding(10)
+                                        .background(Color.white)
+                                        .cornerRadius(14)
+                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1))
+                                    }
+                                }
+                                .padding(.bottom, 8)
+                            }
                             // Friends List
                             if friends.isEmpty {
                                 VStack(spacing: 10) {
@@ -578,6 +651,8 @@ struct TradeStampModalView: View {
 struct FriendQrCodeSheetView: View {
     let repository: SharedMemoStampRepository
     @Environment(\.presentationMode) var presentationMode
+    @State private var scannedCode: String = ""
+    @State private var toastMsg: String? = nil
 
     var user: UserProfile {
         (repository.currentUser.value as? UserProfile) ?? UserProfile(
@@ -593,34 +668,34 @@ struct FriendQrCodeSheetView: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Capsule()
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: 36, height: 4)
                 .padding(.top, 8)
 
-            Text("My Friend QR Code")
+            Text("MÃ QR TÀI KHOẢN")
                 .font(.headline.bold())
                 .foregroundColor(MSColors.ink)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color.white)
-                        .frame(width: 220, height: 220)
+                        .frame(width: 200, height: 200)
                         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 4)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
                                 .stroke(MSColors.stamp.opacity(0.3), lineWidth: 2)
                         )
 
-                    VStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         Image(systemName: "qrcode")
-                            .font(.system(size: 140))
+                            .font(.system(size: 130))
                             .foregroundColor(MSColors.ink)
 
                         Text("#STAMP_\(user.username.uppercased())")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundColor(MSColors.stamp)
                     }
                 }
@@ -632,18 +707,56 @@ struct FriendQrCodeSheetView: View {
                 Text("@\(user.username)")
                     .font(.subheadline)
                     .foregroundColor(MSColors.grey)
-
-                Text("Show this QR code to friends to add you instantly on MemoStamp.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
             }
+
+            Divider().padding(.horizontal)
+
+            // Functional QR Scanner / Friend Invitation Input Field
+            VStack(alignment: .leading, spacing: 8) {
+                Text("QUÉT / NHẬP MÃ QR NGƯỜI KHÁC")
+                    .font(.caption2.bold())
+                    .foregroundColor(MSColors.grey)
+
+                HStack(spacing: 8) {
+                    Image(systemName: "qrcode.viewfinder")
+                        .foregroundColor(MSColors.stamp)
+                    TextField("Dán mã QR hoặc Username", text: $scannedCode)
+                        .font(.subheadline)
+                        .foregroundColor(MSColors.ink)
+                    Button(action: {
+                        let (success, msg) = repository.sendFriendRequest(scannedCode)
+                        toastMsg = msg
+                        if success {
+                            scannedCode = ""
+                        }
+                    }) {
+                        Text("Kết Bạn")
+                            .font(.caption.bold())
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(scannedCode.isEmpty ? Color.gray.opacity(0.3) : MSColors.stamp)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .disabled(scannedCode.isEmpty)
+                }
+                .padding(10)
+                .background(Color.white)
+                .cornerRadius(12)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+
+                if let toast = toastMsg {
+                    Text(toast)
+                        .font(.caption.bold())
+                        .foregroundColor(toast.contains("Đã gửi") ? Color.green : Color.red)
+                }
+            }
+            .padding(.horizontal, 24)
 
             Spacer()
 
             Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                Text("Close")
+                Text("Đóng")
                     .font(.body.bold())
                     .frame(maxWidth: .infinity)
                     .padding()

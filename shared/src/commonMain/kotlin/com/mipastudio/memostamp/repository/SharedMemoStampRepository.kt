@@ -188,6 +188,22 @@ class SharedMemoStampRepository {
     )
     val friends: StateFlow<List<FriendItem>> = _friends.asStateFlow()
 
+data class FriendRequestItem(
+    val id: String,
+    val senderName: String,
+    val senderUsername: String,
+    val senderAvatar: String,
+    val status: String = "PENDING",
+    val createdAt: Long = currentTimeMillis()
+)
+
+    private val _friendRequests = MutableStateFlow<List<FriendRequestItem>>(
+        listOf(
+            FriendRequestItem("freq_1", "Minh Thu", "minh_thu", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150", "PENDING", currentTimeMillis() - 7200000)
+        )
+    )
+    val friendRequests: StateFlow<List<FriendRequestItem>> = _friendRequests.asStateFlow()
+
     private val _tradeRequests = MutableStateFlow<List<TradeRequest>>(
         listOf(
             TradeRequest(
@@ -339,15 +355,11 @@ class SharedMemoStampRepository {
     }
 
     fun acceptTrade(tradeId: String) {
-        _tradeRequests.value = _tradeRequests.value.map { trade ->
-            if (trade.id == tradeId) trade.copy(status = "ACCEPTED") else trade
-        }
+        _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
     }
 
     fun rejectTrade(tradeId: String) {
-        _tradeRequests.value = _tradeRequests.value.map { trade ->
-            if (trade.id == tradeId) trade.copy(status = "REJECTED") else trade
-        }
+        _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
     }
 
     fun updateProfile(displayName: String, bio: String, avatarUrl: String? = null) {
@@ -356,6 +368,59 @@ class SharedMemoStampRepository {
             bio = bio,
             avatarUrl = avatarUrl ?: _currentUser.value.avatarUrl
         )
+    }
+
+    fun sendFriendRequest(usernameOrCode: String): Pair<Boolean, String> {
+        val trimmed = usernameOrCode.trim().lowercase().replace("#", "")
+        if (trimmed.length < 3) {
+            return Pair(false, "Mã/Tên người dùng phải từ 3 ký tự trở lên!")
+        }
+        val me = _currentUser.value
+        if (trimmed == me.username.lowercase()) {
+            return Pair(false, "Không thể tự kết bạn với chính mình!")
+        }
+        val existingFriend = _friends.value.find { it.username.lowercase() == trimmed }
+        if (existingFriend != null) {
+            return Pair(false, "${existingFriend.displayName} đã có trong danh sách bạn bè!")
+        }
+        val existingRequest = _friendRequests.value.find { it.senderUsername.lowercase() == trimmed }
+        if (existingRequest != null) {
+            return Pair(false, "Đã gửi hoặc đã nhận lời mời kết bạn từ người này!")
+        }
+
+        val formattedName = usernameOrCode.trim().replace("#", "").split(" ").joinToString(" ") { word ->
+            word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+        }
+        val request = FriendRequestItem(
+            id = "freq_${currentTimeMillis()}",
+            senderName = formattedName,
+            senderUsername = trimmed,
+            senderAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+            status = "PENDING",
+            createdAt = currentTimeMillis()
+        )
+        _friendRequests.value = listOf(request) + _friendRequests.value
+        return Pair(true, "Đã gửi lời mời kết bạn tới @$trimmed! 📩")
+    }
+
+    fun acceptFriendRequest(requestId: String) {
+        val req = _friendRequests.value.find { it.id == requestId }
+        if (req != null) {
+            val newFriend = FriendItem(
+                id = "user_${currentTimeMillis()}",
+                displayName = req.senderName,
+                username = req.senderUsername,
+                avatarUrl = req.senderAvatar,
+                isOnline = true,
+                tradeCount = 0
+            )
+            _friends.value = listOf(newFriend) + _friends.value
+        }
+        _friendRequests.value = _friendRequests.value.filter { it.id != requestId }
+    }
+
+    fun rejectFriendRequest(requestId: String) {
+        _friendRequests.value = _friendRequests.value.filter { it.id != requestId }
     }
 
     fun addFriend(displayName: String, username: String): FriendItem {

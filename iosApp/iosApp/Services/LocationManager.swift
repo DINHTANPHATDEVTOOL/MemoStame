@@ -21,7 +21,9 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func requestLocationPermission() {
-        clManager.requestWhenInUseAuthorization()
+        if clManager.authorizationStatus == .notDetermined {
+            clManager.requestWhenInUseAuthorization()
+        }
     }
 
     func fetchCurrentLocation(completion: @escaping (String) -> Void) {

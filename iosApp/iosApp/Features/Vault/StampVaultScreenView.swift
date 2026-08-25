@@ -11,6 +11,7 @@ struct StampVaultScreenView: View {
     @State private var searchText: String = ""
     @State private var selectedFilter: String = "All"
     @State private var activeModal: VaultModalItem? = nil
+    @State private var showCreateAlbumModal: Bool = false
 
     let filters = ["All", "Vintage", "Travel", "Coffee", "Special"]
     
@@ -204,9 +205,19 @@ struct StampVaultScreenView: View {
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
                             Spacer()
-                            Text("Nhấn vào nhãn để chỉnh quyền xem")
-                                .font(.caption2)
-                                .foregroundColor(MSColors.grey)
+                            Button(action: { showCreateAlbumModal = true }) {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 11))
+                                    Text("Tạo Album")
+                                        .font(.caption2.bold())
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(MSColors.stamp)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                            }
                         }
 
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -326,6 +337,9 @@ struct StampVaultScreenView: View {
                 )
             }
         }
+        .sheet(isPresented: $showCreateAlbumModal) {
+            CreateAlbumSheetView(repository: repository)
+        }
     }
 }
 
@@ -344,8 +358,8 @@ enum VaultModalItem: Identifiable {
 
 struct StampDetailModalView: View {
     let stamp: StampItem
-    let onShare: () -> Void
-    let onDismiss: () -> Void
+    var onShare: () -> Void
+    var onDismiss: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -401,6 +415,142 @@ struct StampDetailModalView: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 20)
+        }
+    }
+}
+
+struct CreateAlbumSheetView: View {
+    let repository: SharedMemoStampRepository
+    @Environment(\.presentationMode) var presentationMode
+    @State private var albumName: String = ""
+    @State private var albumDesc: String = ""
+    @State private var selectedEmoji: String = "🏞️"
+    @State private var selectedPrivacy: String = "FRIENDS"
+
+    let emojis = ["🏞️", "☕", "✈️", "📸", "💖", "🌲", "🎨", "👑", "🌸", "🍔"]
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("TẠO ALBUM / BỘ SƯU TẬP MỚI")
+                        .font(.headline.bold())
+                        .foregroundColor(MSColors.ink)
+                        .padding(.top, 8)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Tên Album")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.ink)
+                        TextField("Ví dụ: Chuyến đi Hà Nội 2026", text: $albumName)
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
+                            .padding(12)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Mô tả Album")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.ink)
+                        TextField("Mô tả ngắn gọn...", text: $albumDesc)
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
+                            .padding(12)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Biểu tượng Emoji")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.ink)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(emojis, id: \.self) { emoji in
+                                    Text(emoji)
+                                        .font(.title2)
+                                        .padding(8)
+                                        .background(selectedEmoji == emoji ? MSColors.stamp.opacity(0.2) : Color.white)
+                                        .cornerRadius(10)
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedEmoji == emoji ? MSColors.stamp : Color.gray.opacity(0.2), lineWidth: 1.5))
+                                        .onTapGesture {
+                                            selectedEmoji = emoji
+                                        }
+                                }
+                            }
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Quyền riêng tư")
+                            .font(.caption.bold())
+                            .foregroundColor(MSColors.ink)
+                        HStack(spacing: 12) {
+                            Button(action: { selectedPrivacy = "FRIENDS" }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "person.2.fill")
+                                    Text("Bạn bè")
+                                }
+                                .font(.caption.bold())
+                                .foregroundColor(selectedPrivacy == "FRIENDS" ? .white : MSColors.ink)
+                                .padding(.vertical, 8)
+                                .frame(maxWidth: .infinity)
+                                .background(selectedPrivacy == "FRIENDS" ? MSColors.stamp : Color.white)
+                                .cornerRadius(10)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(MSColors.stamp, lineWidth: 1))
+                            }
+
+                            Button(action: { selectedPrivacy = "ONLY_ME" }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "lock.fill")
+                                    Text("Mình tôi")
+                                }
+                                .font(.caption.bold())
+                                .foregroundColor(selectedPrivacy == "ONLY_ME" ? .white : MSColors.ink)
+                                .padding(.vertical, 8)
+                                .frame(maxWidth: .infinity)
+                                .background(selectedPrivacy == "ONLY_ME" ? MSColors.stamp : Color.white)
+                                .cornerRadius(10)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(MSColors.stamp, lineWidth: 1))
+                            }
+                        }
+                    }
+
+                    Spacer().frame(height: 20)
+
+                    Button(action: {
+                        let name = albumName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !name.isEmpty {
+                            _ = repository.createCollection(name: name, description: albumDesc, iconEmoji: selectedEmoji, privacy: selectedPrivacy)
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }) {
+                        Text("Tạo Album")
+                            .font(.body.bold())
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(albumName.isEmpty ? Color.gray.opacity(0.4) : MSColors.stamp)
+                            .cornerRadius(14)
+                    }
+                    .disabled(albumName.isEmpty)
+                }
+                .padding()
+            }
+            .background(MSColors.paper.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Hủy") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .foregroundColor(MSColors.stamp)
+                }
+            }
         }
     }
 }

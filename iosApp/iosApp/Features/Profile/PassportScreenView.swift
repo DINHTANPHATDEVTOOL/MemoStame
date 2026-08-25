@@ -61,7 +61,7 @@ struct PassportScreenView: View {
 
                 Spacer()
 
-                Text("PASSPORT PROFILE")
+                Text("PROFILE")
                     .font(.headline.bold())
                     .foregroundColor(MSColors.ink)
 
@@ -344,6 +344,7 @@ struct ProfileSettingsSheetView: View {
 
     @State private var displayName: String = ""
     @State private var bio: String = ""
+    @State private var avatarUrl: String = ""
     @State private var currentPassword: String = ""
     @State private var newPassword: String = ""
     @State private var confirmPassword: String = ""
@@ -412,9 +413,25 @@ struct ProfileSettingsSheetView: View {
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
                             TextField(langManager.string(vi: "Nhập tên hiển thị", en: "Enter display name"), text: $displayName)
+                                .font(.subheadline)
+                                .foregroundColor(MSColors.ink)
                                 .padding(12)
                                 .background(Color.white)
                                 .cornerRadius(10)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(langManager.string(vi: "Link Ảnh Đại Diện (Avatar URL)", en: "Avatar Image URL"))
+                                .font(.caption.bold())
+                                .foregroundColor(MSColors.ink)
+                            TextField("https://...", text: $avatarUrl)
+                                .font(.subheadline)
+                                .foregroundColor(MSColors.ink)
+                                .padding(12)
+                                .background(Color.white)
+                                .cornerRadius(10)
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
@@ -422,11 +439,13 @@ struct ProfileSettingsSheetView: View {
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
                             TextEditor(text: $bio)
+                                .font(.subheadline)
+                                .foregroundColor(MSColors.ink)
                                 .frame(height: 70)
                                 .padding(4)
                                 .background(Color.white)
                                 .cornerRadius(10)
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
                         }
                     }
                     .padding(.horizontal)
@@ -444,19 +463,28 @@ struct ProfileSettingsSheetView: View {
                         }
 
                         SecureField(langManager.string(vi: "Mật khẩu hiện tại", en: "Current Password"), text: $currentPassword)
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
                             .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
 
                         SecureField(langManager.string(vi: "Mật khẩu mới", en: "New Password"), text: $newPassword)
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
                             .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
 
                         SecureField(langManager.string(vi: "Xác nhận mật khẩu mới", en: "Confirm New Password"), text: $confirmPassword)
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
                             .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
 
                         if let toast = passwordToastMessage {
                             Text(toast)
@@ -504,11 +532,16 @@ struct ProfileSettingsSheetView: View {
                             let current = (repository.currentUser.value as? UserProfile)
                             let name = displayName.isEmpty ? (current?.displayName ?? "") : displayName
                             let note = bio.isEmpty ? (current?.bio ?? "") : bio
-                            repository.updateProfile(displayName: name, bio: note, avatarUrl: nil)
+                            let avatar = avatarUrl.isEmpty ? current?.avatarUrl : avatarUrl
+
+                            repository.updateProfile(displayName: name, bio: note, avatarUrl: avatar)
 
                             let defaults = UserDefaults.standard
                             defaults.set(name, forKey: "user_displayName")
                             defaults.set(note, forKey: "user_bio")
+                            if let av = avatar {
+                                defaults.set(av, forKey: "user_avatarUrl")
+                            }
 
                             presentationMode.wrappedValue.dismiss()
                         }) {
@@ -557,6 +590,7 @@ struct ProfileSettingsSheetView: View {
             if let user = repository.currentUser.value as? UserProfile {
                 displayName = user.displayName
                 bio = user.bio
+                avatarUrl = user.avatarUrl ?? ""
             }
         }
     }

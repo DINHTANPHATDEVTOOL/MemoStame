@@ -24,6 +24,7 @@ struct MemoryNoteScreenView: View {
     @State private var locationSearch: String = ""
     @State private var selectedCategory: String = "Tất cả"
     @State private var selectedAudience: String = "Friends"
+    @State private var selectedCollectionId: String? = nil
     @State private var isGpsLocating: Bool = false
 
     let locationCategories = ["Tất cả", "Biểu tượng", "Cà phê", "Thiên nhiên", "Di tích"]
@@ -73,7 +74,7 @@ struct MemoryNoteScreenView: View {
                         location: locationSearch.isEmpty ? nil : locationSearch,
                         imageUrl: imageUrl,
                         shape: "classic",
-                        collectionId: nil,
+                        collectionId: selectedCollectionId,
                         audience: audience
                     )
                     onSavedSuccess()
@@ -111,16 +112,20 @@ struct MemoryNoteScreenView: View {
 
                         TextField("Stamp Title (e.g. Đà Lạt Chiều Mưa)", text: $title)
                             .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
                             .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
 
                         TextEditor(text: $caption)
                             .font(.subheadline)
+                            .foregroundColor(MSColors.ink)
                             .frame(height: 80)
                             .padding(8)
                             .background(Color.white)
                             .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
                             .overlay(
                                 Group {
                                     if caption.isEmpty {
@@ -133,6 +138,35 @@ struct MemoryNoteScreenView: View {
                                 },
                                 alignment: .topLeading
                             )
+
+                        // Album Selection Picker
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("LƯU VÀO ALBUM / BỘ SƯU TẬP")
+                                .font(.caption2.bold())
+                                .foregroundColor(MSColors.grey)
+
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 10) {
+                                    ForEach((repository.collections.value as? [CollectionItem]) ?? [], id: \.id) { col in
+                                        HStack(spacing: 6) {
+                                            Text(col.iconEmoji)
+                                                .font(.subheadline)
+                                            Text(col.name)
+                                                .font(.caption.bold())
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(selectedCollectionId == col.id ? MSColors.stamp.opacity(0.18) : Color.white)
+                                        .foregroundColor(selectedCollectionId == col.id ? MSColors.stamp : MSColors.ink)
+                                        .cornerRadius(12)
+                                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(selectedCollectionId == col.id ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1.5))
+                                        .onTapGesture {
+                                            selectedCollectionId = col.id
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         // Google Maps Grounded Location Header
                         HStack {
