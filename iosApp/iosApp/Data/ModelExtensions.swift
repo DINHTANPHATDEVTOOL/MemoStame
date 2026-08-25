@@ -20,7 +20,7 @@ struct MSColors {
     static let grey = Color(red: 0.549, green: 0.533, blue: 0.506)       // #8C8881 - muted caption grey
     static let white = Color.white
 }
-}
+
 #if compiler(>=6.0)
 extension FeedPost: @retroactive Identifiable {}
 extension FeedReply: @retroactive Identifiable {}
