@@ -6,12 +6,18 @@ import UIKit
 struct EnvelopeShareModalView: View {
     let stampTitle: String
     let stampUrl: String
+    var recipientsList: [String] = []
     let onDismiss: () -> Void
     
     @State private var copied: Bool = false
-    @State private var selectedRecipient: String = "All Friends"
+    @State private var selectedRecipient: String = "Tất cả bạn bè"
     
-    let recipients = ["All Friends", "Huy Tran", "Linh Pham", "Phat Le", "Class 22DTHB3"]
+    var recipients: [String] {
+        if !recipientsList.isEmpty {
+            return ["Tất cả bạn bè"] + recipientsList
+        }
+        return ["Tất cả bạn bè"]
+    }
 
     var body: some View {
         VStack(spacing: 20) {

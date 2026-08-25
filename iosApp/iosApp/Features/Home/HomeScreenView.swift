@@ -13,7 +13,8 @@ struct HomeScreenView: View {
     @State private var showCommentSheet: Bool = false
     @State private var showTradeInboxSheet: Bool = false
     var filteredPosts: [FeedPost] {
-        let friendIds = ["user_huy", "user_linh"]
+        let friendItems = (viewModel.repository.friends.value as? [FriendItem]) ?? []
+        let friendIds = friendItems.map { $0.id }
         switch activeCircle {
         case "👥 Tất cả bạn bè":
             return viewModel.posts.filter { post in
