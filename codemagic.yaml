@@ -14,7 +14,7 @@ workflows:
       - name: Make gradlew executable & Build KMP Shared Framework
         script: |
           chmod +x gradlew
-          ./gradlew :shared:assemble
+          ./gradlew :shared:linkReleaseFrameworkIosArm64 :shared:linkReleaseFrameworkIosX64 :shared:assemble
       - name: Build iOS Archive (.xcarchive)
         script: |
           xcodebuild archive \
