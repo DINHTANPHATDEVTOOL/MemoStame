@@ -30,6 +30,7 @@ import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
 import com.mipastudio.memostamp.data.local.StampEntity
 import androidx.compose.material.icons.outlined.Palette
+import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -273,7 +274,7 @@ fun StampVaultScreen(
 
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 100.dp),
                         horizontalArrangement = Arrangement.spacedBy(9.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize()

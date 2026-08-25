@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -233,10 +235,12 @@ fun FriendsAndTradeScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            // Messenger Navigation Tabs with Badges
+            // Messenger Navigation Tabs with Badges (Scrollable for all screen sizes)
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val tabs = listOf(
                     (if (unreadChatCount > 0) "💬 Chat ($unreadChatCount)" else "💬 Chat") to 4,
@@ -251,18 +255,16 @@ fun FriendsAndTradeScreen(
                         shape = RoundedCornerShape(20.dp),
                         color = if (selected) AccentRed else SurfaceWhite,
                         shadowElevation = if (selected) 2.dp else 0.dp,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { selectedTab = idx }
+                        modifier = Modifier.clickable { selectedTab = idx }
                     ) {
                         Text(
                             text = label,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                             color = if (selected) Color.White else PrimaryText,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
-                            modifier = Modifier.padding(horizontal = 2.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
                         )
                     }
                 }

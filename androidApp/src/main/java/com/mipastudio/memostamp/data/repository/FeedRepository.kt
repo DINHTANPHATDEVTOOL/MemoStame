@@ -145,7 +145,7 @@ class FeedRepository private constructor(
                         authorName = currentUser.displayName,
                         authorAvatar = currentUser.avatarUrl,
                         caption = stamp.note.ifBlank { stamp.title },
-                        audienceType = AudienceType.EVERYONE.name,
+                        audienceType = AudienceType.FRIENDS.name,
                         createdAt = stamp.createdAt,
                         type = FeedPostType.MEMORY.name,
                         location = stamp.location
@@ -237,7 +237,7 @@ class FeedRepository private constructor(
                     authorName = "Minh Nguyễn",
                     authorAvatar = "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300",
                     caption = "Một chiều chẳng có kế hoạch. Cà phê góc phố Đà Lạt ☕",
-                    audienceType = AudienceType.EVERYONE.name,
+                    audienceType = AudienceType.FRIENDS.name,
                     circleId = null,
                     createdAt = now - 2 * 60 * 1000L,
                     type = FeedPostType.MEMORY.name,
@@ -253,7 +253,7 @@ class FeedRepository private constructor(
                     authorName = "Hoàng Nam",
                     authorAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300",
                     caption = "Coffee sau giờ học ☕ nạp lại năng lượng.",
-                    audienceType = AudienceType.EVERYONE.name,
+                    audienceType = AudienceType.FRIENDS.name,
                     circleId = null,
                     createdAt = now - 18 * 60 * 1000L,
                     type = FeedPostType.MEMORY.name,
@@ -388,8 +388,8 @@ class FeedRepository private constructor(
             val filteredEntities = posts.filter { entity ->
                 val audience = AudienceType.fromString(entity.audienceType)
                 when (audience) {
-                    AudienceType.EVERYONE -> true
                     AudienceType.FRIENDS -> entity.authorId == currentUser.userId || friendIds.contains(entity.authorId)
+                    AudienceType.SPECIFIC_FRIENDS -> entity.authorId == currentUser.userId || entity.circleId != null
                     AudienceType.ONLY_ME -> entity.authorId == currentUser.userId
                 }
             }

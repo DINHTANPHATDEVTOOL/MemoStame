@@ -457,7 +457,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(bottom = 32.dp)
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
             // 0. Hero Banner: Today's Memory Card (Design System)
             item {

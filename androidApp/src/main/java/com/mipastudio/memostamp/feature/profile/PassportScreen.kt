@@ -518,7 +518,7 @@ fun PassportScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
 
         // Change Cover Wallpaper Dialog (Gallery Picker + Presets)

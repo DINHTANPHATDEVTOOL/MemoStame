@@ -36,7 +36,6 @@ fun UserProfileDialog(
         onDismissRequest = onDismiss,
         containerColor = StampCreamBg,
         shape = RoundedCornerShape(20.dp),
-        title = null,
         text = {
             Column(
                 modifier = Modifier
@@ -144,6 +143,7 @@ fun UserProfileDialog(
                             Text("🟢 ONLINE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
                         }
                     }
+                }
                 if (isFriend) {
                     Spacer(modifier = Modifier.height(14.dp))
                     Column(

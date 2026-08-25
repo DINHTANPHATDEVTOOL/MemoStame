@@ -169,7 +169,7 @@ class StampRepository private constructor(
             }
             try {
                 val feedRepo = FeedRepository.getInstance(context)
-                feedRepo.createPostFromStamp(entity, com.mipastudio.memostamp.domain.model.AudienceType.EVERYONE)
+                feedRepo.createPostFromStamp(entity, com.mipastudio.memostamp.domain.model.AudienceType.FRIENDS)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

@@ -419,7 +419,7 @@ class StampEditorViewModel : ViewModel() {
                                 val feedRepo = com.mipastudio.memostamp.data.repository.FeedRepository.getInstance(context)
                                 feedRepo.createPostFromStamp(
                                     stampEntity = newEntity,
-                                    audienceType = com.mipastudio.memostamp.domain.model.AudienceType.EVERYONE
+                                    audienceType = com.mipastudio.memostamp.domain.model.AudienceType.FRIENDS
                                 )
                                 feedRepo.syncFeedFromSupabase()
                             } catch (e: Exception) {
