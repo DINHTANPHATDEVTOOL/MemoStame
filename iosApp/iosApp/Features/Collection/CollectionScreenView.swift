@@ -35,8 +35,10 @@ struct CollectionScreenView: View {
         if cloudStamps.isEmpty {
             return []
         }
-        // Group cloud stamps dynamically by location
-        let grouped = Dictionary(grouping: cloudStamps) { $0.location.isEmpty ? "Kỷ niệm chung" : $0.location }
+        let grouped = Dictionary(grouping: cloudStamps) { stamp -> String in
+            let loc = stamp.location ?? ""
+            return loc.isEmpty ? "Kỷ niệm chung" : loc
+        }
         return grouped.enumerated().map { index, entry in
             let coverColors: [Color] = [
                 Color(red: 0.62, green: 0.24, blue: 0.18),
