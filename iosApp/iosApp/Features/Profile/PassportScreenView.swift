@@ -629,7 +629,6 @@ struct ProfileSettingsSheetView: View {
                 }
             }
         }
-        }
         .sheet(isPresented: $showPhotoPicker) {
             PhotoLibraryPicker { img in
                 selectedAvatarImage = img
