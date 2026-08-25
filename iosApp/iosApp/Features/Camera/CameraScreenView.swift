@@ -610,7 +610,8 @@ struct CameraScreenView: View {
 
     private func handleImageSelected(_ image: UIImage) {
         #if canImport(UIKit)
-        if let data = image.jpegData(compressionQuality: 0.85) {
+        let croppedImage = cropToStampAspectRatio(image)
+        if let data = croppedImage.jpegData(compressionQuality: 0.88) {
             let tempDir = FileManager.default.temporaryDirectory
             let fileURL = tempDir.appendingPathComponent("stamp_photo_\(UUID().uuidString).jpg")
             try? data.write(to: fileURL)
@@ -619,6 +620,40 @@ struct CameraScreenView: View {
         }
         #endif
         onNavigateToNote(activePhotoUrl)
+    }
+
+    private func cropToStampAspectRatio(_ image: UIImage) -> UIImage {
+        #if canImport(UIKit)
+        UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
+        image.draw(in: CGRect(origin: .zero, size: image.size))
+        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext() ?? image
+        UIGraphicsEndImageContext()
+
+        let targetRatio: CGFloat = 885.0 / 1163.0
+        let width = normalizedImage.size.width
+        let height = normalizedImage.size.height
+        let currentRatio = width / height
+
+        var cropRect: CGRect
+        if currentRatio > targetRatio {
+            let cropWidth = height * targetRatio
+            let originX = (width - cropWidth) / 2.0
+            cropRect = CGRect(x: originX, y: 0, width: cropWidth, height: height)
+        } else {
+            let cropHeight = width / targetRatio
+            let originY = (height - cropHeight) / 2.0
+            cropRect = CGRect(x: 0, y: originY, width: width, height: cropHeight)
+        }
+
+        UIGraphicsBeginImageContextWithOptions(cropRect.size, false, normalizedImage.scale)
+        normalizedImage.draw(at: CGPoint(x: -cropRect.origin.x, y: -cropRect.origin.y))
+        let croppedImage = UIGraphicsGetImageFromCurrentImageContext() ?? normalizedImage
+        UIGraphicsEndImageContext()
+
+        return croppedImage
+        #else
+        return image
+        #endif
     }
 
     private func showFilterToast(_ filterName: String) {
