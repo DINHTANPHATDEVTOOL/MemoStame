@@ -65,9 +65,10 @@ struct FriendsAndTradeScreenView: View {
                         }
                     }
 
-                    // Search/Add Friend Code Input
-                    HStack {
+                    // Search/Add Friend Code Input Box
+                    HStack(spacing: 10) {
                         Image(systemName: "person.badge.plus")
+                            .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(MSColors.stamp)
                         TextField(langManager.string(vi: "Nhập mã kết bạn (ví dụ #STAMP99 hoặc Tên)", en: "Enter Friend Code (e.g. #STAMP99 or Username)"), text: $friendCode)
                             .font(.subheadline)
@@ -85,25 +86,72 @@ struct FriendsAndTradeScreenView: View {
                         }) {
                             Text(langManager.string(vi: "Thêm", en: "Add"))
                                 .font(.caption.bold())
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 7)
-                                .background(friendCode.isEmpty ? MSColors.lightGrey : MSColors.stamp)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(friendCode.isEmpty ? MSColors.stamp.opacity(0.3) : MSColors.stamp)
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
+                                .shadow(color: friendCode.isEmpty ? Color.clear : MSColors.stamp.opacity(0.3), radius: 4, x: 0, y: 2)
                         }
                         .disabled(friendCode.isEmpty)
                     }
-                    .padding(10)
-                    .background(Color.white)
-                    .cornerRadius(12)
+                    .padding(12)
+                    .background(MSColors.paper)
+                    .cornerRadius(16)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1.5))
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
 
-                    // Segment Picker
-                    Picker("", selection: $selectedTab) {
-                        Text("\(langManager.string(vi: "Bạn bè", en: "Friends")) (\(friends.count))").tag(0)
-                        Text("\(langManager.string(vi: "Trao đổi", en: "Trades")) (\(tradeRequests.count))").tag(1)
-                        Text(langManager.string(vi: "Trò chuyện", en: "Chat")).tag(2)
+                    // Custom High-Contrast Vintage Tab Bar
+                    HStack(spacing: 8) {
+                        Button(action: { selectedTab = 0 }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "person.2.fill")
+                                    .font(.caption.bold())
+                                Text("\(langManager.string(vi: "Bạn bè", en: "Friends")) (\(friends.count))")
+                                    .font(.subheadline.bold())
+                            }
+                            .padding(.vertical, 9)
+                            .frame(maxWidth: .infinity)
+                            .background(selectedTab == 0 ? MSColors.stamp : Color.white)
+                            .foregroundColor(selectedTab == 0 ? .white : MSColors.grey)
+                            .cornerRadius(18)
+                            .overlay(RoundedRectangle(cornerRadius: 18).stroke(selectedTab == 0 ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1))
+                            .shadow(color: selectedTab == 0 ? MSColors.stamp.opacity(0.25) : Color.clear, radius: 4, x: 0, y: 2)
+                        }
+
+                        Button(action: { selectedTab = 1 }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.caption.bold())
+                                Text("\(langManager.string(vi: "Trao đổi", en: "Trades")) (\(tradeRequests.count))")
+                                    .font(.subheadline.bold())
+                            }
+                            .padding(.vertical, 9)
+                            .frame(maxWidth: .infinity)
+                            .background(selectedTab == 1 ? MSColors.stamp : Color.white)
+                            .foregroundColor(selectedTab == 1 ? .white : MSColors.grey)
+                            .cornerRadius(18)
+                            .overlay(RoundedRectangle(cornerRadius: 18).stroke(selectedTab == 1 ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1))
+                            .shadow(color: selectedTab == 1 ? MSColors.stamp.opacity(0.25) : Color.clear, radius: 4, x: 0, y: 2)
+                        }
+
+                        Button(action: { selectedTab = 2 }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "bubble.left.and.bubble.right.fill")
+                                    .font(.caption.bold())
+                                Text(langManager.string(vi: "Trò chuyện", en: "Chat"))
+                                    .font(.subheadline.bold())
+                            }
+                            .padding(.vertical, 9)
+                            .frame(maxWidth: .infinity)
+                            .background(selectedTab == 2 ? MSColors.stamp : Color.white)
+                            .foregroundColor(selectedTab == 2 ? .white : MSColors.grey)
+                            .cornerRadius(18)
+                            .overlay(RoundedRectangle(cornerRadius: 18).stroke(selectedTab == 2 ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1))
+                            .shadow(color: selectedTab == 2 ? MSColors.stamp.opacity(0.25) : Color.clear, radius: 4, x: 0, y: 2)
+                        }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
+                    .padding(.top, 4)
                 }
                 .padding()
 
@@ -118,48 +166,63 @@ struct FriendsAndTradeScreenView: View {
                                     Image(systemName: "person.2.slash")
                                         .font(.system(size: 38))
                                         .foregroundColor(MSColors.stamp.opacity(0.6))
-                                    Text("No friends added yet")
+                                    Text("Chưa có bạn bè nào")
                                         .font(.headline)
-                                        .foregroundColor(.secondary)
-                                    Text("Add friends using their friend code or username above.")
+                                        .foregroundColor(MSColors.ink)
+                                    Text("Nhập mã kết bạn ở trên để giao lưu tem.")
                                         .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(MSColors.grey)
                                 }
                                 .padding(.top, 40)
                             } else {
                                 ForEach(friends, id: \.id) { friend in
                                     HStack(spacing: 12) {
                                         ZStack(alignment: .bottomTrailing) {
-                                            AsyncImage(url: URL(string: friend.avatarUrl)) { phase in
-                                                if let img = phase.image {
-                                                    img.resizable().aspectRatio(contentMode: .fill)
-                                                } else {
-                                                    Circle().fill(MSColors.lightGrey)
+                                            if !friend.avatarUrl.isEmpty && friend.avatarUrl.contains("http") {
+                                                AsyncImage(url: URL(string: friend.avatarUrl)) { phase in
+                                                    if let img = phase.image {
+                                                        img.resizable().aspectRatio(contentMode: .fill)
+                                                    } else {
+                                                        ZStack {
+                                                            Circle().fill(MSColors.stamp.opacity(0.15))
+                                                            Text(String(friend.displayName.prefix(1)).uppercased())
+                                                                .font(.headline.bold())
+                                                                .foregroundColor(MSColors.stamp)
+                                                        }
+                                                    }
                                                 }
+                                                .frame(width: 48, height: 48)
+                                                .clipShape(Circle())
+                                            } else {
+                                                ZStack {
+                                                    Circle().fill(MSColors.stamp.opacity(0.15))
+                                                    Text(String(friend.displayName.prefix(1)).uppercased())
+                                                        .font(.headline.bold())
+                                                        .foregroundColor(MSColors.stamp)
+                                                }
+                                                .frame(width: 48, height: 48)
                                             }
-                                            .frame(width: 44, height: 44)
-                                            .clipShape(Circle())
 
                                             if friend.isOnline {
                                                 Circle()
                                                     .fill(Color.green)
-                                                    .frame(width: 10, height: 10)
-                                                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                                                    .frame(width: 12, height: 12)
+                                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
                                             }
                                         }
 
-                                        VStack(alignment: .leading, spacing: 2) {
+                                        VStack(alignment: .leading, spacing: 3) {
                                             Text(friend.displayName)
                                                 .font(.subheadline.bold())
                                                 .foregroundColor(MSColors.ink)
-                                            Text("@" + friend.username + " • \(friend.tradeCount) trades")
+                                            Text("@" + friend.username + " • \(friend.tradeCount) trao đổi")
                                                 .font(.caption)
                                                 .foregroundColor(MSColors.grey)
                                         }
 
                                         Spacer()
 
-                                        HStack(spacing: 6) {
+                                        HStack(spacing: 8) {
                                             // Direct Chat Button
                                             Button(action: {
                                                 selectedFriendForChat = friend
@@ -172,12 +235,12 @@ struct FriendsAndTradeScreenView: View {
                                                         .font(.caption.bold())
                                                         .lineLimit(1)
                                                 }
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 7)
                                                 .background(MSColors.stamp.opacity(0.12))
                                                 .foregroundColor(MSColors.stamp)
-                                                .cornerRadius(12)
-                                                .fixedSize()
+                                                .cornerRadius(14)
+                                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1))
                                             }
 
                                             // Trade Button
@@ -192,31 +255,32 @@ struct FriendsAndTradeScreenView: View {
                                                         .font(.caption.bold())
                                                         .lineLimit(1)
                                                 }
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(MSColors.gold.opacity(0.2))
-                                                .foregroundColor(MSColors.gold)
-                                                .cornerRadius(12)
-                                                .fixedSize()
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 7)
+                                                .background(MSColors.gold.opacity(0.18))
+                                                .foregroundColor(Color(red: 0.70, green: 0.50, blue: 0.10))
+                                                .cornerRadius(14)
+                                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.gold.opacity(0.4), lineWidth: 1))
                                             }
 
                                             Button(action: {
                                                 repository.removeFriend(friendId: friend.id)
                                                 refreshTrigger.toggle()
-                                                triggerToast("Removed \(friend.displayName) from friends.")
+                                                triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
                                             }) {
                                                 Image(systemName: "person.badge.minus")
                                                     .font(.system(size: 14))
                                                     .foregroundColor(.gray.opacity(0.7))
-                                                    .padding(4)
+                                                    .padding(6)
                                             }
                                         }
                                         .fixedSize(horizontal: true, vertical: false)
-                                        .layoutPriority(1)
                                     }
-                                    .padding(12)
+                                    .padding(14)
                                     .background(Color.white)
-                                    .cornerRadius(14)
+                                    .cornerRadius(16)
+                                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
+                                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                                 }
                             }
                         } else if selectedTab == 1 {

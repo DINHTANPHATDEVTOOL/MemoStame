@@ -209,8 +209,57 @@ struct CameraScreenView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            // Layer 1: Full-Screen Live Camera Preview / Frozen Captured Photo Background
+            #if canImport(UIKit)
+            if let uiImage = selectedUIImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .scaleEffect(zoomScale)
+                    .ignoresSafeArea()
+            } else {
+                CameraPreviewView(
+                    cameraPosition: $cameraPosition,
+                    flashOn: $flashOn,
+                    captureTrigger: $captureTrigger,
+                    onPhotoCaptured: { img in
+                        self.selectedUIImage = img
+                    }
+                )
+                .scaleEffect(zoomScale)
+                .ignoresSafeArea()
+            }
+            #else
+            AsyncImage(url: URL(string: activePhotoUrl)) { phase in
+                if let img = phase.image {
+                    img.resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .scaleEffect(zoomScale)
+                        .ignoresSafeArea()
+                } else {
+                    Color.black.ignoresSafeArea()
+                }
+            }
+            #endif
 
+            // Color Filter Grading Overlay
+            FilterOverlayView(filter: currentFilter)
+                .allowsHitTesting(false)
+                .ignoresSafeArea()
+
+            // Dark Vignette Gradient Gradients for Control Contrast
+            VStack {
+                LinearGradient(colors: [Color.black.opacity(0.65), Color.clear], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 120)
+                    .ignoresSafeArea()
+                Spacer()
+                LinearGradient(colors: [Color.clear, Color.black.opacity(0.75)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 180)
+                    .ignoresSafeArea()
+            }
+            .allowsHitTesting(false)
+
+            // Layer 2: Mold Viewfinder & Controls Stack
             VStack(spacing: 0) {
                 // Top Camera Controls Bar
                 HStack {
@@ -219,7 +268,7 @@ struct CameraScreenView: View {
                             .font(.title2.bold())
                             .foregroundColor(.white)
                             .frame(width: 40, height: 40)
-                            .background(Color.white.opacity(0.15))
+                            .background(Color.black.opacity(0.35))
                             .clipShape(Circle())
                     }
 
@@ -234,7 +283,7 @@ struct CameraScreenView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.18))
+                        .background(Color.black.opacity(0.45))
                         .cornerRadius(14)
 
                         Spacer()
@@ -250,7 +299,7 @@ struct CameraScreenView: View {
                                 .font(.title3)
                                 .foregroundColor(.white)
                                 .frame(width: 40, height: 40)
-                                .background(Color.white.opacity(0.15))
+                                .background(Color.black.opacity(0.35))
                                 .clipShape(Circle())
                         }
 
@@ -263,7 +312,7 @@ struct CameraScreenView: View {
                                 .font(.title3)
                                 .foregroundColor(flashOn ? .yellow : .white)
                                 .frame(width: 40, height: 40)
-                                .background(Color.white.opacity(0.15))
+                                .background(Color.black.opacity(0.35))
                                 .clipShape(Circle())
                         }
                     }
@@ -272,46 +321,13 @@ struct CameraScreenView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 6)
 
-                // Authentic Die-Cut Metal Stamp Viewfinder
+                Spacer()
+
+                // Authentic Floating Metal Mold Frame Overlay
                 ZStack {
-                    #if canImport(UIKit)
-                    if let uiImage = selectedUIImage {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .scaleEffect(zoomScale)
-                    } else {
-                        CameraPreviewView(
-                            cameraPosition: $cameraPosition,
-                            flashOn: $flashOn,
-                            captureTrigger: $captureTrigger,
-                            onPhotoCaptured: { img in
-                                self.selectedUIImage = img
-                                self.isCapturing = false
-                            }
-                        )
-                        .scaleEffect(zoomScale)
-                    }
-                    #else
-                    AsyncImage(url: URL(string: activePhotoUrl)) { phase in
-                        if let img = phase.image {
-                            img.resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .scaleEffect(zoomScale)
-                        } else {
-                            Color.gray.opacity(0.4)
-                        }
-                    }
-                    #endif
-
-                    // Color Filter Grading Overlay
-                    FilterOverlayView(filter: currentFilter)
-                        .allowsHitTesting(false)
-
-                    // Authentic Metal Mold Frame Overlay
                     Image("khuon_tem_template")
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
+                        .aspectRatio(contentMode: .fill)
                         .allowsHitTesting(false)
 
                     // Swipe Toast Notification
@@ -329,11 +345,9 @@ struct CameraScreenView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 380)
-                .cornerRadius(18)
-                .clipped()
-                .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
-                .padding(.horizontal, 16)
+                .aspectRatio(885.0 / 1163.0, contentMode: .fit)
+                .shadow(color: Color.black.opacity(0.5), radius: 16, x: 0, y: 8)
+                .padding(.horizontal, 20)
                 .offset(y: pressOffset)
                 .gesture(
                     DragGesture(minimumDistance: 30)
@@ -355,6 +369,8 @@ struct CameraScreenView: View {
                         }
                 )
 
+                Spacer()
+
                 // Focal Zoom Pill Selector (1x, 2x, 3x, 5x)
                 HStack(spacing: 8) {
                     ForEach(zoomOptions, id: \.self) { pill in
@@ -374,12 +390,12 @@ struct CameraScreenView: View {
                                 .foregroundColor(selectedZoomPill == pill ? .black : .white)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(selectedZoomPill == pill ? Color.white : Color.white.opacity(0.2))
+                                .background(selectedZoomPill == pill ? Color.white : Color.black.opacity(0.4))
                                 .cornerRadius(14)
                         }
                     }
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, 8)
 
                 Spacer()
 

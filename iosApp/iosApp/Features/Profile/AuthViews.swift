@@ -165,49 +165,55 @@ struct AuthLoginScreenView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Tên hiển thị")
                                 .font(.caption.bold())
-                                .foregroundColor(MSColors.grey)
+                                .foregroundColor(MSColors.ink)
                             HStack {
                                 Image(systemName: "person.fill")
                                     .foregroundColor(MSColors.stamp)
                                 TextField("Ví dụ: Nguyễn Văn A", text: $displayNameText)
+                                    .font(.body)
+                                    .foregroundColor(MSColors.ink)
                             }
                             .padding(12)
-                            .background(MSColors.white)
+                            .background(MSColors.paper)
                             .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1.5))
                         }
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Email")
                             .font(.caption.bold())
-                            .foregroundColor(MSColors.grey)
+                            .foregroundColor(MSColors.ink)
                         HStack {
                             Image(systemName: "envelope.fill")
                                 .foregroundColor(MSColors.stamp)
                             TextField("nhap_email@memostamp.com", text: $emailText)
                                 .autocapitalization(.none)
                                 .keyboardType(.emailAddress)
+                                .font(.body)
+                                .foregroundColor(MSColors.ink)
                         }
                         .padding(12)
-                        .background(MSColors.white)
+                        .background(MSColors.paper)
                         .cornerRadius(12)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1.5))
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Mật khẩu")
                             .font(.caption.bold())
-                            .foregroundColor(MSColors.grey)
+                            .foregroundColor(MSColors.ink)
                         HStack {
                             Image(systemName: "lock.fill")
                                 .foregroundColor(MSColors.stamp)
                             SecureField("••••••••", text: $passwordText)
+                                .font(.body)
+                                .foregroundColor(MSColors.ink)
                         }
                         .padding(12)
-                        .background(MSColors.white)
+                        .background(MSColors.paper)
                         .cornerRadius(12)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1.5))
                     }
 
                     if let err = errorMessage {
@@ -621,9 +627,14 @@ struct ProfileSetupScreenView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Your Name")
                             .font(.caption.bold())
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MSColors.ink)
                         TextField("Ví dụ: Nguyễn Văn A", text: $displayName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .font(.body)
+                            .foregroundColor(MSColors.ink)
+                            .padding(12)
+                            .background(MSColors.paper)
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1.5))
                     }
 
                     // Username Input (@phat)
@@ -631,7 +642,7 @@ struct ProfileSetupScreenView: View {
                         HStack {
                             Text("Username")
                                 .font(.caption.bold())
-                                .foregroundColor(.secondary)
+                                .foregroundColor(MSColors.ink)
                             Spacer()
                             if isCheckingUsername {
                                 Text("Checking...")
@@ -647,27 +658,34 @@ struct ProfileSetupScreenView: View {
                         HStack {
                             Text("@")
                                 .font(.subheadline.bold())
-                                .foregroundColor(.gray)
+                                .foregroundColor(MSColors.stamp)
                             TextField("username", text: $username)
+                                .font(.body)
+                                .foregroundColor(MSColors.ink)
                                 .autocapitalization(.none)
                                 .disableAutocorrection(true)
                                 .onChange(of: username) { newValue in
                                     checkUsernameAvailability(newValue)
                                 }
                         }
-                        .padding(10)
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                        .padding(12)
+                        .background(MSColors.paper)
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1.5))
                     }
 
                     // Bio Input
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Bio")
                             .font(.caption.bold())
-                            .foregroundColor(.secondary)
+                            .foregroundColor(MSColors.ink)
                         TextField("A little about you...", text: $bio)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .font(.body)
+                            .foregroundColor(MSColors.ink)
+                            .padding(12)
+                            .background(MSColors.paper)
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1.5))
                     }
 
                     Spacer(minLength: 30)

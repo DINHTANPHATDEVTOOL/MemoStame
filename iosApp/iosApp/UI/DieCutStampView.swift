@@ -162,7 +162,7 @@ struct DieCutStampView: View {
                             if showMoldOverlay {
                                 Image("khuon_tem_template")
                                     .resizable()
-                                    .aspectRatio(contentMode: .fit)
+                                    .aspectRatio(contentMode: .fill)
                                     .frame(
                                         width: cardWidth - (fittedInGrid ? 10 : 16),
                                         height: cardHeight - (fittedInGrid ? 40 : 60)
