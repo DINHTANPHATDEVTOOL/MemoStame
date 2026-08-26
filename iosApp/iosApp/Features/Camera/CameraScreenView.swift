@@ -719,7 +719,7 @@ struct CameraScreenView: View {
             if let result = colorControls.outputImage { outputCI = result }
         }
 
-        // 3. Authentic Film Grain Generator (CIRandomGenerator)
+        // 3. Authentic Film Grain Generator (CIRandomGenerator + CIColorMatrix Alpha Blending)
         if grain > 0 {
             if let noiseFilter = CIFilter(name: "CIRandomGenerator"),
                let rawNoise = noiseFilter.outputImage {
@@ -729,12 +729,16 @@ struct CameraScreenView: View {
                     monoFilter.setValue(CIColor(red: 0.5, green: 0.5, blue: 0.5), forKey: kCIInputColorKey)
                     monoFilter.setValue(1.0, forKey: kCIInputIntensityKey)
                     if let grayNoise = monoFilter.outputImage,
-                       let alphaFilter = CIFilter(name: "CIColorControls") {
-                        alphaFilter.setValue(grayNoise, forKey: kCIInputImageKey)
-                        alphaFilter.setValue(0.12 * grain, forKey: kCIInputContrastKey)
-                        if let subtleNoise = alphaFilter.outputImage,
+                       let matrixFilter = CIFilter(name: "CIColorMatrix") {
+                        let gAlpha = CGFloat(0.18 * grain)
+                        matrixFilter.setValue(grayNoise, forKey: kCIInputImageKey)
+                        matrixFilter.setValue(CIVector(x: 1, y: 0, z: 0, w: 0), forKey: "inputRVector")
+                        matrixFilter.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
+                        matrixFilter.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
+                        matrixFilter.setValue(CIVector(x: 0, y: 0, z: 0, w: gAlpha), forKey: "inputAVector")
+                        if let transparentNoise = matrixFilter.outputImage,
                            let blendFilter = CIFilter(name: "CISourceOverCompositing") {
-                            blendFilter.setValue(subtleNoise, forKey: kCIInputImageKey)
+                            blendFilter.setValue(transparentNoise, forKey: kCIInputImageKey)
                             blendFilter.setValue(outputCI, forKey: kCIInputBackgroundImageKey)
                             if let blended = blendFilter.outputImage {
                                 outputCI = blended
@@ -781,11 +785,19 @@ struct CameraScreenView: View {
         let imgWidth = normalizedImage.size.width
         let imgHeight = normalizedImage.size.height
 
-        // 2. Map Screen Mold Window (StampGeometry) to high-res photo coordinates
+        // 2. Exact AVCaptureVideoPreviewLayer (.resizeAspectFill) Aspect Ratio Mapping
         let screenSize = UIScreen.main.bounds.size
         let sWidth = screenSize.width > 0 ? screenSize.width : 390.0
         let sHeight = screenSize.height > 0 ? screenSize.height : 844.0
 
+        // Scale factor of AVCaptureVideoPreviewLayer aspectFill:
+        let scale = max(sWidth / imgWidth, sHeight / imgHeight)
+        let renderWidth = imgWidth * scale
+        let renderHeight = imgHeight * scale
+        let offsetX = (sWidth - renderWidth) / 2.0
+        let offsetY = (sHeight - renderHeight) / 2.0
+
+        // Screen mold aperture coordinates using StampGeometry constants:
         let moldWidth = sWidth * StampGeometry.moldWidthRatio
         let moldHeight = moldWidth * StampGeometry.moldAspectRatio
         let moldLeft = (sWidth - moldWidth) / 2.0
@@ -798,43 +810,19 @@ struct CameraScreenView: View {
         let apWidth = apRight - apLeft
         let apHeight = apBottom - apTop
 
-        let normX = apLeft / sWidth
-        let normY = apTop / sHeight
-        let normW = apWidth / sWidth
-        let normH = apHeight / sHeight
+        // Transform screen aperture rectangle back into high-resolution photo pixels:
+        let cropX = max(0, (apLeft - offsetX) / scale)
+        let cropY = max(0, (apTop - offsetY) / scale)
+        let cropW = min(imgWidth - cropX, apWidth / scale)
+        let cropH = min(imgHeight - cropY, apHeight / scale)
 
-        var cropRect: CGRect
-        let screenRatio = sWidth / sHeight
-        let photoRatio = imgWidth / imgHeight
-
-        if abs(screenRatio - photoRatio) < 0.10 {
-            cropRect = CGRect(
-                x: normX * imgWidth,
-                y: normY * imgHeight,
-                width: normW * imgWidth,
-                height: normH * imgHeight
-            )
-        } else {
-            let targetRatio = StampGeometry.aspectRatio // 0.80
-            if photoRatio > targetRatio {
-                let cropW = imgHeight * targetRatio
-                let originX = (imgWidth - cropW) / 2.0
-                cropRect = CGRect(x: originX, y: 0, width: cropW, height: imgHeight)
-            } else {
-                let cropH = imgWidth / targetRatio
-                let originY = (imgHeight - cropH) / 2.0
-                cropRect = CGRect(x: 0, y: originY, width: imgWidth, height: cropH)
-            }
-        }
+        let cropRect = CGRect(x: cropX, y: cropY, width: cropW, height: cropH)
 
         if let cgImage = normalizedImage.cgImage?.cropping(to: cropRect) {
             return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
         }
         return normalizedImage
         #else
-        return image
-        #endif
-    }
         return image
         #endif
     }
