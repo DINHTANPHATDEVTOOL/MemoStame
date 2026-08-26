@@ -10,12 +10,10 @@ struct StampVaultScreenView: View {
     var onNavigateToCamera: () -> Void
 
     @State private var searchText: String = ""
-    @State private var selectedFilter: String = "All"
+    @State private var selectedFilter: String = "Tất cả"
     @State private var activeModal: VaultModalItem? = nil
     @State private var showCreateAlbumModal: Bool = false
 
-    let filters = ["All", "Vintage", "Travel", "Coffee", "Special"]
-    
     let columns = [
         GridItem(.flexible(), spacing: 14),
         GridItem(.flexible(), spacing: 14)
