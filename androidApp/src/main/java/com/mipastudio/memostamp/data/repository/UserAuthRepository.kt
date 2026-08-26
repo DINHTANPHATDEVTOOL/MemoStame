@@ -555,7 +555,7 @@ class UserAuthRepository private constructor(private val context: Context) {
             val hash = digest.digest(password.toByteArray(Charsets.UTF_8))
             hash.joinToString("") { "%02x".format(it) }
         } catch (e: Exception) {
-            password
+            throw IllegalStateException("Password hashing failed", e)
         }
     }
 

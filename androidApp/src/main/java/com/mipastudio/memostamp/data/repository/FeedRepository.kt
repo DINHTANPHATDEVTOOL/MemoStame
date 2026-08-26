@@ -300,8 +300,8 @@ class FeedRepository private constructor(
             }
         }
 
-        if (circleDao.getCircleCount() == 0) {
-            val user = getCurrentUser()
+        val user = getCurrentUser()
+        if (circleDao.getCircleCountByOwner(user.userId) == 0) {
             val defaults = listOf(
                 CircleEntity(
                     id = "circle_${user.userId}_best_friends",
@@ -645,9 +645,16 @@ class FeedRepository private constructor(
             feedDao.observeAllReactions(),
             feedDao.observeAllComments(),
             feedDao.observeAllReplies(),
-            feedDao.observeSeenPosts()
-        ) { posts, reactions, comments, replies, seenList ->
+            feedDao.observeSeenPosts(),
+            circleDao.observeAllCircles()
+        ) { posts, reactions, comments, replies, seenList, circles ->
             val currentUser = getCurrentUser()
+            val circle = circles.find { it.id == circleId }
+            if (circle == null) return@combine emptyList()
+            val isOwner = circle.ownerId == currentUser.userId
+            val isMember = circle.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
+            if (!isOwner && !isMember) return@combine emptyList()
+
             val reactionMap = reactions.groupBy { it.postId }
             val commentMap = comments.groupBy { it.postId }
             val replyMap = replies.groupBy { it.postId }
@@ -701,7 +708,11 @@ class FeedRepository private constructor(
     }
 
     fun observeCircles(): Flow<List<Circle>> = circleDao.observeAllCircles().map { list ->
-        list.map { entity ->
+        val currentUser = getCurrentUser()
+        list.filter { entity ->
+            entity.ownerId == currentUser.userId ||
+            entity.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
+        }.map { entity ->
             Circle(
                 id = entity.id,
                 ownerId = entity.ownerId,

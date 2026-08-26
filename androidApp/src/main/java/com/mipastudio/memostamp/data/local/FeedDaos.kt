@@ -101,4 +101,7 @@ interface CircleDao {
 
     @Query("SELECT COUNT(*) FROM circles")
     fun getCircleCount(): Int
+
+    @Query("SELECT COUNT(*) FROM circles WHERE ownerId = :ownerId")
+    fun getCircleCountByOwner(ownerId: String): Int
 }
