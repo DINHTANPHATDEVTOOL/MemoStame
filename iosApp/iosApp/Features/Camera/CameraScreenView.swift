@@ -11,6 +11,7 @@ import shared
 struct CameraPreviewView: UIViewRepresentable {
     @Binding var cameraPosition: AVCaptureDevice.Position
     @Binding var flashOn: Bool
+    @Binding var zoomScale: CGFloat
     @Binding var captureTrigger: Bool
     var onPhotoCaptured: ((UIImage) -> Void)?
 
@@ -44,12 +45,13 @@ struct CameraPreviewView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: CameraPreviewContainerView, context: Context) {
-        uiView.updateCamera(position: cameraPosition, flashOn: flashOn)
+        uiView.updateCamera(position: cameraPosition)
+        uiView.setZoomFactor(zoomScale)
         if captureTrigger {
             DispatchQueue.main.async {
                 captureTrigger = false
             }
-            uiView.capturePhoto(coordinator: context.coordinator)
+            uiView.capturePhoto(coordinator: context.coordinator, flashOn: flashOn)
         }
     }
 }
@@ -100,7 +102,7 @@ class CameraPreviewContainerView: UIView {
         }
     }
 
-    func updateCamera(position: AVCaptureDevice.Position, flashOn: Bool) {
+    func updateCamera(position: AVCaptureDevice.Position) {
         guard position != currentPosition, let session = captureSession else { return }
         currentPosition = position
         DispatchQueue.global(qos: .userInitiated).async {
@@ -117,8 +119,26 @@ class CameraPreviewContainerView: UIView {
         }
     }
 
-    func capturePhoto(coordinator: CameraPreviewView.Coordinator) {
+    func setZoomFactor(_ factor: CGFloat) {
+        guard let session = captureSession,
+              let input = session.inputs.first as? AVCaptureDeviceInput else { return }
+        let device = input.device
+        do {
+            try device.lockForConfiguration()
+            let maxZoom = min(device.activeFormat.videoMaxZoomFactor, 5.0)
+            let clampedZoom = min(max(factor, 1.0), maxZoom)
+            device.videoZoomFactor = clampedZoom
+            device.unlockForConfiguration()
+        } catch {
+            print("Hardware zoom lock error: \(error)")
+        }
+    }
+
+    func capturePhoto(coordinator: CameraPreviewView.Coordinator, flashOn: Bool) {
         let settings = AVCapturePhotoSettings()
+        if photoOutput.supportedFlashModes.contains(.on) {
+            settings.flashMode = flashOn ? .on : .off
+        }
         photoOutput.capturePhoto(with: settings, delegate: coordinator)
     }
 }
@@ -215,18 +235,17 @@ struct CameraScreenView: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .scaleEffect(zoomScale)
                     .ignoresSafeArea()
             } else {
                 CameraPreviewView(
                     cameraPosition: $cameraPosition,
                     flashOn: $flashOn,
+                    zoomScale: $zoomScale,
                     captureTrigger: $captureTrigger,
                     onPhotoCaptured: { img in
                         self.selectedUIImage = img
                     }
                 )
-                .scaleEffect(zoomScale)
                 .ignoresSafeArea()
             }
             #else
@@ -641,12 +660,18 @@ struct CameraScreenView: View {
 
     private func cropToStampAspectRatio(_ image: UIImage) -> UIImage {
         #if canImport(UIKit)
-        UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
-        image.draw(in: CGRect(origin: .zero, size: image.size))
-        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext() ?? image
-        UIGraphicsEndImageContext()
+        // 1. Normalize image orientation to .up so CGImage pixel cropping matches visual screen orientation
+        let normalizedImage: UIImage
+        if image.imageOrientation == .up {
+            normalizedImage = image
+        } else {
+            UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+            normalizedImage = UIGraphicsGetImageFromCurrentImageContext() ?? image
+            UIGraphicsEndImageContext()
+        }
 
-        // Authentic Stamp Inner Window Aspect Ratio matching Android StampGeometry (1200 x 1500 -> 0.8)
+        // 2. Authentic Stamp Inner Aperture Aspect Ratio: 4.0 / 5.0 (0.80)
         let targetRatio: CGFloat = 4.0 / 5.0
         let width = normalizedImage.size.width
         let height = normalizedImage.size.height
@@ -664,15 +689,10 @@ struct CameraScreenView: View {
         }
 
         if let cgImage = normalizedImage.cgImage?.cropping(to: cropRect) {
-            return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: normalizedImage.imageOrientation)
+            return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
         }
 
-        UIGraphicsBeginImageContextWithOptions(cropRect.size, false, normalizedImage.scale)
-        normalizedImage.draw(at: CGPoint(x: -cropRect.origin.x, y: -cropRect.origin.y))
-        let croppedImage = UIGraphicsGetImageFromCurrentImageContext() ?? normalizedImage
-        UIGraphicsEndImageContext()
-
-        return croppedImage
+        return normalizedImage
         #else
         return image
         #endif

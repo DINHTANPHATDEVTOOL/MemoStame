@@ -5,8 +5,8 @@ import UIKit
 
 /// Authentic postage stamp scallop perforation shape matching Android PerforatedStampShape with mathematically centered notches.
 struct PerforatedStampShape: Shape {
-    var notchRatio: CGFloat = 0.024
-    var spacingRatio: CGFloat = 0.068
+    var notchRatio: CGFloat = 0.025
+    var spacingRatio: CGFloat = 0.072
 
     func path(in rect: CGRect) -> Path {
         let w = rect.width
@@ -317,11 +317,59 @@ struct DieCutStampView: View {
 
             // LAYER 2: CAMERA / EDITOR MOLD OVERLAY (Placed OUTSIDE clipShape & scaled to fit)
             if showMoldOverlay {
-                Image(moldAssetImageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: cardWidth * 1.35, height: cardHeight * 1.35)
-                    .allowsHitTesting(false)
+                ZStack {
+                    Image(moldAssetImageName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: cardWidth * 1.35, height: cardHeight * 1.35)
+
+                    // Template-specific visual accents over the metal mold
+                    let s = shape.lowercased()
+                    if s.contains("vintage") || s.contains("35mm") {
+                        // Film 35mm Sprocket Holes Side Accents
+                        HStack {
+                            VStack(spacing: 8) {
+                                ForEach(0..<8, id: \.self) { _ in
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(Color.white.opacity(0.8))
+                                        .frame(width: 6, height: 9)
+                                }
+                            }
+                            Spacer()
+                            VStack(spacing: 8) {
+                                ForEach(0..<8, id: \.self) { _ in
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(Color.white.opacity(0.8))
+                                        .frame(width: 6, height: 9)
+                                }
+                            }
+                        }
+                        .frame(width: cardWidth * 1.15, height: cardHeight * 0.95)
+                    } else if s.contains("royal") || s.contains("gold") {
+                        // Royal Gold Crown filigree corner accents
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(red: 0.82, green: 0.65, blue: 0.35), lineWidth: 2.5)
+                                .frame(width: cardWidth * 1.08, height: cardHeight * 1.08)
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
+                                .offset(y: -cardHeight * 0.56)
+                        }
+                    } else if s.contains("heart") || s.contains("love") {
+                        // Heart Love corner accents
+                        ZStack {
+                            HStack {
+                                Image(systemName: "heart.fill").foregroundColor(Color(red: 0.90, green: 0.30, blue: 0.45)).font(.system(size: 14))
+                                Spacer()
+                                Image(systemName: "heart.fill").foregroundColor(Color(red: 0.90, green: 0.30, blue: 0.45)).font(.system(size: 14))
+                            }
+                            .frame(width: cardWidth * 1.12)
+                            .offset(y: -cardHeight * 0.54)
+                        }
+                    }
+                }
+                .allowsHitTesting(false)
             }
         }
     }

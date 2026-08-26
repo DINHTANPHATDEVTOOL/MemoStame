@@ -64,8 +64,22 @@ final class StampRenderEngine {
             let rect = CGRect(origin: .zero, size: targetSize)
             let cgContext = context.cgContext
 
+            let s = shape.lowercased()
+            let themeColor: UIColor
+            if s.contains("gold") || s.contains("royal") {
+                themeColor = UIColor(red: 0.82, green: 0.65, blue: 0.35, alpha: 1.0)
+            } else if s.contains("airmail") || s.contains("postmark") {
+                themeColor = UIColor(red: 0.18, green: 0.35, blue: 0.58, alpha: 1.0)
+            } else if s.contains("heart") || s.contains("love") {
+                themeColor = UIColor(red: 0.90, green: 0.30, blue: 0.45, alpha: 1.0)
+            } else if s.contains("vintage") || s.contains("35mm") {
+                themeColor = UIColor(red: 0.75, green: 0.45, blue: 0.25, alpha: 1.0)
+            } else {
+                themeColor = UIColor(red: 0.85, green: 0.25, blue: 0.20, alpha: 1.0)
+            }
+
             // 1. Calculate perforated stamp path
-            let shapeObj = PerforatedStampShape(notchRatio: 0.024, spacingRatio: 0.068)
+            let shapeObj = PerforatedStampShape(notchRatio: 0.025, spacingRatio: 0.072)
             let path = shapeObj.path(in: rect).cgPath
 
             // 2. Clip context to perforated stamp shape
@@ -91,40 +105,107 @@ final class StampRenderEngine {
                 cgContext.fill(rect)
             }
 
-            // 4. Draw Gradient Overlays for Readability
+            // 4. Draw Top & Bottom Gradient Overlays for Readability
             let colorSpace = CGColorSpaceCreateDeviceRGB()
-            let colors = [
-                UIColor.black.withAlphaComponent(0.65).cgColor,
-                UIColor.clear.cgColor
-            ] as CFArray
-            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0.0, 1.0]) {
-                cgContext.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: 120), options: [])
+            let topColors = [UIColor.black.withAlphaComponent(0.65).cgColor, UIColor.clear.cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: topColors, locations: [0.0, 1.0]) {
+                cgContext.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: 140), options: [])
             }
 
-            // 5. Draw Header Date & Location Badges
-            let font = UIFont.systemFont(ofSize: 22, weight: .bold)
-            let textAttributes: [NSAttributedString.Key: Any] = [
-                .font: font,
-                .foregroundColor: UIColor.white
-            ]
+            let bottomColors = [UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.70).cgColor] as CFArray
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: bottomColors, locations: [0.0, 1.0]) {
+                cgContext.drawLinearGradient(gradient, start: CGPoint(x: 0, y: targetSize.height - 180), end: CGPoint(x: 0, y: targetSize.height), options: [])
+            }
 
-            let effectiveTitle = title.isEmpty ? "Untitled Memory" : title
-            let titleString = NSAttributedString(string: effectiveTitle.uppercased(), attributes: textAttributes)
-            titleString.draw(at: CGPoint(x: 32, y: targetSize.height - 70))
+            // 5. Draw Header Badges (Location Pill & Date Pill)
+            let badgeFont = UIFont.monospacedSystemFont(ofSize: 18, weight: .bold)
+            let pillBgColor = UIColor.black.withAlphaComponent(0.45)
 
             if let loc = location, !loc.isEmpty {
+                let locText = "📍 \(loc.uppercased())"
                 let locAttr: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: 18, weight: .semibold),
-                    .foregroundColor: UIColor(red: 0.95, green: 0.85, blue: 0.70, alpha: 1.0)
+                    .font: badgeFont,
+                    .foregroundColor: UIColor.white
                 ]
-                let locString = NSAttributedString(string: "📍 \(loc.uppercased()) • \(dateStr)", attributes: locAttr)
-                locString.draw(at: CGPoint(x: 32, y: 32))
+                let locSize = (locText as NSString).size(withAttributes: locAttr)
+                let locPillRect = CGRect(x: 32, y: 32, width: locSize.width + 24, height: locSize.height + 12)
+                let locPillPath = UIBezierPath(roundedRect: locPillRect, cornerRadius: 10)
+                pillBgColor.setFill()
+                locPillPath.fill()
+                (locText as NSString).draw(at: CGPoint(x: 44, y: 38), withAttributes: locAttr)
             }
 
-            // 6. Draw Perforated White Stroke Border
+            let dateAttr: [NSAttributedString.Key: Any] = [
+                .font: badgeFont,
+                .foregroundColor: UIColor.white.withAlphaComponent(0.9)
+            ]
+            let dateSize = (dateStr as NSString).size(withAttributes: dateAttr)
+            let datePillRect = CGRect(x: targetSize.width - dateSize.width - 56, y: 32, width: dateSize.width + 24, height: dateSize.height + 12)
+            let datePillPath = UIBezierPath(roundedRect: datePillRect, cornerRadius: 10)
+            pillBgColor.setFill()
+            datePillPath.fill()
+            (dateStr as NSString).draw(at: CGPoint(x: targetSize.width - dateSize.width - 44, y: 38), withAttributes: dateAttr)
+
+            // 6. Draw Circular Postmark Cancellation Seal
+            cgContext.saveGState()
+            let postmarkCenter = CGPoint(x: targetSize.width - 110, y: 160)
+            cgContext.translateBy(x: postmarkCenter.x, y: postmarkCenter.y)
+            cgContext.rotate(by: -15 * .pi / 180.0)
+
+            let outerCircle = UIBezierPath(arcCenter: .zero, radius: 52, startAngle: 0, endAngle: .pi * 2, clockwise: true)
+            UIColor.white.withAlphaComponent(0.85).setStroke()
+            outerCircle.lineWidth = 2.5
+            outerCircle.stroke()
+
+            let innerCircle = UIBezierPath(arcCenter: .zero, radius: 42, startAngle: 0, endAngle: .pi * 2, clockwise: true)
+            UIColor.white.withAlphaComponent(0.50).setStroke()
+            innerCircle.lineWidth = 1.5
+            innerCircle.stroke()
+
+            let pmHeaderAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 12, weight: .black), .foregroundColor: UIColor.white.withAlphaComponent(0.95)]
+            let pmCenterAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10, weight: .bold), .foregroundColor: UIColor.white.withAlphaComponent(0.95)]
+            let pmFooterAttr: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 11, weight: .black), .foregroundColor: UIColor.white.withAlphaComponent(0.95)]
+
+            let pmCenterText = s.contains("royal") ? "★ ROYAL ★" : (s.contains("heart") ? "♥ LOVE ♥" : "★ AIR ★")
+
+            ("MEMO" as NSString).draw(at: CGPoint(x: -18, y: -26), withAttributes: pmHeaderAttr)
+            (pmCenterText as NSString).draw(at: CGPoint(x: -24, y: -6), withAttributes: pmCenterAttr)
+            ("POST" as NSString).draw(at: CGPoint(x: -16, y: 14), withAttributes: pmFooterAttr)
+
+            cgContext.restoreGState()
+
+            // 7. Draw Footer: Title, Subtitle, and Denomination Badge
+            let titleFont = UIFont.italicSystemFont(ofSize: 28)
+            let titleAttr: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 28),
+                .foregroundColor: UIColor.white
+            ]
+            let effectiveTitle = title.isEmpty ? "Untitled Memory" : title
+            (effectiveTitle as NSString).draw(at: CGPoint(x: 32, y: targetSize.height - 95), withAttributes: titleAttr)
+
+            let subtitleAttr: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 14, weight: .bold),
+                .foregroundColor: UIColor(red: 0.85, green: 0.75, blue: 0.65, alpha: 1.0)
+            ]
+            ("OFFICIAL DIE-CUT STAMP" as NSString).draw(at: CGPoint(x: 32, y: targetSize.height - 58), withAttributes: subtitleAttr)
+
+            // Vintage Denomination Badge ("₫ 2026")
+            let denomText = "₫ 2026"
+            let denomAttr: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedSystemFont(ofSize: 20, weight: .heavy),
+                .foregroundColor: UIColor.white
+            ]
+            let denomSize = (denomText as NSString).size(withAttributes: denomAttr)
+            let denomRect = CGRect(x: targetSize.width - denomSize.width - 56, y: targetSize.height - 82, width: denomSize.width + 24, height: denomSize.height + 12)
+            let denomPath = UIBezierPath(roundedRect: denomRect, cornerRadius: 6)
+            themeColor.setFill()
+            denomPath.fill()
+            (denomText as NSString).draw(at: CGPoint(x: targetSize.width - denomSize.width - 44, y: targetSize.height - 76), withAttributes: denomAttr)
+
+            // 8. Draw Perforated White Stroke Border
             cgContext.addPath(path)
             cgContext.setLineWidth(4.0)
-            cgContext.setStrokeColor(UIColor.white.withAlphaComponent(0.85).cgColor)
+            cgContext.setStrokeColor(themeColor.withAlphaComponent(0.85).cgColor)
             cgContext.strokePath()
         }
     }
