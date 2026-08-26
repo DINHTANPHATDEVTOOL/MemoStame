@@ -548,6 +548,17 @@ class UserAuthRepository private constructor(private val context: Context) {
         }
     }
 
+    private fun hashPassword(password: String): String {
+        if (password.isBlank()) return ""
+        return try {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            val hash = digest.digest(password.toByteArray(Charsets.UTF_8))
+            hash.joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            password
+        }
+    }
+
     private suspend fun ensurePrimaryUserInDb() = withContext(Dispatchers.IO) {
         val user = _currentUser.value
         val existing = userDao.getUserByUid(user.userId)
@@ -558,7 +569,7 @@ class UserAuthRepository private constructor(private val context: Context) {
                     username = user.username,
                     displayName = user.displayName,
                     email = user.email,
-                    passwordHash = "123456",
+                    passwordHash = hashPassword("123456"),
                     avatarUrl = user.avatarUrl,
                     coverUrl = user.coverUrl,
                     bio = user.bio,
@@ -643,13 +654,14 @@ class UserAuthRepository private constructor(private val context: Context) {
         val newUid = "user_" + UUID.randomUUID().toString().take(8)
         val finalAvatar = avatarUrl ?: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
         val finalCover = coverUrl ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200"
+        val hashedPwd = hashPassword(password)
 
         val entity = UserEntity(
             uid = newUid,
             username = cleanUsername,
             displayName = displayName.ifBlank { cleanUsername },
             email = cleanEmail,
-            passwordHash = password,
+            passwordHash = hashedPwd,
             avatarUrl = finalAvatar,
             coverUrl = finalCover,
             bio = bio,
@@ -672,9 +684,9 @@ class UserAuthRepository private constructor(private val context: Context) {
             totalStampsCount = 0
         ).sanitized()
 
-        // Lưu profile lên Supabase Cloud
+        // Lưu profile lên Supabase Cloud (không gửi password hash)
         try {
-            supabaseClient.upsertProfile(profile, password)
+            supabaseClient.upsertProfile(profile)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -690,43 +702,33 @@ class UserAuthRepository private constructor(private val context: Context) {
     ): Result<UserProfile> = withContext(Dispatchers.IO) {
         val cleanIdentifier = identifier.trim().lowercase().removePrefix("@")
         
-        // 1. Kiểm tra Local trước
-        var user = userDao.getUserByUsernameOrEmail(cleanIdentifier)
-        
-        // 2. Nếu không thấy trên Local, kiểm tra trên Supabase Cloud
+        // 1. Kiểm tra Local DB
+        val user = userDao.getUserByUsernameOrEmail(cleanIdentifier)
         if (user == null) {
-            try {
-                val cloudProfile = supabaseClient.getProfileByUsername(cleanIdentifier)
-                if (cloudProfile != null) {
-                    val entity = UserEntity(
-                        uid = cloudProfile.userId,
-                        username = cloudProfile.username,
-                        displayName = cloudProfile.displayName,
-                        email = cloudProfile.email ?: "",
-                        passwordHash = cloudProfile.passwordHash ?: "",
-                        avatarUrl = cloudProfile.avatarUrl,
-                        coverUrl = cloudProfile.coverUrl,
-                        bio = cloudProfile.bio ?: "",
-                        city = cloudProfile.city ?: "Đà Lạt",
-                        totalStamps = 0,
-                        createdAt = (cloudProfile.createdAt as? Double)?.toLong() ?: (cloudProfile.createdAt as? Long) ?: System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    userDao.insertUser(entity)
-                    user = entity
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            return@withContext Result.failure(IllegalArgumentException("Tài khoản \"$identifier\" chưa được lưu trên thiết bị. Vui lòng chọn Đăng Ký Tài Khoản mới."))
         }
 
-        if (user == null) {
-            return@withContext Result.failure(IllegalArgumentException("Không tìm thấy tài khoản \"$identifier\""))
-        }
-
-        if (user.passwordHash.isNotBlank() && user.passwordHash != password) {
+        // 2. Kiểm tra mật khẩu (Bắt buộc passwordHash phải có dữ liệu và khớp)
+        val inputHashed = hashPassword(password)
+        if (user.passwordHash.isBlank() || (user.passwordHash != inputHashed && user.passwordHash != password)) {
             return@withContext Result.failure(IllegalArgumentException("Mật khẩu không chính xác"))
         }
+
+        val profile = UserProfile(
+            userId = user.uid,
+            username = user.username,
+            displayName = user.displayName,
+            email = user.email,
+            avatarUrl = user.avatarUrl ?: "https://i.pravatar.cc/150?u=${user.uid}",
+            coverUrl = user.coverUrl ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200",
+            bio = user.bio ?: "Người yêu dấu tem & bưu thiếp 📮",
+            city = user.city ?: "Đà Lạt",
+            totalStampsCount = user.totalStamps
+        ).sanitized()
+
+        saveUserProfile(profile)
+        Result.success(profile)
+    }
 
         val profile = UserProfile(
             userId = user.uid,

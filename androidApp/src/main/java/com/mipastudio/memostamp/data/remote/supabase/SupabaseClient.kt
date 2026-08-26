@@ -37,7 +37,6 @@ data class SupabaseProfileRecord(
     @SerializedName("cover_url") val coverUrl: String? = "",
     @SerializedName("bio") val bio: String? = "",
     @SerializedName("city") val city: String? = "",
-    @SerializedName("password_hash") val passwordHash: String? = "",
     @SerializedName("created_at") val createdAt: Any? = null
 ) {
     val userId: String
@@ -352,7 +351,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
     // PROFILES & AUTH
     // ==========================================
 
-    suspend fun upsertProfile(profile: UserProfile, passwordHash: String? = null): Result<Boolean> = withContext(Dispatchers.IO) {
+    suspend fun upsertProfile(profile: UserProfile): Result<Boolean> = withContext(Dispatchers.IO) {
         val jsonMap = mutableMapOf<String, Any?>(
             "id" to profile.userId,
             "user_id" to profile.userId,
@@ -363,7 +362,6 @@ class SupabaseClient constructor(private val context: Context? = null) {
             "cover_url" to profile.coverUrl,
             "bio" to profile.bio,
             "city" to profile.city,
-            "password_hash" to passwordHash,
             "created_at" to System.currentTimeMillis()
         )
         val endpoint = "${getBaseUrl()}/rest/v1/profiles?on_conflict=user_id"

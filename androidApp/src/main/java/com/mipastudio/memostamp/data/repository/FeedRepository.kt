@@ -123,37 +123,6 @@ class FeedRepository private constructor(
 
         // 2. UPLOAD local posts to Supabase SECOND
         try {
-            // Auto-create local feed post for any stamp in stampDao that is missing a feed post
-            val currentUser = getCurrentUser()
-            val allStamps = stampDao.getAllStampsList()
-            for (stamp in allStamps) {
-                val existingPost = feedDao.getPostByStampId(stamp.id)
-                if (existingPost == null) {
-                    val shape = when {
-                        stamp.templateId?.contains("heart", ignoreCase = true) == true -> "heart"
-                        stamp.templateId?.contains("oval", ignoreCase = true) == true -> "oval"
-                        else -> "classic"
-                    }
-                    val cloudUrl = MemoImageProcessor.encodeImageToCloudBase64(stamp.stampImagePath) ?: stamp.stampImagePath
-                    val postEntity = FeedPostEntity(
-                        id = UUID.randomUUID().toString(),
-                        stampId = stamp.id,
-                        stampUrl = cloudUrl,
-                        stampTitle = stamp.title,
-                        shape = shape,
-                        authorId = currentUser.userId,
-                        authorName = currentUser.displayName,
-                        authorAvatar = currentUser.avatarUrl,
-                        caption = stamp.note.ifBlank { stamp.title },
-                        audienceType = AudienceType.FRIENDS.name,
-                        createdAt = stamp.createdAt,
-                        type = FeedPostType.MEMORY.name,
-                        location = stamp.location
-                    )
-                    feedDao.insertPost(postEntity)
-                }
-            }
-
             val localPosts = feedDao.getAllPostsList()
             for (p in localPosts) {
                 val cloudUrl = if (p.stampUrl.startsWith("/") || p.stampUrl.startsWith("file://")) {
@@ -364,7 +333,8 @@ class FeedRepository private constructor(
             feedDao.observeAllComments(),
             feedDao.observeAllReplies(),
             feedDao.observeSeenPosts(),
-            authRepo.friendIds
+            authRepo.friendIds,
+            circleDao.observeAllCircles()
         ) { flowArray ->
             @Suppress("UNCHECKED_CAST")
             val posts = flowArray[0] as List<FeedPostEntity>
@@ -378,18 +348,30 @@ class FeedRepository private constructor(
             val seenList = flowArray[4] as List<FeedSeenEntity>
             @Suppress("UNCHECKED_CAST")
             val friendIds = flowArray[5] as Set<String>
+            @Suppress("UNCHECKED_CAST")
+            val circles = flowArray[6] as List<CircleEntity>
 
             val currentUser = getCurrentUser()
             val reactionMap = reactions.groupBy { it.postId }
             val commentMap = comments.groupBy { it.postId }
             val replyMap = replies.groupBy { it.postId }
             val seenMap = seenList.filter { it.userId == currentUser.userId }.associateBy { it.postId }
+            val myCirclesMap = circles.associateBy { it.id }
 
             val filteredEntities = posts.filter { entity ->
                 val audience = AudienceType.fromString(entity.audienceType)
                 when (audience) {
                     AudienceType.FRIENDS -> entity.authorId == currentUser.userId || friendIds.contains(entity.authorId)
-                    AudienceType.SPECIFIC_FRIENDS -> entity.authorId == currentUser.userId || entity.circleId != null
+                    AudienceType.SPECIFIC_FRIENDS -> {
+                        // NOTE: Local circle membership filtering ensures UI visibility boundaries.
+                        // Server-side Supabase Row-Level Security (RLS) policies are required for complete API security.
+                        if (entity.authorId == currentUser.userId) true
+                        else if (entity.circleId.isNullOrBlank()) false
+                        else {
+                            val circle = myCirclesMap[entity.circleId]
+                            circle != null && (circle.ownerId == currentUser.userId || circle.memberIds.split(",").contains(currentUser.userId))
+                        }
+                    }
                     AudienceType.ONLY_ME -> entity.authorId == currentUser.userId
                 }
             }

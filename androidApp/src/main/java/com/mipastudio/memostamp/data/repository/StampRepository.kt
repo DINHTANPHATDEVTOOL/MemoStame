@@ -175,16 +175,6 @@ class StampRepository private constructor(
                 if (insertedId <= -1) {
                     throw IllegalStateException("Database insert failed")
                 }
-                if (!draftId.isNullOrBlank()) {
-                    stampDraftDao.deleteDraftById(draftId)
-                }
-            }
-            try {
-                val feedRepo = FeedRepository.getInstance(context)
-                feedRepo.createPostFromStamp(entity, com.mipastudio.memostamp.domain.model.AudienceType.FRIENDS)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
             triggerCloudAutoSync()
             Result.success(entity)
         } catch (e: Exception) {

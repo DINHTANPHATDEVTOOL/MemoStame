@@ -4,6 +4,15 @@ import UIKit
 #endif
 import shared
 
+import CryptoKit
+
+func hashPasswordSwift(_ text: String) -> String {
+    guard !text.isEmpty else { return "" }
+    let data = Data(text.utf8)
+    let digest = SHA256.hash(data: data)
+    return digest.map { String(format: "%02hhx", $0) }.joined()
+}
+
 struct UserAccountData: Codable {
     let email: String
     let passwordHash: String
@@ -51,11 +60,10 @@ struct SupabaseCloudAuth {
                     let username = (first["username"] as? String) ?? clean
                     let avatarUrl = (first["avatar_url"] as? String) ?? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
                     let bio = (first["bio"] as? String) ?? "Sưu tầm ký ức qua từng con tem bưu chính 📮"
-                    let pwd = (first["password_hash"] as? String) ?? "123456"
 
                     let account = UserAccountData(
                         email: email,
-                        passwordHash: pwd,
+                        passwordHash: "",
                         displayName: displayName,
                         username: username,
                         avatarUrl: avatarUrl,
@@ -270,11 +278,11 @@ struct AuthLoginScreenView: View {
                         Button(action: { performSocialLogin(provider: "Google") }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "g.circle.fill")
-                                Text("Google")
+                                Text("Google (Demo)")
                                     .font(.subheadline.bold())
                             }
                             .foregroundColor(MSColors.ink)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(MSColors.white)
                             .cornerRadius(20)
@@ -284,11 +292,11 @@ struct AuthLoginScreenView: View {
                         Button(action: { performSocialLogin(provider: "Apple") }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "applelogo")
-                                Text("Apple")
+                                Text("Apple (Demo)")
                                     .font(.subheadline.bold())
                             }
                             .foregroundColor(MSColors.ink)
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(MSColors.white)
                             .cornerRadius(20)
@@ -369,9 +377,10 @@ struct AuthLoginScreenView: View {
                     let avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
                     let bio = "Sưu tầm ký ức qua từng con tem bưu chính 📮"
 
+                    let hashedPwd = hashPasswordSwift(passwordText)
                     let newAccount = UserAccountData(
                         email: trimmedEmail,
-                        passwordHash: passwordText,
+                        passwordHash: hashedPwd,
                         displayName: finalDisplayName,
                         username: cleanUsername,
                         avatarUrl: avatarUrl,
@@ -410,76 +419,39 @@ struct AuthLoginScreenView: View {
                 }
             }
         } else {
-            // Login Mode: Fetch real user profile from Supabase Cloud DB
-            SupabaseCloudAuth.fetchCloudProfile(emailOrUsername: trimmedEmail) { cloudAccount in
-                DispatchQueue.main.async {
-                    if let cloudAccount = cloudAccount {
-                        if !cloudAccount.passwordHash.isEmpty && cloudAccount.passwordHash != passwordText {
-                            isLoading = false
-                            errorMessage = "Mật khẩu không chính xác cho tài khoản Supabase Cloud!"
-                            return
-                        }
-
-                        var currentAccounts = getRegisteredAccounts()
-                        currentAccounts[trimmedEmail] = cloudAccount
-                        saveRegisteredAccounts(currentAccounts)
-
-                        UserDefaults.standard.set(cloudAccount.displayName, forKey: "user_displayName")
-                        UserDefaults.standard.set(cloudAccount.username, forKey: "user_username")
-                        UserDefaults.standard.set(cloudAccount.email, forKey: "user_email")
-                        UserDefaults.standard.set(cloudAccount.avatarUrl, forKey: "user_avatarUrl")
-                        UserDefaults.standard.set(cloudAccount.bio, forKey: "user_bio")
-
-                        let newProfile = UserProfile(
-                            uid: "user_" + cloudAccount.username,
-                            username: cloudAccount.username,
-                            displayName: cloudAccount.displayName,
-                            avatarUrl: cloudAccount.avatarUrl,
-                            bio: cloudAccount.bio,
-                            stampsCreatedCount: Int32(14),
-                            stampsCollectedCount: Int32(38),
-                            placesVisitedCount: Int32(9)
-                        )
-                        repository.setCurrentUser(profile: newProfile)
-
-                        isLoading = false
-                        onLoginSuccess()
-                    } else {
-                        // Check local cache if offline, otherwise report not found on Cloud
-                        let localAccounts = getRegisteredAccounts()
-                        if let localAccount = localAccounts[trimmedEmail] {
-                            if localAccount.passwordHash != passwordText {
-                                isLoading = false
-                                errorMessage = "Mật khẩu không chính xác! Vui lòng thử lại."
-                                return
-                            }
-
-                            UserDefaults.standard.set(localAccount.displayName, forKey: "user_displayName")
-                            UserDefaults.standard.set(localAccount.username, forKey: "user_username")
-                            UserDefaults.standard.set(localAccount.email, forKey: "user_email")
-                            UserDefaults.standard.set(localAccount.avatarUrl, forKey: "user_avatarUrl")
-                            UserDefaults.standard.set(localAccount.bio, forKey: "user_bio")
-
-                            let newProfile = UserProfile(
-                                uid: "user_" + localAccount.username,
-                                username: localAccount.username,
-                                displayName: localAccount.displayName,
-                                avatarUrl: localAccount.avatarUrl,
-                                bio: localAccount.bio,
-                                stampsCreatedCount: Int32(14),
-                                stampsCollectedCount: Int32(38),
-                                placesVisitedCount: Int32(9)
-                            )
-                            repository.setCurrentUser(profile: newProfile)
-
-                            isLoading = false
-                            onLoginSuccess()
-                        } else {
-                            isLoading = false
-                            errorMessage = "Tài khoản \"\(emailText)\" không tồn tại trên Đám mây Supabase! Vui lòng chọn Đăng Ký Tài Khoản ở bên dưới."
-                        }
-                    }
+            // Login Mode: Check local registered accounts securely
+            let localAccounts = getRegisteredAccounts()
+            if let localAccount = localAccounts[trimmedEmail] {
+                let inputHashed = hashPasswordSwift(passwordText)
+                if localAccount.passwordHash.isEmpty || (localAccount.passwordHash != inputHashed && localAccount.passwordHash != passwordText) {
+                    isLoading = false
+                    errorMessage = "Mật khẩu không chính xác! Vui lòng thử lại."
+                    return
                 }
+
+                UserDefaults.standard.set(localAccount.displayName, forKey: "user_displayName")
+                UserDefaults.standard.set(localAccount.username, forKey: "user_username")
+                UserDefaults.standard.set(localAccount.email, forKey: "user_email")
+                UserDefaults.standard.set(localAccount.avatarUrl, forKey: "user_avatarUrl")
+                UserDefaults.standard.set(localAccount.bio, forKey: "user_bio")
+
+                let newProfile = UserProfile(
+                    uid: "user_" + localAccount.username,
+                    username: localAccount.username,
+                    displayName: localAccount.displayName,
+                    avatarUrl: localAccount.avatarUrl,
+                    bio: localAccount.bio,
+                    stampsCreatedCount: Int32(14),
+                    stampsCollectedCount: Int32(38),
+                    placesVisitedCount: Int32(9)
+                )
+                repository.setCurrentUser(profile: newProfile)
+
+                isLoading = false
+                onLoginSuccess()
+            } else {
+                isLoading = false
+                errorMessage = "Tài khoản \"\(emailText)\" chưa được lưu trên thiết bị. Vui lòng chọn Đăng Ký Tài Khoản mới."
             }
         }
     }
