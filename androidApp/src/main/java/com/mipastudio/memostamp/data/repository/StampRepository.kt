@@ -66,7 +66,10 @@ class StampRepository private constructor(
     }
 
     suspend fun getDraft(id: String): StampDraft? = withContext(Dispatchers.IO) {
-        val entity = stampDraftDao.getDraftById(id) ?: return@withContext null
+        val currentUserId = authRepo.currentUser.value.userId
+        val entity = stampDraftDao.getDraftById(id, currentUserId)
+            ?: stampDraftDao.getDraftById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
+            ?: return@withContext null
         StampDraft(
             id = entity.id,
             originalImagePath = entity.originalImagePath,
@@ -86,7 +89,10 @@ class StampRepository private constructor(
 
     suspend fun getNewestDraft(): Pair<String, StampDraft>? = withContext(Dispatchers.IO) {
         cleanupExpiredDrafts()
-        val entity = stampDraftDao.getNewestDraft() ?: return@withContext null
+        val currentUserId = authRepo.currentUser.value.userId
+        val entity = stampDraftDao.getNewestDraft(currentUserId)
+            ?: stampDraftDao.getNewestDraft()?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
+            ?: return@withContext null
         val draft = StampDraft(
             id = entity.id,
             originalImagePath = entity.originalImagePath,
@@ -107,7 +113,8 @@ class StampRepository private constructor(
 
     suspend fun cleanupExpiredDrafts() = withContext(Dispatchers.IO) {
         val cutoff = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
-        val expired = stampDraftDao.getExpiredDrafts(cutoff)
+        val currentUserId = authRepo.currentUser.value.userId
+        val expired = stampDraftDao.getExpiredDrafts(cutoff, currentUserId)
         for (entity in expired) {
             try {
                 val orig = File(entity.originalImagePath)
@@ -122,13 +129,15 @@ class StampRepository private constructor(
                 e.printStackTrace()
             }
         }
-        stampDraftDao.deleteExpiredDrafts(cutoff)
+        stampDraftDao.deleteExpiredDrafts(cutoff, currentUserId)
     }
 
     suspend fun removeDraft(id: String) = withContext(Dispatchers.IO) {
-        val entity = stampDraftDao.getDraftById(id)
+        val currentUserId = authRepo.currentUser.value.userId
+        val entity = stampDraftDao.getDraftById(id, currentUserId)
+            ?: stampDraftDao.getDraftById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
         if (entity != null) {
-            stampDraftDao.deleteDraftById(id)
+            stampDraftDao.deleteDraftById(id, currentUserId)
             try {
                 val origFile = File(entity.originalImagePath)
                 if (origFile.exists()) origFile.delete()
@@ -150,7 +159,12 @@ class StampRepository private constructor(
 
     suspend fun getStampById(id: String): Result<StampEntity?> = withContext(Dispatchers.IO) {
         try {
-            val entity = stampDao.getStampById(id)
+            val currentUserId = authRepo.currentUser.value.userId
+            val entity = stampDao.getStampById(id, currentUserId)
+                ?: stampDao.getStampById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
+            if (entity != null && entity.ownerId.isNotBlank() && entity.ownerId != currentUserId) {
+                return@withContext Result.failure(SecurityException("Unauthorized access to stamp"))
+            }
             Result.success(entity)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -185,7 +199,7 @@ class StampRepository private constructor(
                     throw IllegalStateException("Database insert failed")
                 }
                 if (!draftId.isNullOrBlank()) {
-                    stampDraftDao.deleteDraftById(draftId)
+                    stampDraftDao.deleteDraftById(draftId, currentUserId)
                 }
             }
             triggerCloudAutoSync()
@@ -198,6 +212,10 @@ class StampRepository private constructor(
 
     suspend fun updateStamp(stamp: StampEntity): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val currentUserId = authRepo.currentUser.value.userId
+            if (stamp.ownerId.isNotBlank() && stamp.ownerId != currentUserId) {
+                return@withContext Result.failure(SecurityException("Unauthorized access to stamp"))
+            }
             val updatedRows = stampDao.update(stamp)
             if (updatedRows > 0) {
                 triggerCloudAutoSync()
@@ -213,22 +231,25 @@ class StampRepository private constructor(
 
     suspend fun deleteStamp(id: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val entity = stampDao.getStampById(id)
-            val deletedRows = stampDao.deleteById(id)
+            val currentUserId = authRepo.currentUser.value.userId
+            val entity = stampDao.getStampById(id, currentUserId)
+                ?: stampDao.getStampById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
+            if (entity == null || (entity.ownerId.isNotBlank() && entity.ownerId != currentUserId)) {
+                return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
+            }
+            val deletedRows = stampDao.deleteById(id, currentUserId)
             if (deletedRows > 0) {
-                if (entity != null) {
-                    try {
-                        val origFile = File(entity.originalImagePath)
-                        if (origFile.exists()) origFile.delete()
-                        val stampFile = File(entity.stampImagePath)
-                        if (stampFile.exists()) stampFile.delete()
-                        entity.croppedImagePath?.let { path ->
-                            val croppedFile = File(path)
-                            if (croppedFile.exists()) croppedFile.delete()
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                try {
+                    val origFile = File(entity.originalImagePath)
+                    if (origFile.exists()) origFile.delete()
+                    val stampFile = File(entity.stampImagePath)
+                    if (stampFile.exists()) stampFile.delete()
+                    entity.croppedImagePath?.let { path ->
+                        val croppedFile = File(path)
+                        if (croppedFile.exists()) croppedFile.delete()
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
                 triggerCloudAutoSync()
                 Result.success(Unit)
@@ -242,13 +263,13 @@ class StampRepository private constructor(
     }
 
     suspend fun ensureDefaultCollections() = withContext(Dispatchers.IO) {
-        if (collectionDao.getCollectionCount() == 0) {
-            val currentUserId = authRepo.currentUser.value.userId
+        val currentUserId = authRepo.currentUser.value.userId
+        if (collectionDao.getCollectionCountByOwner(currentUserId) == 0) {
             val defaults = listOf(
-                CollectionEntity("col_travel_default", currentUserId, "Travel & Places", "Destinations, journeys and outdoor adventures", "✈️", null, System.currentTimeMillis(), 0, "SPECIAL", 12),
-                CollectionEntity("col_coffee_default", currentUserId, "Coffee & Food", "Cafes, meals and culinary experiences", "☕", null, System.currentTimeMillis(), 1, "NORMAL", 10),
-                CollectionEntity("col_daily_default", currentUserId, "Daily Life", "Everyday moments and small joys", "🌿", null, System.currentTimeMillis(), 2, "NORMAL", 15),
-                CollectionEntity("col_special_default", currentUserId, "Special Moments", "Anniversaries, celebrations and milestones", "🎉", null, System.currentTimeMillis(), 3, "SERIES", 8)
+                CollectionEntity("col_${currentUserId}_travel_default", currentUserId, "Travel & Places", "Destinations, journeys and outdoor adventures", "✈️", null, System.currentTimeMillis(), 0, "SPECIAL", 12),
+                CollectionEntity("col_${currentUserId}_coffee_default", currentUserId, "Coffee & Food", "Cafes, meals and culinary experiences", "☕", null, System.currentTimeMillis(), 1, "NORMAL", 10),
+                CollectionEntity("col_${currentUserId}_daily_default", currentUserId, "Daily Life", "Everyday moments and small joys", "🌿", null, System.currentTimeMillis(), 2, "NORMAL", 15),
+                CollectionEntity("col_${currentUserId}_special_default", currentUserId, "Special Moments", "Anniversaries, celebrations and milestones", "🎉", null, System.currentTimeMillis(), 3, "SERIES", 8)
             )
             for (col in defaults) {
                 collectionDao.insertCollection(col)
@@ -257,7 +278,7 @@ class StampRepository private constructor(
     }
 
     fun observeCollections(): Flow<List<CollectionEntity>> = combine(collectionDao.observeCollections(), authRepo.currentUser) { collections, user ->
-        collections.filter { it.ownerId == user.userId || (it.ownerId.isBlank() && user.userId == "user_phat_main") || it.id.startsWith("col_") }
+        collections.filter { it.ownerId == user.userId || (it.ownerId.isBlank() && user.userId == "user_phat_main") }
     }
 
     suspend fun createCollection(
@@ -285,7 +306,13 @@ class StampRepository private constructor(
 
     suspend fun updateStampCollection(stampId: String, collectionId: String?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val stamp = stampDao.getStampById(stampId) ?: return@withContext Result.failure(IllegalArgumentException("Stamp not found"))
+            val currentUserId = authRepo.currentUser.value.userId
+            val stamp = stampDao.getStampById(stampId, currentUserId)
+                ?: stampDao.getStampById(stampId)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
+                ?: return@withContext Result.failure(IllegalArgumentException("Stamp not found"))
+            if (stamp.ownerId.isNotBlank() && stamp.ownerId != currentUserId) {
+                return@withContext Result.failure(SecurityException("Unauthorized access to stamp"))
+            }
             val updated = stamp.copy(collectionId = collectionId)
             stampDao.update(updated)
             triggerCloudAutoSync()
@@ -298,8 +325,13 @@ class StampRepository private constructor(
 
     suspend fun toggleCollectionPrivacy(collectionId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val col = collectionDao.getCollectionById(collectionId)
+            val currentUserId = authRepo.currentUser.value.userId
+            val col = collectionDao.getCollectionById(collectionId, currentUserId)
+                ?: collectionDao.getCollectionById(collectionId)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
                 ?: return@withContext Result.failure(IllegalArgumentException("Collection not found"))
+            if (col.ownerId.isNotBlank() && col.ownerId != currentUserId) {
+                return@withContext Result.failure(SecurityException("Unauthorized access to collection"))
+            }
             val newPrivacy = if (col.privacy == "ONLY_ME") "FRIENDS" else "ONLY_ME"
             val updated = col.copy(privacy = newPrivacy)
             collectionDao.updateCollection(updated)

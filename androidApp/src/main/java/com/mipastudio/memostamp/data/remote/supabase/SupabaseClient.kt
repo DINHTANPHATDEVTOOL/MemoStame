@@ -926,21 +926,21 @@ class SupabaseClient constructor(private val context: Context? = null) {
     suspend fun deleteFeedPost(postId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val enc = URLEncoder.encode(postId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_posts?id=eq.$enc"
-        executeHttp(endpoint, method = "DELETE")
-        Result.success(true)
+        val res = executeHttp(endpoint, method = "DELETE")
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete feed post failed"))
     }
 
     suspend fun deleteFeedComment(commentId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val enc = URLEncoder.encode(commentId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_comments?id=eq.$enc"
-        executeHttp(endpoint, method = "DELETE")
-        Result.success(true)
+        val res = executeHttp(endpoint, method = "DELETE")
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete feed comment failed"))
     }
 
     suspend fun deleteFeedReply(replyId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val enc = URLEncoder.encode(replyId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_replies?id=eq.$enc"
-        executeHttp(endpoint, method = "DELETE")
-        Result.success(true)
+        val res = executeHttp(endpoint, method = "DELETE")
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete feed reply failed"))
     }
 }

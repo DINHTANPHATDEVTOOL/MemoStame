@@ -827,6 +827,10 @@ class FeedRepository private constructor(
 
     suspend fun deleteMemory(stampId: String) = withContext(Dispatchers.IO) {
         val currentUser = getCurrentUser()
+        val stamp = stampDao.getStampById(stampId, currentUser.userId)
+            ?: stampDao.getStampById(stampId)?.takeIf { it.ownerId == currentUser.userId || it.ownerId.isBlank() }
+            ?: return@withContext
+
         val post = feedDao.getPostByStampId(stampId)
         if (post != null && post.authorId != currentUser.userId) {
             return@withContext
@@ -841,7 +845,7 @@ class FeedRepository private constructor(
                 }
             }
         }
-        stampDao.deleteById(stampId)
+        stampDao.deleteById(stampId, currentUser.userId)
     }
 
     companion object {
