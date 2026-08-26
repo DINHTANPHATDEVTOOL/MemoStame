@@ -235,8 +235,7 @@ class StampRepository private constructor(
                 if (cloudRes.isFailure) {
                     val msg = cloudRes.exceptionOrNull()?.message ?: ""
                     val is404 = msg.contains("404")
-                    val isOffline = msg.contains("Unable to resolve host") || msg.contains("ConnectException") || msg.contains("UnknownHostException") || msg.contains("timeout") || msg.contains("Failed to connect")
-                    if (!is404 && !isOffline) {
+                    if (!is404) {
                         return@withContext Result.failure(cloudRes.exceptionOrNull() ?: Exception("Cloud stamp delete failed"))
                     }
                 }

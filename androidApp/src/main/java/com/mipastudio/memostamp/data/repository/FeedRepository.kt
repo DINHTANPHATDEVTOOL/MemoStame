@@ -821,8 +821,7 @@ class FeedRepository private constructor(
             val res = supabaseClient.deleteFeedPost(postId)
             val msg = res.exceptionOrNull()?.message ?: ""
             val is404 = msg.contains("404")
-            val isOffline = msg.contains("Unable to resolve host") || msg.contains("ConnectException") || msg.contains("UnknownHostException") || msg.contains("timeout") || msg.contains("Failed to connect")
-            if (res.isSuccess || is404 || isOffline) {
+            if (res.isSuccess || is404) {
                 feedDao.deletePostById(postId)
             } else {
                 val err = res.exceptionOrNull() ?: Exception("Cloud deleteFeedPost failed")
@@ -851,8 +850,7 @@ class FeedRepository private constructor(
                 val res = supabaseClient.deleteFeedPost(post.id)
                 val msg = res.exceptionOrNull()?.message ?: ""
                 val is404 = msg.contains("404")
-                val isOffline = msg.contains("Unable to resolve host") || msg.contains("ConnectException") || msg.contains("UnknownHostException") || msg.contains("timeout") || msg.contains("Failed to connect")
-                if (res.isSuccess || is404 || isOffline) {
+                if (res.isSuccess || is404) {
                     feedDao.deletePostByStampId(stampId)
                 } else {
                     val err = res.exceptionOrNull() ?: Exception("Cloud deleteFeedPost failed")

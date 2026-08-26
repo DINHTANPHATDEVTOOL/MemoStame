@@ -14,7 +14,8 @@ import kotlinx.coroutines.launch
 data class PostDetailUiState(
     val post: FeedPost? = null,
     val isLoading: Boolean = true,
-    val showMenu: Boolean = false
+    val showMenu: Boolean = false,
+    val errorMessage: String? = null
 )
 
 class PostDetailViewModel : ViewModel() {
