@@ -334,7 +334,8 @@ class FeedRepository private constructor(
             feedDao.observeAllReplies(),
             feedDao.observeSeenPosts(),
             authRepo.friendIds,
-            circleDao.observeAllCircles()
+            circleDao.observeAllCircles(),
+            authRepo.currentUser
         ) { flowArray ->
             @Suppress("UNCHECKED_CAST")
             val posts = flowArray[0] as List<FeedPostEntity>
@@ -350,8 +351,8 @@ class FeedRepository private constructor(
             val friendIds = flowArray[5] as Set<String>
             @Suppress("UNCHECKED_CAST")
             val circles = flowArray[6] as List<CircleEntity>
+            val currentUser = flowArray[7] as UserProfile
 
-            val currentUser = getCurrentUser()
             val reactionMap = reactions.groupBy { it.postId }
             val commentMap = comments.groupBy { it.postId }
             val replyMap = replies.groupBy { it.postId }
@@ -646,9 +647,23 @@ class FeedRepository private constructor(
             feedDao.observeAllComments(),
             feedDao.observeAllReplies(),
             feedDao.observeSeenPosts(),
-            circleDao.observeAllCircles()
-        ) { posts, reactions, comments, replies, seenList, circles ->
-            val currentUser = getCurrentUser()
+            circleDao.observeAllCircles(),
+            authRepo.currentUser
+        ) { values ->
+            @Suppress("UNCHECKED_CAST")
+            val posts = values[0] as List<FeedPostEntity>
+            @Suppress("UNCHECKED_CAST")
+            val reactions = values[1] as List<FeedReactionEntity>
+            @Suppress("UNCHECKED_CAST")
+            val comments = values[2] as List<FeedCommentEntity>
+            @Suppress("UNCHECKED_CAST")
+            val replies = values[3] as List<FeedReplyEntity>
+            @Suppress("UNCHECKED_CAST")
+            val seenList = values[4] as List<FeedSeenEntity>
+            @Suppress("UNCHECKED_CAST")
+            val circles = values[5] as List<CircleEntity>
+            val currentUser = values[6] as UserProfile
+
             val circle = circles.find { it.id == circleId }
             if (circle == null) return@combine emptyList()
             val isOwner = circle.ownerId == currentUser.userId
@@ -707,8 +722,10 @@ class FeedRepository private constructor(
         )
     }
 
-    fun observeCircles(): Flow<List<Circle>> = circleDao.observeAllCircles().map { list ->
-        val currentUser = getCurrentUser()
+    fun observeCircles(): Flow<List<Circle>> = combine(
+        circleDao.observeAllCircles(),
+        authRepo.currentUser
+    ) { list, currentUser ->
         list.filter { entity ->
             entity.ownerId == currentUser.userId ||
             entity.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
