@@ -22,44 +22,38 @@ object StampRenderer {
     ): Path {
         val path = Path()
         val minDimension = minOf(width, height)
-        val radius = minDimension * StampGeometry.NOTCH_RADIUS_RATIO
-        val spacing = minDimension * StampGeometry.NOTCH_SPACING_RATIO
+        val radius = maxOf(1.5f, minDimension * StampGeometry.NOTCH_RADIUS_RATIO)
 
+        val topCount = maxOf(3, kotlin.math.roundToInt(width / (minDimension * StampGeometry.NOTCH_SPACING_RATIO)))
+        val topSpacing = width / topCount.toFloat()
         path.moveTo(0f, 0f)
-
-        // TOP
-        var x = spacing / 2f
-        while (x < width - spacing / 2f) {
-            path.lineTo(x - radius, 0f)
-            path.quadTo(x, radius * 1.8f, x + radius, 0f)
-            x += spacing
+        for (i in 0 until topCount) {
+            val cx = topSpacing * (i + 0.5f)
+            path.lineTo(cx - radius, 0f)
+            path.quadTo(cx, radius * 1.8f, cx + radius, 0f)
         }
         path.lineTo(width, 0f)
 
-        // RIGHT
-        var y = spacing / 2f
-        while (y < height - spacing / 2f) {
-            path.lineTo(width, y - radius)
-            path.quadTo(width - radius * 1.8f, y, width, y + radius)
-            y += spacing
+        val rightCount = maxOf(3, kotlin.math.roundToInt(height / (minDimension * StampGeometry.NOTCH_SPACING_RATIO)))
+        val rightSpacing = height / rightCount.toFloat()
+        for (i in 0 until rightCount) {
+            val cy = rightSpacing * (i + 0.5f)
+            path.lineTo(width, cy - radius)
+            path.quadTo(width - radius * 1.8f, cy, width, cy + radius)
         }
         path.lineTo(width, height)
 
-        // BOTTOM
-        x = width - spacing / 2f
-        while (x > spacing / 2f) {
-            path.lineTo(x + radius, height)
-            path.quadTo(x, height - radius * 1.8f, x - radius, height)
-            x -= spacing
+        for (i in (topCount - 1) downTo 0) {
+            val cx = topSpacing * (i + 0.5f)
+            path.lineTo(cx + radius, height)
+            path.quadTo(cx, height - radius * 1.8f, cx - radius, height)
         }
         path.lineTo(0f, height)
 
-        // LEFT
-        y = height - spacing / 2f
-        while (y > spacing / 2f) {
-            path.lineTo(0f, y + radius)
-            path.quadTo(radius * 1.8f, y, 0f, y - radius)
-            y -= spacing
+        for (i in (rightCount - 1) downTo 0) {
+            val cy = rightSpacing * (i + 0.5f)
+            path.lineTo(0f, cy + radius)
+            path.quadTo(radius * 1.8f, cy, 0f, cy - radius)
         }
         path.lineTo(0f, 0f)
 
@@ -106,12 +100,18 @@ object StampRenderer {
             com.mipastudio.memostamp.core.processor.MemoImageProcessor.applyPreset(croppedBitmap, preset)
         }
 
-        val srcRect = calculateCenterCrop(
-            bitmapWidth = processedImage.width,
-            bitmapHeight = processedImage.height,
-            targetWidth = outputWidth,
-            targetHeight = outputHeight
-        )
+        // Avoid double-cropping if the input bitmap already matches target aspect ratio
+        val currentRatio = processedImage.width.toFloat() / processedImage.height.toFloat()
+        val srcRect = if (kotlin.math.abs(currentRatio - STAMP_ASPECT_RATIO) < 0.03f) {
+            Rect(0, 0, processedImage.width, processedImage.height)
+        } else {
+            calculateCenterCrop(
+                bitmapWidth = processedImage.width,
+                bitmapHeight = processedImage.height,
+                targetWidth = outputWidth,
+                targetHeight = outputHeight
+            )
+        }
 
         val destination = RectF(0f, 0f, outputWidth.toFloat(), outputHeight.toFloat())
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -134,28 +134,43 @@ object StampRenderer {
 
             when (el.type) {
                 "badge" -> {
+                    val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        textSize = (32f / 350f) * outputHeight * el.scale
+                        color = Color.WHITE
+                        typeface = Typeface.DEFAULT_BOLD
+                    }
                     val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = colorWithAlpha
                         style = Paint.Style.FILL
                     }
+                    val fm = textP.fontMetrics
+                    val textWidth = textP.measureText(el.value)
+                    val textHeight = fm.bottom - fm.top
+                    val bgRect = RectF(px - 12f, py - 4f, px + textWidth + 12f, py + textHeight + 4f)
+                    canvas.drawRoundRect(bgRect, 10f, 10f, badgePaint)
+                    val baselineY = py - fm.top
+                    canvas.drawText(el.value, px, baselineY, textP)
+                }
+                "sticker" -> {
                     val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        textSize = 36f * el.scale
-                        color = Color.WHITE
+                        textSize = (72f / 350f) * outputHeight * el.scale
+                        color = colorWithAlpha
                         typeface = Typeface.DEFAULT_BOLD
                     }
-                    val textWidth = textP.measureText(el.value)
-                    val bgRect = RectF(px - 10f, py - 36f, px + textWidth + 10f, py + 10f)
-                    canvas.drawRoundRect(bgRect, 8f, 8f, badgePaint)
-                    canvas.drawText(el.value, px, py, textP)
+                    val fm = textP.fontMetrics
+                    val baselineY = py - fm.top
+                    canvas.drawText(el.value, px, baselineY, textP)
                 }
                 else -> {
                     val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        textSize = 64f * el.scale
+                        textSize = (44f / 350f) * outputHeight * el.scale
                         color = colorWithAlpha
                         typeface = Typeface.DEFAULT_BOLD
                         setShadowLayer(4f, 2f, 2f, Color.argb(128, 0, 0, 0))
                     }
-                    canvas.drawText(el.value, px, py, textP)
+                    val fm = textP.fontMetrics
+                    val baselineY = py - fm.top
+                    canvas.drawText(el.value, px, baselineY, textP)
                 }
             }
             canvas.restore()

@@ -14,6 +14,9 @@ struct StampMoldTemplate: Identifiable {
 struct StampEditorScreenView: View {
     @Environment(\.presentationMode) var presentationMode
 
+    var initialImageUrl: String? = nil
+    var onStampSaved: ((URL) -> Void)? = nil
+
     @State private var selectedMoldId: String = "classic_perforated"
     @State private var selectedColorHex: String = "#D32F2F"
     @State private var stampTitle: String = "Khoảnh khắc Đà Lạt"
@@ -69,7 +72,28 @@ struct StampEditorScreenView: View {
 
                 Spacer()
 
-                Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                Button(action: {
+                    #if canImport(UIKit)
+                    var inputImage: UIImage? = nil
+                    if let urlStr = initialImageUrl, let url = URL(string: urlStr), let data = try? Data(contentsOf: url) {
+                        inputImage = UIImage(data: data)
+                    }
+                    let savedUrl = StampRenderEngine.shared.saveStampPng(
+                        photo: inputImage,
+                        title: stampTitle,
+                        location: stampLocation,
+                        dateStr: stampDate,
+                        stampColorHex: selectedColorHex,
+                        shape: selectedMoldId
+                    )
+                    if let fileUrl = savedUrl {
+                        HapticFeedbackManager.shared.playSuccess()
+                        SoundEffectsManager.shared.playStampPressSound()
+                        onStampSaved?(fileUrl)
+                    }
+                    #endif
+                    presentationMode.wrappedValue.dismiss()
+                }) {
                     Text("Lưu Tem")
                         .font(.subheadline.bold())
                         .foregroundColor(.white)
@@ -91,7 +115,7 @@ struct StampEditorScreenView: View {
                     VStack(spacing: 8) {
                         DieCutStampView(
                             title: stampTitle,
-                            imageUrl: "",
+                            imageUrl: initialImageUrl ?? "",
                             location: stampLocation,
                             dateStr: stampDate,
                             shape: selectedMoldId,

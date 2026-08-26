@@ -204,13 +204,19 @@ fun StampEditorScreen(
                     RoundedCornerShape(8.dp)
                 }
 
-                Box(
+                BoxWithConstraints(
                     modifier = Modifier
                         .width(280.dp)
                         .aspectRatio(StampGeometry.ASPECT_RATIO)
                         .shadow(8.dp, stampShape)
                         .clip(stampShape)
                 ) {
+                    val containerWidthDp = maxWidth
+                    val containerHeightDp = maxHeight
+                    val density = androidx.compose.ui.platform.LocalDensity.current
+                    val boxWidthPx = with(density) { containerWidthDp.toPx() }
+                    val boxHeightPx = with(density) { containerHeightDp.toPx() }
+
                     AsyncImage(
                         model = uiState.sourceImagePath.ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
                         contentDescription = null,
@@ -230,14 +236,13 @@ fun StampEditorScreen(
                         }
                         val alpha = currentEl.opacity.coerceIn(0f, 1f)
 
-                        val density = androidx.compose.ui.platform.LocalDensity.current
-                        val boxWidthPx = with(density) { 280.dp.toPx() }
-                        val boxHeightPx = with(density) { 350.dp.toPx() }
-
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .offset(x = (280 * currentEl.x).dp, y = (350 * currentEl.y).dp)
+                                .offset(
+                                    x = containerWidthDp * currentEl.x,
+                                    y = containerHeightDp * currentEl.y
+                                )
                                 .rotate(currentEl.rotation)
                                 .pointerInput(currentEl.id) {
                                     detectTransformGestures(
