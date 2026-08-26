@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
@@ -326,6 +327,39 @@ class FeedRepository private constructor(
         }
     }
 
+    private fun canCurrentUserViewPost(
+        post: FeedPostEntity,
+        currentUser: UserProfile,
+        friendIds: Set<String>,
+        circles: List<CircleEntity>
+    ): Boolean {
+        val audience = AudienceType.fromString(post.audienceType)
+        return when (audience) {
+            AudienceType.ONLY_ME -> post.authorId == currentUser.userId
+            AudienceType.FRIENDS -> post.authorId == currentUser.userId || friendIds.contains(post.authorId)
+            AudienceType.SPECIFIC_FRIENDS -> {
+                if (post.authorId == currentUser.userId) {
+                    true
+                } else if (post.circleId.isNullOrBlank()) {
+                    false
+                } else {
+                    val circle = circles.find { it.id == post.circleId }
+                    circle != null &&
+                    circle.ownerId == post.authorId &&
+                    circle.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
+                }
+            }
+        }
+    }
+
+    private suspend fun isAuthorizedToViewPost(postId: String): Boolean {
+        val entity = feedDao.getPostById(postId) ?: return false
+        val currentUser = getCurrentUser()
+        val friendIds = authRepo.friendIds.value
+        val circles = circleDao.observeAllCircles().first()
+        return canCurrentUserViewPost(entity, currentUser, friendIds, circles)
+    }
+
     fun observeFriendsFeed(): Flow<List<FeedPost>> {
         return combine(
             feedDao.observeAllPosts(),
@@ -357,26 +391,9 @@ class FeedRepository private constructor(
             val commentMap = comments.groupBy { it.postId }
             val replyMap = replies.groupBy { it.postId }
             val seenMap = seenList.filter { it.userId == currentUser.userId }.associateBy { it.postId }
-            val myCirclesMap = circles.associateBy { it.id }
 
             val filteredEntities = posts.filter { entity ->
-                val audience = AudienceType.fromString(entity.audienceType)
-                when (audience) {
-                    AudienceType.FRIENDS -> entity.authorId == currentUser.userId || friendIds.contains(entity.authorId)
-                    AudienceType.SPECIFIC_FRIENDS -> {
-                        // NOTE: Local circle membership filtering ensures UI visibility boundaries.
-                        // Server-side Supabase Row-Level Security (RLS) policies are required for complete API security.
-                        if (entity.authorId == currentUser.userId) true
-                        else if (entity.circleId.isNullOrBlank()) false
-                        else {
-                            val circle = myCirclesMap[entity.circleId]
-                            circle != null &&
-                            circle.ownerId == entity.authorId &&
-                            circle.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
-                        }
-                    }
-                    AudienceType.ONLY_ME -> entity.authorId == currentUser.userId
-                }
+                canCurrentUserViewPost(entity, currentUser, friendIds, circles)
             }
 
             filteredEntities.map { entity ->
@@ -423,6 +440,12 @@ class FeedRepository private constructor(
     suspend fun getPostById(postId: String): FeedPost? = withContext(Dispatchers.IO) {
         val entity = feedDao.getPostById(postId) ?: return@withContext null
         val currentUser = getCurrentUser()
+        val friendIds = authRepo.friendIds.value
+        val circles = circleDao.observeAllCircles().first()
+
+        if (!canCurrentUserViewPost(entity, currentUser, friendIds, circles)) {
+            return@withContext null
+        }
         val reactions = feedDao.getReactionsForPost(entity.id).map {
             FeedReaction(it.id, it.postId, it.userId, it.userName, it.emoji, it.createdAt)
         }
@@ -548,6 +571,7 @@ class FeedRepository private constructor(
     }
 
     suspend fun toggleLike(postId: String) = withContext(Dispatchers.IO) {
+        if (!isAuthorizedToViewPost(postId)) return@withContext
         val currentUser = getCurrentUser()
         val reactionId = "$postId:${currentUser.userId}"
         val existingReactions = feedDao.getReactionsForPost(postId)
@@ -590,6 +614,7 @@ class FeedRepository private constructor(
     }
 
     suspend fun addComment(postId: String, content: String): String = withContext(Dispatchers.IO) {
+        if (!isAuthorizedToViewPost(postId)) return@withContext ""
         val currentUser = getCurrentUser()
         val commentId = UUID.randomUUID().toString()
         val comment = FeedCommentEntity(
@@ -622,6 +647,7 @@ class FeedRepository private constructor(
     }
 
     suspend fun like(postId: String) = withContext(Dispatchers.IO) {
+        if (!isAuthorizedToViewPost(postId)) return@withContext
         val currentUser = getCurrentUser()
         val reactionId = "$postId:${currentUser.userId}"
         val existingReactions = feedDao.getReactionsForPost(postId)
@@ -670,12 +696,14 @@ class FeedRepository private constructor(
             val isMember = circle.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
             if (!isOwner && !isMember) return@combine emptyList()
 
-            val reactionMap = reactions.groupBy { it.postId }
-            val commentMap = comments.groupBy { it.postId }
-            val replyMap = replies.groupBy { it.postId }
-            val seenMap = seenList.filter { it.userId == currentUser.userId }.associateBy { it.postId }
+            val friendIds = authRepo.friendIds.value
+            val filteredPosts = posts.filter { entity ->
+                entity.authorId == circle.ownerId &&
+                AudienceType.fromString(entity.audienceType) == AudienceType.SPECIFIC_FRIENDS &&
+                canCurrentUserViewPost(entity, currentUser, friendIds, circles)
+            }
 
-            posts.map { entity ->
+            filteredPosts.map { entity ->
                 val postReactions = reactionMap[entity.id].orEmpty().map {
                     FeedReaction(it.id, it.postId, it.userId, it.userName, it.emoji, it.createdAt)
                 }
@@ -757,15 +785,31 @@ class FeedRepository private constructor(
     }
 
     suspend fun deleteComment(commentId: String) = withContext(Dispatchers.IO) {
-        feedDao.deleteComment(commentId)
+        val currentUser = getCurrentUser()
+        val comment = feedDao.getAllCommentsList().find { it.id == commentId } ?: return@withContext
+        val post = feedDao.getPostById(comment.postId)
+        val isCommentAuthor = comment.authorId == currentUser.userId
+        val isPostAuthor = post != null && post.authorId == currentUser.userId
+        if (isCommentAuthor || isPostAuthor) {
+            feedDao.deleteComment(commentId)
+        }
     }
 
     suspend fun removePostFromFeed(postId: String) = withContext(Dispatchers.IO) {
-        feedDao.deletePostById(postId)
+        val currentUser = getCurrentUser()
+        val post = feedDao.getPostById(postId) ?: return@withContext
+        if (post.authorId == currentUser.userId) {
+            feedDao.deletePostById(postId)
+        }
     }
 
     suspend fun deleteMemory(stampId: String) = withContext(Dispatchers.IO) {
-        feedDao.deletePostByStampId(stampId)
+        val currentUser = getCurrentUser()
+        val post = feedDao.getPostByStampId(stampId)
+        if (post != null && post.authorId != currentUser.userId) {
+            return@withContext
+        }
+        if (post != null) feedDao.deletePostByStampId(stampId)
         stampDao.deleteById(stampId)
     }
 
