@@ -14,7 +14,9 @@ struct PersistedStampData: Codable {
     let mood: String?
     let collectionId: String?
     let favorite: Bool
+    let filterId: String?
     let shape: String
+    let preset: String?
 }
 
 struct PersistedCollectionData: Codable {
@@ -105,26 +107,33 @@ class IOSLocalPersistenceStore {
                 mood: s.mood,
                 collectionId: s.collectionId,
                 favorite: s.favorite,
-                shape: s.shape
+                filterId: s.filterId,
+                shape: s.shape,
+                preset: s.preset ?? "NATURAL"
             )
         }
         repository.restoreStamps(stamps: loadedStamps)
     }
 
     func saveData(repository: SharedMemoStampRepository) {
-        let currentUser = repository.currentUser.value
-        let userData = PersistedUserData(
-            uid: currentUser.uid,
-            username: currentUser.username,
-            displayName: currentUser.displayName,
-            avatarUrl: currentUser.avatarUrl,
-            bio: currentUser.bio,
-            stampsCreatedCount: currentUser.stampsCreatedCount,
-            stampsCollectedCount: currentUser.stampsCollectedCount,
-            placesVisitedCount: currentUser.placesVisitedCount
-        )
+        let userData: PersistedUserData?
+        if let currentUser = repository.currentUser.value as? UserProfile {
+            userData = PersistedUserData(
+                uid: currentUser.uid,
+                username: currentUser.username,
+                displayName: currentUser.displayName,
+                avatarUrl: currentUser.avatarUrl,
+                bio: currentUser.bio,
+                stampsCreatedCount: currentUser.stampsCreatedCount,
+                stampsCollectedCount: currentUser.stampsCollectedCount,
+                placesVisitedCount: currentUser.placesVisitedCount
+            )
+        } else {
+            userData = nil
+        }
 
-        let stampDatas = repository.stamps.value.map { s in
+        let rawStamps = (repository.stamps.value as? [StampItem]) ?? []
+        let stampDatas = rawStamps.map { (s: StampItem) in
             PersistedStampData(
                 id: s.id,
                 originalImagePath: s.originalImagePath,
@@ -137,11 +146,14 @@ class IOSLocalPersistenceStore {
                 mood: s.mood,
                 collectionId: s.collectionId,
                 favorite: s.favorite,
-                shape: s.shape
+                filterId: s.filterId,
+                shape: s.shape,
+                preset: s.preset
             )
         }
 
-        let collectionDatas = repository.collections.value.map { c in
+        let rawCollections = (repository.collections.value as? [CollectionItem]) ?? []
+        let collectionDatas = rawCollections.map { (c: CollectionItem) in
             PersistedCollectionData(
                 id: c.id,
                 name: c.name,
