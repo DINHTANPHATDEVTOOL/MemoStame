@@ -45,7 +45,7 @@ struct CollectionScreenView: View {
         let icons = ["airplane", "cup.and.saucer.fill", "building.columns.fill", "map.fill", "sparkles"]
 
         if !roomCollections.isEmpty {
-            return roomCollections.enumerated().map { index, col in
+            return roomCollections.enumerated().map { (index, col) -> AlbumItem in
                 let matchingStamps = cloudStamps.filter { $0.collectionId == col.id }
                 return AlbumItem(
                     id: col.id,

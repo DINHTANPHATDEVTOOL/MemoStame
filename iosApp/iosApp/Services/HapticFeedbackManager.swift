@@ -60,4 +60,16 @@ final class HapticFeedbackManager {
         generator.selectionChanged()
         #endif
     }
+
+    func playSuccess() {
+        playNotification(type: .success)
+    }
+
+    func playWarning() {
+        playNotification(type: .warning)
+    }
+
+    func playError() {
+        playNotification(type: .error)
+    }
 }
