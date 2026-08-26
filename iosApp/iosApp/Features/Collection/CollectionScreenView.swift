@@ -67,15 +67,18 @@ struct CollectionScreenView: View {
             let loc = stamp.location ?? ""
             return loc.isEmpty ? "Kỷ niệm chung" : loc
         }
-        return grouped.enumerated().map { index, entry in
+        let sortedKeys = grouped.keys.sorted()
+        return sortedKeys.indices.map { index in
+            let key = sortedKeys[index]
+            let stampList = grouped[key] ?? []
             return AlbumItem(
                 id: "album_\(index)",
-                title: entry.key,
-                desc: "Bộ sưu tập tem kỷ niệm tại \(entry.key)",
-                progress: "\(entry.value.count)/\(entry.value.count)",
+                title: key,
+                desc: "Bộ sưu tập tem kỷ niệm tại \(key)",
+                progress: "\(stampList.count)/\(stampList.count)",
                 iconName: icons[index % icons.count],
                 coverColor: coverColors[index % coverColors.count],
-                stamps: entry.value.map { AlbumStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
+                stamps: stampList.map { AlbumStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
             )
         }
     }
