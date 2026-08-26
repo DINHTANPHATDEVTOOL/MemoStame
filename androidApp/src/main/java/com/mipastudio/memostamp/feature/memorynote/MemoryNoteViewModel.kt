@@ -146,15 +146,17 @@ class MemoryNoteViewModel : ViewModel() {
                 val result = repository.saveStamp(updatedDraft, state.draftId)
                 result.fold(
                     onSuccess = { entity ->
-                        // Post to Feed or attach reply if requested
-                        feedRepository.createPostFromStamp(
-                            stampEntity = entity,
-                            audienceType = state.audienceType,
-                            circleId = state.selectedCircleId,
-                            circleName = state.selectedCircleName,
-                            replyToPostId = state.replyToPostId
-                        )
-                        feedRepository.syncFeedFromSupabase()
+                        // Only create a feed post if explicit reply to post is requested
+                        if (!state.replyToPostId.isNullOrBlank()) {
+                            feedRepository.createPostFromStamp(
+                                stampEntity = entity,
+                                audienceType = state.audienceType,
+                                circleId = state.selectedCircleId,
+                                circleName = state.selectedCircleName,
+                                replyToPostId = state.replyToPostId
+                            )
+                            feedRepository.syncFeedFromSupabase()
+                        }
                         onSuccess(entity)
                     },
                     onFailure = { error ->

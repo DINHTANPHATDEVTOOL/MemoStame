@@ -42,6 +42,7 @@ struct ContentView: View {
             )
             repo.setCurrentUser(profile: profile)
         }
+        IOSLocalPersistenceStore.shared.loadData(into: repo)
         self.repository = repo
         _homeViewModel = StateObject(wrappedValue: HomeObservableViewModel(repository: repo))
     }
@@ -237,28 +238,36 @@ struct BottomNavItem: View {
     }
 }
 
-// Full Camera & Memory Note Flow Modal Container
+// Full Camera & Memory Note Flow Modal Container (3-Step Navigation Flow: Camera -> Editor -> Memory Note)
 struct CameraFlowContainerView: View {
     let replyToPostId: String?
     let repository: SharedMemoStampRepository
     let onComplete: () -> Void
 
-    @State private var capturedImageUrl: String? = nil
+    @State private var rawCapturedUrl: String? = nil
+    @State private var editedStampUrl: String? = nil
 
     var body: some View {
         Group {
-            if let imageUrl = capturedImageUrl {
+            if let editedUrl = editedStampUrl {
                 MemoryNoteScreenView(
-                    imageUrl: imageUrl,
+                    imageUrl: editedUrl,
                     repository: repository,
                     onSavedSuccess: onComplete,
-                    onCancel: { capturedImageUrl = nil }
+                    onCancel: { editedStampUrl = nil }
+                )
+            } else if let rawUrl = rawCapturedUrl {
+                StampEditorScreenView(
+                    initialImageUrl: rawUrl,
+                    onStampSaved: { renderedFileUrl in
+                        editedStampUrl = renderedFileUrl.absoluteString
+                    }
                 )
             } else {
                 CameraScreenView(
                     replyToPostId: replyToPostId,
                     onNavigateToNote: { url in
-                        capturedImageUrl = url
+                        rawCapturedUrl = url
                     },
                     onCancel: onComplete
                 )

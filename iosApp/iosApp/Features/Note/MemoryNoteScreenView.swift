@@ -25,8 +25,11 @@ struct MemoryNoteScreenView: View {
     @State private var selectedCategory: String = "Tất cả"
     @State private var selectedAudience: String = "Friends"
     @State private var selectedCollectionId: String? = nil
+    @State private var selectedMood: String = "😊 Happy"
+    @State private var memoryDate: Date = Date()
     @State private var isGpsLocating: Bool = false
 
+    let moodOptions = ["😊 Happy", "❤️ Love", "✈️ Travel", "☕ Chill", "🔥 Excited", "🕰️ Nostalgic", "🌿 Peaceful", "⭐ Special"]
     let locationCategories = ["Tất cả", "Biểu tượng", "Cà phê", "Thiên nhiên", "Di tích"]
     
     var groundedPlaces: [GroundedPlaceItem] {
@@ -39,10 +42,10 @@ struct MemoryNoteScreenView: View {
 
     let audienceTypes = ["Public", "Friends", "Only Me"]
 
-    private var todayFormattedDate: String {
+    private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM.dd"
-        return formatter.string(from: Date())
+        return formatter.string(from: memoryDate)
     }
 
     var body: some View {
@@ -50,13 +53,13 @@ struct MemoryNoteScreenView: View {
             // Header
             HStack {
                 Button(action: onCancel) {
-                    Text("Cancel")
+                    Text("Hủy")
                         .foregroundColor(.gray)
                 }
 
                 Spacer()
 
-                Text("New Memory Stamp")
+                Text("Tạo Tem Kỷ Niệm")
                     .font(.headline.bold())
 
                 Spacer()
@@ -75,11 +78,14 @@ struct MemoryNoteScreenView: View {
                         imageUrl: imageUrl,
                         shape: "classic",
                         collectionId: selectedCollectionId,
-                        audience: audience
+                        audience: audience,
+                        mood: selectedMood,
+                        memoryDate: Int64(memoryDate.timeIntervalSince1970 * 1000)
                     )
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository)
                     onSavedSuccess()
                 }) {
-                    Text("Save & Post")
+                    Text("Lưu Tem")
                         .font(.body.bold())
                         .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
                 }
@@ -93,10 +99,10 @@ struct MemoryNoteScreenView: View {
                 VStack(spacing: 20) {
                     // Preview Stamp (Tap to flip & view real-time memory note)
                     DieCutStampView(
-                        title: title.isEmpty ? "Memory Stamp Title" : title,
+                        title: title.isEmpty ? "Tiêu đề tem kỷ niệm" : title,
                         imageUrl: imageUrl,
                         location: locationSearch.isEmpty ? nil : locationSearch,
-                        dateStr: todayFormattedDate,
+                        dateStr: formattedDate,
                         note: caption,
                         shape: "classic",
                         isInteractive: true
@@ -106,17 +112,54 @@ struct MemoryNoteScreenView: View {
 
                     // Inputs Section
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("MEMORY DETAILS")
+                        Text("THÔNG TIN KỶ NIỆM")
                             .font(.caption2.bold())
                             .foregroundColor(.secondary)
 
-                        TextField("Stamp Title (e.g. Đà Lạt Chiều Mưa)", text: $title)
+                        TextField("Tiêu đề tem (ví dụ: Đà Lạt Chiều Mưa)", text: $title)
                             .font(.subheadline)
                             .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
                             .cornerRadius(10)
                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+
+                        // Mood Selection Section
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("CẢM XÚC / MOOD")
+                                .font(.caption2.bold())
+                                .foregroundColor(MSColors.grey)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(moodOptions, id: \.self) { mood in
+                                        Text(mood)
+                                            .font(.caption.bold())
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(selectedMood == mood ? MSColors.stamp : Color.white)
+                                            .foregroundColor(selectedMood == mood ? .white : MSColors.ink)
+                                            .cornerRadius(16)
+                                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(selectedMood == mood ? Color.clear : MSColors.lightGrey, lineWidth: 1))
+                                            .onTapGesture {
+                                                selectedMood = mood
+                                            }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Memory Date Picker
+                        HStack {
+                            Image(systemName: "calendar")
+                                .foregroundColor(MSColors.stamp)
+                            DatePicker("Ngày kỷ niệm", selection: $memoryDate, displayedComponents: [.date])
+                                .font(.subheadline)
+                                .foregroundColor(MSColors.ink)
+                        }
+                        .padding(10)
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
 
                         TextEditor(text: $caption)
                             .font(.subheadline)

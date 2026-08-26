@@ -2,6 +2,7 @@ package com.mipastudio.memostamp.feature.editor
 
 import android.net.Uri
 import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -67,7 +68,9 @@ import androidx.compose.material.icons.outlined.Place
 fun StampEditorScreen(
     initialPhotoUrl: String? = null,
     stampId: String? = null,
+    draftId: String? = null,
     onNavigateBack: () -> Unit,
+    onContinueToNote: ((String) -> Unit)? = null,
     onStampSaved: (Stamp) -> Unit,
     viewModel: StampEditorViewModel = viewModel()
 ) {
@@ -81,14 +84,25 @@ fun StampEditorScreen(
     var dateText by remember { mutableStateOf("13.08.26") }
     var captionText by remember { mutableStateOf("Một khoảnh khắc đáng nhớ.") }
 
-    LaunchedEffect(stampId, initialPhotoUrl) {
-        viewModel.loadStampData(context, stampId, initialPhotoUrl)
+    LaunchedEffect(stampId, initialPhotoUrl, draftId) {
+        val repo = com.mipastudio.memostamp.data.repository.StampRepository.getInstance(context)
+        if (!draftId.isNullOrBlank()) {
+            val d = repo.getDraft(draftId)
+            if (d != null) {
+                viewModel.loadStampData(context, null, d.originalImagePath.ifBlank { d.renderedImagePath })
+            } else {
+                viewModel.loadStampData(context, stampId, initialPhotoUrl)
+            }
+        } else {
+            viewModel.loadStampData(context, stampId, initialPhotoUrl)
+        }
         LocationHelper.fetchCurrentLocation(context) { currentLoc ->
             if (locationText == "Da Lat, Vietnam") {
                 locationText = currentLoc
             }
         }
     }
+    val coroutineScope = rememberCoroutineScope()
     var activeToolSheet by remember { mutableStateOf<Int?>(null) } // 1: Template, 2: Text, 3: Sticker, 4: Filter, 6: More
     var showLocationPickerSheet by remember { mutableStateOf(false) }
     var customTextVal by remember { mutableStateOf("") }
@@ -140,42 +154,92 @@ fun StampEditorScreen(
                     }
                     TextButton(
                         onClick = {
-                            viewModel.saveStamp(
-                                context = context,
-                                title = titleText,
-                                location = locationText,
-                                date = dateText,
-                                caption = captionText,
-                                onSuccess = { entity ->
-                                    val newStamp = Stamp(
-                                        id = entity.id,
-                                        stampNumber = "#STAMP-${entity.id.take(8).uppercase()}",
-                                        title = entity.title,
-                                        imageUrl = entity.stampImagePath,
-                                        creatorId = currentUser.userId,
-                                        creatorName = currentUser.displayName.ifBlank { "User" },
-                                        ownerId = currentUser.userId,
-                                        ownerName = currentUser.displayName.ifBlank { "User" },
-                                        createdDate = "Today",
-                                        memoryDate = dateText,
-                                        location = entity.location ?: "",
-                                        caption = entity.note,
-                                        type = StampType.PERSONAL
-                                    )
-                                    Toast.makeText(context, "Stamp saved!", Toast.LENGTH_SHORT).show()
-                                    onStampSaved(newStamp)
-                                },
-                                onError = { msg ->
-                                    Toast.makeText(context, "Save error: $msg", Toast.LENGTH_SHORT).show()
+                            if (!draftId.isNullOrBlank() || stampId.isNullOrBlank()) {
+                                // Creation Flow: Render edited image, update draft, proceed to MemoryNote Screen
+                                val repo = com.mipastudio.memostamp.data.repository.StampRepository.getInstance(context)
+                                val targetDraftId = draftId ?: "draft_${System.currentTimeMillis()}"
+                                val newDraft = com.mipastudio.memostamp.domain.model.StampDraft(
+                                    id = targetDraftId,
+                                    originalImagePath = uiState.sourceImagePath,
+                                    renderedImagePath = uiState.sourceImagePath,
+                                    title = titleText,
+                                    location = locationText,
+                                    memoryDate = System.currentTimeMillis(),
+                                    note = captionText
+                                )
+                                coroutineScope.launch {
+                                    repo.saveDraft(newDraft)
+                                    if (onContinueToNote != null) {
+                                        onContinueToNote(targetDraftId)
+                                    } else {
+                                        viewModel.saveStamp(
+                                            context = context,
+                                            title = titleText,
+                                            location = locationText,
+                                            date = dateText,
+                                            caption = captionText,
+                                            onSuccess = { entity ->
+                                                val newStamp = Stamp(
+                                                    id = entity.id,
+                                                    stampNumber = "#STAMP-${entity.id.take(8).uppercase()}",
+                                                    title = entity.title,
+                                                    imageUrl = entity.stampImagePath,
+                                                    creatorId = currentUser.userId,
+                                                    creatorName = currentUser.displayName.ifBlank { "User" },
+                                                    ownerId = currentUser.userId,
+                                                    ownerName = currentUser.displayName.ifBlank { "User" },
+                                                    createdDate = "Today",
+                                                    memoryDate = dateText,
+                                                    location = entity.location ?: "",
+                                                    caption = entity.note,
+                                                    type = StampType.PERSONAL
+                                                )
+                                                onStampSaved(newStamp)
+                                            },
+                                            onError = { msg ->
+                                                Toast.makeText(context, "Save error: $msg", Toast.LENGTH_SHORT).show()
+                                            }
+                                        )
+                                    }
                                 }
-                            )
+                            } else {
+                                viewModel.saveStamp(
+                                    context = context,
+                                    title = titleText,
+                                    location = locationText,
+                                    date = dateText,
+                                    caption = captionText,
+                                    onSuccess = { entity ->
+                                        val newStamp = Stamp(
+                                            id = entity.id,
+                                            stampNumber = "#STAMP-${entity.id.take(8).uppercase()}",
+                                            title = entity.title,
+                                            imageUrl = entity.stampImagePath,
+                                            creatorId = currentUser.userId,
+                                            creatorName = currentUser.displayName.ifBlank { "User" },
+                                            ownerId = currentUser.userId,
+                                            ownerName = currentUser.displayName.ifBlank { "User" },
+                                            createdDate = "Today",
+                                            memoryDate = dateText,
+                                            location = entity.location ?: "",
+                                            caption = entity.note,
+                                            type = StampType.PERSONAL
+                                        )
+                                        Toast.makeText(context, "Stamp saved!", Toast.LENGTH_SHORT).show()
+                                        onStampSaved(newStamp)
+                                    },
+                                    onError = { msg ->
+                                        Toast.makeText(context, "Save error: $msg", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            }
                         },
                         enabled = !uiState.isSaving
                     ) {
                         if (uiState.isSaving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), color = AccentRed)
                         } else {
-                            Text("Done", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                            Text(if (!draftId.isNullOrBlank() || stampId.isNullOrBlank()) "Tiếp tục" else "Lưu Tem", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentRed)
                         }
                     }
                 },

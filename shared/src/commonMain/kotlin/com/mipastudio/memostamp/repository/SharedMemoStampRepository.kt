@@ -285,7 +285,9 @@ class SharedMemoStampRepository {
         imageUrl: String,
         shape: String = "classic",
         collectionId: String? = null,
-        audience: AudienceType = AudienceType.FRIENDS
+        audience: AudienceType = AudienceType.FRIENDS,
+        mood: String = "😊 Happy",
+        memoryDate: Long = currentTimeMillis()
     ): StampItem {
         val me = _currentUser.value
         val stampId = "stamp_${currentTimeMillis()}"
@@ -296,9 +298,9 @@ class SharedMemoStampRepository {
             title = title,
             note = note,
             createdAt = currentTimeMillis(),
-            memoryDate = currentTimeMillis(),
+            memoryDate = memoryDate,
             location = location,
-            mood = "✨",
+            mood = mood,
             collectionId = collectionId,
             favorite = false,
             shape = shape
@@ -308,26 +310,39 @@ class SharedMemoStampRepository {
         // Update user stats
         _currentUser.value = me.copy(stampsCreatedCount = me.stampsCreatedCount + 1)
 
-        // Also add to feed if not ONLY_ME
-        if (audience != AudienceType.ONLY_ME) {
-            val post = FeedPost(
-                id = "post_${currentTimeMillis()}",
-                stampId = stampId,
-                stampUrl = imageUrl,
-                stampTitle = title,
-                shape = shape,
-                authorId = me.uid,
-                authorName = me.displayName,
-                authorAvatar = me.avatarUrl ?: "",
-                caption = note.ifBlank { title },
-                audienceType = audience,
-                createdAt = currentTimeMillis(),
-                location = location
-            )
-            _feedPosts.value = listOf(post) + _feedPosts.value
-        }
-
         return stamp
+    }
+
+    fun publishStampToFeed(stampId: String, audience: AudienceType = AudienceType.FRIENDS, caption: String? = null): FeedPost? {
+        val me = _currentUser.value
+        val stamp = _stamps.value.find { it.id == stampId } ?: return null
+        val post = FeedPost(
+            id = "post_${currentTimeMillis()}",
+            stampId = stampId,
+            stampUrl = stamp.stampImagePath,
+            stampTitle = stamp.title,
+            shape = stamp.shape,
+            authorId = me.uid,
+            authorName = me.displayName,
+            authorAvatar = me.avatarUrl ?: "",
+            caption = caption ?: stamp.note.ifBlank { stamp.title },
+            audienceType = audience,
+            createdAt = currentTimeMillis(),
+            location = stamp.location
+        )
+        _feedPosts.value = listOf(post) + _feedPosts.value
+        return post
+    }
+
+    fun updateStamp(updatedStamp: StampItem): Boolean {
+        var found = false
+        _stamps.value = _stamps.value.map { s ->
+            if (s.id == updatedStamp.id) {
+                found = true
+                updatedStamp
+            } else s
+        }
+        return found
     }
 
     fun sendTradeRequest(friendId: String, stampId: String) {
@@ -469,6 +484,10 @@ class SharedMemoStampRepository {
     }
 
     fun deleteCollection(collectionId: String): Boolean {
+        val target = _collections.value.find { it.id == collectionId } ?: return false
+        if (target.collectionType == "SPECIAL" || target.collectionType == "DEFAULT" || target.id.contains("default")) {
+            return false // Protection: Default collections cannot be deleted!
+        }
         val initialSize = _collections.value.size
         _collections.value = _collections.value.filter { it.id != collectionId }
         val removed = _collections.value.size < initialSize

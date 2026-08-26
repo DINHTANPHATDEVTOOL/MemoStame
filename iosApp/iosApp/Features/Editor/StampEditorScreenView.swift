@@ -94,7 +94,7 @@ struct StampEditorScreenView: View {
                     #endif
                     presentationMode.wrappedValue.dismiss()
                 }) {
-                    Text("Lưu Tem")
+                    Text("Tiếp tục")
                         .font(.subheadline.bold())
                         .foregroundColor(.white)
                         .padding(.horizontal, 14)

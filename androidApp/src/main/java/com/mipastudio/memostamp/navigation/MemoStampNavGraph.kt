@@ -192,7 +192,7 @@ fun MemoStampNavGraph(
             composable(NavItem.Camera.route) {
                 CameraScreen(
                     onNavigateToVault = { navController.navigate(NavItem.Vault.route) },
-                    onNavigateToNote = { draftId -> navController.navigate("memory_note?draftId=$draftId") },
+                    onNavigateToNote = { draftId -> navController.navigate("stamp_editor?draftId=$draftId") },
                     onNavigateToHome = {
                         navController.navigate(NavItem.Home.route) {
                             popUpTo(navController.graph.startDestinationId)
@@ -222,13 +222,10 @@ fun MemoStampNavGraph(
                     draft = draft,
                     draftId = draftId,
                     onNavigateBack = {
-                        navController.navigate(NavItem.Home.route) {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
-                        }
+                        navController.popBackStack()
                     },
                     onSavedSuccess = {
-                        navController.navigate(NavItem.Home.route) {
+                        navController.navigate(NavItem.Vault.route) {
                             popUpTo(navController.graph.startDestinationId)
                             launchSingleTop = true
                         }
@@ -237,7 +234,7 @@ fun MemoStampNavGraph(
             }
 
             composable(
-                route = "stamp_editor?photoUrl={photoUrl}&stampId={stampId}",
+                route = "stamp_editor?photoUrl={photoUrl}&stampId={stampId}&draftId={draftId}",
                 arguments = listOf(
                     navArgument("photoUrl") {
                         type = NavType.StringType
@@ -248,19 +245,28 @@ fun MemoStampNavGraph(
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
+                    },
+                    navArgument("draftId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
                     }
                 )
             ) { backStackEntry ->
                 val photoUrl = backStackEntry.arguments?.getString("photoUrl")
                 val stampId = backStackEntry.arguments?.getString("stampId")
+                val draftId = backStackEntry.arguments?.getString("draftId")
                 StampEditorScreen(
                     initialPhotoUrl = photoUrl,
                     stampId = stampId,
+                    draftId = draftId,
                     onNavigateBack = { navController.popBackStack() },
-                    onStampSaved = {
-                        navController.navigate(NavItem.Vault.route) {
-                            popUpTo(NavItem.Camera.route)
-                            launchSingleTop = true
+                    onContinueToNote = { targetDraftId ->
+                        navController.navigate("memory_note?draftId=$targetDraftId")
+                    },
+                    onStampSaved = { stamp ->
+                        navController.navigate("stamp_detail/${stamp.id}") {
+                            popUpTo(NavItem.Vault.route)
                         }
                     }
                 )

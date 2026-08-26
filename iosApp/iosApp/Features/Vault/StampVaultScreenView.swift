@@ -1,6 +1,7 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+import Photos
 #endif
 import shared
 
@@ -442,19 +443,28 @@ struct StampDetailModalView: View {
                         var inputImage: UIImage? = nil
                         if let url = URL(string: stamp.stampImagePath), let data = try? Data(contentsOf: url) {
                             inputImage = UIImage(data: data)
+                        } else if let img = UIImage(contentsOfFile: stamp.stampImagePath) {
+                            inputImage = img
                         }
-                        _ = StampRenderEngine.shared.saveStampPng(
-                            photo: inputImage,
-                            title: stamp.title,
-                            location: stamp.location ?? "",
-                            dateStr: "2026.08.18",
-                            stampColorHex: "#D32F2F",
-                            shape: stamp.shape
-                        )
-                        showExportToast = true
-                        HapticFeedbackManager.shared.playSuccess()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            showExportToast = false
+                        
+                        guard let imageToSave = inputImage else { return }
+                        
+                        PHPhotoLibrary.requestAuthorization { status in
+                            if status == .authorized || status == .limited {
+                                PHPhotoLibrary.shared().performChanges({
+                                    PHAssetChangeRequest.creationRequestForAsset(from: imageToSave)
+                                }) { success, error in
+                                    DispatchQueue.main.async {
+                                        if success {
+                                            showExportToast = true
+                                            HapticFeedbackManager.shared.playSuccess()
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                                                showExportToast = false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         #endif
                     }) {
