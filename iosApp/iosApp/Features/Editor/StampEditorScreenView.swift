@@ -89,10 +89,15 @@ struct StampEditorScreenView: View {
                     if let fileUrl = savedUrl {
                         HapticFeedbackManager.shared.playSuccess()
                         SoundEffectsManager.shared.playStampPressSound()
-                        onStampSaved?(fileUrl)
+                        if let callback = onStampSaved {
+                            callback(fileUrl)
+                        } else {
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    } else if onStampSaved == nil {
+                        presentationMode.wrappedValue.dismiss()
                     }
                     #endif
-                    presentationMode.wrappedValue.dismiss()
                 }) {
                     Text("Tiếp tục")
                         .font(.subheadline.bold())

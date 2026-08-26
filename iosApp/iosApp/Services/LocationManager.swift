@@ -28,12 +28,31 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
     func fetchCurrentLocation(completion: @escaping (String) -> Void) {
         isLocating = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            guard let self = self else { return }
-            self.isLocating = false
-            let place = "Quảng trường Lâm Viên, Đà Lạt"
-            self.currentCityName = place
-            completion(place)
+        requestLocationPermission()
+        clManager.requestLocation()
+        
+        if let location = clManager.location {
+            self.currentCoordinate = location.coordinate
+            geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
+                DispatchQueue.main.async {
+                    self?.isLocating = false
+                    if let mark = placemarks?.first, error == nil {
+                        let parts = [mark.name, mark.subLocality, mark.locality].compactMap { $0 }
+                        let result = parts.isEmpty ? (mark.locality ?? "Vị trí hiện tại") : parts.joined(separator: ", ")
+                        self?.currentCityName = result
+                        completion(result)
+                    } else {
+                        completion(self?.currentCityName ?? "Vị trí GPS hiện tại")
+                    }
+                }
+            }
+        } else {
+            clManager.startUpdatingLocation()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+                guard let self = self else { return }
+                self.isLocating = false
+                completion(self.currentCityName.isEmpty ? "Vị trí GPS hiện tại" : self.currentCityName)
+            }
         }
     }
 
@@ -45,6 +64,10 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         }
     }
 
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        self.isLocating = false
+    }
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         self.currentCoordinate = location.coordinate
@@ -52,7 +75,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
             guard let self = self, let mark = placemarks?.first, error == nil else { return }
-            let city = mark.locality ?? mark.administrativeArea ?? "Đà Lạt"
+            let city = mark.locality ?? mark.administrativeArea ?? "TP. Hồ Chí Minh"
             let country = mark.country ?? "Việt Nam"
             DispatchQueue.main.async {
                 self.currentCityName = "\(city), \(country)"

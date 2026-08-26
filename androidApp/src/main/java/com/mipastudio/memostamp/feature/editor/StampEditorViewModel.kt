@@ -443,4 +443,65 @@ class StampEditorViewModel : ViewModel() {
             }
         }
     }
+
+    fun renderAndSaveDraft(
+        context: Context,
+        draftId: String?,
+        titleText: String,
+        locationText: String,
+        captionText: String,
+        onComplete: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            val state = _uiState.value
+            withContext(Dispatchers.IO) {
+                try {
+                    val origPath = state.sourceImagePath
+                    val rawBitmap = SafeBitmapDecoder.decodeSampledBitmap(
+                        context = context,
+                        uriOrPath = origPath,
+                        reqWidth = 1500,
+                        reqHeight = 2000
+                    ) ?: android.graphics.Bitmap.createBitmap(1200, 1500, android.graphics.Bitmap.Config.ARGB_8888)
+
+                    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                    val renderedFile = StampRenderer.renderStampToPng(
+                        context = context,
+                        croppedBitmap = rawBitmap,
+                        elements = state.elements,
+                        filterSpec = state.filterSpec,
+                        outputFileName = "STAMP_DRAFT_$timeStamp.png"
+                    )
+
+                    if (!rawBitmap.isRecycled) rawBitmap.recycle()
+
+                    val repo = StampRepository.getInstance(context)
+                    val targetDraftId = draftId ?: "draft_${System.currentTimeMillis()}"
+                    val newDraft = com.mipastudio.memostamp.domain.model.StampDraft(
+                        id = targetDraftId,
+                        originalImagePath = origPath,
+                        renderedImagePath = renderedFile.absolutePath,
+                        title = titleText,
+                        location = locationText,
+                        memoryDate = System.currentTimeMillis(),
+                        note = captionText,
+                        filterId = state.filterSpec.id,
+                        filterIntensity = state.filterSpec.intensity,
+                        filterSpecJson = state.filterSpec.toJson()
+                    )
+                    repo.saveDraft(newDraft)
+                    withContext(Dispatchers.Main) {
+                        _uiState.update { it.copy(isSaving = false) }
+                        onComplete(targetDraftId)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        _uiState.update { it.copy(isSaving = false) }
+                    }
+                }
+            }
+        }
+    }
 }

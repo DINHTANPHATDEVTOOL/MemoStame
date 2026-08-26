@@ -313,6 +313,18 @@ class SharedMemoStampRepository {
         return stamp
     }
 
+    fun restoreStamps(stamps: List<StampItem>) {
+        if (stamps.isNotEmpty()) {
+            _stamps.value = stamps
+        }
+    }
+
+    fun restoreCollections(collections: List<CollectionItem>) {
+        if (collections.isNotEmpty()) {
+            _collections.value = collections
+        }
+    }
+
     fun publishStampToFeed(stampId: String, audience: AudienceType = AudienceType.FRIENDS, caption: String? = null): FeedPost? {
         val me = _currentUser.value
         val stamp = _stamps.value.find { it.id == stampId } ?: return null

@@ -22,7 +22,6 @@ struct PersistedCollectionData: Codable {
     let name: String
     let description: String
     let iconEmoji: String
-    let createdAt: Int64
     let collectionType: String
     let targetCount: Int32
     let stampsCount: Int32
@@ -77,7 +76,24 @@ class IOSLocalPersistenceStore {
             repository.setCurrentUser(profile: profile)
         }
 
-        // Restore Stamps if present
+        // Restore Collections if present
+        if !payload.collections.isEmpty {
+            let loadedCollections = payload.collections.map { c in
+                CollectionItem(
+                    id: c.id,
+                    name: c.name,
+                    description: c.description,
+                    iconEmoji: c.iconEmoji,
+                    collectionType: c.collectionType,
+                    targetCount: c.targetCount,
+                    stampsCount: c.stampsCount,
+                    privacy: c.privacy
+                )
+            }
+            repository.restoreCollections(collections: loadedCollections)
+        }
+
+        // Restore Stamps preserving exact id, dates, favorite status, and attributes
         if !payload.stamps.isEmpty {
             let loadedStamps = payload.stamps.map { s in
                 StampItem(
@@ -95,22 +111,7 @@ class IOSLocalPersistenceStore {
                     shape: s.shape
                 )
             }
-            // Add/Sync stamps to repository
-            for stamp in loadedStamps.reversed() {
-                if repository.stamps.value.first(where: { $0.id == stamp.id }) == nil {
-                    _ = repository.addStamp(
-                        title: stamp.title,
-                        note: stamp.note,
-                        location: stamp.location,
-                        imageUrl: stamp.stampImagePath,
-                        shape: stamp.shape,
-                        collectionId: stamp.collectionId,
-                        audience: AudienceType.ONLY_ME,
-                        mood: stamp.mood,
-                        memoryDate: stamp.memoryDate
-                    )
-                }
-            }
+            repository.restoreStamps(stamps: loadedStamps)
         }
     }
 
@@ -150,7 +151,6 @@ class IOSLocalPersistenceStore {
                 name: c.name,
                 description: c.description_,
                 iconEmoji: c.iconEmoji,
-                createdAt: c.createdAt,
                 collectionType: c.collectionType,
                 targetCount: c.targetCount,
                 stampsCount: c.stampsCount,

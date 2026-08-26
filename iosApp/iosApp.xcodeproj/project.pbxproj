@@ -40,6 +40,7 @@
 		1D3624272D00000100000001 /* MSChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624262D00000100000001 /* MSChipView.swift */; };
 		1D3624292D00000100000001 /* MSLoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624282D00000100000001 /* MSLoadingOverlay.swift */; };
 		1D36242B2D00000100000001 /* MSRefreshableScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36242A2D00000100000001 /* MSRefreshableScrollView.swift */; };
+		1D36248B2D00000100000001 /* IOSLocalPersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36248A2D00000100000001 /* IOSLocalPersistenceStore.swift */; };
 		1D36234B2D00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D36234A2D00000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -78,6 +79,7 @@
 		1D3624262D00000100000001 /* MSChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSChipView.swift; sourceTree = "<group>"; };
 		1D3624282D00000100000001 /* MSLoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSLoadingOverlay.swift; sourceTree = "<group>"; };
 		1D36242A2D00000100000001 /* MSRefreshableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSRefreshableScrollView.swift; sourceTree = "<group>"; };
+		1D36248A2D00000100000001 /* IOSLocalPersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSLocalPersistenceStore.swift; sourceTree = "<group>"; };
 		1D36234A2D00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -115,6 +117,7 @@
 				1D3623272D00000100000001 /* ContentView.swift */,
 				1D36234A2D00000100000001 /* Assets.xcassets */,
 				1D3623482D00000100000001 /* ModelExtensions.swift */,
+				1D36248A2D00000100000001 /* IOSLocalPersistenceStore.swift */,
 				1D3623502D00000100000001 /* UI */,
 				1D3623512D00000100000001 /* Features */,
 				1D3623602D00000100000001 /* ViewModels */,
@@ -393,6 +396,7 @@
 				1D3624272D00000100000001 /* MSChipView.swift in Sources */,
 				1D3624292D00000100000001 /* MSLoadingOverlay.swift in Sources */,
 				1D36242B2D00000100000001 /* MSRefreshableScrollView.swift in Sources */,
+				1D36248B2D00000100000001 /* IOSLocalPersistenceStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -155,53 +155,18 @@ fun StampEditorScreen(
                     TextButton(
                         onClick = {
                             if (!draftId.isNullOrBlank() || stampId.isNullOrBlank()) {
-                                // Creation Flow: Render edited image, update draft, proceed to MemoryNote Screen
-                                val repo = com.mipastudio.memostamp.data.repository.StampRepository.getInstance(context)
-                                val targetDraftId = draftId ?: "draft_${System.currentTimeMillis()}"
-                                val newDraft = com.mipastudio.memostamp.domain.model.StampDraft(
-                                    id = targetDraftId,
-                                    originalImagePath = uiState.sourceImagePath,
-                                    renderedImagePath = uiState.sourceImagePath,
-                                    title = titleText,
-                                    location = locationText,
-                                    memoryDate = System.currentTimeMillis(),
-                                    note = captionText
-                                )
-                                coroutineScope.launch {
-                                    repo.saveDraft(newDraft)
-                                    if (onContinueToNote != null) {
-                                        onContinueToNote(targetDraftId)
-                                    } else {
-                                        viewModel.saveStamp(
-                                            context = context,
-                                            title = titleText,
-                                            location = locationText,
-                                            date = dateText,
-                                            caption = captionText,
-                                            onSuccess = { entity ->
-                                                val newStamp = Stamp(
-                                                    id = entity.id,
-                                                    stampNumber = "#STAMP-${entity.id.take(8).uppercase()}",
-                                                    title = entity.title,
-                                                    imageUrl = entity.stampImagePath,
-                                                    creatorId = currentUser.userId,
-                                                    creatorName = currentUser.displayName.ifBlank { "User" },
-                                                    ownerId = currentUser.userId,
-                                                    ownerName = currentUser.displayName.ifBlank { "User" },
-                                                    createdDate = "Today",
-                                                    memoryDate = dateText,
-                                                    location = entity.location ?: "",
-                                                    caption = entity.note,
-                                                    type = StampType.PERSONAL
-                                                )
-                                                onStampSaved(newStamp)
-                                            },
-                                            onError = { msg ->
-                                                Toast.makeText(context, "Save error: $msg", Toast.LENGTH_SHORT).show()
-                                            }
-                                        )
+                                viewModel.renderAndSaveDraft(
+                                    context = context,
+                                    draftId = draftId,
+                                    titleText = titleText,
+                                    locationText = locationText,
+                                    captionText = captionText,
+                                    onComplete = { savedDraftId ->
+                                        if (onContinueToNote != null) {
+                                            onContinueToNote(savedDraftId)
+                                        }
                                     }
-                                }
+                                )
                             } else {
                                 viewModel.saveStamp(
                                     context = context,

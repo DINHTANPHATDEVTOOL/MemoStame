@@ -37,17 +37,30 @@ struct StampVaultScreenView: View {
         return formatter.string(from: date)
     }
 
+    let filters = ["Tất cả", "Mới nhất", "Cũ nhất", "Yêu thích", "Du lịch", "Cà phê"]
+
     var filteredStamps: [StampItem] {
         var list = stamps
         if !searchText.isEmpty {
-            list = list.filter { $0.title.localizedCaseInsensitiveContains(searchText) || ($0.location?.localizedCaseInsensitiveContains(searchText) ?? false) }
-        }
-        if selectedFilter != "All" {
-            if selectedFilter.contains("Travel") {
-                list = list.filter { $0.collectionId == "col_travel" }
-            } else if selectedFilter.contains("Coffee") {
-                list = list.filter { $0.collectionId == "col_coffee" }
+            list = list.filter {
+                $0.title.localizedCaseInsensitiveContains(searchText) ||
+                ($0.location?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+                $0.note.localizedCaseInsensitiveContains(searchText)
             }
+        }
+        switch selectedFilter {
+        case "Mới nhất":
+            list = list.sorted(by: { $0.createdAt > $1.createdAt })
+        case "Cũ nhất":
+            list = list.sorted(by: { $0.createdAt < $1.createdAt })
+        case "Yêu thích":
+            list = list.filter { $0.favorite }
+        case "Du lịch":
+            list = list.filter { $0.collectionId == "col_travel" || $0.mood.contains("Travel") }
+        case "Cà phê":
+            list = list.filter { $0.collectionId == "col_coffee" || $0.mood.contains("Chill") }
+        default:
+            break
         }
         return list
     }
@@ -390,6 +403,7 @@ struct StampDetailModalView: View {
                 Button(action: {
                     _ = repository.toggleFavorite(stampId: stamp.id)
                     isFavorite.toggle()
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository)
                     HapticFeedbackManager.shared.playSuccess()
                 }) {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
@@ -480,10 +494,37 @@ struct StampDetailModalView: View {
                         .cornerRadius(12)
                     }
 
+                    Button(action: {
+                        #if canImport(UIKit)
+                        var itemsToShare: [Any] = [stamp.title]
+                        if let url = URL(string: stamp.stampImagePath), let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
+                            itemsToShare.append(img)
+                        } else if let img = UIImage(contentsOfFile: stamp.stampImagePath) {
+                            itemsToShare.append(img)
+                        }
+                        let av = UIActivityViewController(activityItems: itemsToShare, applicationActivities: nil)
+                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let root = scene.windows.first?.rootViewController {
+                            root.present(av, animated: true)
+                        }
+                        #endif
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Share Native")
+                                .font(.subheadline.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.green.opacity(0.12))
+                        .foregroundColor(.green)
+                        .cornerRadius(12)
+                    }
+
                     Button(action: onShare) {
                         HStack(spacing: 6) {
                             Image(systemName: "envelope.fill")
-                            Text("Chia sẻ")
+                            Text("Bao thư")
                                 .font(.subheadline.bold())
                         }
                         .frame(maxWidth: .infinity)
@@ -513,6 +554,7 @@ struct StampDetailModalView: View {
                 message: Text("Hành động này sẽ xóa con tem khỏi Bộ sưu tập của bạn."),
                 primaryButton: .destructive(Text("Xóa")) {
                     _ = repository.deleteStamp(stampId: stamp.id)
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository)
                     onDismiss()
                 },
                 secondaryButton: .cancel()
@@ -629,6 +671,7 @@ struct CreateAlbumSheetView: View {
                         let name = albumName.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !name.isEmpty {
                             _ = repository.createCollection(name: name, description: albumDesc, iconEmoji: selectedEmoji, privacy: selectedPrivacy)
+                            IOSLocalPersistenceStore.shared.saveData(repository: repository)
                             presentationMode.wrappedValue.dismiss()
                         }
                     }) {
