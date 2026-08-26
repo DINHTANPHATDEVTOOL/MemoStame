@@ -180,8 +180,9 @@ final class StampRenderEngine {
                 .font: UIFont.boldSystemFont(ofSize: 28),
                 .foregroundColor: UIColor.white
             ]
-            let effectiveTitle = title.isEmpty ? "Untitled Memory" : title
-            (effectiveTitle as NSString).draw(at: CGPoint(x: 32, y: targetSize.height - 95), withAttributes: titleAttr)
+            if !title.isEmpty {
+                (title as NSString).draw(at: CGPoint(x: 32, y: targetSize.height - 95), withAttributes: titleAttr)
+            }
 
             let subtitleAttr: [NSAttributedString.Key: Any] = [
                 .font: UIFont.monospacedSystemFont(ofSize: 14, weight: .bold),

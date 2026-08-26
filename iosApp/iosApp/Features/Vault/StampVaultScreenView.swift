@@ -419,11 +419,18 @@ struct StampDetailModalView: View {
             }
             .padding(.horizontal)
 
+            let formattedMemoryDate: String = {
+                let date = Date(timeIntervalSince1970: TimeInterval(stamp.memoryDate) / 1000.0)
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy.MM.dd"
+                return formatter.string(from: date)
+            }()
+
             DieCutStampView(
                 title: stamp.title,
                 imageUrl: stamp.stampImagePath,
                 location: stamp.location,
-                dateStr: "2026.08.18",
+                dateStr: formattedMemoryDate,
                 note: stamp.note,
                 shape: stamp.shape,
                 isInteractive: true

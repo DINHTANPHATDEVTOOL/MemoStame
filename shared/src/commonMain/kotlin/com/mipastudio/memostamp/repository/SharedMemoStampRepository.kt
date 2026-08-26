@@ -28,13 +28,7 @@ class SharedMemoStampRepository {
         _currentUser.value = profile
     }
 
-    private val _circles = MutableStateFlow<List<Circle>>(
-        listOf(
-            Circle("c_1", "user_me", "Best Friends", "heart", listOf("user_huy", "user_linh"), currentTimeMillis()),
-            Circle("c_2", "user_me", "Da Lat Trip", "tree", listOf("user_huy", "user_phat"), currentTimeMillis()),
-            Circle("c_3", "user_me", "Class 22DTHB3", "academic", listOf("user_linh", "user_phat"), currentTimeMillis())
-        )
-    )
+    private val _circles = MutableStateFlow<List<Circle>>(emptyList())
     val circles: StateFlow<List<Circle>> = _circles.asStateFlow()
 
     private val _badges = MutableStateFlow<List<PassportBadge>>(
@@ -47,8 +41,38 @@ class SharedMemoStampRepository {
     )
     val badges: StateFlow<List<PassportBadge>> = _badges.asStateFlow()
 
-    private val _feedPosts = MutableStateFlow<List<FeedPost>>(
+    private val _feedPosts = MutableStateFlow<List<FeedPost>>(emptyList())
+    val feedPosts: StateFlow<List<FeedPost>> = _feedPosts.asStateFlow()
+
+    private val _stamps = MutableStateFlow<List<StampItem>>(emptyList())
+    val stamps: StateFlow<List<StampItem>> = _stamps.asStateFlow()
+
+    private val _collections = MutableStateFlow<List<CollectionItem>>(
         listOf(
+            CollectionItem("col_travel", "Travel & Places", "Destinations & journeys", "plane", "SPECIAL", 12, 8),
+            CollectionItem("col_coffee", "Coffee & Food", "Cafes and meals", "coffee", "NORMAL", 10, 5),
+            CollectionItem("col_daily", "Daily Life", "Everyday moments", "leaf", "NORMAL", 15, 12),
+            CollectionItem("col_special", "Special Moments", "Anniversaries & milestones", "star", "SERIES", 8, 4)
+        )
+    )
+    val collections: StateFlow<List<CollectionItem>> = _collections.asStateFlow()
+
+    private val _friends = MutableStateFlow<List<FriendItem>>(emptyList())
+    val friends: StateFlow<List<FriendItem>> = _friends.asStateFlow()
+
+    private val _friendRequests = MutableStateFlow<List<FriendRequestItem>>(emptyList())
+    val friendRequests: StateFlow<List<FriendRequestItem>> = _friendRequests.asStateFlow()
+
+    private val _tradeRequests = MutableStateFlow<List<TradeRequest>>(emptyList())
+    val tradeRequests: StateFlow<List<TradeRequest>> = _tradeRequests.asStateFlow()
+
+    fun loadDemoFixtures() {
+        _circles.value = listOf(
+            Circle("c_1", "user_me", "Best Friends", "heart", listOf("user_huy", "user_linh"), currentTimeMillis()),
+            Circle("c_2", "user_me", "Da Lat Trip", "tree", listOf("user_huy", "user_phat"), currentTimeMillis()),
+            Circle("c_3", "user_me", "Class 22DTHB3", "academic", listOf("user_linh", "user_phat"), currentTimeMillis())
+        )
+        _feedPosts.value = listOf(
             FeedPost(
                 id = "post_1",
                 stampId = "stamp_1",
@@ -118,40 +142,15 @@ class SharedMemoStampRepository {
                 isLikedByMe = true
             )
         )
-    )
-    val feedPosts: StateFlow<List<FeedPost>> = _feedPosts.asStateFlow()
-
-    private val _stamps = MutableStateFlow<List<StampItem>>(emptyList())
-    val stamps: StateFlow<List<StampItem>> = _stamps.asStateFlow()
-
-    private val _collections = MutableStateFlow<List<CollectionItem>>(
-        listOf(
-            CollectionItem("col_travel", "Travel & Places", "Destinations & journeys", "plane", "SPECIAL", 12, 8),
-            CollectionItem("col_coffee", "Coffee & Food", "Cafes and meals", "coffee", "NORMAL", 10, 5),
-            CollectionItem("col_daily", "Daily Life", "Everyday moments", "leaf", "NORMAL", 15, 12),
-            CollectionItem("col_special", "Special Moments", "Anniversaries & milestones", "star", "SERIES", 8, 4)
-        )
-    )
-    val collections: StateFlow<List<CollectionItem>> = _collections.asStateFlow()
-
-    private val _friends = MutableStateFlow<List<FriendItem>>(
-        listOf(
+        _friends.value = listOf(
             FriendItem("user_huy", "Huy Tran", "huy_tran", "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150", true, 5),
             FriendItem("user_linh", "Linh Pham", "linh_pham", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150", true, 3),
             FriendItem("user_phat", "Phat Le", "phat_le", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150", false, 1)
         )
-    )
-    val friends: StateFlow<List<FriendItem>> = _friends.asStateFlow()
-
-    private val _friendRequests = MutableStateFlow<List<FriendRequestItem>>(
-        listOf(
+        _friendRequests.value = listOf(
             FriendRequestItem("freq_1", "Minh Thu", "minh_thu", "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150", "PENDING", currentTimeMillis() - 7200000)
         )
-    )
-    val friendRequests: StateFlow<List<FriendRequestItem>> = _friendRequests.asStateFlow()
-
-    private val _tradeRequests = MutableStateFlow<List<TradeRequest>>(
-        listOf(
+        _tradeRequests.value = listOf(
             TradeRequest(
                 id = "trade_1",
                 senderName = "Huy Tran",
@@ -162,8 +161,7 @@ class SharedMemoStampRepository {
                 createdAt = currentTimeMillis() - 3600000
             )
         )
-    )
-    val tradeRequests: StateFlow<List<TradeRequest>> = _tradeRequests.asStateFlow()
+    }
 
     fun toggleLike(postId: String) {
         val current = _feedPosts.value

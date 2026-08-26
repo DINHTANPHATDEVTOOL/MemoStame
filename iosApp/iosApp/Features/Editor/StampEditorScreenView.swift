@@ -16,6 +16,7 @@ struct StampEditorScreenView: View {
 
     var initialImageUrl: String? = nil
     var onStampSaved: ((URL) -> Void)? = nil
+    var onContinue: ((String, String, String) -> Void)? = nil
 
     @State private var selectedMoldId: String = "classic_perforated"
     @State private var selectedColorHex: String = "#D32F2F"
@@ -73,31 +74,15 @@ struct StampEditorScreenView: View {
                 Spacer()
 
                 Button(action: {
-                    #if canImport(UIKit)
-                    var inputImage: UIImage? = nil
-                    if let urlStr = initialImageUrl, let url = URL(string: urlStr), let data = try? Data(contentsOf: url) {
-                        inputImage = UIImage(data: data)
-                    }
-                    let savedUrl = StampRenderEngine.shared.saveStampPng(
-                        photo: inputImage,
-                        title: stampTitle,
-                        location: stampLocation,
-                        dateStr: stampDate,
-                        stampColorHex: selectedColorHex,
-                        shape: selectedMoldId
-                    )
-                    if let fileUrl = savedUrl {
-                        HapticFeedbackManager.shared.playSuccess()
-                        SoundEffectsManager.shared.playStampPressSound()
-                        if let callback = onStampSaved {
-                            callback(fileUrl)
-                        } else {
-                            presentationMode.wrappedValue.dismiss()
-                        }
-                    } else if onStampSaved == nil {
+                    HapticFeedbackManager.shared.playSuccess()
+                    SoundEffectsManager.shared.playStampPressSound()
+                    if let onContinue = onContinue {
+                        onContinue(initialImageUrl ?? "", selectedMoldId, selectedColorHex)
+                    } else if let callback = onStampSaved, let urlStr = initialImageUrl, let url = URL(string: urlStr) {
+                        callback(url)
+                    } else {
                         presentationMode.wrappedValue.dismiss()
                     }
-                    #endif
                 }) {
                     Text("Tiếp tục")
                         .font(.subheadline.bold())

@@ -246,12 +246,16 @@ struct CameraFlowContainerView: View {
 
     @State private var rawCapturedUrl: String? = nil
     @State private var editedStampUrl: String? = nil
+    @State private var selectedMoldId: String = "classic_perforated"
+    @State private var selectedColorHex: String = "#D32F2F"
 
     var body: some View {
         Group {
             if let editedUrl = editedStampUrl {
                 MemoryNoteScreenView(
                     imageUrl: editedUrl,
+                    shape: selectedMoldId,
+                    stampColorHex: selectedColorHex,
                     replyToPostId: replyToPostId,
                     repository: repository,
                     onSavedSuccess: onComplete,
@@ -260,8 +264,10 @@ struct CameraFlowContainerView: View {
             } else if let rawUrl = rawCapturedUrl {
                 StampEditorScreenView(
                     initialImageUrl: rawUrl,
-                    onStampSaved: { renderedFileUrl in
-                        editedStampUrl = renderedFileUrl.absoluteString
+                    onContinue: { photoUrl, moldId, colorHex in
+                        self.selectedMoldId = moldId
+                        self.selectedColorHex = colorHex
+                        self.editedStampUrl = photoUrl
                     }
                 )
             } else {

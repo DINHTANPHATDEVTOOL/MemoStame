@@ -10,19 +10,21 @@ import kotlin.test.assertTrue
 class SharedMemoStampRepositoryTest {
 
     @Test
-    fun testInitialStampStateIsEmpty() {
+    fun testInitialStateIsEmpty() {
         val repo = SharedMemoStampRepository()
         assertNotNull(repo.currentUser.value)
         assertEquals("user_me", repo.currentUser.value.uid)
         assertTrue(repo.stamps.value.isEmpty())
-        assertTrue(repo.feedPosts.value.isNotEmpty())
-        assertTrue(repo.friends.value.isNotEmpty())
-        assertTrue(repo.collections.value.isNotEmpty())
+        assertTrue(repo.feedPosts.value.isEmpty())
+        assertTrue(repo.friends.value.isEmpty())
+        assertTrue(repo.friendRequests.value.isEmpty())
+        assertTrue(repo.tradeRequests.value.isEmpty())
     }
 
     @Test
     fun testToggleLikeTogglesStateAndCount() {
         val repo = SharedMemoStampRepository()
+        repo.loadDemoFixtures()
         val post = repo.feedPosts.value.first()
         val initialLiked = post.isLikedByMe
         val initialCount = post.reactionCount
@@ -37,6 +39,7 @@ class SharedMemoStampRepositoryTest {
     @Test
     fun testAddCommentAddsCommentAndIncrementsCount() {
         val repo = SharedMemoStampRepository()
+        repo.loadDemoFixtures()
         val post = repo.feedPosts.value.first()
         val initialCommentCount = post.commentCount
 
@@ -50,6 +53,7 @@ class SharedMemoStampRepositoryTest {
     @Test
     fun testDeleteCommentRemovesCommentAndDecrementsCount() {
         val repo = SharedMemoStampRepository()
+        repo.loadDemoFixtures()
         val post = repo.feedPosts.value.first { it.comments.isNotEmpty() }
         val commentToDelete = post.comments.first()
         val initialCount = post.commentCount

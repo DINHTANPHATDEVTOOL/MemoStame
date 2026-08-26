@@ -15,6 +15,8 @@ struct GroundedPlaceItem: Identifiable {
 
 struct MemoryNoteScreenView: View {
     let imageUrl: String
+    var shape: String = "classic"
+    var stampColorHex: String = "#D32F2F"
     var replyToPostId: String? = nil
     let repository: SharedMemoStampRepository
     var onSavedSuccess: () -> Void
@@ -41,7 +43,7 @@ struct MemoryNoteScreenView: View {
         return groundedPlaces
     }
 
-    let audienceTypes = ["Public", "Friends", "Only Me"]
+    let audienceTypes = ["Friends", "Only Me"]
 
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -73,24 +75,43 @@ struct MemoryNoteScreenView: View {
                         audience = AudienceType.friends
                     }
 
-                    let finalTitle = title.isEmpty ? "Memory Stamp" : title
+                    let finalTitle = title.isEmpty ? "" : title
+
+                    #if canImport(UIKit)
+                    var inputImage: UIImage? = nil
+                    if let url = URL(string: imageUrl), let data = try? Data(contentsOf: url) {
+                        inputImage = UIImage(data: data)
+                    }
+                    let finalRenderedUrl = StampRenderEngine.shared.saveStampPng(
+                        photo: inputImage,
+                        title: finalTitle,
+                        location: locationSearch.isEmpty ? nil : locationSearch,
+                        dateStr: formattedDate,
+                        stampColorHex: stampColorHex,
+                        shape: shape
+                    )?.absoluteString ?? imageUrl
+                    #else
+                    let finalRenderedUrl = imageUrl
+                    #endif
+
+                    let stampItemTitle = finalTitle.isEmpty ? "Memory Stamp" : finalTitle
 
                     if let replyId = replyToPostId, !replyId.isEmpty {
                         repository.addStampReply(
                             postId: replyId,
-                            stampTitle: finalTitle,
+                            stampTitle: stampItemTitle,
                             note: caption,
-                            shape: "classic",
-                            imageUrl: imageUrl
+                            shape: shape,
+                            imageUrl: finalRenderedUrl
                         )
                     }
 
                     _ = repository.addStamp(
-                        title: finalTitle,
+                        title: stampItemTitle,
                         note: caption,
                         location: locationSearch.isEmpty ? nil : locationSearch,
-                        imageUrl: imageUrl,
-                        shape: "classic",
+                        imageUrl: finalRenderedUrl,
+                        shape: shape,
                         collectionId: selectedCollectionId,
                         audience: audience,
                         mood: selectedMood,

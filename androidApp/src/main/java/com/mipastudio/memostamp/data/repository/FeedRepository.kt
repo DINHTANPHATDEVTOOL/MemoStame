@@ -53,15 +53,10 @@ class FeedRepository private constructor(
         // 1. DOWNLOAD cloud posts FIRST so user gets new posts immediately
         try {
             val cloudPosts = supabaseClient.getFeedPosts()
-            if (cloudPosts.isEmpty() && feedDao.getPostCount() == 0) {
-                if (com.mipastudio.memostamp.BuildConfig.DEBUG) {
-                    ensureDefaultFeedData()
-                }
-            } else {
-                for (p in cloudPosts) {
-                    val pId = p.id ?: continue
-                    val entity = FeedPostEntity(
-                        id = pId,
+            for (p in cloudPosts) {
+                val pId = p.id ?: continue
+                val entity = FeedPostEntity(
+                    id = pId,
                         stampId = p.stampId.orEmpty(),
                         stampUrl = p.stampUrl.orEmpty().ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
                         stampTitle = p.stampTitle.orEmpty().ifBlank { "Tem kỷ niệm" },
@@ -79,7 +74,6 @@ class FeedRepository private constructor(
                     )
                     feedDao.insertPost(entity)
                 }
-            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
