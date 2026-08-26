@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FeedSeenEntity::class,
         UserEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class MemoStampDatabase : RoomDatabase() {
@@ -296,6 +296,133 @@ abstract class MemoStampDatabase : RoomDatabase() {
             }
         }
 
+        fun getMigration12To13(context: Context) = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                var activeUserId = "user_phat_main"
+                try {
+                    val prefs = context.getSharedPreferences("memostamp_auth_prefs", Context.MODE_PRIVATE)
+                    val json = prefs.getString("user_profile_json", null)
+                    if (!json.isNullOrBlank()) {
+                        val obj = org.json.JSONObject(json)
+                        val uid = obj.optString("userId")
+                        if (!uid.isNullOrBlank()) activeUserId = uid
+                    }
+                } catch (_: Exception) {}
+
+                // 1. Rebuild stamps table with DEFAULT '' schema
+                db.execSQL("""
+                    CREATE TABLE stamps_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        ownerId TEXT NOT NULL DEFAULT '',
+                        originalImagePath TEXT NOT NULL,
+                        croppedImagePath TEXT,
+                        stampImagePath TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        note TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        memoryDate INTEGER NOT NULL,
+                        location TEXT,
+                        mood TEXT,
+                        collectionId TEXT,
+                        favorite INTEGER NOT NULL,
+                        preset TEXT,
+                        templateId TEXT,
+                        borderStyle TEXT,
+                        designJson TEXT,
+                        filterId TEXT,
+                        filterIntensity REAL NOT NULL,
+                        filterSpecJson TEXT
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO stamps_new (
+                        id, ownerId, originalImagePath, croppedImagePath, stampImagePath,
+                        title, note, createdAt, memoryDate, location, mood, collectionId,
+                        favorite, preset, templateId, borderStyle, designJson, filterId,
+                        filterIntensity, filterSpecJson
+                    )
+                    SELECT 
+                        id,
+                        CASE WHEN ownerId IS NULL OR ownerId = '' THEN ? ELSE ownerId END,
+                        originalImagePath, croppedImagePath, stampImagePath,
+                        title, note, createdAt, memoryDate, location, mood, collectionId,
+                        favorite, preset, templateId, borderStyle, designJson, filterId,
+                        filterIntensity, filterSpecJson
+                    FROM stamps
+                """.trimIndent(), arrayOf(activeUserId))
+                db.execSQL("DROP TABLE stamps")
+                db.execSQL("ALTER TABLE stamps_new RENAME TO stamps")
+
+                // 2. Rebuild drafts table with DEFAULT '' schema
+                db.execSQL("""
+                    CREATE TABLE drafts_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        ownerId TEXT NOT NULL DEFAULT '',
+                        originalImagePath TEXT NOT NULL,
+                        croppedImagePath TEXT,
+                        renderedImagePath TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        title TEXT NOT NULL,
+                        note TEXT NOT NULL,
+                        memoryDate INTEGER NOT NULL,
+                        location TEXT,
+                        mood TEXT,
+                        collectionId TEXT,
+                        filterId TEXT,
+                        filterIntensity REAL NOT NULL,
+                        filterSpecJson TEXT
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO drafts_new (
+                        id, ownerId, originalImagePath, croppedImagePath, renderedImagePath,
+                        createdAt, title, note, memoryDate, location, mood, collectionId,
+                        filterId, filterIntensity, filterSpecJson
+                    )
+                    SELECT 
+                        id,
+                        CASE WHEN ownerId IS NULL OR ownerId = '' THEN ? ELSE ownerId END,
+                        originalImagePath, croppedImagePath, renderedImagePath,
+                        createdAt, title, note, memoryDate, location, mood, collectionId,
+                        filterId, filterIntensity, filterSpecJson
+                    FROM drafts
+                """.trimIndent(), arrayOf(activeUserId))
+                db.execSQL("DROP TABLE drafts")
+                db.execSQL("ALTER TABLE drafts_new RENAME TO drafts")
+
+                // 3. Rebuild collections table with DEFAULT '' schema
+                db.execSQL("""
+                    CREATE TABLE collections_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        ownerId TEXT NOT NULL DEFAULT '',
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        iconEmoji TEXT,
+                        coverStampId TEXT,
+                        createdAt INTEGER NOT NULL,
+                        sortOrder INTEGER NOT NULL,
+                        collectionType TEXT NOT NULL,
+                        targetCount INTEGER NOT NULL,
+                        privacy TEXT NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO collections_new (
+                        id, ownerId, name, description, iconEmoji, coverStampId,
+                        createdAt, sortOrder, collectionType, targetCount, privacy
+                    )
+                    SELECT 
+                        id,
+                        CASE WHEN ownerId IS NULL OR ownerId = '' THEN ? ELSE ownerId END,
+                        name, description, iconEmoji, coverStampId,
+                        createdAt, sortOrder, collectionType, targetCount, privacy
+                    FROM collections
+                """.trimIndent(), arrayOf(activeUserId))
+                db.execSQL("DROP TABLE collections")
+                db.execSQL("ALTER TABLE collections_new RENAME TO collections")
+            }
+        }
+
         fun getInstance(context: Context): MemoStampDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -306,7 +433,8 @@ abstract class MemoStampDatabase : RoomDatabase() {
                 .addMigrations(
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
                     getMigration10To11(context.applicationContext),
-                    getMigration11To12(context.applicationContext)
+                    getMigration11To12(context.applicationContext),
+                    getMigration12To13(context.applicationContext)
                 )
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
