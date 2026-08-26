@@ -268,6 +268,9 @@ struct CameraFlowContainerView: View {
                         self.selectedMoldId = moldId
                         self.selectedColorHex = colorHex
                         self.editedStampUrl = photoUrl
+                    },
+                    onCancel: {
+                        self.rawCapturedUrl = nil
                     }
                 )
             } else {

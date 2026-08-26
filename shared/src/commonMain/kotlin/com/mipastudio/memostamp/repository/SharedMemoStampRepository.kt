@@ -17,9 +17,9 @@ class SharedMemoStampRepository {
             displayName = "Phat Nguyen",
             avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
             bio = "Sưu tầm ký ức qua từng con tem bưu chính 📮",
-            stampsCreatedCount = 14,
-            stampsCollectedCount = 38,
-            placesVisitedCount = 9
+            stampsCreatedCount = 0,
+            stampsCollectedCount = 0,
+            placesVisitedCount = 0
         )
     )
     val currentUser: StateFlow<UserProfile> = _currentUser.asStateFlow()
@@ -33,9 +33,9 @@ class SharedMemoStampRepository {
 
     private val _badges = MutableStateFlow<List<PassportBadge>>(
         listOf(
-            PassportBadge("Explorer", "Visited 5+ countries & cities", "plane", true),
-            PassportBadge("Coffee Lover", "Created 10+ coffee memory stamps", "coffee", true),
-            PassportBadge("Master Crafter", "Customized 15+ die-cut stamps", "palette", true),
+            PassportBadge("Explorer", "Visited 5+ countries & cities", "plane", false),
+            PassportBadge("Coffee Lover", "Created 10+ coffee memory stamps", "coffee", false),
+            PassportBadge("Master Crafter", "Customized 15+ die-cut stamps", "palette", false),
             PassportBadge("Trade King", "Completed 5+ stamp exchanges", "crown", false)
         )
     )
@@ -49,10 +49,10 @@ class SharedMemoStampRepository {
 
     private val _collections = MutableStateFlow<List<CollectionItem>>(
         listOf(
-            CollectionItem("col_travel", "Travel & Places", "Destinations & journeys", "plane", "SPECIAL", 12, 8),
-            CollectionItem("col_coffee", "Coffee & Food", "Cafes and meals", "coffee", "NORMAL", 10, 5),
-            CollectionItem("col_daily", "Daily Life", "Everyday moments", "leaf", "NORMAL", 15, 12),
-            CollectionItem("col_special", "Special Moments", "Anniversaries & milestones", "star", "SERIES", 8, 4)
+            CollectionItem("col_travel", "Travel & Places", "Destinations & journeys", "plane", "SPECIAL", 12, 0),
+            CollectionItem("col_coffee", "Coffee & Food", "Cafes and meals", "coffee", "NORMAL", 10, 0),
+            CollectionItem("col_daily", "Daily Life", "Everyday moments", "leaf", "NORMAL", 15, 0),
+            CollectionItem("col_special", "Special Moments", "Anniversaries & milestones", "star", "SERIES", 8, 0)
         )
     )
     val collections: StateFlow<List<CollectionItem>> = _collections.asStateFlow()
@@ -236,6 +236,7 @@ class SharedMemoStampRepository {
         note: String,
         location: String?,
         imageUrl: String,
+        originalImageUrl: String? = null,
         shape: String = "classic",
         collectionId: String? = null,
         audience: AudienceType = AudienceType.FRIENDS,
@@ -246,7 +247,7 @@ class SharedMemoStampRepository {
         val stampId = "stamp_${currentTimeMillis()}"
         val stamp = StampItem(
             id = stampId,
-            originalImagePath = imageUrl,
+            originalImagePath = originalImageUrl ?: imageUrl,
             stampImagePath = imageUrl,
             title = title,
             note = note,

@@ -31,6 +31,7 @@ struct MemoryNoteScreenView: View {
     @State private var selectedMood: String = "😊 Happy"
     @State private var memoryDate: Date = Date()
     @State private var isGpsLocating: Bool = false
+    @State private var showRenderError: Bool = false
 
     let moodOptions = ["😊 Happy", "❤️ Love", "✈️ Travel", "☕ Chill", "🔥 Excited", "🕰️ Nostalgic", "🌿 Peaceful", "⭐ Special"]
     let locationCategories = ["Tất cả", "Biểu tượng", "Cà phê", "Thiên nhiên", "Di tích"]
@@ -82,14 +83,18 @@ struct MemoryNoteScreenView: View {
                     if let url = URL(string: imageUrl), let data = try? Data(contentsOf: url) {
                         inputImage = UIImage(data: data)
                     }
-                    let finalRenderedUrl = StampRenderEngine.shared.saveStampPng(
+                    guard let renderedFileUrl = StampRenderEngine.shared.saveStampPng(
                         photo: inputImage,
                         title: finalTitle,
                         location: locationSearch.isEmpty ? nil : locationSearch,
                         dateStr: formattedDate,
                         stampColorHex: stampColorHex,
                         shape: shape
-                    )?.absoluteString ?? imageUrl
+                    ) else {
+                        showRenderError = true
+                        return
+                    }
+                    let finalRenderedUrl = renderedFileUrl.absoluteString
                     #else
                     let finalRenderedUrl = imageUrl
                     #endif
@@ -111,6 +116,7 @@ struct MemoryNoteScreenView: View {
                         note: caption,
                         location: locationSearch.isEmpty ? nil : locationSearch,
                         imageUrl: finalRenderedUrl,
+                        originalImageUrl: imageUrl,
                         shape: shape,
                         collectionId: selectedCollectionId,
                         audience: audience,
@@ -139,8 +145,9 @@ struct MemoryNoteScreenView: View {
                         location: locationSearch.isEmpty ? nil : locationSearch,
                         dateStr: formattedDate,
                         note: caption,
-                        shape: "classic",
-                        isInteractive: true
+                        shape: shape,
+                        isInteractive: true,
+                        stampColorHex: stampColorHex
                     )
                     .padding(.horizontal)
                     .padding(.top, 12)
@@ -405,5 +412,12 @@ struct MemoryNoteScreenView: View {
             }
         }
         .background(Color(red: 0.98, green: 0.96, blue: 0.92).ignoresSafeArea())
+        .alert(isPresented: $showRenderError) {
+            Alert(
+                title: Text("Lỗi Tạo Tem"),
+                message: Text("Không thể xuất ảnh tem PNG. Vui lòng thử lại."),
+                dismissButton: .default(Text("Đóng"))
+            )
+        }
     }
 }

@@ -99,9 +99,7 @@ fun HomeScreen(
         allChatMessages.count { it.recipientId == currentUser.userId && !it.stampImageUrl.isNullOrBlank() }
     }
 
-    // Seed default feed posts and sync with cloud DB on open
     LaunchedEffect(Unit) {
-        feedRepo.ensureDefaultFeedData()
         feedRepo.syncFeedFromSupabase()
         stampRepo.ensureDefaultCollections()
     }

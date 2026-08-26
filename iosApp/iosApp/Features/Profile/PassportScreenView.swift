@@ -49,6 +49,10 @@ struct PassportScreenView: View {
         }
     }
 
+    var actualStampsCount: Int {
+        ((repository.stamps.value as? [StampItem]) ?? []).count
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -125,7 +129,7 @@ struct PassportScreenView: View {
 
                     // Stats Counters Row (Tem dán, Bạn bè, Bộ sưu tập)
                     HStack(spacing: 14) {
-                        StatBox(title: langManager.string(vi: "TEM DÁN", en: "STAMPS"), value: "\(user.stampsCreatedCount)")
+                        StatBox(title: langManager.string(vi: "TEM DÁN", en: "STAMPS"), value: "\(max(actualStampsCount, Int(user.stampsCreatedCount)))")
                         StatBox(title: langManager.string(vi: "BẠN BÈ", en: "FRIENDS"), value: "\(friendsCount)")
                         StatBox(title: langManager.string(vi: "BỘ SƯU TẬP", en: "COLLECTIONS"), value: "\(collectionsCount)")
                     }

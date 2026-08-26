@@ -17,6 +17,7 @@ struct StampEditorScreenView: View {
     var initialImageUrl: String? = nil
     var onStampSaved: ((URL) -> Void)? = nil
     var onContinue: ((String, String, String) -> Void)? = nil
+    var onCancel: (() -> Void)? = nil
 
     @State private var selectedMoldId: String = "classic_perforated"
     @State private var selectedColorHex: String = "#D32F2F"
@@ -49,7 +50,13 @@ struct StampEditorScreenView: View {
         VStack(spacing: 0) {
             // Header Bar
             HStack(spacing: 12) {
-                Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                Button(action: {
+                    if let onCancel = onCancel {
+                        onCancel()
+                    } else {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(Color(red: 0.35, green: 0.35, blue: 0.40))

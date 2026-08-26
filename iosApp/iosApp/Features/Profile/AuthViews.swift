@@ -441,9 +441,9 @@ struct AuthLoginScreenView: View {
                     displayName: localAccount.displayName,
                     avatarUrl: localAccount.avatarUrl,
                     bio: localAccount.bio,
-                    stampsCreatedCount: Int32(14),
-                    stampsCollectedCount: Int32(38),
-                    placesVisitedCount: Int32(9)
+                    stampsCreatedCount: Int32(0),
+                    stampsCollectedCount: Int32(0),
+                    placesVisitedCount: Int32(0)
                 )
                 repository.setCurrentUser(profile: newProfile)
 
@@ -482,9 +482,9 @@ struct AuthLoginScreenView: View {
             displayName: displayName,
             avatarUrl: avatarUrl,
             bio: bio,
-            stampsCreatedCount: Int32(5),
-            stampsCollectedCount: Int32(12),
-            placesVisitedCount: Int32(3)
+            stampsCreatedCount: Int32(0),
+            stampsCollectedCount: Int32(0),
+            placesVisitedCount: Int32(0)
         )
         repository.setCurrentUser(profile: newProfile)
 

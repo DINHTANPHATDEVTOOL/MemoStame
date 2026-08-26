@@ -126,9 +126,9 @@ data class UserProfile(
     val displayName: String,
     val avatarUrl: String? = null,
     val bio: String = "Capturing life, one stamp at a time ✨",
-    val stampsCreatedCount: Int = 14,
-    val stampsCollectedCount: Int = 38,
-    val placesVisitedCount: Int = 9
+    val stampsCreatedCount: Int = 0,
+    val stampsCollectedCount: Int = 0,
+    val placesVisitedCount: Int = 0
 )
 
 data class FriendItem(
@@ -245,5 +245,5 @@ data class PassportBadge(
     val title: String,
     val subtitle: String,
     val iconEmoji: String,
-    val isUnlocked: Boolean = true
+    val isUnlocked: Boolean = false
 )

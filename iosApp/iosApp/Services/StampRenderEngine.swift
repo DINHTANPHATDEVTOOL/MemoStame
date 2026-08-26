@@ -48,6 +48,22 @@ final class StampRenderEngine {
     }
 
     #if canImport(UIKit)
+    func uiColorFromHex(_ hex: String) -> UIColor {
+        var cleanHex = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if cleanHex.hasPrefix("#") {
+            cleanHex.removeFirst()
+        }
+        guard cleanHex.count == 6, let rgbValue = UInt64(cleanHex, radix: 16) else {
+            return UIColor(red: 0.85, green: 0.25, blue: 0.20, alpha: 1.0)
+        }
+        let r = CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0
+        let g = CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0
+        let b = CGFloat(rgbValue & 0x0000FF) / 255.0
+        return UIColor(red: r, green: g, blue: b, alpha: 1.0)
+    }
+    #endif
+
+    #if canImport(UIKit)
     /// Renders a full high-fidelity transparent PNG die-cut stamp image matching WYSIWYG specs.
     @MainActor
     func renderStampToImage(
@@ -64,19 +80,7 @@ final class StampRenderEngine {
             let rect = CGRect(origin: .zero, size: targetSize)
             let cgContext = context.cgContext
 
-            let s = shape.lowercased()
-            let themeColor: UIColor
-            if s.contains("gold") || s.contains("royal") {
-                themeColor = UIColor(red: 0.82, green: 0.65, blue: 0.35, alpha: 1.0)
-            } else if s.contains("airmail") || s.contains("postmark") {
-                themeColor = UIColor(red: 0.18, green: 0.35, blue: 0.58, alpha: 1.0)
-            } else if s.contains("heart") || s.contains("love") {
-                themeColor = UIColor(red: 0.90, green: 0.30, blue: 0.45, alpha: 1.0)
-            } else if s.contains("vintage") || s.contains("35mm") {
-                themeColor = UIColor(red: 0.75, green: 0.45, blue: 0.25, alpha: 1.0)
-            } else {
-                themeColor = UIColor(red: 0.85, green: 0.25, blue: 0.20, alpha: 1.0)
-            }
+            let themeColor: UIColor = uiColorFromHex(stampColorHex)
 
             // 1. Calculate perforated stamp path
             let shapeObj = PerforatedStampShape(notchRatio: 0.025, spacingRatio: 0.072)

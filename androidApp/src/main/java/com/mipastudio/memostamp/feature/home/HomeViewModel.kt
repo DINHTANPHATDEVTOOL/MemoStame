@@ -33,10 +33,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            feedRepo.ensureDefaultFeedData()
-        }
-
         observeCircles()
         setupFeedStream()
     }
