@@ -129,6 +129,11 @@ class CameraViewModel : ViewModel() {
                         screenHeight = screenHeight
                     )
 
+                    val croppedFile = File(context.filesDir, "cropped_${System.currentTimeMillis()}.jpg")
+                    FileOutputStream(croppedFile).use { out ->
+                        croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                    }
+
                     val renderedFile = StampRenderer.renderStampToPng(
                         context = context,
                         croppedBitmap = croppedBitmap,
@@ -149,6 +154,7 @@ class CameraViewModel : ViewModel() {
 
                     StampDraft(
                         originalImagePath = rawFile.absolutePath,
+                        croppedImagePath = croppedFile.absolutePath,
                         renderedImagePath = renderedFile.absolutePath,
                         memoryDate = System.currentTimeMillis(),
                         location = capturedLocation,
@@ -211,6 +217,11 @@ class CameraViewModel : ViewModel() {
                         screenHeight = screenHeight
                     )
 
+                    val croppedFile = File(context.filesDir, "cropped_${System.currentTimeMillis()}.jpg")
+                    FileOutputStream(croppedFile).use { out ->
+                        croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                    }
+
                     val renderedFile = StampRenderer.renderStampToPng(
                         context = context,
                         croppedBitmap = croppedBitmap,
@@ -232,6 +243,7 @@ class CameraViewModel : ViewModel() {
 
                     StampDraft(
                         originalImagePath = rawFile.absolutePath,
+                        croppedImagePath = croppedFile.absolutePath,
                         renderedImagePath = renderedFile.absolutePath,
                         memoryDate = System.currentTimeMillis(),
                         location = galleryLocation,

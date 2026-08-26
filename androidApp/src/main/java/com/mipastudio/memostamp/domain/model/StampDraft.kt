@@ -3,6 +3,7 @@ package com.mipastudio.memostamp.domain.model
 data class StampDraft(
     val id: String = "",
     val originalImagePath: String,
+    val croppedImagePath: String? = null,
     val renderedImagePath: String,
     val title: String = "",
     val note: String = "",

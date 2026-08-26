@@ -8,6 +8,7 @@ data class StampDraftEntity(
     @PrimaryKey
     val id: String,
     val originalImagePath: String,
+    val croppedImagePath: String? = null,
     val renderedImagePath: String,
     val createdAt: Long,
     val title: String,

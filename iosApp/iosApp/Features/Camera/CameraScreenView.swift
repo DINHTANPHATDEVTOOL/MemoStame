@@ -607,9 +607,8 @@ struct CameraScreenView: View {
         .sheet(isPresented: $showImagePicker) {
             #if canImport(UIKit)
             SwiftUIImagePicker(sourceType: pickerSourceType) { pickedImage in
-                if let image = pickedImage, let savedUrl = saveImageToTmp(image) {
-                    self.customCapturedImageUrl = savedUrl
-                    self.onNavigateToNote(savedUrl)
+                if let image = pickedImage {
+                    handleImageSelected(image)
                 }
             }
             #endif
@@ -625,7 +624,7 @@ struct CameraScreenView: View {
         #if canImport(UIKit)
         .sheet(isPresented: $showPhotoPicker) {
             ImagePickerView { pickedImage in
-                selectedUIImage = pickedImage
+                handleImageSelected(pickedImage)
             }
         }
         #endif
@@ -647,15 +646,82 @@ struct CameraScreenView: View {
     private func handleImageSelected(_ image: UIImage) {
         #if canImport(UIKit)
         let croppedImage = cropToStampAspectRatio(image)
-        if let data = croppedImage.jpegData(compressionQuality: 0.88) {
+        let filteredImage = applyFilterToImage(
+            croppedImage,
+            filterSpec: currentFilter,
+            contrast: contrast,
+            brightness: brightness,
+            saturation: saturation,
+            grain: grain
+        )
+        if let data = filteredImage.jpegData(compressionQuality: 0.90) {
             let tempDir = FileManager.default.temporaryDirectory
             let fileURL = tempDir.appendingPathComponent("stamp_photo_\(UUID().uuidString).jpg")
             try? data.write(to: fileURL)
+            self.customCapturedImageUrl = fileURL.absoluteString
             onNavigateToNote(fileURL.absoluteString)
             return
         }
         #endif
         onNavigateToNote(activePhotoUrl)
+    }
+
+    private func applyFilterToImage(
+        _ inputImage: UIImage,
+        filterSpec: CameraFilterSpec,
+        contrast: Double,
+        brightness: Double,
+        saturation: Double,
+        grain: Double
+    ) -> UIImage {
+        #if canImport(UIKit)
+        guard let ciImage = CIImage(image: inputImage) else { return inputImage }
+        var outputCI = ciImage
+
+        // 1. Core Image preset filters
+        if filterSpec.id == "mono_film" || filterSpec.id == "bw" {
+            if let noirFilter = CIFilter(name: "CIPhotoEffectNoir") {
+                noirFilter.setValue(outputCI, forKey: kCIInputImageKey)
+                if let result = noirFilter.outputImage { outputCI = result }
+            }
+        } else if filterSpec.id == "vintage_fade" || filterSpec.id == "film_35mm" {
+            if let instantFilter = CIFilter(name: "CIPhotoEffectInstant") {
+                instantFilter.setValue(outputCI, forKey: kCIInputImageKey)
+                if let result = instantFilter.outputImage { outputCI = result }
+            }
+        } else if filterSpec.id == "warm" || filterSpec.id == "cafe_cozy" {
+            if let processFilter = CIFilter(name: "CIPhotoEffectProcess") {
+                processFilter.setValue(outputCI, forKey: kCIInputImageKey)
+                if let result = processFilter.outputImage { outputCI = result }
+            }
+        }
+
+        // 2. Fine-tune adjustment parameters
+        if let colorControls = CIFilter(name: "CIColorControls") {
+            colorControls.setValue(outputCI, forKey: kCIInputImageKey)
+            colorControls.setValue(contrast * Double(filterSpec.contrast), forKey: kCIInputContrastKey)
+            colorControls.setValue(brightness + Double(filterSpec.exposure) * 0.08, forKey: kCIInputBrightnessKey)
+            colorControls.setValue(saturation * Double(filterSpec.saturation), forKey: kCIInputSaturationKey)
+            if let result = colorControls.outputImage { outputCI = result }
+        }
+
+        if filterSpec.vignette > 0 || grain > 0 {
+            if let vignetteFilter = CIFilter(name: "CIVignette") {
+                vignetteFilter.setValue(outputCI, forKey: kCIInputImageKey)
+                vignetteFilter.setValue(Double(filterSpec.vignette + 0.3), forKey: kCIInputRadiusKey)
+                vignetteFilter.setValue(0.6, forKey: kCIInputIntensityKey)
+                if let result = vignetteFilter.outputImage { outputCI = result }
+            }
+        }
+
+        let ciContext = CIContext(options: nil)
+        if let cgImage = ciContext.createCGImage(outputCI, from: outputCI.extent) {
+            return UIImage(cgImage: cgImage, scale: inputImage.scale, orientation: .up)
+        }
+        return inputImage
+        #else
+        return inputImage
+        #endif
     }
 
     private func cropToStampAspectRatio(_ image: UIImage) -> UIImage {

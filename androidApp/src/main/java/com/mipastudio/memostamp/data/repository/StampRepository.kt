@@ -43,6 +43,7 @@ class StampRepository private constructor(
         val entity = StampDraftEntity(
             id = id,
             originalImagePath = draft.originalImagePath,
+            croppedImagePath = draft.croppedImagePath,
             renderedImagePath = draft.renderedImagePath,
             createdAt = System.currentTimeMillis(),
             title = draft.title,
@@ -64,6 +65,7 @@ class StampRepository private constructor(
         StampDraft(
             id = entity.id,
             originalImagePath = entity.originalImagePath,
+            croppedImagePath = entity.croppedImagePath,
             renderedImagePath = entity.renderedImagePath,
             title = entity.title,
             location = entity.location ?: "",
@@ -83,6 +85,7 @@ class StampRepository private constructor(
         val draft = StampDraft(
             id = entity.id,
             originalImagePath = entity.originalImagePath,
+            croppedImagePath = entity.croppedImagePath,
             renderedImagePath = entity.renderedImagePath,
             title = entity.title,
             location = entity.location ?: "",
