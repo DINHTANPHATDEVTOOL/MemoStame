@@ -213,6 +213,7 @@ struct CameraScreenView: View {
     @State private var showImagePicker: Bool = false
     @State private var pickerSourceType: UIImagePickerController.SourceType = .camera
     @State private var customCapturedImageUrl: String? = nil
+    @State private var actualMoldFrame: CGRect = .zero
 
     let filters = FilterPresets.shared.ALL
     let zoomOptions = ["1x", "2x", "3x", "5x"]
@@ -366,6 +367,11 @@ struct CameraScreenView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(881.0 / 1159.0, contentMode: .fit)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: MoldFramePreferenceKey.self, value: geo.frame(in: .global))
+                    }
+                )
                 .shadow(color: Color.black.opacity(0.5), radius: 16, x: 0, y: 8)
                 .padding(.horizontal, 20)
                 .offset(y: pressOffset)
@@ -642,6 +648,11 @@ struct CameraScreenView: View {
             }
         }
         #endif
+        .onPreferenceChange(MoldFramePreferenceKey.self) { frame in
+            if frame.width > 0 && frame.height > 0 {
+                self.actualMoldFrame = frame
+            }
+        }
         .onAppear {
             checkCameraAvailability()
         }
@@ -797,11 +808,23 @@ struct CameraScreenView: View {
         let offsetX = (sWidth - renderWidth) / 2.0
         let offsetY = (sHeight - renderHeight) / 2.0
 
-        // Screen mold aperture coordinates using StampGeometry constants:
-        let moldWidth = sWidth * StampGeometry.moldWidthRatio
-        let moldHeight = moldWidth * StampGeometry.moldAspectRatio
-        let moldLeft = (sWidth - moldWidth) / 2.0
-        let moldTop = (sHeight - moldHeight) / 2.0
+        // Measure actual SwiftUI rendered mold aperture coordinates:
+        let moldWidth: CGFloat
+        let moldHeight: CGFloat
+        let moldLeft: CGFloat
+        let moldTop: CGFloat
+
+        if actualMoldFrame.width > 0 && actualMoldFrame.height > 0 {
+            moldLeft = actualMoldFrame.minX
+            moldTop = actualMoldFrame.minY
+            moldWidth = actualMoldFrame.width
+            moldHeight = actualMoldFrame.height
+        } else {
+            moldWidth = sWidth * StampGeometry.moldWidthRatio
+            moldHeight = moldWidth * StampGeometry.moldAspectRatio
+            moldLeft = (sWidth - moldWidth) / 2.0
+            moldTop = (sHeight - moldHeight) / 2.0
+        }
 
         let apLeft = moldLeft + moldWidth * StampGeometry.innerLeftRatio
         let apTop = moldTop + moldHeight * StampGeometry.innerTopRatio
@@ -811,10 +834,14 @@ struct CameraScreenView: View {
         let apHeight = apBottom - apTop
 
         // Transform screen aperture rectangle back into high-resolution photo pixels:
-        let cropX = max(0, (apLeft - offsetX) / scale)
+        var cropX = max(0, (apLeft - offsetX) / scale)
         let cropY = max(0, (apTop - offsetY) / scale)
         let cropW = min(imgWidth - cropX, apWidth / scale)
         let cropH = min(imgHeight - cropY, apHeight / scale)
+
+        if cameraPosition == .front {
+            cropX = max(0, imgWidth - cropX - cropW)
+        }
 
         let cropRect = CGRect(x: cropX, y: cropY, width: cropW, height: cropH)
 
@@ -999,6 +1026,16 @@ func saveImageToTmp(_ image: UIImage) -> String? {
         return filename.absoluteString
     } catch {
         return nil
+    }
+}
+
+struct MoldFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next != .zero {
+            value = next
+        }
     }
 }
 #endif

@@ -109,6 +109,10 @@ class StampRepository private constructor(
                 if (orig.exists()) orig.delete()
                 val stamp = File(entity.renderedImagePath)
                 if (stamp.exists()) stamp.delete()
+                entity.croppedImagePath?.let { path ->
+                    val cropped = File(path)
+                    if (cropped.exists()) cropped.delete()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -125,6 +129,10 @@ class StampRepository private constructor(
                 if (origFile.exists()) origFile.delete()
                 val stampFile = File(entity.renderedImagePath)
                 if (stampFile.exists()) stampFile.delete()
+                entity.croppedImagePath?.let { path ->
+                    val croppedFile = File(path)
+                    if (croppedFile.exists()) croppedFile.delete()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -211,6 +219,10 @@ class StampRepository private constructor(
                         if (origFile.exists()) origFile.delete()
                         val stampFile = File(entity.stampImagePath)
                         if (stampFile.exists()) stampFile.delete()
+                        entity.croppedImagePath?.let { path ->
+                            val croppedFile = File(path)
+                            if (croppedFile.exists()) croppedFile.delete()
+                        }
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

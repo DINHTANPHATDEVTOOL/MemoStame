@@ -10,6 +10,7 @@
 		1D3623262D00000100000001 /* iosAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623252D00000100000001 /* iosAppApp.swift */; };
 		1D3623282D00000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623272D00000100000001 /* ContentView.swift */; };
 		1D3623312D00000100000001 /* DieCutStampView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623302D00000100000001 /* DieCutStampView.swift */; };
+		E9A811012D8B990100000001 /* StampGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A811012D8B990000000001 /* StampGeometry.swift */; };
 		1D3623332D00000100000001 /* EnvelopeShareModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623322D00000100000001 /* EnvelopeShareModalView.swift */; };
 		1D3623352D00000100000001 /* HomeScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623342D00000100000001 /* HomeScreenView.swift */; };
 		1D3623372D00000100000001 /* StampVaultScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623362D00000100000001 /* StampVaultScreenView.swift */; };
@@ -47,6 +48,7 @@
 		1D3623252D00000100000001 /* iosAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iosAppApp.swift; sourceTree = "<group>"; };
 		1D3623272D00000100000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1D3623302D00000100000001 /* DieCutStampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DieCutStampView.swift; sourceTree = "<group>"; };
+		E9A811012D8B990000000001 /* StampGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/StampGeometry.swift; sourceTree = "<group>"; };
 		1D3623322D00000100000001 /* EnvelopeShareModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvelopeShareModalView.swift; sourceTree = "<group>"; };
 		1D3623342D00000100000001 /* HomeScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenView.swift; sourceTree = "<group>"; };
 		1D3623362D00000100000001 /* StampVaultScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StampVaultScreenView.swift; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 			children = (
 				1D3623302D00000100000001 /* DieCutStampView.swift */,
 				1D3623322D00000100000001 /* EnvelopeShareModalView.swift */,
+				E9A811012D8B990000000001 /* StampGeometry.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -360,6 +363,7 @@
 				1D3623262D00000100000001 /* iosAppApp.swift in Sources */,
 				1D3623282D00000100000001 /* ContentView.swift in Sources */,
 				1D3623312D00000100000001 /* DieCutStampView.swift in Sources */,
+				E9A811012D8B990100000001 /* StampGeometry.swift in Sources */,
 				1D3623332D00000100000001 /* EnvelopeShareModalView.swift in Sources */,
 				1D3623352D00000100000001 /* HomeScreenView.swift in Sources */,
 				1D3623372D00000100000001 /* StampVaultScreenView.swift in Sources */,
