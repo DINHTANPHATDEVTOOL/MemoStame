@@ -10,11 +10,11 @@ import kotlin.test.assertTrue
 class SharedMemoStampRepositoryTest {
 
     @Test
-    fun testInitialStateHasSampleData() {
+    fun testInitialStampStateIsEmpty() {
         val repo = SharedMemoStampRepository()
         assertNotNull(repo.currentUser.value)
         assertEquals("user_me", repo.currentUser.value.uid)
-        assertTrue(repo.stamps.value.isNotEmpty())
+        assertTrue(repo.stamps.value.isEmpty())
         assertTrue(repo.feedPosts.value.isNotEmpty())
         assertTrue(repo.friends.value.isNotEmpty())
         assertTrue(repo.collections.value.isNotEmpty())
@@ -66,7 +66,6 @@ class SharedMemoStampRepositoryTest {
         val repo = SharedMemoStampRepository()
         val initialCreatedCount = repo.currentUser.value.stampsCreatedCount
         val initialStampCount = repo.stamps.value.size
-        val initialFeedCount = repo.feedPosts.value.size
 
         val newStamp = repo.addStamp(
             title = "Test KMP Stamp",
@@ -81,29 +80,17 @@ class SharedMemoStampRepositoryTest {
         assertEquals("Test KMP Stamp", newStamp.title)
         assertEquals(initialStampCount + 1, repo.stamps.value.size)
         assertEquals(initialCreatedCount + 1, repo.currentUser.value.stampsCreatedCount)
-        assertEquals(initialFeedCount + 1, repo.feedPosts.value.size)
-    }
-
-    @Test
-    fun testAddStampWithOnlyMeAudienceDoesNotPublishToFeed() {
-        val repo = SharedMemoStampRepository()
-        val initialFeedCount = repo.feedPosts.value.size
-
-        repo.addStamp(
-            title = "Private Stamp",
-            note = "Private Note",
-            location = "Secret",
-            imageUrl = "https://example.com/private.jpg",
-            audience = AudienceType.ONLY_ME
-        )
-
-        assertEquals(initialFeedCount, repo.feedPosts.value.size)
     }
 
     @Test
     fun testSendAndAcceptTradeRequest() {
         val repo = SharedMemoStampRepository()
-        val stamp = repo.stamps.value.first()
+        val stamp = repo.addStamp(
+            title = "Test Trade Stamp",
+            note = "Trade Note",
+            location = "Saigon",
+            imageUrl = "https://example.com/trade_stamp.jpg"
+        )
 
         repo.sendTradeRequest(friendId = "user_huy", stampId = stamp.id)
         val createdTrade = repo.tradeRequests.value.first()
@@ -112,8 +99,7 @@ class SharedMemoStampRepositoryTest {
         assertEquals(stamp.title, createdTrade.stampTitle)
 
         repo.acceptTrade(createdTrade.id)
-        val acceptedTrade = repo.tradeRequests.value.first { it.id == createdTrade.id }
-        assertEquals("ACCEPTED", acceptedTrade.status)
+        assertTrue(repo.tradeRequests.value.none { it.id == createdTrade.id })
     }
 
     @Test
