@@ -839,7 +839,10 @@ class FeedRepository private constructor(
                 return@withContext
             }
         }
-        stampDao.deleteById(stampId, currentUser.userId)
+        val deleteRes = StampRepository.getInstance(context).deleteStamp(stampId)
+        if (deleteRes.isFailure) {
+            System.err.println("Stamp deletion failed in deleteMemory for $stampId: ${deleteRes.exceptionOrNull()?.message}")
+        }
     }
 
     companion object {

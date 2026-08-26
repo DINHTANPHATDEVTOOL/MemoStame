@@ -947,7 +947,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
     suspend fun deleteStamp(stampId: String, ownerId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val encStamp = URLEncoder.encode(stampId.trim(), "UTF-8")
         val encOwner = URLEncoder.encode(ownerId.trim(), "UTF-8")
-        val endpoint = "${getBaseUrl()}/rest/v1/stamps?id=eq.$encStamp&owner_id=eq.$encOwner"
+        val endpoint = "${getBaseUrl()}/rest/v1/stamps?id=eq.$encStamp&user_id=eq.$encOwner"
         val res = executeHttp(endpoint, method = "DELETE")
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete stamp failed"))
     }

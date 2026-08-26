@@ -229,8 +229,13 @@ class StampRepository private constructor(
                 ?: return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
 
             val cloudRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseClient.getInstance(context).deleteStamp(id, currentUserId)
-            if (cloudRes.isFailure && cloudRes.exceptionOrNull()?.message?.contains("404") != true) {
-                return@withContext Result.failure(cloudRes.exceptionOrNull() ?: Exception("Cloud stamp delete failed"))
+            if (cloudRes.isFailure) {
+                val msg = cloudRes.exceptionOrNull()?.message ?: ""
+                val is404 = msg.contains("404")
+                val isOffline = msg.contains("Unable to resolve host") || msg.contains("ConnectException") || msg.contains("UnknownHostException") || msg.contains("timeout") || msg.contains("Failed to connect")
+                if (!is404 && !isOffline) {
+                    return@withContext Result.failure(cloudRes.exceptionOrNull() ?: Exception("Cloud stamp delete failed"))
+                }
             }
 
             val deletedRows = stampDao.deleteById(id, currentUserId)
