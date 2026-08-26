@@ -45,7 +45,8 @@ data class StampEditorUiState(
     val undoStack: List<StampDesignSpec> = emptyList(),
     val redoStack: List<StampDesignSpec> = emptyList(),
     val isSaving: Boolean = false,
-    val hasChanges: Boolean = false
+    val hasChanges: Boolean = false,
+    val errorMessage: String? = null
 )
 
 class StampEditorViewModel : ViewModel() {
@@ -463,7 +464,13 @@ class StampEditorViewModel : ViewModel() {
                         uriOrPath = origPath,
                         reqWidth = 1500,
                         reqHeight = 2000
-                    ) ?: android.graphics.Bitmap.createBitmap(1200, 1500, android.graphics.Bitmap.Config.ARGB_8888)
+                    )
+                    if (rawBitmap == null) {
+                        withContext(Dispatchers.Main) {
+                            _uiState.update { it.copy(isSaving = false, errorMessage = "Failed to decode photo for stamp rendering.") }
+                        }
+                        return@withContext
+                    }
 
                     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
                     val renderedFile = StampRenderer.renderStampToPng(

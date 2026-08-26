@@ -56,9 +56,9 @@ struct StampVaultScreenView: View {
         case "Yêu thích":
             list = list.filter { $0.favorite }
         case "Du lịch":
-            list = list.filter { $0.collectionId == "col_travel" || $0.mood.contains("Travel") }
+            list = list.filter { $0.collectionId == "col_travel" || ($0.mood ?? "").contains("Travel") }
         case "Cà phê":
-            list = list.filter { $0.collectionId == "col_coffee" || $0.mood.contains("Chill") }
+            list = list.filter { $0.collectionId == "col_coffee" || ($0.mood ?? "").contains("Chill") }
         default:
             break
         }
@@ -244,6 +244,7 @@ struct StampVaultScreenView: View {
                                             Spacer()
                                             Button(action: {
                                                 repository.toggleCollectionPrivacy(collectionId: col.id)
+                                                IOSLocalPersistenceStore.shared.saveData(repository: repository)
                                             }) {
                                                 HStack(spacing: 3) {
                                                     Image(systemName: col.privacy == "ONLY_ME" ? "lock.fill" : "person.2.fill")

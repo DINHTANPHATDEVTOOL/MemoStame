@@ -251,11 +251,15 @@ struct MemoryNoteScreenView: View {
                         // GPS Quick Action
                         Button(action: {
                             isGpsLocating = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                isGpsLocating = false
-                                locationSearch = "Quảng trường Lâm Viên, Đà Lạt"
-                                if title.isEmpty {
-                                    title = "Nụ Hoa Atisô Đà Lạt"
+                            LocationManager.shared.fetchCurrentLocation { place in
+                                DispatchQueue.main.async {
+                                    isGpsLocating = false
+                                    if !place.isEmpty {
+                                        locationSearch = place
+                                        if title.isEmpty {
+                                            title = "Kỷ niệm tại \(place)"
+                                        }
+                                    }
                                 }
                             }
                         }) {
@@ -267,7 +271,7 @@ struct MemoryNoteScreenView: View {
                                     Image(systemName: "location.fill")
                                         .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
                                 }
-                                Text("Sử dụng vị trí GPS hiện tại (Đà Lạt)")
+                                Text(locationSearch.isEmpty ? "Sử dụng vị trí GPS hiện tại" : "Vị trí GPS: \(locationSearch)")
                                     .font(.caption.bold())
                                     .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
                                 Spacer()

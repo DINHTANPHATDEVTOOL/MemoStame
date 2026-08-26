@@ -50,7 +50,7 @@ struct CollectionScreenView: View {
                 return AlbumItem(
                     id: col.id,
                     title: col.name,
-                    desc: col.description ?? "Bộ sưu tập tem kỷ niệm \(col.name)",
+                    desc: col.description_ ?? "Bộ sưu tập tem kỷ niệm \(col.name)",
                     progress: "\(matchingStamps.count)/\(max(col.targetCount, matchingStamps.count))",
                     iconName: icons[index % icons.count],
                     coverColor: coverColors[index % coverColors.count],

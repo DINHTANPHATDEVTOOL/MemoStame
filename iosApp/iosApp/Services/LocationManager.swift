@@ -6,7 +6,7 @@ import Combine
 final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = LocationManager()
 
-    @Published var currentCityName: String = "Đà Lạt, Lâm Đồng"
+    @Published var currentCityName: String = ""
     @Published var currentCoordinate: CLLocationCoordinate2D? = nil
     @Published var isLocating: Bool = false
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
@@ -38,11 +38,11 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
                     self?.isLocating = false
                     if let mark = placemarks?.first, error == nil {
                         let parts = [mark.name, mark.subLocality, mark.locality].compactMap { $0 }
-                        let result = parts.isEmpty ? (mark.locality ?? "Vị trí hiện tại") : parts.joined(separator: ", ")
+                        let result = parts.isEmpty ? (mark.locality ?? "") : parts.joined(separator: ", ")
                         self?.currentCityName = result
                         completion(result)
                     } else {
-                        completion(self?.currentCityName ?? "Vị trí GPS hiện tại")
+                        completion(self?.currentCityName ?? "")
                     }
                 }
             }
@@ -51,7 +51,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
                 guard let self = self else { return }
                 self.isLocating = false
-                completion(self.currentCityName.isEmpty ? "Vị trí GPS hiện tại" : self.currentCityName)
+                completion(self.currentCityName)
             }
         }
     }
@@ -75,10 +75,11 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
             guard let self = self, let mark = placemarks?.first, error == nil else { return }
-            let city = mark.locality ?? mark.administrativeArea ?? "TP. Hồ Chí Minh"
-            let country = mark.country ?? "Việt Nam"
+            let city = mark.locality ?? mark.administrativeArea ?? ""
+            let country = mark.country ?? ""
+            let res = [city, country].filter { !$0.isEmpty }.joined(separator: ", ")
             DispatchQueue.main.async {
-                self.currentCityName = "\(city), \(country)"
+                self.currentCityName = res
             }
         }
     }

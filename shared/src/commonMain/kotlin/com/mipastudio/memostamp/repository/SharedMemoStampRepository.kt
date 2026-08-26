@@ -121,52 +121,7 @@ class SharedMemoStampRepository {
     )
     val feedPosts: StateFlow<List<FeedPost>> = _feedPosts.asStateFlow()
 
-    private val _stamps = MutableStateFlow<List<StampItem>>(
-        listOf(
-            StampItem(
-                id = "stamp_1",
-                originalImagePath = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
-                stampImagePath = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
-                title = "Đà Lạt chiều mưa",
-                note = "Một chiều chẳng có kế hoạch. Cà phê góc phố Đà Lạt.",
-                createdAt = currentTimeMillis() - 86400000,
-                memoryDate = currentTimeMillis() - 86400000,
-                location = "Đà Lạt, Lâm Đồng",
-                mood = "rain",
-                collectionId = "col_travel",
-                favorite = true,
-                shape = "heart"
-            ),
-            StampItem(
-                id = "stamp_2",
-                originalImagePath = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600",
-                stampImagePath = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600",
-                title = "Coffee Saigon",
-                note = "Góc nhỏ thân quen cuối tuần",
-                createdAt = currentTimeMillis() - 172800000,
-                memoryDate = currentTimeMillis() - 172800000,
-                location = "Quận 1, Hồ Chí Minh",
-                mood = "coffee",
-                collectionId = "col_coffee",
-                favorite = false,
-                shape = "classic"
-            ),
-            StampItem(
-                id = "stamp_3",
-                originalImagePath = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600",
-                stampImagePath = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600",
-                title = "Vũng Tàu Sunset",
-                note = "Hoàng hôn lãng mạn trên biển",
-                createdAt = currentTimeMillis() - 259200000,
-                memoryDate = currentTimeMillis() - 259200000,
-                location = "Vũng Tàu",
-                mood = "sun",
-                collectionId = "col_travel",
-                favorite = true,
-                shape = "oval"
-            )
-        )
-    )
+    private val _stamps = MutableStateFlow<List<StampItem>>(emptyList())
     val stamps: StateFlow<List<StampItem>> = _stamps.asStateFlow()
 
     private val _collections = MutableStateFlow<List<CollectionItem>>(
@@ -314,15 +269,11 @@ class SharedMemoStampRepository {
     }
 
     fun restoreStamps(stamps: List<StampItem>) {
-        if (stamps.isNotEmpty()) {
-            _stamps.value = stamps
-        }
+        _stamps.value = stamps
     }
 
     fun restoreCollections(collections: List<CollectionItem>) {
-        if (collections.isNotEmpty()) {
-            _collections.value = collections
-        }
+        _collections.value = collections
     }
 
     fun publishStampToFeed(stampId: String, audience: AudienceType = AudienceType.FRIENDS, caption: String? = null): FeedPost? {

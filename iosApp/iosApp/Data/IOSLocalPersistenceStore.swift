@@ -11,7 +11,7 @@ struct PersistedStampData: Codable {
     let createdAt: Int64
     let memoryDate: Int64
     let location: String?
-    let mood: String
+    let mood: String?
     let collectionId: String?
     let favorite: Bool
     let shape: String
@@ -20,7 +20,7 @@ struct PersistedStampData: Codable {
 struct PersistedCollectionData: Codable {
     let id: String
     let name: String
-    let description: String
+    let description: String?
     let iconEmoji: String
     let collectionType: String
     let targetCount: Int32
@@ -76,43 +76,39 @@ class IOSLocalPersistenceStore {
             repository.setCurrentUser(profile: profile)
         }
 
-        // Restore Collections if present
-        if !payload.collections.isEmpty {
-            let loadedCollections = payload.collections.map { c in
-                CollectionItem(
-                    id: c.id,
-                    name: c.name,
-                    description: c.description,
-                    iconEmoji: c.iconEmoji,
-                    collectionType: c.collectionType,
-                    targetCount: c.targetCount,
-                    stampsCount: c.stampsCount,
-                    privacy: c.privacy
-                )
-            }
-            repository.restoreCollections(collections: loadedCollections)
+        // Unconditionally restore Collections (including empty list)
+        let loadedCollections = payload.collections.map { c in
+            CollectionItem(
+                id: c.id,
+                name: c.name,
+                description: c.description,
+                iconEmoji: c.iconEmoji,
+                collectionType: c.collectionType,
+                targetCount: c.targetCount,
+                stampsCount: c.stampsCount,
+                privacy: c.privacy
+            )
         }
+        repository.restoreCollections(collections: loadedCollections)
 
-        // Restore Stamps preserving exact id, dates, favorite status, and attributes
-        if !payload.stamps.isEmpty {
-            let loadedStamps = payload.stamps.map { s in
-                StampItem(
-                    id: s.id,
-                    originalImagePath: s.originalImagePath,
-                    stampImagePath: s.stampImagePath,
-                    title: s.title,
-                    note: s.note,
-                    createdAt: s.createdAt,
-                    memoryDate: s.memoryDate,
-                    location: s.location,
-                    mood: s.mood,
-                    collectionId: s.collectionId,
-                    favorite: s.favorite,
-                    shape: s.shape
-                )
-            }
-            repository.restoreStamps(stamps: loadedStamps)
+        // Unconditionally restore Stamps (including empty list)
+        let loadedStamps = payload.stamps.map { s in
+            StampItem(
+                id: s.id,
+                originalImagePath: s.originalImagePath,
+                stampImagePath: s.stampImagePath,
+                title: s.title,
+                note: s.note,
+                createdAt: s.createdAt,
+                memoryDate: s.memoryDate,
+                location: s.location,
+                mood: s.mood,
+                collectionId: s.collectionId,
+                favorite: s.favorite,
+                shape: s.shape
+            )
         }
+        repository.restoreStamps(stamps: loadedStamps)
     }
 
     func saveData(repository: SharedMemoStampRepository) {
