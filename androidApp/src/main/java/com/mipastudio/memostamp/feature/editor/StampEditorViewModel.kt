@@ -360,18 +360,17 @@ class StampEditorViewModel : ViewModel() {
                     // 3. Update database & safely replace old file only upon success
                     if (!state.stampId.isNullOrBlank()) {
                         val existing = repo.getStampById(state.stampId).getOrNull()
-                        val oldProcPath = existing?.stampImagePath
+                        if (existing == null) {
+                            renderedFile.delete()
+                            withContext(Dispatchers.Main) {
+                                _uiState.update { it.copy(isSaving = false) }
+                                onError("Stamp not found or unauthorized")
+                            }
+                            return@withContext
+                        }
 
-                        val updatedEntity = (existing ?: StampEntity(
-                            id = state.stampId,
-                            originalImagePath = origPath,
-                            stampImagePath = renderedFile.absolutePath,
-                            title = title,
-                            note = caption,
-                            createdAt = nowMillis,
-                            memoryDate = nowMillis,
-                            location = location
-                        )).copy(
+                        val oldProcPath = existing.stampImagePath
+                        val updatedEntity = existing.copy(
                             stampImagePath = renderedFile.absolutePath,
                             title = title,
                             note = caption,
@@ -421,16 +420,6 @@ class StampEditorViewModel : ViewModel() {
                         val saveRes = repo.saveStamp(draft)
                         if (saveRes.isSuccess) {
                             val newEntity = saveRes.getOrThrow()
-                            try {
-                                val feedRepo = com.mipastudio.memostamp.data.repository.FeedRepository.getInstance(context)
-                                feedRepo.createPostFromStamp(
-                                    stampEntity = newEntity,
-                                    audienceType = com.mipastudio.memostamp.domain.model.AudienceType.FRIENDS
-                                )
-                                feedRepo.syncFeedFromSupabase()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
                             withContext(Dispatchers.Main) {
                                 _uiState.update { it.copy(isSaving = false, hasChanges = false) }
                                 onSuccess(newEntity)

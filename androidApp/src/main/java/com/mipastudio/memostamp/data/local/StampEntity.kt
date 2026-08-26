@@ -1,5 +1,6 @@
 package com.mipastudio.memostamp.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -7,7 +8,8 @@ import androidx.room.PrimaryKey
 data class StampEntity(
     @PrimaryKey
     val id: String,
-    val ownerId: String = "",
+    @ColumnInfo(defaultValue = "''")
+    val ownerId: String,
     val originalImagePath: String,
     val croppedImagePath: String? = null,
     val stampImagePath: String,

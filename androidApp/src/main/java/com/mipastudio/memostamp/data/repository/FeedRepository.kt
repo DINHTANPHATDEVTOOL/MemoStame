@@ -800,12 +800,9 @@ class FeedRepository private constructor(
         val isPostAuthor = post != null && post.authorId == currentUser.userId
         if (isCommentAuthor || isPostAuthor) {
             feedDao.deleteComment(commentId)
-            coroutineScope.launch {
-                try {
-                    supabaseClient.deleteFeedComment(commentId)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            val res = supabaseClient.deleteFeedComment(commentId)
+            if (res.isFailure) {
+                System.err.println("Cloud deleteFeedComment failed for $commentId: ${res.exceptionOrNull()?.message}")
             }
         }
     }
@@ -815,12 +812,9 @@ class FeedRepository private constructor(
         val post = feedDao.getPostById(postId) ?: return@withContext
         if (post.authorId == currentUser.userId) {
             feedDao.deletePostById(postId)
-            coroutineScope.launch {
-                try {
-                    supabaseClient.deleteFeedPost(postId)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            val res = supabaseClient.deleteFeedPost(postId)
+            if (res.isFailure) {
+                System.err.println("Cloud deleteFeedPost failed for $postId: ${res.exceptionOrNull()?.message}")
             }
         }
     }
@@ -828,7 +822,6 @@ class FeedRepository private constructor(
     suspend fun deleteMemory(stampId: String) = withContext(Dispatchers.IO) {
         val currentUser = getCurrentUser()
         val stamp = stampDao.getStampById(stampId, currentUser.userId)
-            ?: stampDao.getStampById(stampId)?.takeIf { it.ownerId == currentUser.userId || it.ownerId.isBlank() }
             ?: return@withContext
 
         val post = feedDao.getPostByStampId(stampId)
@@ -837,12 +830,9 @@ class FeedRepository private constructor(
         }
         if (post != null) {
             feedDao.deletePostByStampId(stampId)
-            coroutineScope.launch {
-                try {
-                    supabaseClient.deleteFeedPost(post.id)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            val res = supabaseClient.deleteFeedPost(post.id)
+            if (res.isFailure) {
+                System.err.println("Cloud deleteFeedPost failed for ${post.id}: ${res.exceptionOrNull()?.message}")
             }
         }
         stampDao.deleteById(stampId, currentUser.userId)

@@ -9,9 +9,9 @@ class CollectionFilterTest {
     @Test
     fun filterStampsByCollection_returnsCorrectMatches() {
         val stamps = listOf(
-            StampEntity(id = "1", originalImagePath = "", stampImagePath = "", title = "Beach", note = "", createdAt = 0, memoryDate = 0, collectionId = "nature"),
-            StampEntity(id = "2", originalImagePath = "", stampImagePath = "", title = "Coffee", note = "", createdAt = 0, memoryDate = 0, collectionId = "travel"),
-            StampEntity(id = "3", originalImagePath = "", stampImagePath = "", title = "Mountain", note = "", createdAt = 0, memoryDate = 0, collectionId = "nature")
+            StampEntity(id = "1", ownerId = "user_test", originalImagePath = "", stampImagePath = "", title = "Beach", note = "", createdAt = 0, memoryDate = 0, collectionId = "nature"),
+            StampEntity(id = "2", ownerId = "user_test", originalImagePath = "", stampImagePath = "", title = "Coffee", note = "", createdAt = 0, memoryDate = 0, collectionId = "travel"),
+            StampEntity(id = "3", ownerId = "user_test", originalImagePath = "", stampImagePath = "", title = "Mountain", note = "", createdAt = 0, memoryDate = 0, collectionId = "nature")
         )
 
         val natureStamps = stamps.filter { it.collectionId == "nature" }

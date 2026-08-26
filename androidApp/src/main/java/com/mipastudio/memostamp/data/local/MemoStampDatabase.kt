@@ -261,9 +261,13 @@ abstract class MemoStampDatabase : RoomDatabase() {
                     }
                 } catch (_: Exception) {}
 
-                db.execSQL("ALTER TABLE stamps ADD COLUMN ownerId TEXT NOT NULL DEFAULT '$activeUserId'")
-                db.execSQL("ALTER TABLE drafts ADD COLUMN ownerId TEXT NOT NULL DEFAULT '$activeUserId'")
-                db.execSQL("ALTER TABLE collections ADD COLUMN ownerId TEXT NOT NULL DEFAULT '$activeUserId'")
+                db.execSQL("ALTER TABLE stamps ADD COLUMN ownerId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE drafts ADD COLUMN ownerId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE collections ADD COLUMN ownerId TEXT NOT NULL DEFAULT ''")
+
+                db.execSQL("UPDATE stamps SET ownerId = ? WHERE ownerId = ''", arrayOf(activeUserId))
+                db.execSQL("UPDATE drafts SET ownerId = ? WHERE ownerId = ''", arrayOf(activeUserId))
+                db.execSQL("UPDATE collections SET ownerId = ? WHERE ownerId = ''", arrayOf(activeUserId))
             }
         }
 

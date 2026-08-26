@@ -67,9 +67,7 @@ class StampRepository private constructor(
 
     suspend fun getDraft(id: String): StampDraft? = withContext(Dispatchers.IO) {
         val currentUserId = authRepo.currentUser.value.userId
-        val entity = stampDraftDao.getDraftById(id, currentUserId)
-            ?: stampDraftDao.getDraftById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
-            ?: return@withContext null
+        val entity = stampDraftDao.getDraftById(id, currentUserId) ?: return@withContext null
         StampDraft(
             id = entity.id,
             originalImagePath = entity.originalImagePath,
@@ -90,9 +88,7 @@ class StampRepository private constructor(
     suspend fun getNewestDraft(): Pair<String, StampDraft>? = withContext(Dispatchers.IO) {
         cleanupExpiredDrafts()
         val currentUserId = authRepo.currentUser.value.userId
-        val entity = stampDraftDao.getNewestDraft(currentUserId)
-            ?: stampDraftDao.getNewestDraft()?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
-            ?: return@withContext null
+        val entity = stampDraftDao.getNewestDraft(currentUserId) ?: return@withContext null
         val draft = StampDraft(
             id = entity.id,
             originalImagePath = entity.originalImagePath,
@@ -135,7 +131,6 @@ class StampRepository private constructor(
     suspend fun removeDraft(id: String) = withContext(Dispatchers.IO) {
         val currentUserId = authRepo.currentUser.value.userId
         val entity = stampDraftDao.getDraftById(id, currentUserId)
-            ?: stampDraftDao.getDraftById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
         if (entity != null) {
             stampDraftDao.deleteDraftById(id, currentUserId)
             try {
@@ -153,18 +148,16 @@ class StampRepository private constructor(
         }
     }
 
-    fun observeStamps(): Flow<List<StampEntity>> = combine(stampDao.observeStamps(), authRepo.currentUser) { stamps, user ->
-        stamps.filter { it.ownerId == user.userId || (it.ownerId.isBlank() && user.userId == "user_phat_main") }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeStamps(): Flow<List<StampEntity>> = authRepo.currentUser.flatMapLatest { user ->
+        stampDao.observeStampsByOwner(user.userId)
     }
 
     suspend fun getStampById(id: String): Result<StampEntity?> = withContext(Dispatchers.IO) {
         try {
             val currentUserId = authRepo.currentUser.value.userId
             val entity = stampDao.getStampById(id, currentUserId)
-                ?: stampDao.getStampById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
-            if (entity != null && entity.ownerId.isNotBlank() && entity.ownerId != currentUserId) {
-                return@withContext Result.failure(SecurityException("Unauthorized access to stamp"))
-            }
+                ?: return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
             Result.success(entity)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -213,10 +206,11 @@ class StampRepository private constructor(
     suspend fun updateStamp(stamp: StampEntity): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val currentUserId = authRepo.currentUser.value.userId
-            if (stamp.ownerId.isNotBlank() && stamp.ownerId != currentUserId) {
-                return@withContext Result.failure(SecurityException("Unauthorized access to stamp"))
-            }
-            val updatedRows = stampDao.update(stamp)
+            val existing = stampDao.getStampById(stamp.id, currentUserId)
+                ?: return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
+
+            val safeEntity = stamp.copy(ownerId = currentUserId)
+            val updatedRows = stampDao.update(safeEntity)
             if (updatedRows > 0) {
                 triggerCloudAutoSync()
                 Result.success(Unit)
@@ -233,10 +227,8 @@ class StampRepository private constructor(
         try {
             val currentUserId = authRepo.currentUser.value.userId
             val entity = stampDao.getStampById(id, currentUserId)
-                ?: stampDao.getStampById(id)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
-            if (entity == null || (entity.ownerId.isNotBlank() && entity.ownerId != currentUserId)) {
-                return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
-            }
+                ?: return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
+
             val deletedRows = stampDao.deleteById(id, currentUserId)
             if (deletedRows > 0) {
                 try {
@@ -277,8 +269,9 @@ class StampRepository private constructor(
         }
     }
 
-    fun observeCollections(): Flow<List<CollectionEntity>> = combine(collectionDao.observeCollections(), authRepo.currentUser) { collections, user ->
-        collections.filter { it.ownerId == user.userId || (it.ownerId.isBlank() && user.userId == "user_phat_main") }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeCollections(): Flow<List<CollectionEntity>> = authRepo.currentUser.flatMapLatest { user ->
+        collectionDao.observeCollectionsByOwner(user.userId)
     }
 
     suspend fun createCollection(
@@ -308,11 +301,13 @@ class StampRepository private constructor(
         try {
             val currentUserId = authRepo.currentUser.value.userId
             val stamp = stampDao.getStampById(stampId, currentUserId)
-                ?: stampDao.getStampById(stampId)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
-                ?: return@withContext Result.failure(IllegalArgumentException("Stamp not found"))
-            if (stamp.ownerId.isNotBlank() && stamp.ownerId != currentUserId) {
-                return@withContext Result.failure(SecurityException("Unauthorized access to stamp"))
+                ?: return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
+
+            if (collectionId != null) {
+                collectionDao.getCollectionById(collectionId, currentUserId)
+                    ?: return@withContext Result.failure(SecurityException("Unauthorized collection access"))
             }
+
             val updated = stamp.copy(collectionId = collectionId)
             stampDao.update(updated)
             triggerCloudAutoSync()
@@ -327,11 +322,8 @@ class StampRepository private constructor(
         try {
             val currentUserId = authRepo.currentUser.value.userId
             val col = collectionDao.getCollectionById(collectionId, currentUserId)
-                ?: collectionDao.getCollectionById(collectionId)?.takeIf { it.ownerId == currentUserId || it.ownerId.isBlank() }
-                ?: return@withContext Result.failure(IllegalArgumentException("Collection not found"))
-            if (col.ownerId.isNotBlank() && col.ownerId != currentUserId) {
-                return@withContext Result.failure(SecurityException("Unauthorized access to collection"))
-            }
+                ?: return@withContext Result.failure(SecurityException("Unauthorized or collection not found"))
+
             val newPrivacy = if (col.privacy == "ONLY_ME") "FRIENDS" else "ONLY_ME"
             val updated = col.copy(privacy = newPrivacy)
             collectionDao.updateCollection(updated)
