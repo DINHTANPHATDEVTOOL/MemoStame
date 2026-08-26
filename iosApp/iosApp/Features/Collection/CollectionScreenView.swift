@@ -48,11 +48,12 @@ struct CollectionScreenView: View {
             return roomCollections.indices.map { index in
                 let col = roomCollections[index]
                 let matchingStamps = cloudStamps.filter { $0.collectionId == col.id }
+                let target = max(Int(col.targetCount), matchingStamps.count)
                 return AlbumItem(
                     id: col.id,
                     title: col.name,
                     desc: col.description_ ?? "Bộ sưu tập tem kỷ niệm \(col.name)",
-                    progress: "\(matchingStamps.count)/\(max(col.targetCount, matchingStamps.count))",
+                    progress: "\(matchingStamps.count)/\(target)",
                     iconName: icons[index % icons.count],
                     coverColor: coverColors[index % coverColors.count],
                     stamps: matchingStamps.map { AlbumStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
