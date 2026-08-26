@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FeedSeenEntity::class,
         UserEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class MemoStampDatabase : RoomDatabase() {
@@ -271,6 +271,31 @@ abstract class MemoStampDatabase : RoomDatabase() {
             }
         }
 
+        fun getMigration11To12(context: Context) = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                var activeUserId = "user_phat_main"
+                try {
+                    val prefs = context.getSharedPreferences("memostamp_auth_prefs", Context.MODE_PRIVATE)
+                    val json = prefs.getString("user_profile_json", null)
+                    if (!json.isNullOrBlank()) {
+                        val obj = org.json.JSONObject(json)
+                        val uid = obj.optString("userId")
+                        if (!uid.isNullOrBlank()) activeUserId = uid
+                    }
+                } catch (_: Exception) {}
+
+                try {
+                    db.execSQL("UPDATE stamps SET ownerId = ? WHERE ownerId = '' OR ownerId IS NULL", arrayOf(activeUserId))
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("UPDATE drafts SET ownerId = ? WHERE ownerId = '' OR ownerId IS NULL", arrayOf(activeUserId))
+                } catch (_: Exception) {}
+                try {
+                    db.execSQL("UPDATE collections SET ownerId = ? WHERE ownerId = '' OR ownerId IS NULL", arrayOf(activeUserId))
+                } catch (_: Exception) {}
+            }
+        }
+
         fun getInstance(context: Context): MemoStampDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -278,7 +303,11 @@ abstract class MemoStampDatabase : RoomDatabase() {
                     MemoStampDatabase::class.java,
                     "memostamp_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, getMigration10To11(context.applicationContext))
+                .addMigrations(
+                    MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
+                    getMigration10To11(context.applicationContext),
+                    getMigration11To12(context.applicationContext)
+                )
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
             }

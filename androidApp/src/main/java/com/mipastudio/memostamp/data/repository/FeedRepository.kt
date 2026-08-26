@@ -799,9 +799,10 @@ class FeedRepository private constructor(
         val isCommentAuthor = comment.authorId == currentUser.userId
         val isPostAuthor = post != null && post.authorId == currentUser.userId
         if (isCommentAuthor || isPostAuthor) {
-            feedDao.deleteComment(commentId)
             val res = supabaseClient.deleteFeedComment(commentId)
-            if (res.isFailure) {
+            if (res.isSuccess || res.exceptionOrNull()?.message?.contains("404") == true) {
+                feedDao.deleteComment(commentId)
+            } else {
                 System.err.println("Cloud deleteFeedComment failed for $commentId: ${res.exceptionOrNull()?.message}")
             }
         }
@@ -811,9 +812,10 @@ class FeedRepository private constructor(
         val currentUser = getCurrentUser()
         val post = feedDao.getPostById(postId) ?: return@withContext
         if (post.authorId == currentUser.userId) {
-            feedDao.deletePostById(postId)
             val res = supabaseClient.deleteFeedPost(postId)
-            if (res.isFailure) {
+            if (res.isSuccess || res.exceptionOrNull()?.message?.contains("404") == true) {
+                feedDao.deletePostById(postId)
+            } else {
                 System.err.println("Cloud deleteFeedPost failed for $postId: ${res.exceptionOrNull()?.message}")
             }
         }
@@ -829,10 +831,12 @@ class FeedRepository private constructor(
             return@withContext
         }
         if (post != null) {
-            feedDao.deletePostByStampId(stampId)
             val res = supabaseClient.deleteFeedPost(post.id)
-            if (res.isFailure) {
+            if (res.isSuccess || res.exceptionOrNull()?.message?.contains("404") == true) {
+                feedDao.deletePostByStampId(stampId)
+            } else {
                 System.err.println("Cloud deleteFeedPost failed for ${post.id}: ${res.exceptionOrNull()?.message}")
+                return@withContext
             }
         }
         stampDao.deleteById(stampId, currentUser.userId)

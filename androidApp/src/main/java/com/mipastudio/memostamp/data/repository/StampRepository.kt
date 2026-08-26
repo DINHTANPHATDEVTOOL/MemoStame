@@ -1,26 +1,25 @@
 package com.mipastudio.memostamp.data.repository
 
 import android.content.Context
+import androidx.room.withTransaction
+import com.mipastudio.memostamp.data.local.CollectionDao
+import com.mipastudio.memostamp.data.local.CollectionEntity
 import com.mipastudio.memostamp.data.local.MemoStampDatabase
 import com.mipastudio.memostamp.data.local.StampDao
 import com.mipastudio.memostamp.data.local.StampDraftDao
 import com.mipastudio.memostamp.data.local.StampDraftEntity
 import com.mipastudio.memostamp.data.local.StampEntity
+import com.mipastudio.memostamp.data.remote.CloudSyncEngine
 import com.mipastudio.memostamp.domain.model.StampDraft
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
-
-import androidx.room.withTransaction
-import com.mipastudio.memostamp.data.local.CollectionDao
-import com.mipastudio.memostamp.data.local.CollectionEntity
-import com.mipastudio.memostamp.data.remote.CloudSyncEngine
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-
-import kotlinx.coroutines.flow.combine
 
 class StampRepository private constructor(
     private val context: Context,

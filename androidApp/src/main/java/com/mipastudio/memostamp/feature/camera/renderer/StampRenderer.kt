@@ -9,6 +9,7 @@ import com.mipastudio.memostamp.core.processor.CameraPreset
 import com.mipastudio.memostamp.ui.components.StampGeometry
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.roundToInt
 
 object StampRenderer {
 
@@ -24,7 +25,7 @@ object StampRenderer {
         val minDimension = minOf(width, height)
         val radius = maxOf(1.5f, minDimension * StampGeometry.NOTCH_RADIUS_RATIO)
 
-        val topCount = maxOf(3, kotlin.math.roundToInt(width / (minDimension * StampGeometry.NOTCH_SPACING_RATIO)))
+        val topCount = maxOf(3, (width / (minDimension * StampGeometry.NOTCH_SPACING_RATIO)).roundToInt())
         val topSpacing = width / topCount.toFloat()
         path.moveTo(0f, 0f)
         for (i in 0 until topCount) {
@@ -34,7 +35,7 @@ object StampRenderer {
         }
         path.lineTo(width, 0f)
 
-        val rightCount = maxOf(3, kotlin.math.roundToInt(height / (minDimension * StampGeometry.NOTCH_SPACING_RATIO)))
+        val rightCount = maxOf(3, (height / (minDimension * StampGeometry.NOTCH_SPACING_RATIO)).roundToInt())
         val rightSpacing = height / rightCount.toFloat()
         for (i in 0 until rightCount) {
             val cy = rightSpacing * (i + 0.5f)
