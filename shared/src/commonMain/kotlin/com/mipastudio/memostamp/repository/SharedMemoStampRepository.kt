@@ -456,4 +456,60 @@ class SharedMemoStampRepository {
             }
         }
     }
+
+    fun updateCollection(collectionId: String, name: String, description: String, iconEmoji: String): Boolean {
+        var updated = false
+        _collections.value = _collections.value.map { col ->
+            if (col.id == collectionId) {
+                updated = true
+                col.copy(name = name, description = description, iconEmoji = iconEmoji)
+            } else col
+        }
+        return updated
+    }
+
+    fun deleteCollection(collectionId: String): Boolean {
+        val initialSize = _collections.value.size
+        _collections.value = _collections.value.filter { it.id != collectionId }
+        val removed = _collections.value.size < initialSize
+        if (removed) {
+            _stamps.value = _stamps.value.map { stamp ->
+                if (stamp.collectionId == collectionId) stamp.copy(collectionId = null) else stamp
+            }
+        }
+        return removed
+    }
+
+    fun toggleFavorite(stampId: String): Boolean {
+        var newFav = false
+        _stamps.value = _stamps.value.map { stamp ->
+            if (stamp.id == stampId) {
+                newFav = !stamp.favorite
+                stamp.copy(favorite = newFav)
+            } else stamp
+        }
+        return newFav
+    }
+
+    fun updateStampCollection(stampId: String, collectionId: String?): Boolean {
+        var updated = false
+        _stamps.value = _stamps.value.map { stamp ->
+            if (stamp.id == stampId) {
+                updated = true
+                stamp.copy(collectionId = collectionId)
+            } else stamp
+        }
+        return updated
+    }
+
+    fun deleteStamp(stampId: String): Boolean {
+        val initialSize = _stamps.value.size
+        _stamps.value = _stamps.value.filter { it.id != stampId }
+        val deleted = _stamps.value.size < initialSize
+        if (deleted) {
+            _feedPosts.value = _feedPosts.value.filter { it.stampId != stampId }
+        }
+        return deleted
+    }
 }
+

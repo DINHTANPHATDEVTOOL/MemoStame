@@ -321,6 +321,7 @@ struct StampVaultScreenView: View {
             case .detail(let stamp):
                 StampDetailModalView(
                     stamp: stamp,
+                    repository: repository,
                     onShare: {
                         activeModal = nil
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -357,11 +358,24 @@ enum VaultModalItem: Identifiable {
 
 struct StampDetailModalView: View {
     let stamp: StampItem
+    let repository: SharedMemoStampRepository
     var onShare: () -> Void
     var onDismiss: () -> Void
 
+    @State private var isFavorite: Bool
+    @State private var showDeleteConfirm: Bool = false
+    @State private var showExportToast: Bool = false
+
+    init(stamp: StampItem, repository: SharedMemoStampRepository, onShare: @escaping () -> Void, onDismiss: @escaping () -> Void) {
+        self.stamp = stamp
+        self.repository = repository
+        self.onShare = onShare
+        self.onDismiss = onDismiss
+        _isFavorite = State(initialValue: stamp.favorite)
+    }
+
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Capsule()
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: 40, height: 5)
@@ -371,9 +385,22 @@ struct StampDetailModalView: View {
                 Text(stamp.title)
                     .font(.title3.bold())
                 Spacer()
+
+                Button(action: {
+                    _ = repository.toggleFavorite(stampId: stamp.id)
+                    isFavorite.toggle()
+                    HapticFeedbackManager.shared.playSuccess()
+                }) {
+                    Image(systemName: isFavorite ? "heart.fill" : "heart")
+                        .font(.title3)
+                        .foregroundColor(isFavorite ? Color(red: 0.85, green: 0.25, blue: 0.20) : .gray)
+                        .padding(6)
+                }
+
                 Button(action: onDismiss) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.gray)
+                        .padding(6)
                 }
             }
             .padding(.horizontal)
@@ -398,25 +425,92 @@ struct StampDetailModalView: View {
                     .foregroundColor(MSColors.stamp)
             }
 
-            VStack(spacing: 12) {
-                Button(action: onShare) {
-                    HStack {
-                        Image(systemName: "envelope.fill")
-                        Text("Share via Vintage Envelope")
-                            .font(.body.bold())
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+            if showExportToast {
+                Text("✓ Đã lưu con tem vào Thư viện ảnh!")
+                    .font(.caption.bold())
                     .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.75))
                     .cornerRadius(12)
+            }
+
+            VStack(spacing: 10) {
+                HStack(spacing: 12) {
+                    Button(action: {
+                        #if canImport(UIKit)
+                        var inputImage: UIImage? = nil
+                        if let url = URL(string: stamp.stampImagePath), let data = try? Data(contentsOf: url) {
+                            inputImage = UIImage(data: data)
+                        }
+                        _ = StampRenderEngine.shared.saveStampPng(
+                            photo: inputImage,
+                            title: stamp.title,
+                            location: stamp.location ?? "",
+                            dateStr: "2026.08.18",
+                            stampColorHex: "#D32F2F",
+                            shape: stamp.shape
+                        )
+                        showExportToast = true
+                        HapticFeedbackManager.shared.playSuccess()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            showExportToast = false
+                        }
+                        #endif
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.down")
+                            Text("Export PNG")
+                                .font(.subheadline.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.blue.opacity(0.12))
+                        .foregroundColor(.blue)
+                        .cornerRadius(12)
+                    }
+
+                    Button(action: onShare) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "envelope.fill")
+                            Text("Chia sẻ")
+                                .font(.subheadline.bold())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color(red: 0.85, green: 0.25, blue: 0.20))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                }
+
+                Button(action: { showDeleteConfirm = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash")
+                        Text("Xóa con tem này")
+                            .font(.caption.bold())
+                    }
+                    .foregroundColor(.red.opacity(0.8))
+                    .padding(.top, 4)
                 }
             }
             .padding(.horizontal)
             .padding(.bottom, 20)
         }
+        .alert(isPresented: $showDeleteConfirm) {
+            Alert(
+                title: Text("Xóa ký ức này?"),
+                message: Text("Hành động này sẽ xóa con tem khỏi Bộ sưu tập của bạn."),
+                primaryButton: .destructive(Text("Xóa")) {
+                    _ = repository.deleteStamp(stampId: stamp.id)
+                    onDismiss()
+                },
+                secondaryButton: .cancel()
+            )
+        }
     }
 }
+
 
 struct CreateAlbumSheetView: View {
     let repository: SharedMemoStampRepository

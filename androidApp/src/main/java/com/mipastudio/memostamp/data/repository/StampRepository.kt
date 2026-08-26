@@ -222,6 +222,21 @@ class StampRepository private constructor(
         }
     }
 
+    suspend fun toggleFavorite(id: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val currentUserId = authRepo.currentUser.value.userId
+            val stamp = stampDao.getStampById(id, currentUserId)
+                ?: return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
+            val newFav = !stamp.favorite
+            val updated = stamp.copy(favorite = newFav)
+            stampDao.update(updated)
+            Result.success(newFav)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
     suspend fun deleteStamp(id: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val currentUserId = authRepo.currentUser.value.userId

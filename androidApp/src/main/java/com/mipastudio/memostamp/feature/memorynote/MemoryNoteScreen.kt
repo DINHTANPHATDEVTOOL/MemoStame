@@ -68,11 +68,12 @@ fun MemoryNoteScreen(
     val moods = listOf(
         "😊" to "Happy",
         "❤️" to "Love",
-        "☀️" to "Bright",
-        "✨" to "Magic",
-        "☕" to "Cozy",
-        "🌿" to "Calm",
-        "🥹" to "Emotional"
+        "✈️" to "Travel",
+        "☕" to "Chill",
+        "🔥" to "Excited",
+        "📜" to "Nostalgic",
+        "🌿" to "Peaceful",
+        "✨" to "Special"
     )
 
     LaunchedEffect(draft.renderedImagePath, draftId) {

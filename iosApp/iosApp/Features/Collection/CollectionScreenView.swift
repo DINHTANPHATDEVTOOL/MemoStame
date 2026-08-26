@@ -31,7 +31,34 @@ struct CollectionScreenView: View {
         (repository.stamps.value as? [StampItem]) ?? []
     }
 
+    var roomCollections: [CollectionItem] {
+        (repository.collections.value as? [CollectionItem]) ?? []
+    }
+
     var albums: [AlbumItem] {
+        let coverColors: [Color] = [
+            Color(red: 0.62, green: 0.24, blue: 0.18),
+            Color(red: 0.43, green: 0.30, blue: 0.25),
+            Color(red: 0.55, green: 0.43, blue: 0.39),
+            Color(red: 0.22, green: 0.38, blue: 0.35)
+        ]
+        let icons = ["airplane", "cup.and.saucer.fill", "building.columns.fill", "map.fill", "sparkles"]
+
+        if !roomCollections.isEmpty {
+            return roomCollections.enumerated().map { index, col in
+                let matchingStamps = cloudStamps.filter { $0.collectionId == col.id }
+                return AlbumItem(
+                    id: col.id,
+                    title: col.name,
+                    desc: col.description ?? "Bộ sưu tập tem kỷ niệm \(col.name)",
+                    progress: "\(matchingStamps.count)/\(max(col.targetCount, matchingStamps.count))",
+                    iconName: icons[index % icons.count],
+                    coverColor: coverColors[index % coverColors.count],
+                    stamps: matchingStamps.map { AlbumStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
+                )
+            }
+        }
+
         if cloudStamps.isEmpty {
             return []
         }
@@ -40,14 +67,6 @@ struct CollectionScreenView: View {
             return loc.isEmpty ? "Kỷ niệm chung" : loc
         }
         return grouped.enumerated().map { index, entry in
-            let coverColors: [Color] = [
-                Color(red: 0.62, green: 0.24, blue: 0.18),
-                Color(red: 0.43, green: 0.30, blue: 0.25),
-                Color(red: 0.55, green: 0.43, blue: 0.39),
-                Color(red: 0.22, green: 0.38, blue: 0.35)
-            ]
-            let icons = ["airplane", "cup.and.saucer.fill", "building.columns.fill", "map.fill", "sparkles"]
-            
             return AlbumItem(
                 id: "album_\(index)",
                 title: entry.key,

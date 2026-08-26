@@ -12,7 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Share
@@ -287,6 +289,17 @@ fun StampDetailScreen(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val isFav = s.favorite
+                            DetailAction(
+                                icon = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                label = if (isFav) "Favorited" else "Favorite",
+                                tint = if (isFav) AccentRed else PrimaryText
+                            ) {
+                                scope.launch {
+                                    StampRepository.getInstance(context).toggleFavorite(s.id)
+                                    stamp = stamp?.copy(favorite = !isFav)
+                                }
+                            }
                             DetailAction(Icons.Outlined.Edit, "Edit", PrimaryText) { onEditStamp(s.id) }
                             DetailAction(Icons.Outlined.Send, "Send", AccentRed) { showShareModal = true }
                             DetailAction(Icons.Outlined.Share, "Export", AccentBlue) {
