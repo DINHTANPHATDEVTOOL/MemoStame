@@ -304,7 +304,7 @@ class FeedRepository private constructor(
             val user = getCurrentUser()
             val defaults = listOf(
                 CircleEntity(
-                    id = "circle_best_friends",
+                    id = "circle_${user.userId}_best_friends",
                     ownerId = user.userId,
                     name = "Bạn Thân (Close Friends)",
                     icon = "💖",
@@ -312,7 +312,7 @@ class FeedRepository private constructor(
                     createdAt = System.currentTimeMillis()
                 ),
                 CircleEntity(
-                    id = "circle_travel_buddies",
+                    id = "circle_${user.userId}_travel_buddies",
                     ownerId = user.userId,
                     name = "Hội Phượt & Du Lịch",
                     icon = "✈️",
@@ -369,7 +369,9 @@ class FeedRepository private constructor(
                         else if (entity.circleId.isNullOrBlank()) false
                         else {
                             val circle = myCirclesMap[entity.circleId]
-                            circle != null && (circle.ownerId == currentUser.userId || circle.memberIds.split(",").contains(currentUser.userId))
+                            circle != null &&
+                            circle.ownerId == entity.authorId &&
+                            circle.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
                         }
                     }
                     AudienceType.ONLY_ME -> entity.authorId == currentUser.userId

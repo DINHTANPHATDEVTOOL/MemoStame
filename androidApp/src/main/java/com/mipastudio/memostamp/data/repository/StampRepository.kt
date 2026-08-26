@@ -175,6 +175,10 @@ class StampRepository private constructor(
                 if (insertedId <= -1) {
                     throw IllegalStateException("Database insert failed")
                 }
+                if (!draftId.isNullOrBlank()) {
+                    stampDraftDao.deleteDraftById(draftId)
+                }
+            }
             triggerCloudAutoSync()
             Result.success(entity)
         } catch (e: Exception) {

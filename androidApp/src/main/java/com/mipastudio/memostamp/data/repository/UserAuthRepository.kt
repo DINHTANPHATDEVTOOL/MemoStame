@@ -714,21 +714,14 @@ class UserAuthRepository private constructor(private val context: Context) {
             return@withContext Result.failure(IllegalArgumentException("Mật khẩu không chính xác"))
         }
 
-        val profile = UserProfile(
-            userId = user.uid,
-            username = user.username,
-            displayName = user.displayName,
-            email = user.email,
-            avatarUrl = user.avatarUrl ?: "https://i.pravatar.cc/150?u=${user.uid}",
-            coverUrl = user.coverUrl ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200",
-            bio = user.bio ?: "Người yêu dấu tem & bưu thiếp 📮",
-            city = user.city ?: "Đà Lạt",
-            totalStampsCount = user.totalStamps
-        ).sanitized()
-
-        saveUserProfile(profile)
-        Result.success(profile)
-    }
+        // Tự động chuyển đổi mật khẩu cũ sang passwordHash mới nếu đang là plaintext
+        if (user.passwordHash == password) {
+            try {
+                userDao.insertUser(user.copy(passwordHash = inputHashed, updatedAt = System.currentTimeMillis()))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
 
         val profile = UserProfile(
             userId = user.uid,
@@ -741,6 +734,7 @@ class UserAuthRepository private constructor(private val context: Context) {
             city = user.city ?: "Đà Lạt",
             totalStampsCount = user.totalStamps
         ).sanitized()
+
         saveUserProfile(profile)
         Result.success(profile)
     }
