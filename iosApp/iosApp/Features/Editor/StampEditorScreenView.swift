@@ -19,8 +19,8 @@ struct StampEditorScreenView: View {
 
     @State private var selectedMoldId: String = "classic_perforated"
     @State private var selectedColorHex: String = "#D32F2F"
-    @State private var stampTitle: String = "Khoảnh khắc Đà Lạt"
-    @State private var stampLocation: String = "Đà Lạt, Lâm Đồng"
+    @State private var stampTitle: String = ""
+    @State private var stampLocation: String = ""
     @State private var stampDate: String = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM.dd"
@@ -205,38 +205,6 @@ struct StampEditorScreenView: View {
                                 Toggle("Vân khuôn dập", isOn: $showMoldOverlay)
                                     .font(.caption.bold())
                                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.85, green: 0.25, blue: 0.20)))
-                            }
-                        }
-
-                        // Section 3: Stamp Texts (Title & Location)
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("THÔNG TIN TRÊN TEM")
-                                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                .foregroundColor(.secondary)
-
-                            VStack(spacing: 8) {
-                                HStack {
-                                    Image(systemName: "tag.fill")
-                                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
-                                        .frame(width: 20)
-                                    TextField("Tiêu đề tem kỷ niệm", text: $stampTitle)
-                                        .font(.subheadline)
-                                }
-                                .padding(10)
-                                .background(Color.white)
-                                .cornerRadius(10)
-
-                                HStack {
-                                    Image(systemName: "mappin.and.ellipse")
-                                        .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
-                                        .frame(width: 20)
-                                    TextField("Địa điểm gắn trên tem", text: $stampLocation)
-                                        .font(.subheadline)
-                                }
-                                .padding(10)
-                                .background(Color.white)
-                                .cornerRadius(10)
-                            }
                         }
                     }
                     .padding(.horizontal, 16)

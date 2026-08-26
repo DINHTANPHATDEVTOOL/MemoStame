@@ -15,6 +15,7 @@ struct GroundedPlaceItem: Identifiable {
 
 struct MemoryNoteScreenView: View {
     let imageUrl: String
+    var replyToPostId: String? = nil
     let repository: SharedMemoStampRepository
     var onSavedSuccess: () -> Void
     var onCancel: () -> Void
@@ -66,13 +67,26 @@ struct MemoryNoteScreenView: View {
 
                 Button(action: {
                     var audience = AudienceType.friends
-                    if selectedAudience.contains("Public") {
-                        audience = AudienceType.friends
-                    } else if selectedAudience.contains("Only Me") {
+                    if selectedAudience.contains("Only Me") {
                         audience = AudienceType.onlyMe
+                    } else {
+                        audience = AudienceType.friends
                     }
+
+                    let finalTitle = title.isEmpty ? "Memory Stamp" : title
+
+                    if let replyId = replyToPostId, !replyId.isEmpty {
+                        repository.addStampReply(
+                            postId: replyId,
+                            stampTitle: finalTitle,
+                            note: caption,
+                            shape: "classic",
+                            imageUrl: imageUrl
+                        )
+                    }
+
                     _ = repository.addStamp(
-                        title: title.isEmpty ? "Memory Stamp" : title,
+                        title: finalTitle,
                         note: caption,
                         location: locationSearch.isEmpty ? nil : locationSearch,
                         imageUrl: imageUrl,

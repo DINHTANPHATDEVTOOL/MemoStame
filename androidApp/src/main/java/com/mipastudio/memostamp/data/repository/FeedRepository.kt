@@ -54,7 +54,9 @@ class FeedRepository private constructor(
         try {
             val cloudPosts = supabaseClient.getFeedPosts()
             if (cloudPosts.isEmpty() && feedDao.getPostCount() == 0) {
-                ensureDefaultFeedData()
+                if (com.mipastudio.memostamp.BuildConfig.DEBUG) {
+                    ensureDefaultFeedData()
+                }
             } else {
                 for (p in cloudPosts) {
                     val pId = p.id ?: continue
@@ -249,31 +251,6 @@ class FeedRepository private constructor(
 
             for (p in samplePosts) {
                 feedDao.insertPost(p)
-                try {
-                    val domainPost = FeedPost(
-                        id = p.id,
-                        stampId = p.stampId,
-                        stampUrl = p.stampUrl,
-                        stampTitle = p.stampTitle,
-                        shape = p.shape,
-                        authorId = p.authorId,
-                        authorName = p.authorName,
-                        authorAvatar = p.authorAvatar,
-                        caption = p.caption,
-                        audienceType = AudienceType.fromString(p.audienceType),
-                        circleId = p.circleId,
-                        circleName = p.circleName,
-                        createdAt = p.createdAt,
-                        type = FeedPostType.valueOf(p.type),
-                        location = p.location,
-                        reactionCount = 1,
-                        commentCount = 1,
-                        replyCount = 0
-                    )
-                    supabaseClient.createFeedPost(domainPost)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
             }
 
             // Sample reactions
@@ -281,24 +258,12 @@ class FeedRepository private constructor(
             val r2 = FeedReactionEntity("feed_post_2:user_minh_dalat", "feed_post_2", "user_minh_dalat", "Minh Nguyễn", "❤️", now - 10 * 60 * 1000L)
             feedDao.insertReaction(r1)
             feedDao.insertReaction(r2)
-            try {
-                supabaseClient.addFeedReaction(com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedReactionRecord(r1.id, r1.postId, r1.userId, r1.userName, r1.emoji, r1.createdAt))
-                supabaseClient.addFeedReaction(com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedReactionRecord(r2.id, r2.postId, r2.userId, r2.userName, r2.emoji, r2.createdAt))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
 
             // Sample comments
             val c1 = FeedCommentEntity(UUID.randomUUID().toString(), "feed_post_1", "user_linh_seasun", "Linh Trần", "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300", "Cảnh sương mù đẹp quá Minh ơi! 🌸", now - 1 * 60 * 1000L)
             val c2 = FeedCommentEntity(UUID.randomUUID().toString(), "feed_post_1", "user_nam_hanoi", "Hoàng Nam", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300", "Nhìn chill ghê ☕", now - 30 * 1000L)
             feedDao.insertComment(c1)
             feedDao.insertComment(c2)
-            try {
-                supabaseClient.addFeedComment(com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedCommentRecord(c1.id, c1.postId, c1.authorId, c1.authorName, c1.authorAvatar, c1.content, c1.createdAt))
-                supabaseClient.addFeedComment(com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedCommentRecord(c2.id, c2.postId, c2.authorId, c2.authorName, c2.authorAvatar, c2.content, c2.createdAt))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
         }
 
         val user = getCurrentUser()

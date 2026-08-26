@@ -252,6 +252,7 @@ struct CameraFlowContainerView: View {
             if let editedUrl = editedStampUrl {
                 MemoryNoteScreenView(
                     imageUrl: editedUrl,
+                    replyToPostId: replyToPostId,
                     repository: repository,
                     onSavedSuccess: onComplete,
                     onCancel: { editedStampUrl = nil }
