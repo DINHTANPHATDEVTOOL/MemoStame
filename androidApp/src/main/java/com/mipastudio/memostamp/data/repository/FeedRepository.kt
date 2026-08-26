@@ -808,41 +808,68 @@ class FeedRepository private constructor(
         }
     }
 
-    suspend fun removePostFromFeed(postId: String) = withContext(Dispatchers.IO) {
+    suspend fun removePostFromFeed(postId: String): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUser = getCurrentUser()
-        val post = feedDao.getPostById(postId) ?: return@withContext
-        if (post.authorId == currentUser.userId) {
+        val post = feedDao.getPostById(postId)
+            ?: return@withContext Result.failure(SecurityException("Post not found"))
+        if (post.authorId != currentUser.userId) {
+            return@withContext Result.failure(SecurityException("Unauthorized to remove post"))
+        }
+        val hasCloud = com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig.getAnonKey(context).isNotBlank() &&
+                com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig.getSupabaseUrl(context).isNotBlank()
+        if (hasCloud) {
             val res = supabaseClient.deleteFeedPost(postId)
-            if (res.isSuccess || res.exceptionOrNull()?.message?.contains("404") == true) {
+            val msg = res.exceptionOrNull()?.message ?: ""
+            val is404 = msg.contains("404")
+            val isOffline = msg.contains("Unable to resolve host") || msg.contains("ConnectException") || msg.contains("UnknownHostException") || msg.contains("timeout") || msg.contains("Failed to connect")
+            if (res.isSuccess || is404 || isOffline) {
                 feedDao.deletePostById(postId)
             } else {
-                System.err.println("Cloud deleteFeedPost failed for $postId: ${res.exceptionOrNull()?.message}")
+                val err = res.exceptionOrNull() ?: Exception("Cloud deleteFeedPost failed")
+                System.err.println("Cloud deleteFeedPost failed for $postId: ${err.message}")
+                return@withContext Result.failure(err)
             }
+        } else {
+            feedDao.deletePostById(postId)
         }
+        Result.success(Unit)
     }
 
-    suspend fun deleteMemory(stampId: String) = withContext(Dispatchers.IO) {
+    suspend fun deleteMemory(stampId: String): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUser = getCurrentUser()
         val stamp = stampDao.getStampById(stampId, currentUser.userId)
-            ?: return@withContext
+            ?: return@withContext Result.failure(SecurityException("Unauthorized or stamp not found"))
 
         val post = feedDao.getPostByStampId(stampId)
         if (post != null && post.authorId != currentUser.userId) {
-            return@withContext
+            return@withContext Result.failure(SecurityException("Unauthorized to delete post"))
         }
         if (post != null) {
-            val res = supabaseClient.deleteFeedPost(post.id)
-            if (res.isSuccess || res.exceptionOrNull()?.message?.contains("404") == true) {
-                feedDao.deletePostByStampId(stampId)
+            val hasCloud = com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig.getAnonKey(context).isNotBlank() &&
+                    com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig.getSupabaseUrl(context).isNotBlank()
+            if (hasCloud) {
+                val res = supabaseClient.deleteFeedPost(post.id)
+                val msg = res.exceptionOrNull()?.message ?: ""
+                val is404 = msg.contains("404")
+                val isOffline = msg.contains("Unable to resolve host") || msg.contains("ConnectException") || msg.contains("UnknownHostException") || msg.contains("timeout") || msg.contains("Failed to connect")
+                if (res.isSuccess || is404 || isOffline) {
+                    feedDao.deletePostByStampId(stampId)
+                } else {
+                    val err = res.exceptionOrNull() ?: Exception("Cloud deleteFeedPost failed")
+                    System.err.println("Cloud deleteFeedPost failed for ${post.id}: ${err.message}")
+                    return@withContext Result.failure(err)
+                }
             } else {
-                System.err.println("Cloud deleteFeedPost failed for ${post.id}: ${res.exceptionOrNull()?.message}")
-                return@withContext
+                feedDao.deletePostByStampId(stampId)
             }
         }
         val deleteRes = StampRepository.getInstance(context).deleteStamp(stampId)
         if (deleteRes.isFailure) {
-            System.err.println("Stamp deletion failed in deleteMemory for $stampId: ${deleteRes.exceptionOrNull()?.message}")
+            val err = deleteRes.exceptionOrNull() ?: Exception("Stamp deletion failed")
+            System.err.println("Stamp deletion failed in deleteMemory for $stampId: ${err.message}")
+            return@withContext Result.failure(err)
         }
+        Result.success(Unit)
     }
 
     companion object {

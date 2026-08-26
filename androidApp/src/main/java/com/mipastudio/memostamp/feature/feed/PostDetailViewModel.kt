@@ -69,19 +69,41 @@ class PostDetailViewModel : ViewModel() {
         }
     }
 
-    fun removePostFromFeed(context: Context, postId: String, onDone: () -> Unit) {
+    fun removePostFromFeed(
+        context: Context,
+        postId: String,
+        onDone: () -> Unit,
+        onError: ((String) -> Unit)? = null
+    ) {
         viewModelScope.launch {
             val repo = FeedRepository.getInstance(context)
-            repo.removePostFromFeed(postId)
-            onDone()
+            val res = repo.removePostFromFeed(postId)
+            if (res.isSuccess) {
+                onDone()
+            } else {
+                val err = res.exceptionOrNull()?.message ?: "Failed to remove post"
+                _uiState.update { it.copy(errorMessage = err) }
+                onError?.invoke(err)
+            }
         }
     }
 
-    fun deleteMemory(context: Context, stampId: String, onDone: () -> Unit) {
+    fun deleteMemory(
+        context: Context,
+        stampId: String,
+        onDone: () -> Unit,
+        onError: ((String) -> Unit)? = null
+    ) {
         viewModelScope.launch {
             val repo = FeedRepository.getInstance(context)
-            repo.deleteMemory(stampId)
-            onDone()
+            val res = repo.deleteMemory(stampId)
+            if (res.isSuccess) {
+                onDone()
+            } else {
+                val err = res.exceptionOrNull()?.message ?: "Failed to delete memory"
+                _uiState.update { it.copy(errorMessage = err) }
+                onError?.invoke(err)
+            }
         }
     }
 }
