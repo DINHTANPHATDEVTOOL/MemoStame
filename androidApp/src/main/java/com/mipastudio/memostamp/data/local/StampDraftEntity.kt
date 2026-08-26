@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class StampDraftEntity(
     @PrimaryKey
     val id: String,
+    val ownerId: String = "",
     val originalImagePath: String,
     val croppedImagePath: String? = null,
     val renderedImagePath: String,

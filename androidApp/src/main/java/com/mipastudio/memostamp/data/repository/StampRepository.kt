@@ -20,6 +20,8 @@ import com.mipastudio.memostamp.data.remote.CloudSyncEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+import kotlinx.coroutines.flow.combine
+
 class StampRepository private constructor(
     private val context: Context,
     private val database: MemoStampDatabase,
@@ -28,6 +30,7 @@ class StampRepository private constructor(
     private val collectionDao: CollectionDao
 ) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val authRepo by lazy { UserAuthRepository.getInstance(context) }
 
     private fun triggerCloudAutoSync() {
         coroutineScope.launch {
@@ -40,8 +43,10 @@ class StampRepository private constructor(
     }
     suspend fun saveDraft(draft: StampDraft): String = withContext(Dispatchers.IO) {
         val id = UUID.randomUUID().toString()
+        val currentUserId = authRepo.currentUser.value.userId
         val entity = StampDraftEntity(
             id = id,
+            ownerId = currentUserId,
             originalImagePath = draft.originalImagePath,
             croppedImagePath = draft.croppedImagePath,
             renderedImagePath = draft.renderedImagePath,
@@ -139,7 +144,9 @@ class StampRepository private constructor(
         }
     }
 
-    fun observeStamps(): Flow<List<StampEntity>> = stampDao.observeStamps()
+    fun observeStamps(): Flow<List<StampEntity>> = combine(stampDao.observeStamps(), authRepo.currentUser) { stamps, user ->
+        stamps.filter { it.ownerId == user.userId || (it.ownerId.isBlank() && user.userId == "user_phat_main") }
+    }
 
     suspend fun getStampById(id: String): Result<StampEntity?> = withContext(Dispatchers.IO) {
         try {
@@ -153,8 +160,10 @@ class StampRepository private constructor(
 
     suspend fun saveStamp(draft: StampDraft, draftId: String? = null): Result<StampEntity> = withContext(Dispatchers.IO) {
         try {
+            val currentUserId = authRepo.currentUser.value.userId
             val entity = StampEntity(
                 id = UUID.randomUUID().toString(),
+                ownerId = currentUserId,
                 originalImagePath = draft.originalImagePath,
                 croppedImagePath = draft.croppedImagePath,
                 stampImagePath = draft.renderedImagePath,
@@ -234,11 +243,12 @@ class StampRepository private constructor(
 
     suspend fun ensureDefaultCollections() = withContext(Dispatchers.IO) {
         if (collectionDao.getCollectionCount() == 0) {
+            val currentUserId = authRepo.currentUser.value.userId
             val defaults = listOf(
-                CollectionEntity("col_travel_default", "Travel & Places", "Destinations, journeys and outdoor adventures", "✈️", null, System.currentTimeMillis(), 0, "SPECIAL", 12),
-                CollectionEntity("col_coffee_default", "Coffee & Food", "Cafes, meals and culinary experiences", "☕", null, System.currentTimeMillis(), 1, "NORMAL", 10),
-                CollectionEntity("col_daily_default", "Daily Life", "Everyday moments and small joys", "🌿", null, System.currentTimeMillis(), 2, "NORMAL", 15),
-                CollectionEntity("col_special_default", "Special Moments", "Anniversaries, celebrations and milestones", "🎉", null, System.currentTimeMillis(), 3, "SERIES", 8)
+                CollectionEntity("col_travel_default", currentUserId, "Travel & Places", "Destinations, journeys and outdoor adventures", "✈️", null, System.currentTimeMillis(), 0, "SPECIAL", 12),
+                CollectionEntity("col_coffee_default", currentUserId, "Coffee & Food", "Cafes, meals and culinary experiences", "☕", null, System.currentTimeMillis(), 1, "NORMAL", 10),
+                CollectionEntity("col_daily_default", currentUserId, "Daily Life", "Everyday moments and small joys", "🌿", null, System.currentTimeMillis(), 2, "NORMAL", 15),
+                CollectionEntity("col_special_default", currentUserId, "Special Moments", "Anniversaries, celebrations and milestones", "🎉", null, System.currentTimeMillis(), 3, "SERIES", 8)
             )
             for (col in defaults) {
                 collectionDao.insertCollection(col)
@@ -246,7 +256,9 @@ class StampRepository private constructor(
         }
     }
 
-    fun observeCollections(): Flow<List<CollectionEntity>> = collectionDao.observeCollections()
+    fun observeCollections(): Flow<List<CollectionEntity>> = combine(collectionDao.observeCollections(), authRepo.currentUser) { collections, user ->
+        collections.filter { it.ownerId == user.userId || (it.ownerId.isBlank() && user.userId == "user_phat_main") || it.id.startsWith("col_") }
+    }
 
     suspend fun createCollection(
         name: String,
@@ -256,8 +268,10 @@ class StampRepository private constructor(
         targetCount: Int = 12
     ): String = withContext(Dispatchers.IO) {
         val id = UUID.randomUUID().toString()
+        val currentUserId = authRepo.currentUser.value.userId
         val entity = CollectionEntity(
             id = id,
+            ownerId = currentUserId,
             name = name,
             description = description,
             iconEmoji = iconEmoji,

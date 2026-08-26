@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "collections")
 data class CollectionEntity(
     @PrimaryKey val id: String,
+    val ownerId: String = "",
     val name: String,
     val description: String? = null,
     val iconEmoji: String? = "📁",

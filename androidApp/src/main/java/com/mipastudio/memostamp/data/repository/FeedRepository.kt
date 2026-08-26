@@ -497,6 +497,9 @@ class FeedRepository private constructor(
         }
 
         if (replyToPostId != null) {
+            if (!isAuthorizedToViewPost(replyToPostId)) {
+                throw SecurityException("Not authorized to reply to this post")
+            }
             val replyId = UUID.randomUUID().toString()
             val reply = FeedReplyEntity(
                 id = replyId,
@@ -696,6 +699,11 @@ class FeedRepository private constructor(
             val isMember = circle.memberIds.split(",").map { it.trim() }.contains(currentUser.userId)
             if (!isOwner && !isMember) return@combine emptyList()
 
+            val reactionMap = reactions.groupBy { it.postId }
+            val commentMap = comments.groupBy { it.postId }
+            val replyMap = replies.groupBy { it.postId }
+            val seenMap = seenList.filter { it.userId == currentUser.userId }.associateBy { it.postId }
+
             val friendIds = authRepo.friendIds.value
             val filteredPosts = posts.filter { entity ->
                 entity.authorId == circle.ownerId &&
@@ -769,7 +777,7 @@ class FeedRepository private constructor(
         }
     }.flowOn(Dispatchers.IO)
 
-    suspend fun createCircle(name: String, icon: String, memberIds: List<String>): Circle = withContext(Dispatchers.IO) {
+    suspend fun createCircle(name: String, icon: String = "⭕", memberIds: List<String>): Circle = withContext(Dispatchers.IO) {
         val id = UUID.randomUUID().toString()
         val user = getCurrentUser()
         val entity = CircleEntity(
@@ -792,6 +800,13 @@ class FeedRepository private constructor(
         val isPostAuthor = post != null && post.authorId == currentUser.userId
         if (isCommentAuthor || isPostAuthor) {
             feedDao.deleteComment(commentId)
+            coroutineScope.launch {
+                try {
+                    supabaseClient.deleteFeedComment(commentId)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
@@ -800,6 +815,13 @@ class FeedRepository private constructor(
         val post = feedDao.getPostById(postId) ?: return@withContext
         if (post.authorId == currentUser.userId) {
             feedDao.deletePostById(postId)
+            coroutineScope.launch {
+                try {
+                    supabaseClient.deleteFeedPost(postId)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
@@ -809,7 +831,16 @@ class FeedRepository private constructor(
         if (post != null && post.authorId != currentUser.userId) {
             return@withContext
         }
-        if (post != null) feedDao.deletePostByStampId(stampId)
+        if (post != null) {
+            feedDao.deletePostByStampId(stampId)
+            coroutineScope.launch {
+                try {
+                    supabaseClient.deleteFeedPost(post.id)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
         stampDao.deleteById(stampId)
     }
 

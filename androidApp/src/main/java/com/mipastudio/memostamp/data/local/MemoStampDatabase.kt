@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FeedSeenEntity::class,
         UserEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class MemoStampDatabase : RoomDatabase() {
@@ -248,6 +248,18 @@ abstract class MemoStampDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                try {
+                    db.execSQL("ALTER TABLE stamps ADD COLUMN ownerId TEXT NOT NULL DEFAULT 'user_phat_main'")
+                    db.execSQL("ALTER TABLE drafts ADD COLUMN ownerId TEXT NOT NULL DEFAULT 'user_phat_main'")
+                    db.execSQL("ALTER TABLE collections ADD COLUMN ownerId TEXT NOT NULL DEFAULT 'user_phat_main'")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
         fun getInstance(context: Context): MemoStampDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -255,7 +267,7 @@ abstract class MemoStampDatabase : RoomDatabase() {
                     MemoStampDatabase::class.java,
                     "memostamp_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
             }

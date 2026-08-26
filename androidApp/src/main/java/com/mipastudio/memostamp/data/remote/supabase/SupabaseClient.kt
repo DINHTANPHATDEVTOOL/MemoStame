@@ -922,4 +922,25 @@ class SupabaseClient constructor(private val context: Context? = null) {
             }
         } ?: emptyList()
     }
+
+    suspend fun deleteFeedPost(postId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val enc = URLEncoder.encode(postId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/feed_posts?id=eq.$enc"
+        executeHttp(endpoint, method = "DELETE")
+        Result.success(true)
+    }
+
+    suspend fun deleteFeedComment(commentId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val enc = URLEncoder.encode(commentId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/feed_comments?id=eq.$enc"
+        executeHttp(endpoint, method = "DELETE")
+        Result.success(true)
+    }
+
+    suspend fun deleteFeedReply(replyId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val enc = URLEncoder.encode(replyId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/feed_replies?id=eq.$enc"
+        executeHttp(endpoint, method = "DELETE")
+        Result.success(true)
+    }
 }
