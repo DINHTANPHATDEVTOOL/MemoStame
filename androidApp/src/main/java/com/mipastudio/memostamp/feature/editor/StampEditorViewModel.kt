@@ -76,11 +76,17 @@ class StampEditorViewModel : ViewModel() {
                         emptyList()
                     }
 
-                    val origFile = File(entity.originalImagePath)
-                    val sourcePath = if (origFile.exists() && origFile.length() > 0) {
-                        entity.originalImagePath
+                    val croppedPath = entity.croppedImagePath
+                    val croppedFile = croppedPath?.let { File(it) }
+                    val sourcePath = if (croppedFile != null && croppedFile.exists() && croppedFile.length() > 0) {
+                        entity.croppedImagePath!!
                     } else {
-                        entity.stampImagePath
+                        val origFile = File(entity.originalImagePath)
+                        if (origFile.exists() && origFile.length() > 0) {
+                            entity.originalImagePath
+                        } else {
+                            entity.stampImagePath
+                        }
                     }
 
                     val spec = StampDesignSpec(

@@ -57,7 +57,7 @@ final class StampRenderEngine {
         dateStr: String,
         stampColorHex: String = "#D32F2F",
         shape: String = "classic",
-        targetSize: CGSize = CGSize(width: 800, height: 1000)
+        targetSize: CGSize = CGSize(width: StampGeometry.outputWidth, height: StampGeometry.outputHeight)
     ) -> UIImage? {
         let renderer = UIGraphicsImageRenderer(size: targetSize)
         return renderer.image { context in

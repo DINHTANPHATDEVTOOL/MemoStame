@@ -8,6 +8,7 @@ data class StampEntity(
     @PrimaryKey
     val id: String,
     val originalImagePath: String,
+    val croppedImagePath: String? = null,
     val stampImagePath: String,
     val title: String,
     val note: String,

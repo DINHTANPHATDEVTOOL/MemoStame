@@ -301,9 +301,9 @@ struct DieCutStampView: View {
                 }
             }
             .frame(width: cardWidth, height: cardHeight)
-            .clipShape(PerforatedStampShape(notchRatio: 0.024, spacingRatio: 0.068))
+            .clipShape(PerforatedStampShape())
             .overlay(
-                PerforatedStampShape(notchRatio: 0.024, spacingRatio: 0.068)
+                PerforatedStampShape()
                     .stroke(shapeThemeColor.opacity(0.85), lineWidth: 1.5)
             )
             .shadow(color: Color.black.opacity(0.25), radius: fittedInGrid ? 4 : 8, x: 0, y: fittedInGrid ? 2 : 4)

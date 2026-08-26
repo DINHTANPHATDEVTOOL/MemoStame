@@ -189,6 +189,7 @@ struct CameraScreenView: View {
 
     @State private var selectedFilterIndex: Int = 5 // Film 35mm
     @State private var zoomScale: CGFloat = 1.0
+    @State private var zoomBeforeGesture: CGFloat = 1.0
     @State private var selectedZoomPill: String = "1x"
     @State private var contrast: Double = 1.0
     @State private var brightness: Double = 0.0
@@ -383,8 +384,11 @@ struct CameraScreenView: View {
                 .gesture(
                     MagnificationGesture()
                         .onChanged { value in
-                            let newScale = zoomScale * value
-                            zoomScale = min(max(newScale, 1.0), 5.0)
+                            let target = zoomBeforeGesture * value
+                            zoomScale = min(max(target, 1.0), 5.0)
+                        }
+                        .onEnded { _ in
+                            zoomBeforeGesture = zoomScale
                         }
                 )
 
@@ -397,11 +401,21 @@ struct CameraScreenView: View {
                             selectedZoomPill = pill
                             triggerHapticFeedback()
                             switch pill {
-                            case "1x": zoomScale = 1.0
-                            case "2x": zoomScale = 1.8
-                            case "3x": zoomScale = 2.8
-                            case "5x": zoomScale = 4.2
-                            default: zoomScale = 1.0
+                            case "1x":
+                                zoomScale = 1.0
+                                zoomBeforeGesture = 1.0
+                            case "2x":
+                                zoomScale = 2.0
+                                zoomBeforeGesture = 2.0
+                            case "3x":
+                                zoomScale = 3.0
+                                zoomBeforeGesture = 3.0
+                            case "5x":
+                                zoomScale = 5.0
+                                zoomBeforeGesture = 5.0
+                            default:
+                                zoomScale = 1.0
+                                zoomBeforeGesture = 1.0
                             }
                         }) {
                             Text(pill)
@@ -705,7 +719,34 @@ struct CameraScreenView: View {
             if let result = colorControls.outputImage { outputCI = result }
         }
 
-        if filterSpec.vignette > 0 || grain > 0 {
+        // 3. Authentic Film Grain Generator (CIRandomGenerator)
+        if grain > 0 {
+            if let noiseFilter = CIFilter(name: "CIRandomGenerator"),
+               let rawNoise = noiseFilter.outputImage {
+                let croppedNoise = rawNoise.cropped(to: outputCI.extent)
+                if let monoFilter = CIFilter(name: "CIColorMonochrome") {
+                    monoFilter.setValue(croppedNoise, forKey: kCIInputImageKey)
+                    monoFilter.setValue(CIColor(red: 0.5, green: 0.5, blue: 0.5), forKey: kCIInputColorKey)
+                    monoFilter.setValue(1.0, forKey: kCIInputIntensityKey)
+                    if let grayNoise = monoFilter.outputImage,
+                       let alphaFilter = CIFilter(name: "CIColorControls") {
+                        alphaFilter.setValue(grayNoise, forKey: kCIInputImageKey)
+                        alphaFilter.setValue(0.12 * grain, forKey: kCIInputContrastKey)
+                        if let subtleNoise = alphaFilter.outputImage,
+                           let blendFilter = CIFilter(name: "CISourceOverCompositing") {
+                            blendFilter.setValue(subtleNoise, forKey: kCIInputImageKey)
+                            blendFilter.setValue(outputCI, forKey: kCIInputBackgroundImageKey)
+                            if let blended = blendFilter.outputImage {
+                                outputCI = blended
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Lens Vignette
+        if filterSpec.vignette > 0 {
             if let vignetteFilter = CIFilter(name: "CIVignette") {
                 vignetteFilter.setValue(outputCI, forKey: kCIInputImageKey)
                 vignetteFilter.setValue(Double(filterSpec.vignette + 0.3), forKey: kCIInputRadiusKey)
@@ -737,29 +778,63 @@ struct CameraScreenView: View {
             UIGraphicsEndImageContext()
         }
 
-        // 2. Authentic Stamp Inner Aperture Aspect Ratio: 4.0 / 5.0 (0.80)
-        let targetRatio: CGFloat = 4.0 / 5.0
-        let width = normalizedImage.size.width
-        let height = normalizedImage.size.height
-        let currentRatio = width / height
+        let imgWidth = normalizedImage.size.width
+        let imgHeight = normalizedImage.size.height
+
+        // 2. Map Screen Mold Window (StampGeometry) to high-res photo coordinates
+        let screenSize = UIScreen.main.bounds.size
+        let sWidth = screenSize.width > 0 ? screenSize.width : 390.0
+        let sHeight = screenSize.height > 0 ? screenSize.height : 844.0
+
+        let moldWidth = sWidth * StampGeometry.moldWidthRatio
+        let moldHeight = moldWidth * StampGeometry.moldAspectRatio
+        let moldLeft = (sWidth - moldWidth) / 2.0
+        let moldTop = (sHeight - moldHeight) / 2.0
+
+        let apLeft = moldLeft + moldWidth * StampGeometry.innerLeftRatio
+        let apTop = moldTop + moldHeight * StampGeometry.innerTopRatio
+        let apRight = moldLeft + moldWidth * StampGeometry.innerRightRatio
+        let apBottom = moldTop + moldHeight * StampGeometry.innerBottomRatio
+        let apWidth = apRight - apLeft
+        let apHeight = apBottom - apTop
+
+        let normX = apLeft / sWidth
+        let normY = apTop / sHeight
+        let normW = apWidth / sWidth
+        let normH = apHeight / sHeight
 
         var cropRect: CGRect
-        if currentRatio > targetRatio {
-            let cropWidth = height * targetRatio
-            let originX = (width - cropWidth) / 2.0
-            cropRect = CGRect(x: originX, y: 0, width: cropWidth, height: height)
+        let screenRatio = sWidth / sHeight
+        let photoRatio = imgWidth / imgHeight
+
+        if abs(screenRatio - photoRatio) < 0.10 {
+            cropRect = CGRect(
+                x: normX * imgWidth,
+                y: normY * imgHeight,
+                width: normW * imgWidth,
+                height: normH * imgHeight
+            )
         } else {
-            let cropHeight = width / targetRatio
-            let originY = (height - cropHeight) / 2.0
-            cropRect = CGRect(x: 0, y: originY, width: width, height: cropHeight)
+            let targetRatio = StampGeometry.aspectRatio // 0.80
+            if photoRatio > targetRatio {
+                let cropW = imgHeight * targetRatio
+                let originX = (imgWidth - cropW) / 2.0
+                cropRect = CGRect(x: originX, y: 0, width: cropW, height: imgHeight)
+            } else {
+                let cropH = imgWidth / targetRatio
+                let originY = (imgHeight - cropH) / 2.0
+                cropRect = CGRect(x: 0, y: originY, width: imgWidth, height: cropH)
+            }
         }
 
         if let cgImage = normalizedImage.cgImage?.cropping(to: cropRect) {
             return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
         }
-
         return normalizedImage
         #else
+        return image
+        #endif
+    }
         return image
         #endif
     }

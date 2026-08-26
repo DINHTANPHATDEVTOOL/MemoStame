@@ -148,6 +148,7 @@ class StampRepository private constructor(
             val entity = StampEntity(
                 id = UUID.randomUUID().toString(),
                 originalImagePath = draft.originalImagePath,
+                croppedImagePath = draft.croppedImagePath,
                 stampImagePath = draft.renderedImagePath,
                 title = draft.title,
                 note = draft.note,

@@ -135,7 +135,7 @@ object StampRenderer {
             when (el.type) {
                 "badge" -> {
                     val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        textSize = (32f / 350f) * outputHeight * el.scale
+                        textSize = (10f / 350f) * outputHeight * el.scale
                         color = Color.WHITE
                         typeface = Typeface.DEFAULT_BOLD
                     }
@@ -153,7 +153,7 @@ object StampRenderer {
                 }
                 "sticker" -> {
                     val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        textSize = (72f / 350f) * outputHeight * el.scale
+                        textSize = (24f / 350f) * outputHeight * el.scale
                         color = colorWithAlpha
                         typeface = Typeface.DEFAULT_BOLD
                     }
@@ -163,7 +163,7 @@ object StampRenderer {
                 }
                 else -> {
                     val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        textSize = (44f / 350f) * outputHeight * el.scale
+                        textSize = (12f / 350f) * outputHeight * el.scale
                         color = colorWithAlpha
                         typeface = Typeface.DEFAULT_BOLD
                         setShadowLayer(4f, 2f, 2f, Color.argb(128, 0, 0, 0))
