@@ -497,7 +497,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
         )
         val json = gson.toJson(record)
         val endpoint = "${getBaseUrl()}/rest/v1/friend_requests?on_conflict=id"
-        val res = executeHttp(endpoint, method = "POST", jsonBody = json, prefer = "resolution=merge-duplicates")
+        val res = executeHttp(endpoint, method = "POST", jsonBody = json, prefer = "resolution=merge-duplicates", requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Unknown error"))
     }
 
@@ -533,7 +533,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
     suspend fun updateFriendRequestStatus(requestId: String, status: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(requestId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/friend_requests?id=eq.$encoded"
-        var res = executeHttp(endpoint, method = "PATCH", jsonBody = gson.toJson(mapOf("status" to status)))
+        var res = executeHttp(endpoint, method = "PATCH", jsonBody = gson.toJson(mapOf("status" to status)), requireUserAuth = true)
         if (!res.isSuccess) {
             val queryEndpoint = "${getBaseUrl()}/rest/v1/friend_requests?id=eq.$encoded&select=*"
             val getRes = executeHttp(queryEndpoint, method = "GET")
@@ -575,8 +575,8 @@ class SupabaseClient constructor(private val context: Context? = null) {
         )
         val endpointPlain = "${getBaseUrl()}/rest/v1/friends"
 
-        var res1 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map1))
-        var res2 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map2))
+        var res1 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map1), requireUserAuth = true)
+        var res2 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map2), requireUserAuth = true)
 
         Result.success(true)
     }
@@ -588,11 +588,11 @@ class SupabaseClient constructor(private val context: Context? = null) {
         val u2 = URLEncoder.encode(userId2.trim(), "UTF-8")
 
         // 1. Delete friends record by id
-        executeHttp("${getBaseUrl()}/rest/v1/friends?or=(id.eq.$id1,id.eq.$id2)", method = "DELETE")
+        executeHttp("${getBaseUrl()}/rest/v1/friends?or=(id.eq.$id1,id.eq.$id2)", method = "DELETE", requireUserAuth = true)
         // 2. Delete friends record by user pairs
-        executeHttp("${getBaseUrl()}/rest/v1/friends?or=(and(user_id_1.eq.$u1,user_id_2.eq.$u2),and(user_id_1.eq.$u2,user_id_2.eq.$u1))", method = "DELETE")
+        executeHttp("${getBaseUrl()}/rest/v1/friends?or=(and(user_id_1.eq.$u1,user_id_2.eq.$u2),and(user_id_1.eq.$u2,user_id_2.eq.$u1))", method = "DELETE", requireUserAuth = true)
         // 3. Delete any friend requests between these two users so they are not resurrected on next sync
-        executeHttp("${getBaseUrl()}/rest/v1/friend_requests?or=(and(sender_id.eq.$u1,recipient_id.eq.$u2),and(sender_id.eq.$u2,recipient_id.eq.$u1))", method = "DELETE")
+        executeHttp("${getBaseUrl()}/rest/v1/friend_requests?or=(and(sender_id.eq.$u1,recipient_id.eq.$u2),and(sender_id.eq.$u2,recipient_id.eq.$u1))", method = "DELETE", requireUserAuth = true)
 
         Result.success(true)
     }
@@ -641,7 +641,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
         )
         val json = gson.toJson(record)
         val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?on_conflict=id"
-        val res = executeHttp(endpoint, method = "POST", jsonBody = json, prefer = "resolution=merge-duplicates")
+        val res = executeHttp(endpoint, method = "POST", jsonBody = json, prefer = "resolution=merge-duplicates", requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Unknown error"))
     }
 
@@ -682,7 +682,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
         val sEncoded = URLEncoder.encode(senderId.trim(), "UTF-8")
         val rEncoded = URLEncoder.encode(recipientId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?sender_id=eq.$sEncoded&recipient_id=eq.$rEncoded&is_read=eq.false"
-        var res = executeHttp(endpoint, method = "PATCH", jsonBody = json)
+        var res = executeHttp(endpoint, method = "PATCH", jsonBody = json, requireUserAuth = true)
         if (!res.isSuccess) {
             val unreadMsgs = getMessagesForUser(recipientId).filter { it.senderId == senderId && !it.isRead }
             unreadMsgs.forEach { msg ->
@@ -702,7 +702,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
     suspend fun deleteDirectMessage(messageId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(messageId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?id=eq.$encoded"
-        executeHttp(endpoint, method = "DELETE")
+        executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
         Result.success(true)
     }
 
@@ -735,7 +735,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
 
         while (attempts < maxAttempts) {
             attempts++
-            val res = executeHttp(endpoint, method = "POST", jsonBody = gson.toJson(jsonMap), prefer = prefer)
+            val res = executeHttp(endpoint, method = "POST", jsonBody = gson.toJson(jsonMap), prefer = prefer, requireUserAuth = true)
             if (res.isSuccess) {
                 return res
             }
@@ -835,11 +835,11 @@ class SupabaseClient constructor(private val context: Context? = null) {
         if (post.authorName.isNotBlank()) jsonMap["author_name"] = post.authorName
         if (!post.authorAvatar.isNullOrBlank()) jsonMap["author_avatar"] = post.authorAvatar
         if (!post.caption.isNullOrBlank()) jsonMap["caption"] = post.caption
-        if (post.audienceType != null) jsonMap["audience_type"] = post.audienceType.name
+        jsonMap["audience_type"] = post.audienceType.name
         if (!post.circleId.isNullOrBlank()) jsonMap["circle_id"] = post.circleId
         if (!post.circleName.isNullOrBlank()) jsonMap["circle_name"] = post.circleName
         jsonMap["created_at"] = post.createdAt
-        if (post.type != null) jsonMap["type"] = post.type.name
+        jsonMap["type"] = post.type.name
         if (!post.location.isNullOrBlank()) jsonMap["location"] = post.location
 
         val endpoint = "${getBaseUrl()}/rest/v1/feed_posts?on_conflict=id"
@@ -887,7 +887,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
         val encPost = URLEncoder.encode(postId.trim(), "UTF-8")
         val encUser = URLEncoder.encode(userId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_reactions?post_id=eq.$encPost&user_id=eq.$encUser"
-        executeHttp(endpoint, method = "DELETE")
+        executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
         Result.success(true)
     }
 
@@ -935,21 +935,21 @@ class SupabaseClient constructor(private val context: Context? = null) {
     suspend fun deleteFeedPost(postId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val enc = URLEncoder.encode(postId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_posts?id=eq.$enc"
-        val res = executeHttp(endpoint, method = "DELETE")
+        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete feed post failed"))
     }
 
     suspend fun deleteFeedComment(commentId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val enc = URLEncoder.encode(commentId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_comments?id=eq.$enc"
-        val res = executeHttp(endpoint, method = "DELETE")
+        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete feed comment failed"))
     }
 
     suspend fun deleteFeedReply(replyId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val enc = URLEncoder.encode(replyId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_replies?id=eq.$enc"
-        val res = executeHttp(endpoint, method = "DELETE")
+        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete feed reply failed"))
     }
 
@@ -957,7 +957,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
         val encStamp = URLEncoder.encode(stampId.trim(), "UTF-8")
         val encOwner = URLEncoder.encode(ownerId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/stamps?id=eq.$encStamp&user_id=eq.$encOwner"
-        val res = executeHttp(endpoint, method = "DELETE")
+        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete stamp failed"))
     }
 }

@@ -11,6 +11,9 @@ import com.mipastudio.memostamp.core.notification.MemoStampNotificationManager
 import com.mipastudio.memostamp.data.local.MemoStampDatabase
 import com.mipastudio.memostamp.data.local.UserDao
 import com.mipastudio.memostamp.data.local.UserEntity
+import com.mipastudio.memostamp.data.remote.supabase.AndroidAuthSession
+import com.mipastudio.memostamp.data.remote.supabase.AndroidAuthSessionStore
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseAuthService
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,9 +29,9 @@ import java.io.FileOutputStream
 import java.util.UUID
 
 data class UserProfile(
-    val userId: String = "user_phat_main",
-    val username: String = "phat_memostamp",
-    val displayName: String = "Phat Nguyen",
+    val userId: String = "guest_visitor",
+    val username: String = "guest_visitor",
+    val displayName: String = "Khách du hành",
     val email: String = "",
     val avatarUrl: String = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
     val coverUrl: String = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200",
@@ -38,9 +41,9 @@ data class UserProfile(
     val totalStampsCount: Int = 0
 ) {
     fun sanitized(): UserProfile = copy(
-        userId = if (userId.isNullOrBlank()) "user_phat_main" else userId,
-        username = if (username.isNullOrBlank()) "phat_memostamp" else username,
-        displayName = if (displayName.isNullOrBlank()) "Phat Nguyen" else displayName,
+        userId = if (userId.isNullOrBlank()) "guest_visitor" else userId,
+        username = if (username.isNullOrBlank()) "guest_visitor" else username,
+        displayName = if (displayName.isNullOrBlank()) "Khách du hành" else displayName,
         email = email ?: "",
         avatarUrl = if (avatarUrl.isNullOrBlank()) "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300" else avatarUrl,
         coverUrl = if (coverUrl.isNullOrBlank()) "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200" else coverUrl,
@@ -72,21 +75,23 @@ class UserAuthRepository private constructor(private val context: Context) {
     private val db = MemoStampDatabase.getInstance(context)
     private val userDao: UserDao = db.userDao()
     private val supabaseClient = SupabaseClient.getInstance(context)
+    private val supabaseAuthService = SupabaseAuthService.getInstance()
+    private val sessionStore = AndroidAuthSessionStore(context)
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    private val _isLoggedIn = MutableStateFlow<Boolean>(prefs.getBoolean("is_logged_in", false))
+    private val _isLoggedIn = MutableStateFlow<Boolean>(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
-    private val _authUserId = MutableStateFlow<String?>(prefs.getString("auth_user_id", null))
+    private val _authUserId = MutableStateFlow<String?>(null)
     val authUserId: StateFlow<String?> = _authUserId.asStateFlow()
 
-    private val _accessToken = MutableStateFlow<String?>(prefs.getString("auth_access_token", null))
+    private val _accessToken = MutableStateFlow<String?>(null)
     val accessToken: StateFlow<String?> = _accessToken.asStateFlow()
 
-    private val _refreshToken = MutableStateFlow<String?>(prefs.getString("auth_refresh_token", null))
+    private val _refreshToken = MutableStateFlow<String?>(null)
     val refreshToken: StateFlow<String?> = _refreshToken.asStateFlow()
 
-    private val _currentUser = MutableStateFlow<UserProfile>(loadInitialUser())
+    private val _currentUser = MutableStateFlow<UserProfile>(createGuestUser())
     val currentUser: StateFlow<UserProfile> = _currentUser.asStateFlow()
 
     private val _allAccounts = MutableStateFlow<List<UserProfile>>(emptyList())
@@ -102,7 +107,46 @@ class UserAuthRepository private constructor(private val context: Context) {
     private val notifiedAcceptedRequestIds = mutableSetOf<String>()
 
     init {
-        supabaseClient.userAccessToken = _accessToken.value
+        val session = sessionStore.load()
+        if (session != null && !session.isExpired()) {
+            _authUserId.value = session.userId
+            _accessToken.value = session.accessToken
+            _refreshToken.value = session.refreshToken
+            supabaseClient.userAccessToken = session.accessToken
+            _isLoggedIn.value = true
+            _currentUser.value = loadInitialUser(session.userId)
+        } else if (session != null && session.refreshToken.isNotBlank()) {
+            coroutineScope.launch {
+                val refreshRes = supabaseAuthService.refreshSession(session.refreshToken)
+                if (refreshRes.isSuccess) {
+                    val refreshedSession = refreshRes.getOrThrow()
+                    sessionStore.save(refreshedSession)
+                    _authUserId.value = refreshedSession.userId
+                    _accessToken.value = refreshedSession.accessToken
+                    _refreshToken.value = refreshedSession.refreshToken
+                    supabaseClient.userAccessToken = refreshedSession.accessToken
+                    _isLoggedIn.value = true
+                    _currentUser.value = loadInitialUser(refreshedSession.userId)
+                } else {
+                    sessionStore.clear()
+                    _authUserId.value = null
+                    _accessToken.value = null
+                    _refreshToken.value = null
+                    supabaseClient.userAccessToken = null
+                    _isLoggedIn.value = false
+                    _currentUser.value = createGuestUser()
+                }
+            }
+        } else {
+            sessionStore.clear()
+            _authUserId.value = null
+            _accessToken.value = null
+            _refreshToken.value = null
+            supabaseClient.userAccessToken = null
+            _isLoggedIn.value = false
+            _currentUser.value = createGuestUser()
+        }
+
         _friendIds.value = loadFriendIds(_currentUser.value.userId)
         val initialReqs = loadFriendRequests()
         _friendRequests.value = initialReqs
@@ -110,7 +154,6 @@ class UserAuthRepository private constructor(private val context: Context) {
         notifiedAcceptedRequestIds.addAll(initialReqs.filter { it.status == "ACCEPTED" }.map { it.id })
         coroutineScope.launch {
             cleanUpOldMockUsersIfNeeded()
-            ensurePrimaryUserInDb()
             refreshAccountsList()
             syncWithSupabaseLoop()
         }
@@ -126,8 +169,8 @@ class UserAuthRepository private constructor(private val context: Context) {
         try {
             val user = _currentUser.value
             val currentUid = user.userId
-            if (currentUid.isNotBlank()) {
-                // 1. Ensure current profile is always synced to Supabase
+            if (currentUid.isNotBlank() && _isLoggedIn.value && !currentUid.startsWith("guest_")) {
+                // 1. Ensure current profile is synced to Supabase
                 supabaseClient.upsertProfile(user)
 
                 // 2. Sync all public accounts from Supabase for discovery
@@ -146,7 +189,6 @@ class UserAuthRepository private constructor(private val context: Context) {
                 saveFriendRequests(_friendRequests.value, syncToCloud = false)
 
                 if (validCloudRequests.isNotEmpty()) {
-                    // Check for new incoming pending friend requests to notify
                     val newIncomingRequests = validCloudRequests.filter { req ->
                         req.recipientId == currentUid &&
                         req.status.equals("PENDING", ignoreCase = true) &&
@@ -172,7 +214,6 @@ class UserAuthRepository private constructor(private val context: Context) {
                         )
                     }
 
-                    // Check for accepted friend requests to notify sender
                     val newlyAcceptedRequests = validCloudRequests.filter { req ->
                         req.senderId == currentUid &&
                         req.status.equals("ACCEPTED", ignoreCase = true) &&
@@ -269,7 +310,7 @@ class UserAuthRepository private constructor(private val context: Context) {
     private suspend fun syncWithSupabaseLoop() {
         while (coroutineScope.isActive) {
             syncWithSupabaseOnce()
-            delay(3500) // Poll Supabase every 3.5 seconds for instant real-time sync
+            delay(3500)
         }
     }
 
@@ -319,9 +360,6 @@ class UserAuthRepository private constructor(private val context: Context) {
         return _friendRequests.value.find { it.senderId == senderUserId && it.recipientId == currentUid && it.status == "PENDING" }
     }
 
-    /**
-     * Gửi lời mời kết bạn đến người dùng khác (Online Supabase + Local)
-     */
     fun sendFriendRequest(targetUser: UserProfile): Result<Unit> {
         val current = _currentUser.value
         if (targetUser.userId == current.userId || targetUser.username.equals(current.username, ignoreCase = true)) {
@@ -334,7 +372,6 @@ class UserAuthRepository private constructor(private val context: Context) {
             return Result.failure(IllegalArgumentException("Đã gửi lời mời kết bạn trước đó, đang chờ đối phương chấp nhận"))
         }
 
-        // Kiểm tra xem đối phương có từng gửi lời mời cho mình chưa -> Nếu có thì chấp nhận luôn
         val incoming = getIncomingRequestFrom(targetUser.userId)
         if (incoming != null) {
             return acceptFriendRequest(incoming.id)
@@ -357,7 +394,6 @@ class UserAuthRepository private constructor(private val context: Context) {
         val updated = _friendRequests.value.filterNot { it.senderId == current.userId && it.recipientId == targetUser.userId } + newReq
         saveFriendRequests(updated)
 
-        // Đồng bộ lên Supabase Cloud
         coroutineScope.launch {
             try {
                 supabaseClient.sendFriendRequest(newReq)
@@ -369,9 +405,6 @@ class UserAuthRepository private constructor(private val context: Context) {
         return Result.success(Unit)
     }
 
-    /**
-     * Chấp nhận lời mời kết bạn (Online Supabase + Local)
-     */
     fun acceptFriendRequest(requestId: String): Result<Unit> {
         val current = _currentUser.value
         val req = _friendRequests.value.find { it.id == requestId }
@@ -382,35 +415,29 @@ class UserAuthRepository private constructor(private val context: Context) {
         val targetDisplayName = if (req.recipientId == current.userId) req.senderDisplayName else req.recipientDisplayName
         val targetAvatar = if (req.recipientId == current.userId) req.senderAvatar else req.recipientAvatar
 
-        // 1. Thêm vào danh sách bạn bè của người dùng hiện tại
         val myFriends = _friendIds.value.toMutableSet()
         myFriends.add(targetUserId)
         _friendIds.value = myFriends
         friendsPrefs.edit().putStringSet(getFriendsPrefKey(current.userId), myFriends).apply()
 
-        // Cập nhật cho người gửi trong bộ nhớ cục bộ
         val theirFriends = loadFriendIds(targetUserId).toMutableSet()
         theirFriends.add(current.userId)
         friendsPrefs.edit().putStringSet(getFriendsPrefKey(targetUserId), theirFriends).apply()
 
-        // 2. Đảm bảo đối phương có mặt trong hồ sơ người dùng cục bộ & danh sách tài khoản
         coroutineScope.launch {
             ensureUserProfileExists(targetUserId, targetUsername, targetDisplayName, targetAvatar)
         }
 
-        // 3. Đánh dấu request là ACCEPTED
         val updatedRequests = _friendRequests.value.map {
             if (it.id == requestId) it.copy(status = "ACCEPTED") else it
         }
         _friendRequests.value = updatedRequests
         saveFriendRequests(updatedRequests, syncToCloud = false)
 
-        // 4. Đồng bộ tức thì lên Supabase Cloud
         coroutineScope.launch {
             try {
                 supabaseClient.updateFriendRequestStatus(requestId, "ACCEPTED")
                 supabaseClient.addFriendship(current.userId, targetUserId)
-                // Đảm bảo 2 bên nhận được ngay
                 syncWithSupabaseOnce()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -420,9 +447,6 @@ class UserAuthRepository private constructor(private val context: Context) {
         return Result.success(Unit)
     }
 
-    /**
-     * Từ chối lời mời kết bạn
-     */
     fun declineFriendRequest(requestId: String): Result<Unit> {
         val updatedRequests = _friendRequests.value.filterNot { it.id == requestId }
         saveFriendRequests(updatedRequests, syncToCloud = false)
@@ -439,49 +463,10 @@ class UserAuthRepository private constructor(private val context: Context) {
         return Result.success(Unit)
     }
 
-    /**
-     * Thu hồi lời mời kết bạn đã gửi
-     */
     fun cancelFriendRequest(targetUserId: String): Result<Unit> {
         val currentUid = _currentUser.value.userId
-        val targetReq = _friendRequests.value.find { it.senderId == currentUid && it.recipientId == targetUserId }
         val updatedRequests = _friendRequests.value.filterNot {
             it.senderId == currentUid && it.recipientId == targetUserId && it.status == "PENDING"
-        }
-        saveFriendRequests(updatedRequests, syncToCloud = false)
-
-        if (targetReq != null) {
-            coroutineScope.launch {
-                try {
-                    supabaseClient.updateFriendRequestStatus(targetReq.id, "CANCELLED")
-                    syncWithSupabaseOnce()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
-        return Result.success(Unit)
-    }
-
-    /**
-     * Hủy kết bạn (Unfriend)
-     */
-    fun unfriend(targetUserId: String): Result<Unit> {
-        val currentUid = _currentUser.value.userId
-        val myFriends = _friendIds.value.toMutableSet()
-        myFriends.remove(targetUserId)
-        _friendIds.value = myFriends
-        friendsPrefs.edit().putStringSet(getFriendsPrefKey(currentUid), myFriends).apply()
-
-        // Đồng thời hủy từ phía bên kia
-        val theirFriends = loadFriendIds(targetUserId).toMutableSet()
-        theirFriends.remove(currentUid)
-        friendsPrefs.edit().putStringSet(getFriendsPrefKey(targetUserId), theirFriends).apply()
-
-        val updatedRequests = _friendRequests.value.filterNot {
-            (it.senderId == currentUid && it.recipientId == targetUserId) ||
-            (it.senderId == targetUserId && it.recipientId == currentUid)
         }
         saveFriendRequests(updatedRequests, syncToCloud = false)
 
@@ -497,13 +482,35 @@ class UserAuthRepository private constructor(private val context: Context) {
         return Result.success(Unit)
     }
 
+    fun unfriend(targetUserId: String): Result<Unit> {
+        val currentUid = _currentUser.value.userId
+        val myFriends = _friendIds.value.toMutableSet()
+        myFriends.remove(targetUserId)
+        _friendIds.value = myFriends
+        friendsPrefs.edit().putStringSet(getFriendsPrefKey(currentUid), myFriends).apply()
+
+        coroutineScope.launch {
+            try {
+                supabaseClient.removeFriendship(currentUid, targetUserId)
+                syncWithSupabaseOnce()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return Result.success(Unit)
+    }
+
     suspend fun searchUsers(query: String): List<UserProfile> = withContext(Dispatchers.IO) {
         val cleanQuery = query.trim().lowercase().removePrefix("@")
         if (cleanQuery.isBlank()) return@withContext emptyList()
 
-        // Tìm trên Supabase Cloud trực tiếp
         val cloudResults = try {
-            supabaseClient.searchProfiles(cleanQuery)
+            val profiles = supabaseClient.getAllProfiles()
+            profiles.filter {
+                it.username.lowercase().contains(cleanQuery) ||
+                it.displayName.lowercase().contains(cleanQuery) ||
+                it.userId.lowercase().contains(cleanQuery)
+            }
         } catch (e: Exception) {
             emptyList()
         }
@@ -520,28 +527,30 @@ class UserAuthRepository private constructor(private val context: Context) {
     }
 
     fun isUserLoggedIn(): Boolean {
-        return prefs.getBoolean("is_logged_in", false)
+        return _isLoggedIn.value && !_currentUser.value.userId.startsWith("guest_")
     }
 
-    private fun loadInitialUser(): UserProfile {
+    private fun loadInitialUser(authUid: String? = null): UserProfile {
+        val targetUid = authUid ?: _authUserId.value
+        if (targetUid.isNullOrBlank() || !_isLoggedIn.value) {
+            return createGuestUser()
+        }
         val json = prefs.getString("user_profile_json", null)
         if (!json.isNullOrBlank()) {
             try {
                 val parsed = gson.fromJson(json, UserProfile::class.java)
-                if (parsed != null) {
+                if (parsed != null && parsed.userId == targetUid) {
                     return parsed.sanitized()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-
-        // Primary user profile
         return UserProfile(
-            userId = "user_phat_main",
-            username = "phat_memostamp",
-            displayName = "Phat Nguyen",
-            email = "phatdinh265@gmail.com",
+            userId = targetUid,
+            username = "user_${targetUid.take(6)}",
+            displayName = "Người dùng MemoStamp",
+            email = "",
             avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
             coverUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200",
             bio = "Sưu tầm ký ức qua từng con tem bưu chính 📮",
@@ -551,42 +560,25 @@ class UserAuthRepository private constructor(private val context: Context) {
         ).sanitized()
     }
 
+    fun createGuestUser(): UserProfile {
+        return UserProfile(
+            userId = "guest_visitor",
+            username = "guest_visitor",
+            displayName = "Khách du hành",
+            email = "",
+            avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
+            coverUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200",
+            bio = "Chưa đăng nhập tài khoản MemoStamp",
+            city = "Việt Nam",
+            isCloudSynced = false,
+            totalStampsCount = 0
+        ).sanitized()
+    }
+
     private suspend fun cleanUpOldMockUsersIfNeeded() = withContext(Dispatchers.IO) {
         val mockUids = listOf("user_heritage_vietnam", "user_minh_dalat", "user_linh_seasun", "user_huy_wanderer")
         for (uid in mockUids) {
             userDao.deleteUserByUid(uid)
-        }
-    }
-
-    private fun hashPassword(password: String): String {
-        if (password.isBlank()) return ""
-        return try {
-            val digest = java.security.MessageDigest.getInstance("SHA-256")
-            val hash = digest.digest(password.toByteArray(Charsets.UTF_8))
-            hash.joinToString("") { "%02x".format(it) }
-        } catch (e: Exception) {
-            throw IllegalStateException("Password hashing failed", e)
-        }
-    }
-
-    private suspend fun ensurePrimaryUserInDb() = withContext(Dispatchers.IO) {
-        val user = _currentUser.value
-        val existing = userDao.getUserByUid(user.userId)
-        if (existing == null) {
-            userDao.insertUser(
-                UserEntity(
-                    uid = user.userId,
-                    username = user.username,
-                    displayName = user.displayName,
-                    email = user.email,
-                    passwordHash = hashPassword("123456"),
-                    avatarUrl = user.avatarUrl,
-                    coverUrl = user.coverUrl,
-                    bio = user.bio,
-                    city = user.city,
-                    totalStamps = user.totalStampsCount
-                )
-            )
         }
     }
 
@@ -608,9 +600,6 @@ class UserAuthRepository private constructor(private val context: Context) {
         _allAccounts.value = list
     }
 
-    /**
-     * Đăng ký tài khoản với ID duy nhất (Đồng bộ Cloud Supabase + Local)
-     */
     suspend fun register(
         displayName: String,
         username: String,
@@ -624,7 +613,6 @@ class UserAuthRepository private constructor(private val context: Context) {
         val cleanUsername = username.trim().lowercase().removePrefix("@")
         val cleanEmail = email.trim().lowercase()
 
-        // Kiểm tra định dạng ID
         if (cleanUsername.length < 3 || cleanUsername.length > 24) {
             return@withContext Result.failure(IllegalArgumentException("ID người dùng phải từ 3 đến 24 ký tự"))
         }
@@ -638,13 +626,10 @@ class UserAuthRepository private constructor(private val context: Context) {
             return@withContext Result.failure(IllegalArgumentException("Mật khẩu phải từ 4 ký tự"))
         }
 
-        // 1. Kiểm tra tính DUY NHẤT trên Local DB
-        val existingUserLocal = userDao.getUserByUsernameOrEmail(cleanUsername)
-        if (existingUserLocal != null) {
-            return@withContext Result.failure(IllegalArgumentException("ID @$cleanUsername đã có người sử dụng. Vui lòng chọn ID khác!"))
+        if (cleanEmail.isBlank()) {
+            return@withContext Result.failure(IllegalArgumentException("Vui lòng nhập địa chỉ email hợp lệ"))
         }
 
-        // 2. Kiểm tra tính DUY NHẤT trên Supabase Cloud
         try {
             val cloudUser = supabaseClient.getProfileByUsername(cleanUsername)
             if (cloudUser != null) {
@@ -654,24 +639,31 @@ class UserAuthRepository private constructor(private val context: Context) {
             e.printStackTrace()
         }
 
-        if (cleanEmail.isNotBlank()) {
-            val existingEmail = userDao.getUserByUsernameOrEmail(cleanEmail)
-            if (existingEmail != null) {
-                return@withContext Result.failure(IllegalArgumentException("Email $cleanEmail đã được sử dụng."))
-            }
+        val authResult = supabaseAuthService.signUp(cleanEmail, password)
+        if (authResult.isFailure) {
+            val errMsg = authResult.exceptionOrNull()?.message ?: "Đăng ký không thành công"
+            return@withContext Result.failure(IllegalArgumentException(errMsg))
         }
 
-        val newUid = "user_" + UUID.randomUUID().toString().take(8)
+        val session = authResult.getOrThrow()
+        val realUid = session.userId
+
+        sessionStore.save(session)
+        _authUserId.value = realUid
+        _accessToken.value = session.accessToken
+        _refreshToken.value = session.refreshToken
+        supabaseClient.userAccessToken = session.accessToken
+        _isLoggedIn.value = true
+
         val finalAvatar = avatarUrl ?: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
         val finalCover = coverUrl ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200"
-        val hashedPwd = hashPassword(password)
 
         val entity = UserEntity(
-            uid = newUid,
+            uid = realUid,
             username = cleanUsername,
             displayName = displayName.ifBlank { cleanUsername },
             email = cleanEmail,
-            passwordHash = hashedPwd,
+            passwordHash = "",
             avatarUrl = finalAvatar,
             coverUrl = finalCover,
             bio = bio,
@@ -683,7 +675,7 @@ class UserAuthRepository private constructor(private val context: Context) {
         userDao.insertUser(entity)
 
         val profile = UserProfile(
-            userId = newUid,
+            userId = realUid,
             username = cleanUsername,
             displayName = entity.displayName,
             email = cleanEmail,
@@ -694,7 +686,6 @@ class UserAuthRepository private constructor(private val context: Context) {
             totalStampsCount = 0
         ).sanitized()
 
-        // Lưu profile lên Supabase Cloud (không gửi password hash)
         try {
             supabaseClient.upsertProfile(profile)
         } catch (e: Exception) {
@@ -711,39 +702,75 @@ class UserAuthRepository private constructor(private val context: Context) {
         password: String
     ): Result<UserProfile> = withContext(Dispatchers.IO) {
         val cleanIdentifier = identifier.trim().lowercase().removePrefix("@")
-        
-        // 1. Kiểm tra Local DB
-        val user = userDao.getUserByUsernameOrEmail(cleanIdentifier)
-        if (user == null) {
-            return@withContext Result.failure(IllegalArgumentException("Tài khoản \"$identifier\" chưa được lưu trên thiết bị. Vui lòng chọn Đăng Ký Tài Khoản mới."))
+        if (cleanIdentifier.isBlank() || password.isBlank()) {
+            return@withContext Result.failure(IllegalArgumentException("Vui lòng nhập tên đăng nhập/email và mật khẩu"))
         }
 
-        // 2. Kiểm tra mật khẩu (Bắt buộc passwordHash phải có dữ liệu và khớp)
-        val inputHashed = hashPassword(password)
-        if (user.passwordHash.isBlank() || (user.passwordHash != inputHashed && user.passwordHash != password)) {
-            return@withContext Result.failure(IllegalArgumentException("Mật khẩu không chính xác"))
-        }
-
-        // Tự động chuyển đổi mật khẩu cũ sang passwordHash mới nếu đang là plaintext
-        if (user.passwordHash == password) {
-            try {
-                userDao.insertUser(user.copy(passwordHash = inputHashed, updatedAt = System.currentTimeMillis()))
-            } catch (e: Exception) {
-                e.printStackTrace()
+        val emailToUse: String = if (cleanIdentifier.contains("@")) {
+            cleanIdentifier
+        } else {
+            val localUser = userDao.getUserByUsernameOrEmail(cleanIdentifier)
+            if (localUser != null && localUser.email.isNotBlank()) {
+                localUser.email
+            } else {
+                val cloudProfile = supabaseClient.getProfileByUsername(cleanIdentifier)
+                if (cloudProfile != null && !cloudProfile.email.isNullOrBlank()) {
+                    cloudProfile.email
+                } else {
+                    "${cleanIdentifier}@memostamp.app"
+                }
             }
         }
 
+        val authResult = supabaseAuthService.signIn(emailToUse, password)
+        if (authResult.isFailure) {
+            val errMsg = authResult.exceptionOrNull()?.message ?: "Tên đăng nhập hoặc mật khẩu không chính xác"
+            return@withContext Result.failure(IllegalArgumentException(errMsg))
+        }
+
+        val session = authResult.getOrThrow()
+        val realUid = session.userId
+
+        sessionStore.save(session)
+        _authUserId.value = realUid
+        _accessToken.value = session.accessToken
+        _refreshToken.value = session.refreshToken
+        supabaseClient.userAccessToken = session.accessToken
+        _isLoggedIn.value = true
+
+        var cloudProfileRecord = supabaseClient.getProfileById(realUid)
+        if (cloudProfileRecord == null && !cleanIdentifier.contains("@")) {
+            cloudProfileRecord = supabaseClient.getProfileByUsername(cleanIdentifier)
+        }
+
+        val localUser = userDao.getUserByUid(realUid)
         val profile = UserProfile(
-            userId = user.uid,
-            username = user.username,
-            displayName = user.displayName,
-            email = user.email,
-            avatarUrl = user.avatarUrl ?: "https://i.pravatar.cc/150?u=${user.uid}",
-            coverUrl = user.coverUrl ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200",
-            bio = user.bio ?: "Người yêu dấu tem & bưu thiếp 📮",
-            city = user.city ?: "Đà Lạt",
-            totalStampsCount = user.totalStamps
+            userId = realUid,
+            username = cloudProfileRecord?.username ?: localUser?.username ?: cleanIdentifier,
+            displayName = cloudProfileRecord?.displayName ?: localUser?.displayName ?: cleanIdentifier,
+            email = session.email.ifBlank { localUser?.email ?: emailToUse },
+            avatarUrl = cloudProfileRecord?.avatarUrl ?: localUser?.avatarUrl ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
+            coverUrl = cloudProfileRecord?.coverUrl ?: localUser?.coverUrl ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200",
+            bio = cloudProfileRecord?.bio ?: localUser?.bio ?: "Sưu tầm ký ức qua từng con tem bưu chính 📮",
+            city = cloudProfileRecord?.city ?: localUser?.city ?: "Đà Lạt",
+            totalStampsCount = localUser?.totalStamps ?: 0
         ).sanitized()
+
+        val entity = UserEntity(
+            uid = realUid,
+            username = profile.username,
+            displayName = profile.displayName,
+            email = profile.email,
+            passwordHash = "",
+            avatarUrl = profile.avatarUrl,
+            coverUrl = profile.coverUrl,
+            bio = profile.bio,
+            city = profile.city,
+            totalStamps = profile.totalStampsCount,
+            createdAt = localUser?.createdAt ?: System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        userDao.insertUser(entity)
 
         saveUserProfile(profile)
         Result.success(profile)
@@ -792,10 +819,12 @@ class UserAuthRepository private constructor(private val context: Context) {
                 )
             }
             refreshAccountsList()
-            try {
-                supabaseClient.upsertProfile(profile)
-            } catch (e: Exception) {
-                e.printStackTrace()
+            if (profile.isCloudSynced && _accessToken.value != null && !profile.userId.startsWith("guest_")) {
+                try {
+                    supabaseClient.upsertProfile(profile)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
@@ -853,21 +882,26 @@ class UserAuthRepository private constructor(private val context: Context) {
     }
 
     fun logout() {
+        val currentToken = _accessToken.value
+        if (!currentToken.isNullOrBlank()) {
+            coroutineScope.launch {
+                supabaseAuthService.signOut(currentToken)
+            }
+        }
+
+        sessionStore.clear()
         prefs.edit().putBoolean("is_logged_in", false).remove("user_profile_json").apply()
+
         _isLoggedIn.value = false
-        val randomId = "guest_" + UUID.randomUUID().toString().take(6)
-        val guest = UserProfile(
-            userId = randomId,
-            username = "guest_$randomId",
-            displayName = "Khách du hành",
-            email = "",
-            avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300",
-            bio = "Chưa đăng nhập tài khoản MemoStamp",
-            city = "Việt Nam",
-            isCloudSynced = false,
-            totalStampsCount = 0
-        ).sanitized()
-        _currentUser.value = guest
+        _authUserId.value = null
+        _accessToken.value = null
+        _refreshToken.value = null
+        supabaseClient.userAccessToken = null
+
+        _friendIds.value = emptySet()
+        _friendRequests.value = emptyList()
+
+        _currentUser.value = createGuestUser()
     }
 
     companion object {
@@ -883,4 +917,3 @@ class UserAuthRepository private constructor(private val context: Context) {
         }
     }
 }
-
