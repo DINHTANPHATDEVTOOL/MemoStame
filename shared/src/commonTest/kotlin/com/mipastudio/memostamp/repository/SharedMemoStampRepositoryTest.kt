@@ -273,8 +273,8 @@ class SharedMemoStampRepositoryTest {
             status = "PENDING",
             createdAt = 1000L,
             senderId = "",
-            recipientId = "",
-            recipientUsername = ""
+            recipientId = "user_me",
+            recipientUsername = "me"
         )
         repo.restoreFriendRequests(listOf(legacyReq))
 
@@ -342,6 +342,7 @@ class SharedMemoStampRepositoryTest {
         assertTrue(repo.stamps.value.isNotEmpty())
         assertTrue(repo.friends.value.isNotEmpty())
         assertTrue(repo.friendRequests.value.isNotEmpty())
+        assertTrue(repo.circles.value.isNotEmpty())
 
         repo.resetUserScopedState()
 
@@ -350,5 +351,77 @@ class SharedMemoStampRepositoryTest {
         assertTrue(repo.friendRequests.value.isEmpty())
         assertTrue(repo.tradeRequests.value.isEmpty())
         assertTrue(repo.feedPosts.value.isEmpty())
+        assertTrue(repo.circles.value.isEmpty())
+        assertTrue(repo.badges.value.all { !it.unlocked })
+    }
+
+    @Test
+    fun testStrictBlankRecipientDoesNotQualifyAsIncoming() {
+        val repo = SharedMemoStampRepository()
+        repo.setCurrentUser(
+            com.mipastudio.memostamp.domain.model.UserProfile(
+                uid = "user_alice",
+                username = "alice",
+                displayName = "Alice",
+                avatarUrl = null,
+                bio = "",
+                stampsCreatedCount = 0,
+                stampsCollectedCount = 0,
+                placesVisitedCount = 0
+            )
+        )
+
+        val unassignedFriendReq = com.mipastudio.memostamp.domain.model.FriendRequestItem(
+            id = "freq_blank_recip",
+            senderName = "Bob",
+            senderUsername = "bob",
+            senderAvatar = "",
+            status = "PENDING",
+            createdAt = 1000L,
+            senderId = "user_bob",
+            recipientId = "",
+            recipientUsername = ""
+        )
+        val unassignedTradeReq = com.mipastudio.memostamp.domain.model.TradeRequest(
+            id = "trade_blank_recip",
+            senderName = "Bob",
+            senderAvatar = "",
+            stampTitle = "Stamp",
+            stampUrl = "",
+            status = "PENDING",
+            createdAt = 1000L,
+            senderId = "user_bob",
+            recipientId = ""
+        )
+
+        repo.restoreFriendRequests(listOf(unassignedFriendReq))
+        repo.restoreTradeRequests(listOf(unassignedTradeReq))
+
+        // Since recipientId is blank and current user is "user_alice", actions must be denied
+        assertFalse(repo.acceptFriendRequest(unassignedFriendReq.id))
+        assertFalse(repo.rejectFriendRequest(unassignedFriendReq.id))
+        assertFalse(repo.acceptTrade(unassignedTradeReq.id))
+        assertFalse(repo.rejectTrade(unassignedTradeReq.id))
+    }
+
+    @Test
+    fun testLegacyV1MigrationIdentityIsolationGuards() {
+        val aliceUid = "user_alice"
+        val bobUid = "user_bob"
+
+        // Helper function mimicking IOSLocalPersistenceStore migration guard
+        fun shouldMigrateLegacy(legacyUserUid: String?, targetUserId: String): Boolean {
+            return legacyUserUid != null && legacyUserUid == targetUserId
+        }
+
+        // 1. Legacy V1 A ("user_alice") must NOT migrate to B ("user_bob")
+        assertFalse(shouldMigrateLegacy("user_alice", bobUid))
+
+        // 2. Blank legacy UID must NOT migrate to arbitrary B ("user_bob")
+        assertFalse(shouldMigrateLegacy("", bobUid))
+        assertFalse(shouldMigrateLegacy(null, bobUid))
+
+        // 3. Matching legacy UID MUST migrate
+        assertTrue(shouldMigrateLegacy(aliceUid, aliceUid))
     }
 }

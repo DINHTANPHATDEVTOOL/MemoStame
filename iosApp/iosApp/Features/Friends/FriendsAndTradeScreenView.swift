@@ -30,7 +30,7 @@ struct FriendsAndTradeScreenView: View {
 
     var incomingFriendRequests: [FriendRequestItem] {
         allFriendRequests.filter { req in
-            req.recipientId.isEmpty || req.recipientId == currentUid
+            req.recipientId == currentUid
         }
     }
 
@@ -52,7 +52,7 @@ struct FriendsAndTradeScreenView: View {
 
     var incomingTradeRequests: [TradeRequest] {
         allTradeRequests.filter { trade in
-            trade.recipientId.isEmpty || trade.recipientId == currentUid
+            trade.recipientId == currentUid
         }
     }
 

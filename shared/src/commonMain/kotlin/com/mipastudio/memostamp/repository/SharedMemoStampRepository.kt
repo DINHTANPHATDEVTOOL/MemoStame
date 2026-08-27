@@ -40,6 +40,13 @@ class SharedMemoStampRepository {
         _friendRequests.value = emptyList()
         _tradeRequests.value = emptyList()
         _feedPosts.value = emptyList()
+        _circles.value = emptyList()
+        _badges.value = listOf(
+            PassportBadge("Explorer", "Visited 5+ countries & cities", "plane", false),
+            PassportBadge("Coffee Lover", "Created 10+ coffee memory stamps", "coffee", false),
+            PassportBadge("Master Crafter", "Customized 15+ die-cut stamps", "palette", false),
+            PassportBadge("Trade King", "Completed 5+ stamp exchanges", "crown", false)
+        )
     }
 
     private val _circles = MutableStateFlow<List<Circle>>(emptyList())
@@ -377,21 +384,17 @@ class SharedMemoStampRepository {
     }
 
     fun restoreFriendRequests(requests: List<FriendRequestItem>) {
-        val me = _currentUser.value
         _friendRequests.value = requests.map { r ->
             r.copy(
-                senderId = if (r.senderId.isBlank()) "user_${r.senderUsername.ifBlank { "legacy_sender" }}" else r.senderId,
-                recipientId = if (r.recipientId.isBlank()) me.uid else r.recipientId
+                senderId = if (r.senderId.isBlank()) "user_${r.senderUsername.ifBlank { "legacy_sender" }}" else r.senderId
             )
         }
     }
 
     fun restoreTradeRequests(trades: List<TradeRequest>) {
-        val me = _currentUser.value
         _tradeRequests.value = trades.map { t ->
             t.copy(
-                senderId = if (t.senderId.isBlank()) "user_legacy_sender" else t.senderId,
-                recipientId = if (t.recipientId.isBlank()) me.uid else t.recipientId
+                senderId = if (t.senderId.isBlank()) "user_legacy_sender" else t.senderId
             )
         }
     }
