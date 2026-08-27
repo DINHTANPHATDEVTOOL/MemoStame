@@ -92,7 +92,13 @@ class IOSLocalPersistenceStore {
     func sanitizeUserId(_ userId: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_-"))
         let clean = userId.lowercased().components(separatedBy: allowed.inverted).joined(separator: "_")
-        return clean.isEmpty ? "unknown_user" : clean
+        var hash: UInt32 = 2166136261
+        for byte in userId.utf8 {
+            hash = (hash ^ UInt32(byte)).multipliedReportingOverflow(by: 16777619).partialValue
+        }
+        let hexHash = String(format: "%08x", hash)
+        let base = clean.isEmpty ? "user" : clean
+        return "\(base)_\(hexHash)"
     }
 
     func storageUrl(userId: String) -> URL {

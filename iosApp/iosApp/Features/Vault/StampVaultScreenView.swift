@@ -605,6 +605,10 @@ struct CreateAlbumSheetView: View {
 
     let emojis = ["🏞️", "☕", "✈️", "📸", "💖", "🌲", "🎨", "👑", "🌸", "🍔"]
 
+    private var currentUid: String {
+        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+    }
+
     var body: some View {
         NavigationView {
             ScrollView {
