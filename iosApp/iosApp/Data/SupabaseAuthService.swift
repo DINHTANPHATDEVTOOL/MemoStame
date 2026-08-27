@@ -168,7 +168,12 @@ class SupabaseAuthService {
             return
         }
 
-        let token = activeSession?.accessToken ?? anonKey
+        guard let token = activeSession?.accessToken,
+              !token.isEmpty else {
+            completion(false)
+            return
+        }
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(anonKey, forHTTPHeaderField: "apikey")

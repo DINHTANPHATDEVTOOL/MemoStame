@@ -1,5 +1,6 @@
 package com.mipastudio.memostamp.repository
 
+import com.mipastudio.memostamp.getCurrentEpochMillis
 import com.mipastudio.memostamp.domain.model.AuthSession
 import com.mipastudio.memostamp.domain.model.UserProfile
 import kotlin.test.Test
@@ -24,7 +25,7 @@ class FakeSupabaseAuthService {
         val session = AuthSession(
             accessToken = "access_token_$uid",
             refreshToken = "refresh_token_$uid",
-            expiresAt = (System.currentTimeMillis() / 1000) + 3600,
+            expiresAt = (getCurrentEpochMillis() / 1000) + 3600,
             userId = uid,
             email = email
         )
@@ -41,7 +42,7 @@ class FakeSupabaseAuthService {
         val session = AuthSession(
             accessToken = "access_token_$uid",
             refreshToken = "refresh_token_$uid",
-            expiresAt = (System.currentTimeMillis() / 1000) + 3600,
+            expiresAt = (getCurrentEpochMillis() / 1000) + 3600,
             userId = uid,
             email = email
         )
@@ -55,7 +56,7 @@ class FakeSupabaseAuthService {
 
         val newSession = oldSession.copy(
             accessToken = "new_access_token_" + oldSession.userId,
-            expiresAt = (System.currentTimeMillis() / 1000) + 3600
+            expiresAt = (getCurrentEpochMillis() / 1000) + 3600
         )
         activeSessions.remove(oldSession.accessToken)
         activeSessions[newSession.accessToken] = newSession
@@ -82,7 +83,7 @@ class AuthSessionAndIsolationTest {
         assertNotNull(session)
         assertTrue(session.userId.startsWith("c138b1d9-7608-4171-8a9d-"))
         assertEquals("alice@memostamp.com", session.email)
-        val now = System.currentTimeMillis() / 1000
+        val now = getCurrentEpochMillis() / 1000
         assertFalse(session.isExpired(now))
     }
 
@@ -121,7 +122,7 @@ class AuthSessionAndIsolationTest {
         val authService = FakeSupabaseAuthService()
         val session = authService.signUp("eve@memostamp.com", "pass123456").getOrThrow()
 
-        val now = System.currentTimeMillis() / 1000
+        val now = getCurrentEpochMillis() / 1000
         // Create an expired session object
         val expiredSession = session.copy(expiresAt = now - 100)
         assertTrue(expiredSession.isExpired(now))

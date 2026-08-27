@@ -298,11 +298,16 @@ class SupabaseClient constructor(private val context: Context? = null) {
         endpoint: String,
         method: String = "GET",
         jsonBody: String? = null,
-        prefer: String? = null
+        prefer: String? = null,
+        requireUserAuth: Boolean = false
     ): Result<String> {
         return try {
             val apiKey = getApiKey()
-            val token = userAccessToken.takeIf { !it.isNullOrBlank() } ?: apiKey
+            val token = userAccessToken.takeIf { !it.isNullOrBlank() }
+            if (requireUserAuth && token == null) {
+                return Result.failure(IllegalStateException("User authentication token required for RLS mutation"))
+            }
+            val authHeaderToken = token ?: apiKey
             val url = URL(endpoint)
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 if (method == "PATCH") {
@@ -316,7 +321,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
                     requestMethod = method
                 }
                 setRequestProperty("apikey", apiKey)
-                setRequestProperty("Authorization", "Bearer $token")
+                setRequestProperty("Authorization", "Bearer $authHeaderToken")
                 setRequestProperty("Content-Type", "application/json")
                 if (!prefer.isNullOrBlank()) {
                     setRequestProperty("Prefer", prefer)

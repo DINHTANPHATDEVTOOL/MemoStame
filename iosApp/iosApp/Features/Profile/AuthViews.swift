@@ -340,43 +340,6 @@ struct AuthLoginScreenView: View {
             }
         }
     }
-
-    private func performSocialLogin(provider: String) {
-        let (displayName, username, avatarUrl) = {
-            switch provider {
-            case "Google":
-                return ("Google Account User", "google_collector", "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300")
-            case "Apple":
-                return ("Apple Account User", "apple_id_user", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300")
-            default:
-                return ("Khách Thử Nghiệm", "guest_explorer", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300")
-            }
-        }()
-
-        let bio = "Đăng nhập qua \(provider) Auth 📮"
-        let uid = "user_" + username
-
-        UserDefaults.standard.set(displayName, forKey: "user_displayName")
-        UserDefaults.standard.set(username, forKey: "user_username")
-        UserDefaults.standard.set(avatarUrl, forKey: "user_avatarUrl")
-        UserDefaults.standard.set(bio, forKey: "user_bio")
-
-        let newProfile = UserProfile(
-            uid: uid,
-            username: username,
-            displayName: displayName,
-            avatarUrl: avatarUrl,
-            bio: bio,
-            stampsCreatedCount: Int32(0),
-            stampsCollectedCount: Int32(0),
-            placesVisitedCount: Int32(0)
-        )
-        repository.resetUserScopedState()
-        repository.setCurrentUser(profile: newProfile)
-        IOSLocalPersistenceStore.shared.loadData(into: repository, userId: uid)
-
-        onLoginSuccess()
-    }
 }
 
 // Sheet shown when user tries to perform social actions while offline / unauthenticated
