@@ -466,6 +466,12 @@ class UserAuthRepository internal constructor(
         val req = _friendRequests.value.find { it.id == requestId }
             ?: return@withContext Result.failure(IllegalArgumentException("Không tìm thấy lời mời kết bạn"))
 
+        if (requestId.startsWith("freq_")) {
+            val updatedRequests = _friendRequests.value.filterNot { it.id == requestId }
+            saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
+            return@withContext Result.failure(SecurityException("Unauthorized: Legacy request ID not supported"))
+        }
+
         if (req.status != "PENDING") {
             return@withContext Result.failure(IllegalArgumentException("Lời mời kết bạn đã được xử lý"))
         }
@@ -514,6 +520,12 @@ class UserAuthRepository internal constructor(
         val req = _friendRequests.value.find { it.id == requestId }
             ?: return@withContext Result.failure(IllegalArgumentException("Không tìm thấy lời mời kết bạn"))
 
+        if (requestId.startsWith("freq_")) {
+            val updatedRequests = _friendRequests.value.filterNot { it.id == requestId }
+            saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
+            return@withContext Result.failure(SecurityException("Unauthorized: Legacy request ID not supported"))
+        }
+
         if (req.status != "PENDING" || req.recipientId != authUid || req.senderId == authUid) {
             return@withContext Result.failure(SecurityException("Unauthorized: Cannot decline this friend request"))
         }
@@ -541,6 +553,12 @@ class UserAuthRepository internal constructor(
 
         val req = _friendRequests.value.find { it.id == requestId }
             ?: return@withContext Result.failure(IllegalArgumentException("Không tìm thấy lời mời kết bạn"))
+
+        if (requestId.startsWith("freq_")) {
+            val updatedRequests = _friendRequests.value.filterNot { it.id == requestId }
+            saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
+            return@withContext Result.failure(SecurityException("Unauthorized: Legacy request ID not supported"))
+        }
 
         if (req.status != "PENDING" || req.senderId != authUid) {
             return@withContext Result.failure(SecurityException("Unauthorized: Cannot cancel this outgoing friend request"))

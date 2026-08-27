@@ -7,6 +7,46 @@ on:
     branches: [ "main" ]
 
 jobs:
+  backend_security:
+    name: Backend SQL Migrations & RLS Security Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run Migrations Chronologically (001 -> 002 -> 003)
+        env:
+          PGPASSWORD: postgrespassword
+        run: |
+          PGPASSWORD=postgrespassword psql -h localhost -U postgres -d postgres -f supabase/migrations/001_auth_social_rls.sql
+          PGPASSWORD=postgrespassword psql -h localhost -U postgres -d postgres -f supabase/migrations/002_schema_contract_and_rls_hardening.sql
+          PGPASSWORD=postgrespassword psql -h localhost -U postgres -d postgres -f supabase/migrations/003_deployment_safety_and_id_contract.sql
+
+      - name: Run Real RLS Test Harness
+        env:
+          PGPASSWORD: postgrespassword
+        run: |
+          PGPASSWORD=postgrespassword psql -h localhost -U postgres -d postgres -f supabase/tests/rls_negative_tests.sql
+
   build_ios:
     name: Build KMP Shared & Swift iOS App
     runs-on: macos-14
@@ -63,4 +103,3 @@ jobs:
             :androidApp:testDebugUnitTest \
             :androidApp:assembleDebug \
             --no-daemon
-

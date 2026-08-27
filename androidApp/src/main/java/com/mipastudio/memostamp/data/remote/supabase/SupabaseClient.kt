@@ -419,12 +419,8 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
     }
 
     suspend fun getAllProfiles(): List<UserProfile> = withContext(Dispatchers.IO) {
-        var endpoint = "${getBaseUrl()}/rest/v1/public_profiles?select=*&order=created_at.desc&limit=5000"
-        var res = executeHttp(endpoint, method = "GET")
-        if (!res.isSuccess) {
-            endpoint = "${getBaseUrl()}/rest/v1/profiles?select=*&limit=5000"
-            res = executeHttp(endpoint, method = "GET")
-        }
+        val endpoint = "${getBaseUrl()}/rest/v1/public_profiles?select=*&order=created_at.desc&limit=5000"
+        val res = executeHttp(endpoint, method = "GET")
         res.getOrNull()?.let { json ->
             try {
                 val listType = object : TypeToken<List<Map<String, Any?>>>() {}.type
@@ -463,12 +459,8 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
 
         val encoded = URLEncoder.encode("*$clean*", "UTF-8")
         val cleanEncoded = URLEncoder.encode(clean, "UTF-8")
-        var endpoint = "${getBaseUrl()}/rest/v1/public_profiles?or=(username.ilike.$encoded,display_name.ilike.$encoded,username.eq.$cleanEncoded)&select=*"
-        var res = executeHttp(endpoint, method = "GET")
-        if (!res.isSuccess) {
-            endpoint = "${getBaseUrl()}/rest/v1/profiles?or=(username.ilike.$encoded,display_name.ilike.$encoded,username.eq.$cleanEncoded)&select=*"
-            res = executeHttp(endpoint, method = "GET")
-        }
+        val endpoint = "${getBaseUrl()}/rest/v1/public_profiles?or=(username.ilike.$encoded,display_name.ilike.$encoded,username.eq.$cleanEncoded)&select=*"
+        val res = executeHttp(endpoint, method = "GET")
         val cloudList: List<UserProfile> = res.getOrNull()?.let { json ->
             try {
                 val listType = object : TypeToken<List<SupabaseProfileRecord>>() {}.type
@@ -759,12 +751,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         if (rpcRes.isSuccess) {
             Result.success(true)
         } else {
-            val json = gson.toJson(mapOf("is_read" to true))
-            val sEncoded = URLEncoder.encode(senderId.trim(), "UTF-8")
-            val rEncoded = URLEncoder.encode(recipientId.trim(), "UTF-8")
-            val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?sender_id=eq.$sEncoded&recipient_id=eq.$rEncoded&is_read=eq.false"
-            val res = executeHttp(endpoint, method = "PATCH", jsonBody = json, requireUserAuth = true)
-            if (res.isSuccess) Result.success(true) else Result.failure(rpcRes.exceptionOrNull() ?: Exception("Mark messages read failed"))
+            Result.failure(rpcRes.exceptionOrNull() ?: Exception("Mark messages read failed"))
         }
     }
 

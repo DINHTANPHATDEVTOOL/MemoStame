@@ -13,12 +13,41 @@ DROP FUNCTION IF EXISTS public.run_rls_negative_tests();
 -- 2. FEED CONTENT ID CONTRACT STANDARDIZATION
 -- ===================================================
 
+-- Safely drop foreign key constraints referencing feed content IDs before type conversion
+ALTER TABLE public.feed_reactions DROP CONSTRAINT IF EXISTS feed_reactions_post_id_fkey;
+ALTER TABLE public.feed_comments DROP CONSTRAINT IF EXISTS feed_comments_post_id_fkey;
+ALTER TABLE public.feed_comments DROP CONSTRAINT IF EXISTS feed_comments_parent_comment_id_fkey;
+
+-- Drop default UUID generators on content ID columns if any
+ALTER TABLE public.feed_posts ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.feed_reactions ALTER COLUMN id DROP DEFAULT;
+ALTER TABLE public.feed_comments ALTER COLUMN id DROP DEFAULT;
+
 -- Standardize content identifier columns as TEXT for full compatibility with client IDs (e.g., feed_post_1)
 ALTER TABLE public.feed_posts ALTER COLUMN id TYPE TEXT USING id::text;
 ALTER TABLE public.feed_reactions ALTER COLUMN id TYPE TEXT USING id::text;
 ALTER TABLE public.feed_reactions ALTER COLUMN post_id TYPE TEXT USING post_id::text;
 ALTER TABLE public.feed_comments ALTER COLUMN id TYPE TEXT USING id::text;
 ALTER TABLE public.feed_comments ALTER COLUMN post_id TYPE TEXT USING post_id::text;
+ALTER TABLE public.feed_comments ALTER COLUMN parent_comment_id TYPE TEXT USING parent_comment_id::text;
+
+-- Re-create Foreign Keys referencing TEXT content IDs
+ALTER TABLE public.feed_reactions
+    ADD CONSTRAINT feed_reactions_post_id_fkey
+    FOREIGN KEY (post_id) REFERENCES public.feed_posts(id) ON DELETE CASCADE;
+
+ALTER TABLE public.feed_comments
+    ADD CONSTRAINT feed_comments_post_id_fkey
+    FOREIGN KEY (post_id) REFERENCES public.feed_posts(id) ON DELETE CASCADE;
+
+ALTER TABLE public.feed_comments
+    ADD CONSTRAINT feed_comments_parent_comment_id_fkey
+    FOREIGN KEY (parent_comment_id) REFERENCES public.feed_comments(id) ON DELETE CASCADE;
+
+-- Re-verify unique reaction constraint (post_id, user_id)
+ALTER TABLE public.feed_reactions DROP CONSTRAINT IF EXISTS unique_user_post_reaction;
+ALTER TABLE public.feed_reactions DROP CONSTRAINT IF EXISTS feed_reactions_post_id_user_id_key;
+ALTER TABLE public.feed_reactions ADD CONSTRAINT unique_user_post_reaction UNIQUE (post_id, user_id);
 
 
 -- ===================================================

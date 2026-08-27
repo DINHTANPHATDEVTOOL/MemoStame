@@ -203,7 +203,8 @@ class FeedRepository private constructor(
     }
 
     suspend fun ensureDefaultFeedData() = withContext(Dispatchers.IO) {
-        if (feedDao.getPostCount() == 0) {
+        if (com.mipastudio.memostamp.BuildConfig.DEBUG) {
+            if (feedDao.getPostCount() == 0) {
             val now = System.currentTimeMillis()
             val samplePosts = listOf(
                 FeedPostEntity(
@@ -271,6 +272,7 @@ class FeedRepository private constructor(
             val c2 = FeedCommentEntity(UUID.randomUUID().toString(), "feed_post_1", "user_nam_hanoi", "Hoàng Nam", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300", "Nhìn chill ghê ☕", now - 30 * 1000L)
             feedDao.insertComment(c1)
             feedDao.insertComment(c2)
+        }
         }
 
         val user = getCurrentUser()
