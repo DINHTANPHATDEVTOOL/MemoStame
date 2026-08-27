@@ -190,85 +190,89 @@ class UserAuthRepository internal constructor(
                 }
 
                 // 3. Sync friend requests from Supabase
-                val cloudRequests = supabaseClient.getFriendRequestsForUser(currentUid)
-                val validCloudRequests = cloudRequests.filter { it.senderId.isNotBlank() && it.recipientId.isNotBlank() }
-                val mergedRequestsMap = _friendRequests.value.associateBy { it.id }.toMutableMap()
-                for (cr in validCloudRequests) {
-                    mergedRequestsMap[cr.id] = cr
-                }
-                val mergedRequests = mergedRequestsMap.values.sortedByDescending { it.createdAt }
-                _friendRequests.value = mergedRequests
-                saveFriendRequests(currentUid, mergedRequests, syncToCloud = false)
+                val resRequests = supabaseClient.getFriendRequestsForUser(currentUid)
+                var validCloudRequests: List<FriendRequest> = emptyList()
+                if (resRequests.isSuccess) {
+                    val cloudRequests = resRequests.getOrNull() ?: emptyList()
+                    validCloudRequests = cloudRequests.filter { it.senderId.isNotBlank() && it.recipientId.isNotBlank() }
+                    val sortedRequests = validCloudRequests.sortedByDescending { it.createdAt }
+                    _friendRequests.value = sortedRequests
+                    saveFriendRequests(currentUid, sortedRequests, syncToCloud = false)
 
-                if (validCloudRequests.isNotEmpty()) {
-                    val newIncomingRequests = validCloudRequests.filter { req ->
-                        req.recipientId == currentUid &&
-                        req.status.equals("PENDING", ignoreCase = true) &&
-                        !notifiedPendingRequestIds.contains(req.id)
-                    }
-                    newIncomingRequests.forEach { req ->
-                        notifiedPendingRequestIds.add(req.id)
-                        MemoStampNotificationManager.sendFriendRequestNotification(
-                            context = context,
-                            senderName = req.senderDisplayName.ifBlank { req.senderUsername },
-                            senderId = req.senderId
-                        )
-                        InAppNotificationManager.show(
-                            InAppBanner(
-                                id = "req_${req.id}",
-                                title = "🤝 Lời mời kết bạn mới",
-                                message = "${req.senderDisplayName.ifBlank { req.senderUsername }} muốn kết nối bạn bè với bạn!",
-                                avatarUrl = req.senderAvatar,
-                                iconEmoji = "🤝",
-                                targetRoute = "friends",
-                                senderName = req.senderDisplayName
+                    if (validCloudRequests.isNotEmpty()) {
+                        val newIncomingRequests = validCloudRequests.filter { req ->
+                            req.recipientId == currentUid &&
+                            req.status.equals("PENDING", ignoreCase = true) &&
+                            !notifiedPendingRequestIds.contains(req.id)
+                        }
+                        newIncomingRequests.forEach { req ->
+                            notifiedPendingRequestIds.add(req.id)
+                            MemoStampNotificationManager.sendFriendRequestNotification(
+                                context = context,
+                                senderName = req.senderDisplayName.ifBlank { req.senderUsername },
+                                senderId = req.senderId
                             )
-                        )
-                    }
+                            InAppNotificationManager.show(
+                                InAppBanner(
+                                    id = "req_${req.id}",
+                                    title = "🤝 Lời mời kết bạn mới",
+                                    message = "${req.senderDisplayName.ifBlank { req.senderUsername }} muốn kết nối bạn bè với bạn!",
+                                    avatarUrl = req.senderAvatar,
+                                    iconEmoji = "🤝",
+                                    targetRoute = "friends",
+                                    senderName = req.senderDisplayName
+                                )
+                            )
+                        }
 
-                    val newlyAcceptedRequests = validCloudRequests.filter { req ->
-                        req.senderId == currentUid &&
-                        req.status.equals("ACCEPTED", ignoreCase = true) &&
-                        !notifiedAcceptedRequestIds.contains(req.id)
-                    }
-                    newlyAcceptedRequests.forEach { req ->
-                        notifiedAcceptedRequestIds.add(req.id)
-                        MemoStampNotificationManager.sendFriendAcceptedNotification(
-                            context = context,
-                            friendName = req.recipientDisplayName.ifBlank { req.recipientUsername },
-                            friendId = req.recipientId
-                        )
-                        InAppNotificationManager.show(
-                            InAppBanner(
-                                id = "acc_${req.id}",
-                                title = "🎉 Đã kết nối bạn bè!",
-                                message = "${req.recipientDisplayName.ifBlank { req.recipientUsername }} đã chấp nhận lời mời kết bạn của bạn!",
-                                avatarUrl = req.recipientAvatar,
-                                iconEmoji = "🎉",
-                                targetRoute = "chat/${req.recipientId}",
-                                senderName = req.recipientDisplayName
+                        val newlyAcceptedRequests = validCloudRequests.filter { req ->
+                            req.senderId == currentUid &&
+                            req.status.equals("ACCEPTED", ignoreCase = true) &&
+                            !notifiedAcceptedRequestIds.contains(req.id)
+                        }
+                        newlyAcceptedRequests.forEach { req ->
+                            notifiedAcceptedRequestIds.add(req.id)
+                            MemoStampNotificationManager.sendFriendAcceptedNotification(
+                                context = context,
+                                friendName = req.recipientDisplayName.ifBlank { req.recipientUsername },
+                                friendId = req.recipientId
                             )
-                        )
+                            InAppNotificationManager.show(
+                                InAppBanner(
+                                    id = "acc_${req.id}",
+                                    title = "🎉 Đã kết nối bạn bè!",
+                                    message = "${req.recipientDisplayName.ifBlank { req.recipientUsername }} đã chấp nhận lời mời kết bạn của bạn!",
+                                    avatarUrl = req.recipientAvatar,
+                                    iconEmoji = "🎉",
+                                    targetRoute = "chat/${req.recipientId}",
+                                    senderName = req.recipientDisplayName
+                                )
+                            )
+                        }
                     }
+                } else {
+                    validCloudRequests = _friendRequests.value.filter { it.senderId.isNotBlank() && it.recipientId.isNotBlank() }
                 }
 
                 // 4. Sync friends list from Supabase
-                val cloudFriends = supabaseClient.getFriendsForUser(currentUid)
-                val newAcceptedFriendIds = mutableSetOf<String>()
-                validCloudRequests.filter { it.status.equals("ACCEPTED", ignoreCase = true) }.forEach { req ->
-                    if (req.senderId == currentUid && req.recipientId.isNotBlank()) {
-                        newAcceptedFriendIds.add(req.recipientId)
-                        ensureUserProfileExists(req.recipientId, req.recipientUsername, req.recipientDisplayName, req.recipientAvatar)
-                    } else if (req.recipientId == currentUid && req.senderId.isNotBlank()) {
-                        newAcceptedFriendIds.add(req.senderId)
-                        ensureUserProfileExists(req.senderId, req.senderUsername, req.senderDisplayName, req.senderAvatar)
+                val resFriends = supabaseClient.getFriendsForUser(currentUid)
+                if (resFriends.isSuccess) {
+                    val cloudFriends = resFriends.getOrNull() ?: emptySet()
+                    val newAcceptedFriendIds = mutableSetOf<String>()
+                    validCloudRequests.filter { it.status.equals("ACCEPTED", ignoreCase = true) }.forEach { req ->
+                        if (req.senderId == currentUid && req.recipientId.isNotBlank()) {
+                            newAcceptedFriendIds.add(req.recipientId)
+                            ensureUserProfileExists(req.recipientId, req.recipientUsername, req.recipientDisplayName, req.recipientAvatar)
+                        } else if (req.recipientId == currentUid && req.senderId.isNotBlank()) {
+                            newAcceptedFriendIds.add(req.senderId)
+                            ensureUserProfileExists(req.senderId, req.senderUsername, req.senderDisplayName, req.senderAvatar)
+                        }
                     }
-                }
 
-                val currentLocalFriends = _friendIds.value
-                val allActiveFriends = (currentLocalFriends + cloudFriends + newAcceptedFriendIds).filter { it.isNotBlank() && it != currentUid }.toSet()
-                _friendIds.value = allActiveFriends
-                friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(currentUid), allActiveFriends)?.apply()
+                    val resolvedFriends = (cloudFriends + newAcceptedFriendIds).filter { it.isNotBlank() && it != currentUid }.toSet()
+                    _friendIds.value = resolvedFriends
+                    friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(currentUid), resolvedFriends)?.apply()
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()

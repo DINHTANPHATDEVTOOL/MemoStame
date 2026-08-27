@@ -519,33 +519,36 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Unknown error"))
     }
 
-    suspend fun getFriendRequestsForUser(userId: String): List<FriendRequest> = withContext(Dispatchers.IO) {
+    suspend fun getFriendRequestsForUser(userId: String): Result<List<FriendRequest>> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(userId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/friend_requests?or=(recipient_id.eq.$encoded,sender_id.eq.$encoded)&select=*&order=created_at.desc"
         val res = executeHttp(endpoint, method = "GET")
-        res.getOrNull()?.let { json ->
-            try {
-                val listType = object : TypeToken<List<SupabaseFriendRequestRecord>>() {}.type
-                val list: List<SupabaseFriendRequestRecord> = gson.fromJson(json, listType) ?: emptyList()
-                list.map {
-                    FriendRequest(
-                        id = it.id,
-                        senderId = it.senderId,
-                        senderUsername = it.senderUsername,
-                        senderDisplayName = it.senderDisplayName,
-                        senderAvatar = it.senderAvatar ?: "https://i.pravatar.cc/150?u=${it.senderId}",
-                        recipientId = it.recipientId,
-                        recipientUsername = it.recipientUsername,
-                        recipientDisplayName = it.recipientDisplayName,
-                        recipientAvatar = it.recipientAvatar ?: "https://i.pravatar.cc/150?u=${it.recipientId}",
-                        status = it.status,
-                        createdAt = (it.createdAt as? Double)?.toLong() ?: (it.createdAt as? Long) ?: System.currentTimeMillis()
-                    )
-                }
-            } catch (e: Exception) {
-                emptyList()
+        if (res.isFailure) {
+            return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Failed to fetch friend requests"))
+        }
+        val json = res.getOrNull() ?: ""
+        try {
+            val listType = object : TypeToken<List<SupabaseFriendRequestRecord>>() {}.type
+            val list: List<SupabaseFriendRequestRecord> = gson.fromJson(json, listType) ?: emptyList()
+            val mapped = list.map {
+                FriendRequest(
+                    id = it.id,
+                    senderId = it.senderId,
+                    senderUsername = it.senderUsername,
+                    senderDisplayName = it.senderDisplayName,
+                    senderAvatar = it.senderAvatar ?: "https://i.pravatar.cc/150?u=${it.senderId}",
+                    recipientId = it.recipientId,
+                    recipientUsername = it.recipientUsername,
+                    recipientDisplayName = it.recipientDisplayName,
+                    recipientAvatar = it.recipientAvatar ?: "https://i.pravatar.cc/150?u=${it.recipientId}",
+                    status = it.status,
+                    createdAt = (it.createdAt as? Double)?.toLong() ?: (it.createdAt as? Long) ?: System.currentTimeMillis()
+                )
             }
-        } ?: emptyList()
+            Result.success(mapped)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun updateFriendRequestStatus(requestId: String, status: String): Result<Boolean> = withContext(Dispatchers.IO) {
@@ -631,25 +634,27 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         Result.success(true)
     }
 
-    suspend fun getFriendsForUser(userId: String): Set<String> = withContext(Dispatchers.IO) {
+    suspend fun getFriendsForUser(userId: String): Result<Set<String>> = withContext(Dispatchers.IO) {
         val cleanId = userId.trim()
         val res = executeHttp("${getBaseUrl()}/rest/v1/friends?select=*", method = "GET")
-        res.getOrNull()?.let { json ->
-            try {
-                val listType = object : TypeToken<List<Map<String, Any?>>>() {}.type
-                val list: List<Map<String, Any?>> = gson.fromJson(json, listType) ?: emptyList()
-                val friends = mutableSetOf<String>()
-                list.forEach { map ->
-                    val u1 = (map["user_id_1"] ?: map["user_id"] ?: map["sender_id"] ?: "").toString()
-                    val u2 = (map["user_id_2"] ?: map["friend_id"] ?: map["recipient_id"] ?: "").toString()
-                    if (u1.isNotBlank() && u1 == cleanId && u2.isNotBlank() && u2 != cleanId) friends.add(u2)
-                    if (u2.isNotBlank() && u2 == cleanId && u1.isNotBlank() && u1 != cleanId) friends.add(u1)
-                }
-                friends
-            } catch (e: Exception) {
-                emptySet()
+        if (res.isFailure) {
+            return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Failed to fetch friends"))
+        }
+        val json = res.getOrNull() ?: ""
+        try {
+            val listType = object : TypeToken<List<Map<String, Any?>>>() {}.type
+            val list: List<Map<String, Any?>> = gson.fromJson(json, listType) ?: emptyList()
+            val friends = mutableSetOf<String>()
+            list.forEach { map ->
+                val u1 = (map["user_id_1"] ?: map["user_id"] ?: map["sender_id"] ?: "").toString()
+                val u2 = (map["user_id_2"] ?: map["friend_id"] ?: map["recipient_id"] ?: "").toString()
+                if (u1.isNotBlank() && u1 == cleanId && u2.isNotBlank() && u2 != cleanId) friends.add(u2)
+                if (u2.isNotBlank() && u2 == cleanId && u1.isNotBlank() && u1 != cleanId) friends.add(u1)
             }
-        } ?: emptySet()
+            Result.success(friends)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     // ==========================================
