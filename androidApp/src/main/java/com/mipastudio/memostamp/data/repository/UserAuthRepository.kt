@@ -430,7 +430,7 @@ class UserAuthRepository internal constructor(
         }
 
         val newReq = FriendRequest(
-            id = "freq_" + UUID.randomUUID().toString().take(8),
+            id = UUID.randomUUID().toString(),
             senderId = authUid,
             senderUsername = current.username,
             senderDisplayName = current.displayName,

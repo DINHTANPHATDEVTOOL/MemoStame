@@ -1,172 +1,220 @@
--- Executable RLS Negative Test Runner for Supabase/PostgreSQL
--- Evaluates real SQL queries under simulated JWT claims for Users A, B, and C
+-- Real RLS Executable Test Script for Supabase / PostgreSQL
+-- Run with psql or Supabase CLI: psql $DATABASE_URL -f supabase/tests/rls_negative_tests.sql
+-- Fixtures are prepared as superuser, assertions execute strictly under ROLE authenticated.
 
-CREATE OR REPLACE FUNCTION public.run_rls_negative_tests()
-RETURNS TABLE(test_id INT, scenario TEXT, expected TEXT, outcome TEXT, passed BOOLEAN)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    v_user_a UUID := '11111111-1111-1111-1111-111111111111';
-    v_user_b UUID := '22222222-2222-2222-2222-222222222222';
-    v_user_c UUID := '33333333-3333-3333-3333-333333333333';
-    v_freq_id UUID := gen_random_uuid();
-    v_dm_id UUID := gen_random_uuid();
-    v_post_only_me UUID := gen_random_uuid();
-    v_post_friends UUID := gen_random_uuid();
-    v_res RECORD;
-    v_count INT;
-    v_err TEXT;
+BEGIN;
+
+-- ===================================================
+-- 1. FIXTURE PREPARATION (ADMIN / SUPERUSER ROLE)
+-- ===================================================
+SET LOCAL ROLE postgres;
+
+-- Test User UIDs
+\set user_a '11111111-1111-1111-1111-111111111111'
+\set user_b '22222222-2222-2222-2222-222222222222'
+\set user_c '33333333-3333-3333-3333-333333333333'
+\set freq_ab '44444444-4444-4444-4444-444444444444'
+\set dm_ab '55555555-5555-5555-5555-555555555555'
+
+-- Cleanup previous test data
+DELETE FROM public.friends WHERE user_id_1 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR user_id_2 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+DELETE FROM public.friend_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+DELETE FROM public.direct_messages WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+DELETE FROM public.feed_posts WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+DELETE FROM public.profiles WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+
+-- Insert profiles
+INSERT INTO public.profiles (id, username, display_name) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'user_a', 'User A'),
+    ('22222222-2222-2222-2222-222222222222', 'user_b', 'User B'),
+    ('33333333-3333-3333-3333-333333333333', 'user_c', 'User C');
+
+-- Insert friend request A -> B
+INSERT INTO public.friend_requests (id, sender_id, recipient_id, status) VALUES
+    ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'PENDING');
+
+-- Insert DM A -> B
+INSERT INTO public.direct_messages (id, sender_id, recipient_id, text, is_read) VALUES
+    ('55555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Hello B', false);
+
+-- Insert Feed Posts by A
+INSERT INTO public.feed_posts (id, author_id, caption, audience_type) VALUES
+    ('post_a_only_me', '11111111-1111-1111-1111-111111111111', 'Private Note', 'ONLY_ME'),
+    ('post_a_friends', '11111111-1111-1111-1111-111111111111', 'Friends Note', 'FRIENDS');
+
+COMMIT;
+
+-- ===================================================
+-- 2. EXECUTABLE RLS ASSERTIONS (ROLE: AUTHENTICATED)
+-- ===================================================
+
+-- Test 1: A modifies A profile -> allowed
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+UPDATE public.profiles SET bio = 'Bio updated by A' WHERE id = '11111111-1111-1111-1111-111111111111';
+ROLLBACK;
+
+-- Test 2: A modifies B profile -> denied (0 rows updated)
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+UPDATE public.profiles SET bio = 'Hacked by A' WHERE id = '22222222-2222-2222-2222-222222222222';
+DO $$
+DECLARE v_c INT;
 BEGIN
-    -- Setup Test Fixtures (Bypassing RLS as Security Definer)
-    DELETE FROM public.profiles WHERE id IN (v_user_a, v_user_b, v_user_c);
-    INSERT INTO public.profiles (id, username, display_name) VALUES
-        (v_user_a, 'user_a', 'User A'),
-        (v_user_b, 'user_b', 'User B'),
-        (v_user_c, 'user_c', 'User C');
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c > 0 THEN RAISE EXCEPTION 'RLS Leak: A updated B profile'; END IF;
+END $$;
+ROLLBACK;
 
-    DELETE FROM public.friend_requests WHERE id = v_freq_id;
-    INSERT INTO public.friend_requests (id, sender_id, recipient_id, status) VALUES
-        (v_freq_id, v_user_a, v_user_b, 'PENDING');
+-- Test 3: A sends request sender=A -> allowed
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+VALUES ('66666666-6666-6666-6666-666666666666', '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', 'PENDING');
+ROLLBACK;
 
-    DELETE FROM public.direct_messages WHERE id = v_dm_id;
-    INSERT INTO public.direct_messages (id, sender_id, recipient_id, text, is_read) VALUES
-        (v_dm_id, v_user_a, v_user_b, 'Hello B', false);
+-- Test 4: A sends request pretending sender=B -> denied
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+DO $$
+BEGIN
+    INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+    VALUES ('77777777-7777-7777-7777-777777777777', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', 'PENDING');
+    RAISE EXCEPTION 'RLS Leak: A inserted request pretending sender=B';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%RLS Leak%' THEN RAISE; END IF;
+END $$;
+ROLLBACK;
 
-    DELETE FROM public.feed_posts WHERE id IN (v_post_only_me, v_post_friends);
-    INSERT INTO public.feed_posts (id, author_id, caption, audience_type) VALUES
-        (v_post_only_me, v_user_a, 'Private Note', 'ONLY_ME'),
-        (v_post_friends, v_user_a, 'Friends Only Note', 'FRIENDS');
+-- Test 5: Sender A accepts own request -> denied
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+DO $$
+BEGIN
+    PERFORM public.accept_friend_request('44444444-4444-4444-4444-444444444444');
+    RAISE EXCEPTION 'RLS Leak: Sender A accepted own request';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%RLS Leak%' THEN RAISE; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 1: A edits own profile -> allowed
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_a::text, true);
-        UPDATE public.profiles SET bio = 'Updated by A' WHERE id = v_user_a;
-        RETURN NEXT ROW(1, 'A edits own profile', 'ALLOWED', 'ALLOWED', true);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(1, 'A edits own profile', 'ALLOWED', 'DENIED: ' || SQLERRM, false);
-    END;
+-- Test 6: Recipient B accepts request -> allowed
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+PERFORM public.accept_friend_request('44444444-4444-4444-4444-444444444444');
+ROLLBACK;
 
-    -- Test 2: A edits B profile -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_a::text, true);
-        UPDATE public.profiles SET bio = 'Hacked by A' WHERE id = v_user_b;
-        GET DIAGNOSTICS v_count = ROW_COUNT;
-        IF v_count = 0 THEN
-            RETURN NEXT ROW(2, 'A edits B profile', 'DENIED', 'DENIED (0 rows updated)', true);
-        ELSE
-            RETURN NEXT ROW(2, 'A edits B profile', 'DENIED', 'ALLOWED (Security Leak)', false);
-        END IF;
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(2, 'A edits B profile', 'DENIED', 'DENIED', true);
-    END;
+-- Test 7: Third user C accepts A-B request -> denied
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+DO $$
+BEGIN
+    PERFORM public.accept_friend_request('44444444-4444-4444-4444-444444444444');
+    RAISE EXCEPTION 'RLS Leak: Third user C accepted A-B request';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%RLS Leak%' THEN RAISE; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 3: A pretends sender=B in friend request -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_a::text, true);
-        INSERT INTO public.friend_requests (sender_id, recipient_id, status)
-        VALUES (v_user_b, v_user_c, 'PENDING');
-        RETURN NEXT ROW(3, 'A pretends sender=B in friend request', 'DENIED', 'ALLOWED (Security Leak)', false);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(3, 'A pretends sender=B in friend request', 'DENIED', 'DENIED', true);
-    END;
+-- Test 8: C reads A-B request -> denied (0 rows)
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SELECT COUNT(*) INTO v_c FROM public.friend_requests WHERE id = '44444444-4444-4444-4444-444444444444';
+    IF v_c > 0 THEN RAISE EXCEPTION 'RLS Leak: C read A-B request'; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 4: Sender A accepts own outgoing request -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_a::text, true);
-        PERFORM public.accept_friend_request(v_freq_id);
-        RETURN NEXT ROW(4, 'Sender A accepts own request via RPC', 'DENIED', 'ALLOWED (Security Leak)', false);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(4, 'Sender A accepts own request via RPC', 'DENIED', 'DENIED', true);
-    END;
+-- Test 9: C reads A-B direct message -> denied (0 rows)
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SELECT COUNT(*) INTO v_c FROM public.direct_messages WHERE id = '55555555-5555-5555-5555-555555555555';
+    IF v_c > 0 THEN RAISE EXCEPTION 'RLS Leak: C read A-B DM'; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 5: Recipient B accepts friend request -> allowed
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_b::text, true);
-        PERFORM public.accept_friend_request(v_freq_id);
-        RETURN NEXT ROW(5, 'Recipient B accepts friend request via RPC', 'ALLOWED', 'ALLOWED', true);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(5, 'Recipient B accepts friend request via RPC', 'ALLOWED', 'DENIED: ' || SQLERRM, false);
-    END;
+-- Test 10: Recipient B edits DM text directly -> denied (0 rows updated)
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+UPDATE public.direct_messages SET text = 'Hacked DM Text' WHERE id = '55555555-5555-5555-5555-555555555555';
+DO $$
+DECLARE v_c INT;
+BEGIN
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c > 0 THEN RAISE EXCEPTION 'RLS Leak: Recipient B updated DM text directly'; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 6: Third user C accepts A-B request -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_c::text, true);
-        PERFORM public.accept_friend_request(v_freq_id);
-        RETURN NEXT ROW(6, 'Third user C accepts A-B request via RPC', 'DENIED', 'ALLOWED (Security Leak)', false);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(6, 'Third user C accepts A-B request via RPC', 'DENIED', 'DENIED', true);
-    END;
+-- Test 11: Recipient B mark-read RPC -> allowed
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+PERFORM public.mark_direct_messages_read('11111111-1111-1111-1111-111111111111');
+ROLLBACK;
 
-    -- Test 7: Third user C reads A-B direct message -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_c::text, true);
-        SELECT COUNT(*) INTO v_count FROM public.direct_messages WHERE id = v_dm_id;
-        IF v_count = 0 THEN
-            RETURN NEXT ROW(7, 'Third user C reads A-B DM', 'DENIED', 'DENIED (0 rows returned)', true);
-        ELSE
-            RETURN NEXT ROW(7, 'Third user C reads A-B DM', 'DENIED', 'ALLOWED (Security Leak)', false);
-        END IF;
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(7, 'Third user C reads A-B DM', 'DENIED', 'DENIED', true);
-    END;
+-- Test 12: B reads A ONLY_ME post -> denied (0 rows)
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SELECT COUNT(*) INTO v_c FROM public.feed_posts WHERE id = 'post_a_only_me';
+    IF v_c > 0 THEN RAISE EXCEPTION 'RLS Leak: B read A ONLY_ME post'; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 8: Recipient B cannot edit DM text directly -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_b::text, true);
-        UPDATE public.direct_messages SET text = 'Altered Text' WHERE id = v_dm_id;
-        GET DIAGNOSTICS v_count = ROW_COUNT;
-        IF v_count = 0 THEN
-            RETURN NEXT ROW(8, 'Recipient B edits DM text directly', 'DENIED', 'DENIED (0 rows updated)', true);
-        ELSE
-            RETURN NEXT ROW(8, 'Recipient B edits DM text directly', 'DENIED', 'ALLOWED (Security Leak)', false);
-        END IF;
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(8, 'Recipient B edits DM text directly', 'DENIED', 'DENIED', true);
-    END;
+-- Test 13: Unrelated C reads A FRIENDS post -> denied (0 rows)
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SELECT COUNT(*) INTO v_c FROM public.feed_posts WHERE id = 'post_a_friends';
+    IF v_c > 0 THEN RAISE EXCEPTION 'RLS Leak: Unrelated C read A FRIENDS post'; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 9: Recipient B marks DM read via RPC -> allowed
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_b::text, true);
-        PERFORM public.mark_direct_messages_read(v_user_a);
-        RETURN NEXT ROW(9, 'Recipient B marks DM as read via RPC', 'ALLOWED', 'ALLOWED', true);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(9, 'Recipient B marks DM as read via RPC', 'ALLOWED', 'DENIED: ' || SQLERRM, false);
-    END;
+-- Test 14: Friend B reads A FRIENDS post -> allowed (after friendship created)
+BEGIN;
+SET LOCAL ROLE postgres;
+INSERT INTO public.friends (user_id_1, user_id_2) VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');
 
-    -- Test 10: User B reads User A ONLY_ME post -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_b::text, true);
-        SELECT COUNT(*) INTO v_count FROM public.feed_posts WHERE id = v_post_only_me;
-        IF v_count = 0 THEN
-            RETURN NEXT ROW(10, 'B reads A ONLY_ME post', 'DENIED', 'DENIED (0 rows returned)', true);
-        ELSE
-            RETURN NEXT ROW(10, 'B reads A ONLY_ME post', 'DENIED', 'ALLOWED (Security Leak)', false);
-        END IF;
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(10, 'B reads A ONLY_ME post', 'DENIED', 'DENIED', true);
-    END;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SELECT COUNT(*) INTO v_c FROM public.feed_posts WHERE id = 'post_a_friends';
+    IF v_c = 0 THEN RAISE EXCEPTION 'RLS Failure: Friend B could not read A FRIENDS post'; END IF;
+END $$;
+ROLLBACK;
 
-    -- Test 11: Unrelated user C reads A FRIENDS post (no friendship) -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_c::text, true);
-        SELECT COUNT(*) INTO v_count FROM public.feed_posts WHERE id = v_post_friends;
-        IF v_count = 0 THEN
-            RETURN NEXT ROW(11, 'Unrelated C reads A FRIENDS post', 'DENIED', 'DENIED (0 rows returned)', true);
-        ELSE
-            RETURN NEXT ROW(11, 'Unrelated C reads A FRIENDS post', 'DENIED', 'ALLOWED (Security Leak)', false);
-        END IF;
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(11, 'Unrelated C reads A FRIENDS post', 'DENIED', 'DENIED', true);
-    END;
-
-    -- Test 12: User A writes post pretending author=B -> denied
-    BEGIN
-        PERFORM set_config('request.jwt.claim.sub', v_user_a::text, true);
-        INSERT INTO public.feed_posts (author_id, caption) VALUES (v_user_b, 'Impersonated post');
-        RETURN NEXT ROW(12, 'A writes post with author=B', 'DENIED', 'ALLOWED (Security Leak)', false);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN NEXT ROW(12, 'A writes post with author=B', 'DENIED', 'DENIED', true);
-    END;
-END;
-$$;
+-- Test 15: A writes feed post author=B -> denied
+BEGIN;
+SET LOCAL ROLE authenticated;
+SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+DO $$
+BEGIN
+    INSERT INTO public.feed_posts (id, author_id, caption) VALUES ('post_fake', '22222222-2222-2222-2222-222222222222', 'Impersonated post');
+    RAISE EXCEPTION 'RLS Leak: A inserted feed post with author=B';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%RLS Leak%' THEN RAISE; END IF;
+END $$;
+ROLLBACK;

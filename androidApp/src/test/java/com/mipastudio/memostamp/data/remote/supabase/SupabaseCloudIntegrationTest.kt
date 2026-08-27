@@ -95,7 +95,7 @@ class SupabaseCloudIntegrationTest {
     fun testFriendshipCloudLifecycle() {
         val aliceId = "user_alice_test_" + System.currentTimeMillis()
         val bobId = "user_bob_test_" + System.currentTimeMillis()
-        val requestId = "freq_test_" + System.currentTimeMillis()
+        val requestId = java.util.UUID.randomUUID().toString()
 
         // 1. Create test profiles
         executeHttp("profiles?on_conflict=user_id", method = "POST", jsonBody = gson.toJson(mapOf("user_id" to aliceId, "username" to "alice_test", "display_name" to "Alice Test")), prefer = "resolution=merge-duplicates")

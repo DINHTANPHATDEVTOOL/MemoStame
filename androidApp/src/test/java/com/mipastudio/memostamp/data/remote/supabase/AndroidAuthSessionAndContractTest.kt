@@ -98,7 +98,7 @@ class AndroidAuthSessionAndContractTest {
     @Test
     fun test3_recipientAcceptReturnsSuccessWithFakeServerSuccess() = runBlocking {
         val transport = FakeSupabaseHttpTransport()
-        val acceptedReqJson = """[{"id":"freq_1","sender_id":"user_sender_123","sender_username":"sender","sender_display_name":"Sender","sender_avatar":"","recipient_id":"user_recipient_456","recipient_username":"recipient","recipient_display_name":"Recipient","recipient_avatar":"","status":"ACCEPTED","created_at":1000}]"""
+        val acceptedReqJson = """[{"id":"10000000-0000-0000-0000-000000000001","sender_id":"user_sender_123","sender_username":"sender","sender_display_name":"Sender","sender_avatar":"","recipient_id":"user_recipient_456","recipient_username":"recipient","recipient_display_name":"Recipient","recipient_avatar":"","status":"ACCEPTED","created_at":1000}]"""
         val friendsJson = """[{"id":"user_sender_123_user_recipient_456","user_id":"user_recipient_456","friend_id":"user_sender_123"}]"""
         transport.endpointResponses["friend_requests"] = Result.success(acceptedReqJson)
         transport.endpointResponses["friends"] = Result.success(friendsJson)
@@ -107,7 +107,7 @@ class AndroidAuthSessionAndContractTest {
         val recipientUser = UserProfile(userId = "user_recipient_456", username = "recipient", displayName = "Recipient")
 
         val req = FriendRequest(
-            id = "freq_1",
+            id = "10000000-0000-0000-0000-000000000001",
             senderId = "user_sender_123",
             senderUsername = "sender",
             senderDisplayName = "Sender",
@@ -121,7 +121,7 @@ class AndroidAuthSessionAndContractTest {
 
         repo.setTestAuthState(isLoggedIn = true, authUser = recipientUser, requests = listOf(req))
 
-        val result = repo.acceptFriendRequest("freq_1")
+        val result = repo.acceptFriendRequest("10000000-0000-0000-0000-000000000001")
 
         assertTrue(result.isSuccess)
         assertTrue(repo.isFriend("user_sender_123"))
@@ -137,7 +137,7 @@ class AndroidAuthSessionAndContractTest {
         val recipientUser = UserProfile(userId = "user_recipient_456", username = "recipient", displayName = "Recipient")
 
         val req = FriendRequest(
-            id = "freq_1",
+            id = "10000000-0000-0000-0000-000000000001",
             senderId = "user_sender_123",
             senderUsername = "sender",
             senderDisplayName = "Sender",
@@ -151,7 +151,7 @@ class AndroidAuthSessionAndContractTest {
 
         repo.setTestAuthState(isLoggedIn = true, authUser = recipientUser, requests = listOf(req))
 
-        val result = repo.acceptFriendRequest("freq_1")
+        val result = repo.acceptFriendRequest("10000000-0000-0000-0000-000000000001")
 
         assertTrue(result.isFailure)
         assertFalse(repo.isFriend("user_sender_123"))
@@ -164,7 +164,7 @@ class AndroidAuthSessionAndContractTest {
         val thirdUser = UserProfile(userId = "user_third_789", username = "third", displayName = "Third")
 
         val req = FriendRequest(
-            id = "freq_1",
+            id = "10000000-0000-0000-0000-000000000001",
             senderId = "user_sender_123",
             senderUsername = "sender",
             senderDisplayName = "Sender",
@@ -178,9 +178,9 @@ class AndroidAuthSessionAndContractTest {
 
         repo.setTestAuthState(isLoggedIn = true, authUser = thirdUser, requests = listOf(req))
 
-        val acceptRes = repo.acceptFriendRequest("freq_1")
-        val declineRes = repo.declineFriendRequest("freq_1")
-        val cancelRes = repo.cancelOutgoingFriendRequest("freq_1")
+        val acceptRes = repo.acceptFriendRequest("10000000-0000-0000-0000-000000000001")
+        val declineRes = repo.declineFriendRequest("10000000-0000-0000-0000-000000000001")
+        val cancelRes = repo.cancelOutgoingFriendRequest("10000000-0000-0000-0000-000000000001")
 
         assertTrue(acceptRes.isFailure)
         assertTrue(declineRes.isFailure)
@@ -211,7 +211,7 @@ class AndroidAuthSessionAndContractTest {
         val senderUser = UserProfile(userId = "user_a", username = "usera", displayName = "A")
 
         val req = FriendRequest(
-            id = "freq_1",
+            id = "10000000-0000-0000-0000-000000000001",
             senderId = "user_a",
             senderUsername = "usera",
             senderDisplayName = "A",
@@ -225,11 +225,11 @@ class AndroidAuthSessionAndContractTest {
 
         repo.setTestAuthState(isLoggedIn = true, authUser = senderUser, requests = listOf(req))
 
-        val result = repo.cancelOutgoingFriendRequest("freq_1")
+        val result = repo.cancelOutgoingFriendRequest("10000000-0000-0000-0000-000000000001")
 
         assertTrue(result.isFailure)
         assertEquals(1, repo.friendRequests.value.size)
-        assertEquals("freq_1", repo.friendRequests.value.first().id)
+        assertEquals("10000000-0000-0000-0000-000000000001", repo.friendRequests.value.first().id)
     }
 
     @Test
@@ -341,7 +341,7 @@ class AndroidAuthSessionAndContractTest {
         val repo = createRepository(transport)
         val userA = UserProfile(userId = "user_a", username = "usera", displayName = "A")
         val req = FriendRequest(
-            id = "freq_1",
+            id = "10000000-0000-0000-0000-000000000001",
             senderId = "user_b",
             senderUsername = "userb",
             senderDisplayName = "B",
