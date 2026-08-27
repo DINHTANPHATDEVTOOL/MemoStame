@@ -1,55 +1,12 @@
--- Real Executable RLS & Security Test Suite for Supabase / PostgreSQL
+-- Real Executable RLS & Security Test Suite for Native Supabase / PostgreSQL
 -- Run with: psql -v ON_ERROR_STOP=1 $DATABASE_URL -f supabase/tests/rls_negative_tests.sql
--- All assertions run under ROLE authenticated with simulated JWT sub claims.
+-- All assertions run against native Supabase auth schema & authenticated role.
 
 -- ===================================================
--- 1. SETUP & PREREQUISITES (ADMIN / POSTGRES ROLE)
+-- 1. PREREQUISITE ASSERTIONS (ADMIN / POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
 
--- Ensure auth schema, roles, and auth.uid() function exist
-CREATE SCHEMA IF NOT EXISTS auth;
-
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-        CREATE ROLE anon NOSPUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-        CREATE ROLE authenticated NOSPUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
-        CREATE ROLE service_role NOSPUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN;
-    END IF;
-END $$;
-
-GRANT anon TO postgres;
-GRANT authenticated TO postgres;
-GRANT service_role TO postgres;
-
-CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
-LANGUAGE sql STABLE
-AS $$
-  SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid;
-$$;
-
-CREATE TABLE IF NOT EXISTS auth.users (
-    id UUID PRIMARY KEY,
-    instance_id UUID DEFAULT '00000000-0000-0000-0000-000000000000'::uuid,
-    email TEXT UNIQUE,
-    encrypted_password TEXT DEFAULT '',
-    email_confirmed_at TIMESTAMPTZ DEFAULT now(),
-    raw_app_meta_data JSONB DEFAULT '{"provider":"email","providers":["email"]}'::jsonb,
-    raw_user_meta_data JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    role TEXT DEFAULT 'authenticated',
-    aud TEXT DEFAULT 'authenticated'
-);
-
--- ===================================================
--- 2. VERIFY MIGRATION PREREQUISITES
--- ===================================================
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'auth' AND table_name = 'users') THEN
@@ -108,7 +65,7 @@ END $$;
 
 
 -- ===================================================
--- 3. FIXTURE CLEANUP & POPULATION (SUPERUSER ROLE)
+-- 2. FIXTURE CLEANUP & POPULATION (SUPERUSER ROLE)
 -- ===================================================
 DELETE FROM public.friends WHERE user_id_1 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR user_id_2 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friend_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
@@ -117,11 +74,11 @@ DELETE FROM public.feed_posts WHERE author_id IN ('11111111-1111-1111-1111-11111
 DELETE FROM public.profiles WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM auth.users WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 
--- Insert Auth test users
-INSERT INTO auth.users (id, email) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'usera@test.local'),
-    ('22222222-2222-2222-2222-222222222222', 'userb@test.local'),
-    ('33333333-3333-3333-3333-333333333333', 'userc@test.local')
+-- Insert Auth test users into existing auth.users table
+INSERT INTO auth.users (id, email, role, aud) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'usera@test.local', 'authenticated', 'authenticated'),
+    ('22222222-2222-2222-2222-222222222222', 'userb@test.local', 'authenticated', 'authenticated'),
+    ('33333333-3333-3333-3333-333333333333', 'userc@test.local', 'authenticated', 'authenticated')
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert User Profiles
@@ -142,10 +99,10 @@ INSERT INTO public.feed_posts (id, author_id, caption, audience_type) VALUES
 
 
 -- ===================================================
--- 4. REAL RLS ASSERTIONS (ROLE: AUTHENTICATED)
+-- 3. REAL RLS ASSERTIONS (ROLE: AUTHENTICATED)
 -- ===================================================
 
--- Sanity Check: Verify auth.uid() resolution under authenticated role
+-- Assertion 1: Sanity Check - Verify auth.uid() resolution under authenticated role
 DO $$
 DECLARE
     v_uid uuid;
@@ -158,7 +115,7 @@ BEGIN
     END IF;
 END $$;
 
--- Test 1: Profile RLS - A updates A -> allowed
+-- Assertion 2: Profile RLS - A updates A -> allowed
 DO $$
 DECLARE v_c INT;
 BEGIN
@@ -169,7 +126,7 @@ BEGIN
     IF v_c <> 1 THEN RAISE EXCEPTION 'Profile RLS Failed: User A could not update own profile'; END IF;
 END $$;
 
--- Test 2: Profile RLS - A updates B -> denied (0 rows updated)
+-- Assertion 3: Profile RLS - A updates B -> denied (0 rows updated)
 DO $$
 DECLARE v_c INT;
 BEGIN
@@ -180,22 +137,31 @@ BEGIN
     IF v_c <> 0 THEN RAISE EXCEPTION 'Profile RLS Leak: A updated B profile (count: %)', v_c; END IF;
 END $$;
 
--- Test 3: Public Profile Discovery vs Base Table Protection
+-- Assertion 4 & 5: Public Profile Discovery vs Base Table Protection
 DO $$
 DECLARE v_c INT;
 BEGIN
     SET LOCAL ROLE authenticated;
     SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
-    -- public_profiles view allowed
+
+    -- Assertion 4: public_profiles view allowed
     SELECT COUNT(*) INTO v_c FROM public.public_profiles WHERE id = '22222222-2222-2222-2222-222222222222';
     IF v_c <> 1 THEN RAISE EXCEPTION 'Public Profiles View Failed: Could not discover User B public profile'; END IF;
 
-    -- base profiles table SELECT for B by A restricted to owner only
-    SELECT COUNT(*) INTO v_c FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222';
-    IF v_c <> 0 THEN RAISE EXCEPTION 'Profile Privacy Leak: Base profiles table returned non-owner profile'; END IF;
+    -- Assertion 5: base profiles table SELECT for B by A is denied (insufficient_privilege or 0 rows returned)
+    BEGIN
+        SELECT COUNT(*) INTO v_c FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222';
+        IF v_c <> 0 THEN
+            RAISE EXCEPTION 'Profile Privacy Leak: Base profiles table returned non-owner profile';
+        END IF;
+    EXCEPTION
+        WHEN insufficient_privilege THEN
+            -- PASS: REVOKE SELECT correctly blocked direct table read
+            NULL;
+    END;
 END $$;
 
--- Test 4: Friend Request - A sends A -> B request -> allowed
+-- Assertion 6: Friend Request - A sends A -> B request -> allowed
 DO $$
 BEGIN
     SET LOCAL ROLE authenticated;
@@ -204,7 +170,19 @@ BEGIN
     VALUES ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'PENDING');
 END $$;
 
--- Test 5: Friend RPC - Sender A accepts own outgoing request -> denied
+-- Assertion 7: Friend Request - A inserting request pretending sender=B -> denied
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+    VALUES ('44444444-4444-4444-4444-999999999999', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'PENDING');
+    RAISE EXCEPTION 'Friend Request RLS Leak: User A inserted request pretending sender=B';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%Friend Request RLS Leak%' THEN RAISE; END IF;
+END $$;
+
+-- Assertion 8: Friend RPC - Sender A accepts own outgoing request -> denied
 DO $$
 BEGIN
     SET LOCAL ROLE authenticated;
@@ -215,7 +193,7 @@ EXCEPTION WHEN OTHERS THEN
     IF SQLERRM LIKE '%Friend RPC Leak%' THEN RAISE; END IF;
 END $$;
 
--- Test 6: Friend RPC - Third User C accepts A -> B request -> denied
+-- Assertion 9: Friend RPC - Third User C accepts A -> B request -> denied
 DO $$
 BEGIN
     SET LOCAL ROLE authenticated;
@@ -226,7 +204,7 @@ EXCEPTION WHEN OTHERS THEN
     IF SQLERRM LIKE '%Friend RPC Leak%' THEN RAISE; END IF;
 END $$;
 
--- Test 7: Friend RPC - Recipient B accepts A -> B request -> allowed & creates exactly 1 canonical friendship pair
+-- Assertion 10: Friend RPC - Recipient B accepts A -> B request -> allowed & creates exactly 1 canonical friendship pair
 DO $$
 DECLARE v_c INT;
 BEGIN
@@ -240,7 +218,7 @@ BEGIN
     IF v_c <> 1 THEN RAISE EXCEPTION 'Friend RPC Failed: Canonical friendship pair count is %, expected 1', v_c; END IF;
 END $$;
 
--- Test 8: Friend RPC - Repeated accept on non-pending request -> denied
+-- Assertion 11: Friend RPC - Repeated accept on non-pending request -> denied
 DO $$
 BEGIN
     SET LOCAL ROLE authenticated;
@@ -251,73 +229,78 @@ EXCEPTION WHEN OTHERS THEN
     IF SQLERRM LIKE '%Friend RPC Leak%' THEN RAISE; END IF;
 END $$;
 
--- Test 9: DM RLS - Participant A/B read DM -> allowed, Unrelated C read DM -> denied
+-- Assertion 12 & 13: DM RLS - Participant A/B read DM -> allowed, Unrelated C read DM -> denied
 DO $$
 DECLARE v_c INT;
 BEGIN
-    -- Participant A
+    -- Assertion 12a: Participant A
     SET LOCAL ROLE authenticated;
     SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
     SELECT COUNT(*) INTO v_c FROM public.direct_messages WHERE id = '55555555-5555-5555-5555-555555555555';
     IF v_c <> 1 THEN RAISE EXCEPTION 'DM RLS Failed: Participant A could not read DM'; END IF;
 
-    -- Participant B
+    -- Assertion 12b: Participant B
     SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
     SELECT COUNT(*) INTO v_c FROM public.direct_messages WHERE id = '55555555-5555-5555-5555-555555555555';
     IF v_c <> 1 THEN RAISE EXCEPTION 'DM RLS Failed: Participant B could not read DM'; END IF;
 
-    -- Unrelated C
+    -- Assertion 13: Unrelated C
     SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
     SELECT COUNT(*) INTO v_c FROM public.direct_messages WHERE id = '55555555-5555-5555-5555-555555555555';
     IF v_c <> 0 THEN RAISE EXCEPTION 'DM RLS Leak: Unrelated C read DM (count: %)', v_c; END IF;
 END $$;
 
--- Test 10: DM RLS - Recipient B direct text update -> denied, mark_direct_messages_read RPC -> allowed
+-- Assertion 14 & 15: DM RLS - Recipient B direct text update -> denied, mark_direct_messages_read RPC -> allowed
 DO $$
 DECLARE v_c INT;
 BEGIN
     SET LOCAL ROLE authenticated;
     SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
-    -- Direct text update denied
+    
+    -- Assertion 14: Direct text update denied
     UPDATE public.direct_messages SET text = 'Hacked DM Text' WHERE id = '55555555-5555-5555-5555-555555555555';
     GET DIAGNOSTICS v_c = ROW_COUNT;
     IF v_c <> 0 THEN RAISE EXCEPTION 'DM RLS Leak: Recipient B directly updated DM text'; END IF;
 
-    -- RPC allowed
+    -- Assertion 15: RPC allowed
     PERFORM public.mark_direct_messages_read('11111111-1111-1111-1111-111111111111');
 END $$;
 
--- Test 11: Feed Privacy RLS - ONLY_ME (A allowed, B denied)
+-- Assertion 16 & 17: Feed Privacy RLS - ONLY_ME (A allowed, B denied)
 DO $$
 DECLARE v_c INT;
 BEGIN
     SET LOCAL ROLE authenticated;
+    
+    -- Assertion 16: Author A
     SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
     SELECT COUNT(*) INTO v_c FROM public.feed_posts WHERE id = 'post_a_only_me';
     IF v_c <> 1 THEN RAISE EXCEPTION 'Feed Privacy Failed: Author A could not read ONLY_ME post'; END IF;
 
+    -- Assertion 17: Non-author B
     SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
     SELECT COUNT(*) INTO v_c FROM public.feed_posts WHERE id = 'post_a_only_me';
     IF v_c <> 0 THEN RAISE EXCEPTION 'Feed Privacy Leak: Non-author B read ONLY_ME post'; END IF;
 END $$;
 
--- Test 12: Feed Privacy RLS - FRIENDS (Friend B allowed, Unrelated C denied)
+-- Assertion 18 & 19: Feed Privacy RLS - FRIENDS (Friend B allowed, Unrelated C denied)
 DO $$
 DECLARE v_c INT;
 BEGIN
     SET LOCAL ROLE authenticated;
-    -- Friend B (Friendship created in Test 7)
+    
+    -- Assertion 18: Friend B (Friendship created in Assertion 10)
     SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
     SELECT COUNT(*) INTO v_c FROM public.feed_posts WHERE id = 'post_a_friends';
     IF v_c <> 1 THEN RAISE EXCEPTION 'Feed Privacy Failed: Friend B could not read FRIENDS post'; END IF;
 
-    -- Unrelated C
+    -- Assertion 19: Unrelated C
     SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
     SELECT COUNT(*) INTO v_c FROM public.feed_posts WHERE id = 'post_a_friends';
     IF v_c <> 0 THEN RAISE EXCEPTION 'Feed Privacy Leak: Unrelated C read FRIENDS post'; END IF;
 END $$;
 
--- Test 13: Feed Privacy RLS - SPECIFIC_FRIENDS (Non-author B denied)
+-- Assertion 20: Feed Privacy RLS - SPECIFIC_FRIENDS (Non-author B denied)
 DO $$
 DECLARE v_c INT;
 BEGIN
@@ -327,7 +310,7 @@ BEGIN
     IF v_c <> 0 THEN RAISE EXCEPTION 'Feed Privacy Leak: Non-author B read SPECIFIC_FRIENDS post'; END IF;
 END $$;
 
--- Test 14: Feed Author Impersonation - A inserts post with author_id = B -> denied
+-- Assertion 21: Feed Author Impersonation - A inserts post with author_id = B -> denied
 DO $$
 BEGIN
     SET LOCAL ROLE authenticated;
@@ -340,7 +323,7 @@ END $$;
 
 
 -- ===================================================
--- 5. FINAL CLEANUP (ADMIN / POSTGRES ROLE)
+-- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
 
