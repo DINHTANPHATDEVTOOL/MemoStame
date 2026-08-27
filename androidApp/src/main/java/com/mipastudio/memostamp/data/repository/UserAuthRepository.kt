@@ -491,21 +491,12 @@ class UserAuthRepository internal constructor(
         }
         saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
 
-        val resStatus = supabaseClient.updateFriendRequestStatus(requestId, "ACCEPTED")
-        if (resStatus.isFailure) {
+        val resRpc = supabaseClient.acceptFriendRequestRpc(requestId)
+        if (resRpc.isFailure) {
             _friendIds.value = previousFriends
             friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), previousFriends)?.apply()
             saveFriendRequests(authUid, previousReqs, syncToCloud = false)
-            return@withContext Result.failure(resStatus.exceptionOrNull() ?: Exception("Chấp nhận lời mời kết bạn thất bại"))
-        }
-
-        // TODO: Move accept-friend flow to atomic Supabase RPC transaction during RLS/backend phase to avoid server partial failure state.
-        val resAdd = supabaseClient.addFriendship(authUid, targetUserId)
-        if (resAdd.isFailure) {
-            _friendIds.value = previousFriends
-            friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), previousFriends)?.apply()
-            saveFriendRequests(authUid, previousReqs, syncToCloud = false)
-            return@withContext Result.failure(resAdd.exceptionOrNull() ?: Exception("Tạo quan hệ bạn bè thất bại"))
+            return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Chấp nhận lời mời kết bạn thất bại"))
         }
 
         ensureUserProfileExists(targetUserId, targetUsername, targetDisplayName, targetAvatar)
@@ -531,10 +522,10 @@ class UserAuthRepository internal constructor(
         val updatedRequests = previousReqs.filterNot { it.id == requestId }
         saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
 
-        val res = supabaseClient.updateFriendRequestStatus(requestId, "DECLINED")
-        if (res.isFailure) {
+        val resRpc = supabaseClient.declineFriendRequestRpc(requestId)
+        if (resRpc.isFailure) {
             saveFriendRequests(authUid, previousReqs, syncToCloud = false)
-            return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Từ chối lời mời kết bạn thất bại"))
+            return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Từ chối lời mời kết bạn thất bại"))
         }
 
         syncWithSupabaseOnce()
@@ -559,10 +550,10 @@ class UserAuthRepository internal constructor(
         val updatedRequests = previousReqs.filterNot { it.id == requestId }
         saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
 
-        val res = supabaseClient.removeFriendship(authUid, req.recipientId)
-        if (res.isFailure) {
+        val resRpc = supabaseClient.cancelFriendRequestRpc(requestId)
+        if (resRpc.isFailure) {
             saveFriendRequests(authUid, previousReqs, syncToCloud = false)
-            return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Thu hồi lời mời kết bạn thất bại"))
+            return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Thu hồi lời mời kết bạn thất bại"))
         }
 
         syncWithSupabaseOnce()
@@ -588,11 +579,11 @@ class UserAuthRepository internal constructor(
         _friendIds.value = updatedFriends
         friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), updatedFriends)?.apply()
 
-        val res = supabaseClient.removeFriendship(authUid, targetUserId)
-        if (res.isFailure) {
+        val resRpc = supabaseClient.unfriendUserRpc(targetUserId)
+        if (resRpc.isFailure) {
             _friendIds.value = previousFriends
             friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), previousFriends)?.apply()
-            return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Hủy kết bạn thất bại"))
+            return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Hủy kết bạn thất bại"))
         }
 
         syncWithSupabaseOnce()

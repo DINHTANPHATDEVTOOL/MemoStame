@@ -551,6 +551,38 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         }
     }
 
+    // ==========================================
+    // RPC SECURITY DEFINER FUNCTIONS
+    // ==========================================
+
+    suspend fun acceptFriendRequestRpc(requestId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/accept_friend_request"
+        val body = gson.toJson(mapOf("p_request_id" to requestId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to accept friend request via RPC"))
+    }
+
+    suspend fun declineFriendRequestRpc(requestId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/decline_friend_request"
+        val body = gson.toJson(mapOf("p_request_id" to requestId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to decline friend request via RPC"))
+    }
+
+    suspend fun cancelFriendRequestRpc(requestId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/cancel_friend_request"
+        val body = gson.toJson(mapOf("p_request_id" to requestId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to cancel friend request via RPC"))
+    }
+
+    suspend fun unfriendUserRpc(friendId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/unfriend_user"
+        val body = gson.toJson(mapOf("p_friend_id" to friendId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to unfriend user via RPC"))
+    }
+
     suspend fun updateFriendRequestStatus(requestId: String, status: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(requestId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/friend_requests?id=eq.$encoded"

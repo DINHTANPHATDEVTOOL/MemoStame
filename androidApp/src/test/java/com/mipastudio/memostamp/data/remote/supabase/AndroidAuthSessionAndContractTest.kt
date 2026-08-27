@@ -131,7 +131,7 @@ class AndroidAuthSessionAndContractTest {
     @Test
     fun test4_recipientAcceptFailsAndRollsBackWhenFakeServerFails() = runBlocking {
         val transport = FakeSupabaseHttpTransport()
-        transport.endpointResponses["friends"] = Result.failure(IllegalStateException("500 Internal Server Error"))
+        transport.endpointResponses["rpc/accept_friend_request"] = Result.failure(IllegalStateException("500 Internal Server Error"))
 
         val repo = createRepository(transport)
         val recipientUser = UserProfile(userId = "user_recipient_456", username = "recipient", displayName = "Recipient")
@@ -205,7 +205,7 @@ class AndroidAuthSessionAndContractTest {
     @Test
     fun test7_cancelOutgoingFakeServerFailureReturnsFailureAndRestoresState() = runBlocking {
         val transport = FakeSupabaseHttpTransport()
-        transport.endpointResponses["friends"] = Result.failure(IllegalStateException("503 Service Unavailable"))
+        transport.endpointResponses["rpc/cancel_friend_request"] = Result.failure(IllegalStateException("503 Service Unavailable"))
 
         val repo = createRepository(transport)
         val senderUser = UserProfile(userId = "user_a", username = "usera", displayName = "A")
@@ -235,7 +235,7 @@ class AndroidAuthSessionAndContractTest {
     @Test
     fun test8_unfriendFakeServerFailureReturnsFailureAndRestoresState() = runBlocking {
         val transport = FakeSupabaseHttpTransport()
-        transport.endpointResponses["friends"] = Result.failure(IllegalStateException("503 Service Unavailable"))
+        transport.endpointResponses["rpc/unfriend_user"] = Result.failure(IllegalStateException("503 Service Unavailable"))
 
         val repo = createRepository(transport)
         val userA = UserProfile(userId = "user_a", username = "usera", displayName = "A")
