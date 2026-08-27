@@ -315,16 +315,16 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         prefer: String? = null,
         requireUserAuth: Boolean = false
     ): Result<String> {
+        val token = userAccessToken.takeIf { !it.isNullOrBlank() }
+        if (requireUserAuth && token == null) {
+            return Result.failure(IllegalStateException("User authentication token required for RLS mutation"))
+        }
         val t = transport
         if (t != null) {
             return t.executeHttp(this, endpoint, method, jsonBody, prefer, requireUserAuth)
         }
         return try {
             val apiKey = getApiKey()
-            val token = userAccessToken.takeIf { !it.isNullOrBlank() }
-            if (requireUserAuth && token == null) {
-                return Result.failure(IllegalStateException("User authentication token required for RLS mutation"))
-            }
             val authHeaderToken = token ?: apiKey
             val url = URL(endpoint)
             val conn = (url.openConnection() as HttpURLConnection).apply {

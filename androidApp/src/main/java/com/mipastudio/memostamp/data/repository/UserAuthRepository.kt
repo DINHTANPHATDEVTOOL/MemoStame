@@ -73,15 +73,15 @@ class UserAuthRepository internal constructor(
     val supabaseAuthService: SupabaseAuthService = SupabaseAuthService.getInstance()
 ) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences("memostamp_auth_prefs", Context.MODE_PRIVATE)
-    private val friendsPrefs: SharedPreferences = context.getSharedPreferences("memostamp_friends_prefs", Context.MODE_PRIVATE)
-    private val requestsPrefs: SharedPreferences = context.getSharedPreferences("memostamp_requests_prefs", Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences? = try { context.getSharedPreferences("memostamp_auth_prefs", Context.MODE_PRIVATE) } catch (_: Throwable) { null }
+    private val friendsPrefs: SharedPreferences? = try { context.getSharedPreferences("memostamp_friends_prefs", Context.MODE_PRIVATE) } catch (_: Throwable) { null }
+    private val requestsPrefs: SharedPreferences? = try { context.getSharedPreferences("memostamp_requests_prefs", Context.MODE_PRIVATE) } catch (_: Throwable) { null }
     private val gson = Gson()
-    private val db = MemoStampDatabase.getInstance(context)
-    private val userDao: UserDao = db.userDao()
+    private val db: MemoStampDatabase? = try { MemoStampDatabase.getInstance(context) } catch (_: Throwable) { null }
+    private val userDao: UserDao? = try { db?.userDao() } catch (_: Throwable) { null }
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
-    private val _isSessionPersistent = MutableStateFlow<Boolean>(true)
+    private val _isSessionPersistent = MutableStateFlow<Boolean>(sessionStore.sessionPersistenceAvailable)
     val isSessionPersistent: StateFlow<Boolean> = _isSessionPersistent.asStateFlow()
 
     private val _isLoggedIn = MutableStateFlow<Boolean>(false)
@@ -112,6 +112,7 @@ class UserAuthRepository internal constructor(
     private val notifiedAcceptedRequestIds = mutableSetOf<String>()
 
     init {
+        _isSessionPersistent.value = sessionStore.sessionPersistenceAvailable
         val session = sessionStore.load()
         if (session != null && !session.isExpired()) {
             _authUserId.value = session.userId
@@ -125,7 +126,8 @@ class UserAuthRepository internal constructor(
                 val refreshRes = supabaseAuthService.refreshSession(session.refreshToken)
                 if (refreshRes.isSuccess) {
                     val refreshedSession = refreshRes.getOrThrow()
-                    sessionStore.save(refreshedSession)
+                    val persisted = sessionStore.save(refreshedSession)
+                    _isSessionPersistent.value = persisted
                     _authUserId.value = refreshedSession.userId
                     _accessToken.value = refreshedSession.accessToken
                     _refreshToken.value = refreshedSession.refreshToken
@@ -190,8 +192,13 @@ class UserAuthRepository internal constructor(
                 // 3. Sync friend requests from Supabase
                 val cloudRequests = supabaseClient.getFriendRequestsForUser(currentUid)
                 val validCloudRequests = cloudRequests.filter { it.senderId.isNotBlank() && it.recipientId.isNotBlank() }
-                _friendRequests.value = validCloudRequests.sortedByDescending { it.createdAt }
-                saveFriendRequests(currentUid, _friendRequests.value, syncToCloud = false)
+                val mergedRequestsMap = _friendRequests.value.associateBy { it.id }.toMutableMap()
+                for (cr in validCloudRequests) {
+                    mergedRequestsMap[cr.id] = cr
+                }
+                val mergedRequests = mergedRequestsMap.values.sortedByDescending { it.createdAt }
+                _friendRequests.value = mergedRequests
+                saveFriendRequests(currentUid, mergedRequests, syncToCloud = false)
 
                 if (validCloudRequests.isNotEmpty()) {
                     val newIncomingRequests = validCloudRequests.filter { req ->
@@ -258,9 +265,10 @@ class UserAuthRepository internal constructor(
                     }
                 }
 
-                val allActiveFriends = (cloudFriends + newAcceptedFriendIds).filter { it.isNotBlank() && it != currentUid }.toSet()
+                val currentLocalFriends = _friendIds.value
+                val allActiveFriends = (currentLocalFriends + cloudFriends + newAcceptedFriendIds).filter { it.isNotBlank() && it != currentUid }.toSet()
                 _friendIds.value = allActiveFriends
-                friendsPrefs.edit().putStringSet(getFriendsPrefKey(currentUid), allActiveFriends).apply()
+                friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(currentUid), allActiveFriends)?.apply()
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -275,9 +283,9 @@ class UserAuthRepository internal constructor(
     ) = withContext(Dispatchers.IO) {
         if (userId.isBlank()) return@withContext
         try {
-            val existing = userDao.getUserByUid(userId)
+            val existing = userDao?.getUserByUid(userId)
             if (existing == null) {
-                userDao.insertUser(
+                userDao?.insertUser(
                     UserEntity(
                         uid = userId,
                         username = username.ifBlank { "user_${userId.take(6)}" },
@@ -322,7 +330,7 @@ class UserAuthRepository internal constructor(
     private fun getFriendsPrefKey(userId: String): String = "friends_of_$userId"
 
     private fun loadFriendIds(userId: String): Set<String> {
-        val raw = friendsPrefs.getStringSet(getFriendsPrefKey(userId), null)
+        val raw = friendsPrefs?.getStringSet(getFriendsPrefKey(userId), null)
         return raw ?: emptySet()
     }
 
@@ -332,10 +340,10 @@ class UserAuthRepository internal constructor(
         if (userId.isBlank() || userId.startsWith("guest_")) return emptyList()
 
         val scopedKey = getRequestsPrefKey(userId)
-        var json = requestsPrefs.getString(scopedKey, null)
+        var json = requestsPrefs?.getString(scopedKey, null)
 
         if (json == null) {
-            val oldGlobalJson = requestsPrefs.getString("friend_requests_json", null)
+            val oldGlobalJson = requestsPrefs?.getString("friend_requests_json", null)
             if (!oldGlobalJson.isNullOrBlank()) {
                 try {
                     val type = object : TypeToken<List<FriendRequest>>() {}.type
@@ -343,12 +351,12 @@ class UserAuthRepository internal constructor(
                     val ownedList = oldList.filter { it.senderId == userId || it.recipientId == userId }
                     if (ownedList.isNotEmpty()) {
                         json = gson.toJson(ownedList)
-                        requestsPrefs.edit().putString(scopedKey, json).apply()
+                        requestsPrefs?.edit()?.putString(scopedKey, json)?.apply()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-                requestsPrefs.edit().remove("friend_requests_json").apply()
+                requestsPrefs?.edit()?.remove("friend_requests_json")?.apply()
             }
         }
 
@@ -368,7 +376,7 @@ class UserAuthRepository internal constructor(
             return
         }
         _friendRequests.value = requests
-        requestsPrefs.edit().putString(getRequestsPrefKey(userId), gson.toJson(requests)).apply()
+        requestsPrefs?.edit()?.putString(getRequestsPrefKey(userId), gson.toJson(requests))?.apply()
     }
 
     fun isFriend(userId: String): Boolean {
@@ -472,7 +480,7 @@ class UserAuthRepository internal constructor(
 
         val updatedFriends = previousFriends.toMutableSet().apply { add(targetUserId) }
         _friendIds.value = updatedFriends
-        friendsPrefs.edit().putStringSet(getFriendsPrefKey(authUid), updatedFriends).apply()
+        friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), updatedFriends)?.apply()
 
         val updatedRequests = previousReqs.map {
             if (it.id == requestId) it.copy(status = "ACCEPTED") else it
@@ -482,15 +490,16 @@ class UserAuthRepository internal constructor(
         val resStatus = supabaseClient.updateFriendRequestStatus(requestId, "ACCEPTED")
         if (resStatus.isFailure) {
             _friendIds.value = previousFriends
-            friendsPrefs.edit().putStringSet(getFriendsPrefKey(authUid), previousFriends).apply()
+            friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), previousFriends)?.apply()
             saveFriendRequests(authUid, previousReqs, syncToCloud = false)
             return@withContext Result.failure(resStatus.exceptionOrNull() ?: Exception("Chấp nhận lời mời kết bạn thất bại"))
         }
 
+        // TODO: Move accept-friend flow to atomic Supabase RPC transaction during RLS/backend phase to avoid server partial failure state.
         val resAdd = supabaseClient.addFriendship(authUid, targetUserId)
         if (resAdd.isFailure) {
             _friendIds.value = previousFriends
-            friendsPrefs.edit().putStringSet(getFriendsPrefKey(authUid), previousFriends).apply()
+            friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), previousFriends)?.apply()
             saveFriendRequests(authUid, previousReqs, syncToCloud = false)
             return@withContext Result.failure(resAdd.exceptionOrNull() ?: Exception("Tạo quan hệ bạn bè thất bại"))
         }
@@ -573,12 +582,12 @@ class UserAuthRepository internal constructor(
         val previousFriends = _friendIds.value
         val updatedFriends = previousFriends.toMutableSet().apply { remove(targetUserId) }
         _friendIds.value = updatedFriends
-        friendsPrefs.edit().putStringSet(getFriendsPrefKey(authUid), updatedFriends).apply()
+        friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), updatedFriends)?.apply()
 
         val res = supabaseClient.removeFriendship(authUid, targetUserId)
         if (res.isFailure) {
             _friendIds.value = previousFriends
-            friendsPrefs.edit().putStringSet(getFriendsPrefKey(authUid), previousFriends).apply()
+            friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), previousFriends)?.apply()
             return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Hủy kết bạn thất bại"))
         }
 
@@ -621,7 +630,7 @@ class UserAuthRepository internal constructor(
         if (targetUid.isNullOrBlank() || !_isLoggedIn.value) {
             return createGuestUser()
         }
-        val json = prefs.getString("user_profile_json", null)
+        val json = prefs?.getString("user_profile_json", null)
         if (!json.isNullOrBlank()) {
             try {
                 val parsed = gson.fromJson(json, UserProfile::class.java)
@@ -664,12 +673,12 @@ class UserAuthRepository internal constructor(
     private suspend fun cleanUpOldMockUsersIfNeeded() = withContext(Dispatchers.IO) {
         val mockUids = listOf("user_heritage_vietnam", "user_minh_dalat", "user_linh_seasun", "user_huy_wanderer")
         for (uid in mockUids) {
-            userDao.deleteUserByUid(uid)
+            userDao?.deleteUserByUid(uid)
         }
     }
 
     suspend fun refreshAccountsList() = withContext(Dispatchers.IO) {
-        val dbUsers = userDao.getAllUsers()
+        val dbUsers = userDao?.getAllUsers() ?: emptyList()
         val list = dbUsers.map { entity ->
             UserProfile(
                 userId = entity.uid,
@@ -734,7 +743,8 @@ class UserAuthRepository internal constructor(
         val session = authResult.getOrThrow()
         val realUid = session.userId
 
-        sessionStore.save(session)
+        val persisted = sessionStore.save(session)
+        _isSessionPersistent.value = persisted
         _authUserId.value = realUid
         _accessToken.value = session.accessToken
         _refreshToken.value = session.refreshToken
@@ -758,7 +768,7 @@ class UserAuthRepository internal constructor(
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis()
         )
-        userDao.insertUser(entity)
+        userDao?.insertUser(entity)
 
         val profile = UserProfile(
             userId = realUid,
@@ -795,7 +805,7 @@ class UserAuthRepository internal constructor(
         val emailToUse: String = if (cleanIdentifier.contains("@")) {
             cleanIdentifier
         } else {
-            val localUser = userDao.getUserByUsernameOrEmail(cleanIdentifier)
+            val localUser = userDao?.getUserByUsernameOrEmail(cleanIdentifier)
             if (localUser != null && localUser.email.isNotBlank()) {
                 localUser.email
             } else {
@@ -817,7 +827,8 @@ class UserAuthRepository internal constructor(
         val session = authResult.getOrThrow()
         val realUid = session.userId
 
-        sessionStore.save(session)
+        val persisted = sessionStore.save(session)
+        _isSessionPersistent.value = persisted
         _authUserId.value = realUid
         _accessToken.value = session.accessToken
         _refreshToken.value = session.refreshToken
@@ -829,7 +840,7 @@ class UserAuthRepository internal constructor(
             cloudProfileRecord = supabaseClient.getProfileByUsername(cleanIdentifier)
         }
 
-        val localUser = userDao.getUserByUid(realUid)
+        val localUser = userDao?.getUserByUid(realUid)
         val profile = UserProfile(
             userId = realUid,
             username = cloudProfileRecord?.username ?: localUser?.username ?: cleanIdentifier,
@@ -856,14 +867,14 @@ class UserAuthRepository internal constructor(
             createdAt = localUser?.createdAt ?: System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis()
         )
-        userDao.insertUser(entity)
+        userDao?.insertUser(entity)
 
         saveUserProfile(profile)
         Result.success(profile)
     }
 
     suspend fun switchAccount(userId: String): Result<UserProfile> = withContext(Dispatchers.IO) {
-        val user = userDao.getUserByUid(userId)
+        val user = userDao?.getUserByUid(userId)
             ?: return@withContext Result.failure(IllegalArgumentException("Không tìm thấy tài khoản"))
 
         val profile = UserProfile(
@@ -882,19 +893,19 @@ class UserAuthRepository internal constructor(
     }
 
     fun saveUserProfile(profile: UserProfile, markLoggedIn: Boolean = true) {
-        val editor = prefs.edit().putString("user_profile_json", gson.toJson(profile))
+        val editor = prefs?.edit()?.putString("user_profile_json", gson.toJson(profile))
         if (markLoggedIn) {
-            editor.putBoolean("is_logged_in", true)
+            editor?.putBoolean("is_logged_in", true)
             _isLoggedIn.value = true
         }
-        editor.apply()
+        editor?.apply()
         _currentUser.value = profile
         _friendIds.value = loadFriendIds(profile.userId)
         _friendRequests.value = loadFriendRequests(profile.userId)
         coroutineScope.launch {
-            val entity = userDao.getUserByUid(profile.userId)
+            val entity = userDao?.getUserByUid(profile.userId)
             if (entity != null) {
-                userDao.insertUser(
+                userDao?.insertUser(
                     entity.copy(
                         displayName = profile.displayName,
                         avatarUrl = profile.avatarUrl,
@@ -977,7 +988,7 @@ class UserAuthRepository internal constructor(
         }
 
         sessionStore.clear()
-        prefs.edit().putBoolean("is_logged_in", false).remove("user_profile_json").apply()
+        prefs?.edit()?.putBoolean("is_logged_in", false)?.remove("user_profile_json")?.apply()
 
         _isLoggedIn.value = false
         _authUserId.value = null
@@ -989,6 +1000,24 @@ class UserAuthRepository internal constructor(
         _friendRequests.value = emptyList()
 
         _currentUser.value = createGuestUser()
+    }
+
+    internal fun setTestAuthState(
+        isLoggedIn: Boolean,
+        authUser: UserProfile?,
+        friends: Set<String> = emptySet(),
+        requests: List<FriendRequest> = emptyList()
+    ) {
+        _isLoggedIn.value = isLoggedIn
+        _authUserId.value = authUser?.userId
+        _currentUser.value = authUser ?: createGuestUser()
+        _friendIds.value = friends
+        _friendRequests.value = requests
+        if (authUser != null && !authUser.userId.startsWith("guest_")) {
+            supabaseClient.userAccessToken = "test_jwt_${authUser.userId}"
+        } else {
+            supabaseClient.userAccessToken = null
+        }
     }
 
     companion object {
