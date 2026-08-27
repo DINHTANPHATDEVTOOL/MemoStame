@@ -328,17 +328,55 @@ class SharedMemoStampRepository {
         return true
     }
 
-    fun acceptTrade(tradeId: String) {
-        val trade = _tradeRequests.value.find { it.id == tradeId }
+    fun acceptTrade(tradeId: String): Boolean {
+        val trade = _tradeRequests.value.find { it.id == tradeId } ?: return false
         val me = _currentUser.value
-        if (trade != null && trade.senderId == me.uid && trade.senderId.isNotEmpty()) {
-            return
+        if (trade.senderId.isNotEmpty() && trade.senderId == me.uid && trade.recipientId != me.uid) {
+            return false
+        }
+        val isIncoming = trade.recipientId.isBlank() || trade.recipientId == me.uid
+        if (!isIncoming) {
+            return false
         }
         _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
+        return true
     }
 
-    fun rejectTrade(tradeId: String) {
+    fun rejectTrade(tradeId: String): Boolean {
+        val trade = _tradeRequests.value.find { it.id == tradeId } ?: return false
+        val me = _currentUser.value
+        if (trade.senderId.isNotEmpty() && trade.senderId == me.uid && trade.recipientId != me.uid) {
+            return false
+        }
+        val isIncoming = trade.recipientId.isBlank() || trade.recipientId == me.uid
+        if (!isIncoming) {
+            return false
+        }
         _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
+        return true
+    }
+
+    fun cancelOutgoingTrade(tradeId: String): Boolean {
+        val trade = _tradeRequests.value.find { it.id == tradeId } ?: return false
+        val me = _currentUser.value
+        val isSender = trade.senderId.isBlank() || trade.senderId == me.uid
+        if (!isSender) {
+            return false
+        }
+        _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
+        return true
+    }
+
+    fun restoreFriends(friends: List<FriendItem>) {
+        _friends.value = friends
+    }
+
+    fun restoreFriendRequests(requests: List<FriendRequestItem>) {
+        _friendRequests.value = requests
+    }
+
+    fun restoreTradeRequests(trades: List<TradeRequest>) {
+        _tradeRequests.value = trades
     }
 
     fun updateProfile(displayName: String, bio: String, avatarUrl: String? = null) {
@@ -382,28 +420,52 @@ class SharedMemoStampRepository {
         return FriendRequestResult(true, "Đã gửi lời mời kết bạn tới @$trimmed! 📩")
     }
 
-    fun acceptFriendRequest(requestId: String) {
-        val req = _friendRequests.value.find { it.id == requestId }
+    fun acceptFriendRequest(requestId: String): Boolean {
+        val req = _friendRequests.value.find { it.id == requestId } ?: return false
         val me = _currentUser.value
-        if (req != null) {
-            if (req.senderId == me.uid && req.senderId.isNotEmpty()) {
-                return
-            }
-            val newFriend = FriendItem(
-                id = if (req.senderId.isNotBlank()) req.senderId else "user_${currentTimeMillis()}",
-                displayName = req.senderName,
-                username = req.senderUsername,
-                avatarUrl = req.senderAvatar,
-                isOnline = true,
-                tradeCount = 0
-            )
-            _friends.value = listOf(newFriend) + _friends.value
+        if (req.senderId.isNotEmpty() && req.senderId == me.uid && req.recipientId != me.uid) {
+            return false
         }
+        val isIncoming = req.recipientId.isBlank() || req.recipientId == me.uid
+        if (!isIncoming) {
+            return false
+        }
+        val newFriend = FriendItem(
+            id = if (req.senderId.isNotBlank()) req.senderId else "user_${currentTimeMillis()}",
+            displayName = req.senderName,
+            username = req.senderUsername,
+            avatarUrl = req.senderAvatar,
+            isOnline = true,
+            tradeCount = 0
+        )
+        _friends.value = listOf(newFriend) + _friends.value.filter { it.id != newFriend.id }
         _friendRequests.value = _friendRequests.value.filter { it.id != requestId }
+        return true
     }
 
-    fun rejectFriendRequest(requestId: String) {
+    fun rejectFriendRequest(requestId: String): Boolean {
+        val req = _friendRequests.value.find { it.id == requestId } ?: return false
+        val me = _currentUser.value
+        if (req.senderId.isNotEmpty() && req.senderId == me.uid && req.recipientId != me.uid) {
+            return false
+        }
+        val isIncoming = req.recipientId.isBlank() || req.recipientId == me.uid
+        if (!isIncoming) {
+            return false
+        }
         _friendRequests.value = _friendRequests.value.filter { it.id != requestId }
+        return true
+    }
+
+    fun cancelOutgoingFriendRequest(requestId: String): Boolean {
+        val req = _friendRequests.value.find { it.id == requestId } ?: return false
+        val me = _currentUser.value
+        val isSender = req.senderId.isBlank() || req.senderId == me.uid
+        if (!isSender) {
+            return false
+        }
+        _friendRequests.value = _friendRequests.value.filter { it.id != requestId }
+        return true
     }
 
     fun addFriend(displayName: String, username: String): FriendItem {

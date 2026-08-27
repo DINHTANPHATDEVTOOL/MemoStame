@@ -105,9 +105,87 @@ class SharedMemoStampRepositoryTest {
         assertEquals(stamp.title, createdTrade.stampTitle)
         assertEquals(repo.currentUser.value.uid, createdTrade.senderId)
 
-        // Cannot accept own outgoing trade
-        repo.acceptTrade(createdTrade.id)
+        // Sender cannot accept own outgoing trade
+        val accepted = repo.acceptTrade(createdTrade.id)
+        assertFalse(accepted)
         assertTrue(repo.tradeRequests.value.any { it.id == createdTrade.id })
+    }
+
+    @Test
+    fun testSenderCannotAcceptOrRejectOwnFriendRequest() {
+        val repo = SharedMemoStampRepository()
+        val result = repo.sendFriendRequest("target_user")
+        assertTrue(result.success)
+        val req = repo.friendRequests.value.first()
+
+        // Current user ("user_me") is sender. Accept and reject must fail.
+        assertFalse(repo.acceptFriendRequest(req.id))
+        assertFalse(repo.rejectFriendRequest(req.id))
+        assertTrue(repo.friendRequests.value.any { it.id == req.id })
+    }
+
+    @Test
+    fun testSenderCanCancelOwnFriendRequest() {
+        val repo = SharedMemoStampRepository()
+        val result = repo.sendFriendRequest("target_user")
+        assertTrue(result.success)
+        val req = repo.friendRequests.value.first()
+
+        // Sender can cancel outgoing request
+        val cancelled = repo.cancelOutgoingFriendRequest(req.id)
+        assertTrue(cancelled)
+        assertTrue(repo.friendRequests.value.none { it.id == req.id })
+    }
+
+    @Test
+    fun testRecipientCanAcceptAndRejectFriendRequest() {
+        val repo = SharedMemoStampRepository()
+        val incomingReq = com.mipastudio.memostamp.domain.model.FriendRequestItem(
+            id = "freq_incoming",
+            senderName = "Linh Pham",
+            senderUsername = "linh_pham",
+            senderAvatar = "https://example.com/linh.jpg",
+            status = "PENDING",
+            createdAt = 1000L,
+            senderId = "user_linh",
+            recipientId = "user_me",
+            recipientUsername = "phat_memostamp"
+        )
+        repo.restoreFriendRequests(listOf(incomingReq))
+
+        val accepted = repo.acceptFriendRequest(incomingReq.id)
+        assertTrue(accepted)
+        assertTrue(repo.friends.value.any { it.username == "linh_pham" })
+        assertTrue(repo.friendRequests.value.none { it.id == incomingReq.id })
+    }
+
+    @Test
+    fun testSenderCanCancelOwnTradeRequest() {
+        val repo = SharedMemoStampRepository()
+        val friend = repo.addFriend("Huy Tran", "user_huy")
+        val stamp = repo.addStamp(
+            title = "Test Trade Stamp",
+            note = "Trade Note",
+            location = "Saigon",
+            imageUrl = "https://example.com/trade_stamp.jpg"
+        )
+        repo.sendTradeRequest(friendId = friend.id, stampId = stamp.id)
+        val trade = repo.tradeRequests.value.first()
+
+        val cancelled = repo.cancelOutgoingTrade(trade.id)
+        assertTrue(cancelled)
+        assertTrue(repo.tradeRequests.value.none { it.id == trade.id })
+    }
+
+    @Test
+    fun testRestoreSocialData() {
+        val repo = SharedMemoStampRepository()
+        val friends = listOf(
+            com.mipastudio.memostamp.domain.model.FriendItem("user_1", "User One", "user1", "", true, 0)
+        )
+        repo.restoreFriends(friends)
+        assertEquals(1, repo.friends.value.size)
+        assertEquals("User One", repo.friends.value.first().displayName)
     }
 
     @Test

@@ -41,10 +41,48 @@ struct PersistedUserData: Codable {
     let placesVisitedCount: Int32
 }
 
+struct PersistedFriendData: Codable {
+    let id: String
+    let displayName: String
+    let username: String
+    let avatarUrl: String
+    let isOnline: Bool
+    let tradeCount: Int32
+}
+
+struct PersistedFriendRequestData: Codable {
+    let id: String
+    let senderName: String
+    let senderUsername: String
+    let senderAvatar: String
+    let status: String
+    let createdAt: Int64
+    let senderId: String?
+    let recipientId: String?
+    let recipientUsername: String?
+}
+
+struct PersistedTradeRequestData: Codable {
+    let id: String
+    let senderName: String
+    let senderAvatar: String
+    let stampTitle: String
+    let stampUrl: String
+    let status: String
+    let createdAt: Int64
+    let senderId: String?
+    let recipientId: String?
+    let recipientName: String?
+    let stampId: String?
+}
+
 struct PersistedPayload: Codable {
     let user: PersistedUserData?
     let stamps: [PersistedStampData]
     let collections: [PersistedCollectionData]
+    let friends: [PersistedFriendData]?
+    let friendRequests: [PersistedFriendRequestData]?
+    let tradeRequests: [PersistedTradeRequestData]?
 }
 
 class IOSLocalPersistenceStore {
@@ -113,6 +151,59 @@ class IOSLocalPersistenceStore {
             )
         }
         repository.restoreStamps(stamps: loadedStamps)
+
+        // Restore Friends if present
+        if let friends = payload.friends {
+            let loadedFriends = friends.map { f in
+                FriendItem(
+                    id: f.id,
+                    displayName: f.displayName,
+                    username: f.username,
+                    avatarUrl: f.avatarUrl,
+                    isOnline: f.isOnline,
+                    tradeCount: f.tradeCount
+                )
+            }
+            repository.restoreFriends(friends: loadedFriends)
+        }
+
+        // Restore Friend Requests if present
+        if let requests = payload.friendRequests {
+            let loadedReqs = requests.map { r in
+                FriendRequestItem(
+                    id: r.id,
+                    senderName: r.senderName,
+                    senderUsername: r.senderUsername,
+                    senderAvatar: r.senderAvatar,
+                    status: r.status,
+                    createdAt: r.createdAt,
+                    senderId: r.senderId ?? "",
+                    recipientId: r.recipientId ?? "",
+                    recipientUsername: r.recipientUsername ?? ""
+                )
+            }
+            repository.restoreFriendRequests(requests: loadedReqs)
+        }
+
+        // Restore Trade Requests if present
+        if let trades = payload.tradeRequests {
+            let loadedTrades = trades.map { t in
+                TradeRequest(
+                    id: t.id,
+                    senderName: t.senderName,
+                    senderAvatar: t.senderAvatar,
+                    stampTitle: t.stampTitle,
+                    stampUrl: t.stampUrl,
+                    status: t.status,
+                    createdAt: t.createdAt,
+                    senderId: t.senderId ?? "",
+                    recipientId: t.recipientId ?? "",
+                    recipientName: t.recipientName ?? "",
+                    stampId: t.stampId ?? ""
+                )
+            }
+            repository.restoreTradeRequests(trades: loadedTrades)
+        }
     }
 
     func saveData(repository: SharedMemoStampRepository) {
@@ -166,10 +257,57 @@ class IOSLocalPersistenceStore {
             )
         }
 
+        let rawFriends = (repository.friends.value as? [FriendItem]) ?? []
+        let friendDatas = rawFriends.map { (f: FriendItem) in
+            PersistedFriendData(
+                id: f.id,
+                displayName: f.displayName,
+                username: f.username,
+                avatarUrl: f.avatarUrl,
+                isOnline: f.isOnline,
+                tradeCount: f.tradeCount
+            )
+        }
+
+        let rawFriendRequests = (repository.friendRequests.value as? [FriendRequestItem]) ?? []
+        let friendRequestDatas = rawFriendRequests.map { (r: FriendRequestItem) in
+            PersistedFriendRequestData(
+                id: r.id,
+                senderName: r.senderName,
+                senderUsername: r.senderUsername,
+                senderAvatar: r.senderAvatar,
+                status: r.status,
+                createdAt: r.createdAt,
+                senderId: r.senderId,
+                recipientId: r.recipientId,
+                recipientUsername: r.recipientUsername
+            )
+        }
+
+        let rawTradeRequests = (repository.tradeRequests.value as? [TradeRequest]) ?? []
+        let tradeRequestDatas = rawTradeRequests.map { (t: TradeRequest) in
+            PersistedTradeRequestData(
+                id: t.id,
+                senderName: t.senderName,
+                senderAvatar: t.senderAvatar,
+                stampTitle: t.stampTitle,
+                stampUrl: t.stampUrl,
+                status: t.status,
+                createdAt: t.createdAt,
+                senderId: t.senderId,
+                recipientId: t.recipientId,
+                recipientName: t.recipientName,
+                stampId: t.stampId
+            )
+        }
+
         let payload = PersistedPayload(
             user: userData,
             stamps: stampDatas,
-            collections: collectionDatas
+            collections: collectionDatas,
+            friends: friendDatas,
+            friendRequests: friendRequestDatas,
+            tradeRequests: tradeRequestDatas
         )
 
         if let encoded = try? JSONEncoder().encode(payload) {

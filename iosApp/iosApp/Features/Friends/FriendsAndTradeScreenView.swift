@@ -112,6 +112,7 @@ struct FriendsAndTradeScreenView: View {
                             if result.success {
                                 friendCode = ""
                                 refreshTrigger.toggle()
+                                IOSLocalPersistenceStore.shared.saveData(repository: repository)
                             }
                         }) {
                             Text(langManager.string(vi: "Gửi Mời", en: "Invite"))
@@ -223,12 +224,15 @@ struct FriendsAndTradeScreenView: View {
                                                     .foregroundColor(MSColors.grey)
                                             }
 
-                                            Spacer()
-
-                                            Button(action: {
-                                                repository.acceptFriendRequest(requestId: req.id)
+                                              Button(action: {
+                                                let success = repository.acceptFriendRequest(requestId: req.id)
                                                 refreshTrigger.toggle()
-                                                triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
+                                                IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                                                if success {
+                                                    triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
+                                                } else {
+                                                    triggerToast("Không có quyền chấp nhận lời mời này.")
+                                                }
                                             }) {
                                                 Text("Chấp nhận")
                                                     .font(.caption.bold())
@@ -240,9 +244,14 @@ struct FriendsAndTradeScreenView: View {
                                             }
 
                                             Button(action: {
-                                                repository.rejectFriendRequest(requestId: req.id)
+                                                let success = repository.rejectFriendRequest(requestId: req.id)
                                                 refreshTrigger.toggle()
-                                                triggerToast("Đã từ chối lời mời kết bạn.")
+                                                IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                                                if success {
+                                                    triggerToast("Đã từ chối lời mời kết bạn.")
+                                                } else {
+                                                    triggerToast("Không thể thực hiện thao tác.")
+                                                }
                                             }) {
                                                 Text("Từ chối")
                                                     .font(.caption.bold())
@@ -295,13 +304,24 @@ struct FriendsAndTradeScreenView: View {
 
                                             Spacer()
 
-                                            Text("ĐÃ GỬI")
-                                                .font(.caption2.bold())
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(Color.gray.opacity(0.15))
-                                                .foregroundColor(MSColors.grey)
-                                                .cornerRadius(8)
+                                            Button(action: {
+                                                let success = repository.cancelOutgoingFriendRequest(requestId: req.id)
+                                                refreshTrigger.toggle()
+                                                IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                                                if success {
+                                                    triggerToast("Đã hủy lời mời kết bạn.")
+                                                } else {
+                                                    triggerToast("Không thể hủy lời mời.")
+                                                }
+                                            }) {
+                                                Text("Hủy lời mời")
+                                                    .font(.caption.bold())
+                                                    .padding(.horizontal, 10)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color.red.opacity(0.12))
+                                                    .foregroundColor(.red)
+                                                    .cornerRadius(10)
+                                            }
                                         }
                                         .padding(10)
                                         .background(Color.white)
@@ -418,6 +438,7 @@ struct FriendsAndTradeScreenView: View {
                                             Button(action: {
                                                 repository.removeFriend(friendId: friend.id)
                                                 refreshTrigger.toggle()
+                                                IOSLocalPersistenceStore.shared.saveData(repository: repository)
                                                 triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
                                             }) {
                                                 Image(systemName: "person.badge.minus")
@@ -494,9 +515,14 @@ struct FriendsAndTradeScreenView: View {
                                                 if trade.status == "PENDING" {
                                                     HStack(spacing: 10) {
                                                         Button(action: {
-                                                            repository.acceptTrade(tradeId: trade.id)
+                                                            let success = repository.acceptTrade(tradeId: trade.id)
                                                             refreshTrigger.toggle()
-                                                            triggerToast("Đã đồng ý trao đổi tem!")
+                                                            IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                                                            if success {
+                                                                triggerToast("Đã chấp nhận đề nghị trao đổi")
+                                                            } else {
+                                                                triggerToast("Không có quyền chấp nhận yêu cầu này.")
+                                                            }
                                                         }) {
                                                             Text("Chấp nhận")
                                                                 .font(.caption.bold())
@@ -508,8 +534,14 @@ struct FriendsAndTradeScreenView: View {
                                                         }
 
                                                         Button(action: {
-                                                            repository.rejectTrade(tradeId: trade.id)
+                                                            let success = repository.rejectTrade(tradeId: trade.id)
                                                             refreshTrigger.toggle()
+                                                            IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                                                            if success {
+                                                                triggerToast("Đã từ chối đề nghị trao đổi.")
+                                                            } else {
+                                                                triggerToast("Không thể thực hiện thao tác.")
+                                                            }
                                                         }) {
                                                             Text("Từ chối")
                                                                 .font(.caption.bold())
@@ -566,6 +598,29 @@ struct FriendsAndTradeScreenView: View {
                                                         Text("Đang chờ bạn bè xác nhận...")
                                                             .font(.caption)
                                                             .foregroundColor(MSColors.grey)
+                                                    }
+
+                                                    Spacer()
+
+                                                    if trade.status == "PENDING" {
+                                                        Button(action: {
+                                                            let success = repository.cancelOutgoingTrade(tradeId: trade.id)
+                                                            refreshTrigger.toggle()
+                                                            IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                                                            if success {
+                                                                triggerToast("Đã hủy yêu cầu trao đổi.")
+                                                            } else {
+                                                                triggerToast("Không thể hủy yêu cầu.")
+                                                            }
+                                                        }) {
+                                                            Text("Hủy yêu cầu")
+                                                                .font(.caption.bold())
+                                                                .padding(.horizontal, 10)
+                                                                .padding(.vertical, 6)
+                                                                .background(Color.red.opacity(0.12))
+                                                                .foregroundColor(.red)
+                                                                .cornerRadius(10)
+                                                        }
                                                     }
                                                 }
                                             }
@@ -671,6 +726,7 @@ struct FriendsAndTradeScreenView: View {
                     onSendTrade: { stampId in
                         let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
                         refreshTrigger.toggle()
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository)
                         showTradeModal = false
                         if success {
                             triggerToast("Sent trade offer to \(friend.displayName)!")
@@ -860,6 +916,7 @@ struct FriendQrCodeSheetView: View {
                         toastMsg = result.message
                         if result.success {
                             scannedCode = ""
+                            IOSLocalPersistenceStore.shared.saveData(repository: repository)
                         }
                     }) {
                         Text("Kết Bạn")
