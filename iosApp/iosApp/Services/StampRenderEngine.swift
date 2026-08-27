@@ -81,6 +81,7 @@ final class StampRenderEngine {
             let cgContext = context.cgContext
 
             let themeColor: UIColor = uiColorFromHex(stampColorHex)
+            let s = shape.lowercased()
 
             // 1. Calculate perforated stamp path
             let shapeObj = PerforatedStampShape(notchRatio: 0.025, spacingRatio: 0.072)
