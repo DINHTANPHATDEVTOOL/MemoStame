@@ -25,6 +25,7 @@ class AndroidAuthSessionStore(context: Context) {
     }
 
     val isAvailable: Boolean get() = prefs != null
+    val sessionPersistenceAvailable: Boolean get() = isAvailable
 
     fun save(session: AndroidAuthSession): Boolean {
         val p = prefs ?: return false

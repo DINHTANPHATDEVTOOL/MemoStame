@@ -344,14 +344,20 @@ fun HomeScreen(
             onSendTrade = { onInboxClick() },
             onAddFriend = {
                 coroutineScope.launch {
-                    authRepo.sendFriendRequest(targetUser)
-                    Toast.makeText(context, "Đã gửi lời mời kết bạn! 🤝", Toast.LENGTH_SHORT).show()
+                    val res = authRepo.sendFriendRequest(targetUser)
+                    res.fold(
+                        onSuccess = { Toast.makeText(context, "Đã gửi lời mời kết bạn! 🤝", Toast.LENGTH_SHORT).show() },
+                        onFailure = { err -> Toast.makeText(context, err.message ?: "Gửi lời mời thất bại", Toast.LENGTH_SHORT).show() }
+                    )
                 }
             },
             onUnfriend = {
                 coroutineScope.launch {
-                    authRepo.unfriend(targetUser.userId)
-                    Toast.makeText(context, "Đã hủy kết bạn", Toast.LENGTH_SHORT).show()
+                    val res = authRepo.unfriend(targetUser.userId)
+                    res.fold(
+                        onSuccess = { Toast.makeText(context, "Đã hủy kết bạn", Toast.LENGTH_SHORT).show() },
+                        onFailure = { err -> Toast.makeText(context, err.message ?: "Hủy kết bạn thất bại", Toast.LENGTH_SHORT).show() }
+                    )
                 }
             }
         )

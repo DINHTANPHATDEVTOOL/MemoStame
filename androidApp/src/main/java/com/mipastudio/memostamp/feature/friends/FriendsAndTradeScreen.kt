@@ -498,41 +498,55 @@ fun FriendsAndTradeScreen(
                                         isPending = isPending,
                                         hasIncoming = incomingReq != null,
                                         onSendRequest = {
-                                            val res = authRepo.sendFriendRequest(user)
-                                            res.fold(
-                                                onSuccess = {
-                                                    Toast.makeText(context, "Đã gửi lời mời kết bạn đến @${user.username}! ✉️", Toast.LENGTH_SHORT).show()
-                                                },
-                                                onFailure = { err ->
-                                                    Toast.makeText(context, err.message ?: "Không thể gửi lời mời", Toast.LENGTH_SHORT).show()
-                                                }
-                                            )
-                                        },
-                                        onCancelRequest = {
-                                            authRepo.cancelFriendRequest(user.userId)
-                                            Toast.makeText(context, "Đã thu hồi lời mời kết bạn", Toast.LENGTH_SHORT).show()
-                                        },
-                                        onAcceptRequest = {
-                                            incomingReq?.let { req ->
-                                                val res = authRepo.acceptFriendRequest(req.id)
+                                            coroutineScope.launch {
+                                                val res = authRepo.sendFriendRequest(user)
                                                 res.fold(
                                                     onSuccess = {
-                                                        Toast.makeText(context, "Đã chấp nhận lời mời kết bạn từ @${user.username}! 🤝", Toast.LENGTH_SHORT).show()
-                                                        selectedTab = 0
+                                                        Toast.makeText(context, "Đã gửi lời mời kết bạn đến @${user.username}! ✉️", Toast.LENGTH_SHORT).show()
                                                     },
                                                     onFailure = { err ->
-                                                        Toast.makeText(context, err.message ?: "Không thể chấp nhận lời mời", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, err.message ?: "Không thể gửi lời mời", Toast.LENGTH_SHORT).show()
                                                     }
                                                 )
                                             }
                                         },
-                                        onDeclineRequest = {
-                                            incomingReq?.let { req ->
-                                                authRepo.declineFriendRequest(req.id)
-                                                Toast.makeText(context, "Đã từ chối lời mời kết bạn", Toast.LENGTH_SHORT).show()
+                                        onCancelRequest = {
+                                            coroutineScope.launch {
+                                                val res = authRepo.cancelFriendRequest(user.userId)
+                                                res.fold(
+                                                    onSuccess = { Toast.makeText(context, "Đã thu hồi lời mời kết bạn", Toast.LENGTH_SHORT).show() },
+                                                    onFailure = { err -> Toast.makeText(context, err.message ?: "Thu hồi thất bại", Toast.LENGTH_SHORT).show() }
+                                                )
                                             }
                                         },
-                                         onUnfriend = { userToUnfriend = user },
+                                        onAcceptRequest = {
+                                            incomingReq?.let { req ->
+                                                coroutineScope.launch {
+                                                    val res = authRepo.acceptFriendRequest(req.id)
+                                                    res.fold(
+                                                        onSuccess = {
+                                                            Toast.makeText(context, "Đã chấp nhận lời mời kết bạn từ @${user.username}! 🤝", Toast.LENGTH_SHORT).show()
+                                                            selectedTab = 0
+                                                        },
+                                                        onFailure = { err ->
+                                                            Toast.makeText(context, err.message ?: "Không thể chấp nhận lời mời", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        onDeclineRequest = {
+                                            incomingReq?.let { req ->
+                                                coroutineScope.launch {
+                                                    val res = authRepo.declineFriendRequest(req.id)
+                                                    res.fold(
+                                                        onSuccess = { Toast.makeText(context, "Đã từ chối lời mời kết bạn", Toast.LENGTH_SHORT).show() },
+                                                        onFailure = { err -> Toast.makeText(context, err.message ?: "Từ chối thất bại", Toast.LENGTH_SHORT).show() }
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        onUnfriend = { userToUnfriend = user },
                                         onSendTrade = { friendToTradeWith = user },
                                         onOpenChat = { onOpenChat(user.userId) },
                                         onOpenProfile = { profilePreviewUser = user }
@@ -604,16 +618,18 @@ fun FriendsAndTradeScreen(
                                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                             Button(
                                                 onClick = {
-                                                    val res = authRepo.acceptFriendRequest(req.id)
-                                                    res.fold(
-                                                        onSuccess = {
-                                                            Toast.makeText(context, "Đã trở thành bạn bè với @${req.senderUsername}! 🤝", Toast.LENGTH_SHORT).show()
-                                                            selectedTab = 0
-                                                        },
-                                                        onFailure = { err ->
-                                                            Toast.makeText(context, err.message ?: "Không thể chấp nhận lời mời", Toast.LENGTH_SHORT).show()
-                                                        }
-                                                    )
+                                                    coroutineScope.launch {
+                                                        val res = authRepo.acceptFriendRequest(req.id)
+                                                        res.fold(
+                                                            onSuccess = {
+                                                                Toast.makeText(context, "Đã trở thành bạn bè với @${req.senderUsername}! 🤝", Toast.LENGTH_SHORT).show()
+                                                                selectedTab = 0
+                                                            },
+                                                            onFailure = { err ->
+                                                                Toast.makeText(context, err.message ?: "Không thể chấp nhận lời mời", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        )
+                                                    }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                                                 shape = RoundedCornerShape(12.dp),
@@ -623,8 +639,13 @@ fun FriendsAndTradeScreen(
                                             }
                                             OutlinedButton(
                                                 onClick = {
-                                                    authRepo.declineFriendRequest(req.id)
-                                                    Toast.makeText(context, "Đã từ chối lời mời", Toast.LENGTH_SHORT).show()
+                                                    coroutineScope.launch {
+                                                        val res = authRepo.declineFriendRequest(req.id)
+                                                        res.fold(
+                                                            onSuccess = { Toast.makeText(context, "Đã từ chối lời mời", Toast.LENGTH_SHORT).show() },
+                                                            onFailure = { err -> Toast.makeText(context, err.message ?: "Từ chối thất bại", Toast.LENGTH_SHORT).show() }
+                                                        )
+                                                    }
                                                 },
                                                 shape = RoundedCornerShape(12.dp),
                                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
@@ -694,8 +715,13 @@ fun FriendsAndTradeScreen(
 
                                         OutlinedButton(
                                             onClick = {
-                                                authRepo.cancelFriendRequest(req.recipientId)
-                                                Toast.makeText(context, "Đã thu hồi lời mời kết bạn", Toast.LENGTH_SHORT).show()
+                                                coroutineScope.launch {
+                                                    val res = authRepo.cancelFriendRequest(req.recipientId)
+                                                    res.fold(
+                                                        onSuccess = { Toast.makeText(context, "Đã thu hồi lời mời kết bạn", Toast.LENGTH_SHORT).show() },
+                                                        onFailure = { err -> Toast.makeText(context, err.message ?: "Thu hồi thất bại", Toast.LENGTH_SHORT).show() }
+                                                    )
+                                                }
                                             },
                                             shape = RoundedCornerShape(12.dp),
                                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
@@ -1169,9 +1195,14 @@ fun FriendsAndTradeScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            authRepo.unfriend(friend.userId)
-                            userToUnfriend = null
-                            Toast.makeText(context, "Đã hủy kết bạn với @${friend.username}", Toast.LENGTH_SHORT).show()
+                            coroutineScope.launch {
+                                val res = authRepo.unfriend(friend.userId)
+                                userToUnfriend = null
+                                res.fold(
+                                    onSuccess = { Toast.makeText(context, "Đã hủy kết bạn với @${friend.username}", Toast.LENGTH_SHORT).show() },
+                                    onFailure = { err -> Toast.makeText(context, err.message ?: "Hủy kết bạn thất bại", Toast.LENGTH_SHORT).show() }
+                                )
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                     ) {

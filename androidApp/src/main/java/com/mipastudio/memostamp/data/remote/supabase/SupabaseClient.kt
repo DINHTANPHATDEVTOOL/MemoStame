@@ -118,10 +118,24 @@ data class SupabaseFeedCommentRecord(
     @SerializedName("created_at") val createdAt: Long? = null
 )
 
-class SupabaseClient constructor(private val context: Context? = null) {
+interface SupabaseHttpTransport {
+    fun executeHttp(
+        client: SupabaseClient,
+        endpoint: String,
+        method: String,
+        jsonBody: String?,
+        prefer: String?,
+        requireUserAuth: Boolean
+    ): Result<String>
+}
+
+class SupabaseClient internal constructor(private val context: Context? = null) {
 
     private val gson: Gson = createCustomGson()
     private val missingSchemaColumns = ConcurrentHashMap.newKeySet<String>()
+
+    @Volatile
+    var transport: SupabaseHttpTransport? = null
 
     companion object {
         private const val TAG = "SupabaseClient"
@@ -208,8 +222,8 @@ class SupabaseClient constructor(private val context: Context? = null) {
         }
     }
 
-    private fun getBaseUrl(): String = SupabaseConfig.getSupabaseUrl(context).trimEnd('/')
-    private fun getApiKey(): String = SupabaseConfig.getAnonKey(context).trim()
+    private fun getBaseUrl(): String = if (context != null) SupabaseConfig.getSupabaseUrl(context).trimEnd('/') else "https://fake.supabase.co"
+    private fun getApiKey(): String = if (context != null) SupabaseConfig.getAnonKey(context).trim() else "fake_anon_key"
 
     suspend fun testConnection(overrideUrl: String? = null, overrideKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         val baseUrl = (overrideUrl ?: getBaseUrl()).trimEnd('/')
@@ -301,6 +315,10 @@ class SupabaseClient constructor(private val context: Context? = null) {
         prefer: String? = null,
         requireUserAuth: Boolean = false
     ): Result<String> {
+        val t = transport
+        if (t != null) {
+            return t.executeHttp(this, endpoint, method, jsonBody, prefer, requireUserAuth)
+        }
         return try {
             val apiKey = getApiKey()
             val token = userAccessToken.takeIf { !it.isNullOrBlank() }
@@ -600,9 +618,15 @@ class SupabaseClient constructor(private val context: Context? = null) {
             return@withContext Result.failure(res1.exceptionOrNull() ?: Exception("Failed to remove friend records"))
         }
         // 2. Delete friends record by user pairs
-        executeHttp("${getBaseUrl()}/rest/v1/friends?or=(and(user_id_1.eq.$u1,user_id_2.eq.$u2),and(user_id_1.eq.$u2,user_id_2.eq.$u1))", method = "DELETE", requireUserAuth = true)
+        val res2 = executeHttp("${getBaseUrl()}/rest/v1/friends?or=(and(user_id_1.eq.$u1,user_id_2.eq.$u2),and(user_id_1.eq.$u2,user_id_2.eq.$u1))", method = "DELETE", requireUserAuth = true)
+        if (!res2.isSuccess) {
+            return@withContext Result.failure(res2.exceptionOrNull() ?: Exception("Failed to remove friend pair records"))
+        }
         // 3. Delete any friend requests between these two users so they are not resurrected on next sync
-        executeHttp("${getBaseUrl()}/rest/v1/friend_requests?or=(and(sender_id.eq.$u1,recipient_id.eq.$u2),and(sender_id.eq.$u2,recipient_id.eq.$u1))", method = "DELETE", requireUserAuth = true)
+        val res3 = executeHttp("${getBaseUrl()}/rest/v1/friend_requests?or=(and(sender_id.eq.$u1,recipient_id.eq.$u2),and(sender_id.eq.$u2,recipient_id.eq.$u1))", method = "DELETE", requireUserAuth = true)
+        if (!res3.isSuccess) {
+            return@withContext Result.failure(res3.exceptionOrNull() ?: Exception("Failed to cleanup friend request records"))
+        }
 
         Result.success(true)
     }
@@ -884,8 +908,8 @@ class SupabaseClient constructor(private val context: Context? = null) {
         val encPost = URLEncoder.encode(postId.trim(), "UTF-8")
         val encUser = URLEncoder.encode(userId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_reactions?post_id=eq.$encPost&user_id=eq.$encUser"
-        executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
-        Result.success(true)
+        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Delete reaction failed"))
     }
 
     suspend fun getFeedReactions(): List<SupabaseFeedReactionRecord> = withContext(Dispatchers.IO) {
