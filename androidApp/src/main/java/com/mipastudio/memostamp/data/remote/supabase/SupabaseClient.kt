@@ -575,8 +575,15 @@ class SupabaseClient constructor(private val context: Context? = null) {
         )
         val endpointPlain = "${getBaseUrl()}/rest/v1/friends"
 
-        var res1 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map1), requireUserAuth = true)
-        var res2 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map2), requireUserAuth = true)
+        val res1 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map1), requireUserAuth = true)
+        if (!res1.isSuccess) {
+            return@withContext Result.failure(res1.exceptionOrNull() ?: Exception("Failed to create friendship pair 1"))
+        }
+
+        val res2 = executeHttp(endpointPlain, method = "POST", jsonBody = gson.toJson(map2), requireUserAuth = true)
+        if (!res2.isSuccess) {
+            return@withContext Result.failure(res2.exceptionOrNull() ?: Exception("Failed to create friendship pair 2"))
+        }
 
         Result.success(true)
     }
@@ -588,7 +595,10 @@ class SupabaseClient constructor(private val context: Context? = null) {
         val u2 = URLEncoder.encode(userId2.trim(), "UTF-8")
 
         // 1. Delete friends record by id
-        executeHttp("${getBaseUrl()}/rest/v1/friends?or=(id.eq.$id1,id.eq.$id2)", method = "DELETE", requireUserAuth = true)
+        val res1 = executeHttp("${getBaseUrl()}/rest/v1/friends?or=(id.eq.$id1,id.eq.$id2)", method = "DELETE", requireUserAuth = true)
+        if (!res1.isSuccess) {
+            return@withContext Result.failure(res1.exceptionOrNull() ?: Exception("Failed to remove friend records"))
+        }
         // 2. Delete friends record by user pairs
         executeHttp("${getBaseUrl()}/rest/v1/friends?or=(and(user_id_1.eq.$u1,user_id_2.eq.$u2),and(user_id_1.eq.$u2,user_id_2.eq.$u1))", method = "DELETE", requireUserAuth = true)
         // 3. Delete any friend requests between these two users so they are not resurrected on next sync
@@ -682,28 +692,15 @@ class SupabaseClient constructor(private val context: Context? = null) {
         val sEncoded = URLEncoder.encode(senderId.trim(), "UTF-8")
         val rEncoded = URLEncoder.encode(recipientId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?sender_id=eq.$sEncoded&recipient_id=eq.$rEncoded&is_read=eq.false"
-        var res = executeHttp(endpoint, method = "PATCH", jsonBody = json, requireUserAuth = true)
-        if (!res.isSuccess) {
-            val unreadMsgs = getMessagesForUser(recipientId).filter { it.senderId == senderId && !it.isRead }
-            unreadMsgs.forEach { msg ->
-                val jsonMap = mutableMapOf<String, Any?>(
-                    "id" to msg.id,
-                    "sender_id" to msg.senderId,
-                    "recipient_id" to msg.recipientId,
-                    "is_read" to true
-                )
-                executeUpsertWithSchemaFallback("${getBaseUrl()}/rest/v1/direct_messages?on_conflict=id", jsonMap, prefer = "resolution=merge-duplicates")
-            }
-            res = Result.success("Batch updated")
-        }
-        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Unknown error"))
+        val res = executeHttp(endpoint, method = "PATCH", jsonBody = json, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Mark messages read failed"))
     }
 
     suspend fun deleteDirectMessage(messageId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(messageId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?id=eq.$encoded"
-        executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
-        Result.success(true)
+        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Delete direct message failed"))
     }
 
     private fun extractMissingColumn(errMsg: String): String? {

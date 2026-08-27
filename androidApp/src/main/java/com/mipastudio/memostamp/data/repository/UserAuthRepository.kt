@@ -148,7 +148,7 @@ class UserAuthRepository private constructor(private val context: Context) {
         }
 
         _friendIds.value = loadFriendIds(_currentUser.value.userId)
-        val initialReqs = loadFriendRequests()
+        val initialReqs = loadFriendRequests(_currentUser.value.userId)
         _friendRequests.value = initialReqs
         notifiedPendingRequestIds.addAll(initialReqs.filter { it.status == "PENDING" }.map { it.id })
         notifiedAcceptedRequestIds.addAll(initialReqs.filter { it.status == "ACCEPTED" }.map { it.id })
@@ -186,7 +186,7 @@ class UserAuthRepository private constructor(private val context: Context) {
                 val cloudRequests = supabaseClient.getFriendRequestsForUser(currentUid)
                 val validCloudRequests = cloudRequests.filter { it.senderId.isNotBlank() && it.recipientId.isNotBlank() }
                 _friendRequests.value = validCloudRequests.sortedByDescending { it.createdAt }
-                saveFriendRequests(_friendRequests.value, syncToCloud = false)
+                saveFriendRequests(currentUid, _friendRequests.value, syncToCloud = false)
 
                 if (validCloudRequests.isNotEmpty()) {
                     val newIncomingRequests = validCloudRequests.filter { req ->
@@ -321,8 +321,34 @@ class UserAuthRepository private constructor(private val context: Context) {
         return raw ?: emptySet()
     }
 
-    private fun loadFriendRequests(): List<FriendRequest> {
-        val json = requestsPrefs.getString("friend_requests_json", null) ?: return emptyList()
+    private fun getRequestsPrefKey(userId: String): String = "friend_requests_of_$userId"
+
+    private fun loadFriendRequests(userId: String): List<FriendRequest> {
+        if (userId.isBlank() || userId.startsWith("guest_")) return emptyList()
+
+        val scopedKey = getRequestsPrefKey(userId)
+        var json = requestsPrefs.getString(scopedKey, null)
+
+        if (json == null) {
+            val oldGlobalJson = requestsPrefs.getString("friend_requests_json", null)
+            if (!oldGlobalJson.isNullOrBlank()) {
+                try {
+                    val type = object : TypeToken<List<FriendRequest>>() {}.type
+                    val oldList: List<FriendRequest> = gson.fromJson(oldGlobalJson, type) ?: emptyList()
+                    val ownedList = oldList.filter { it.senderId == userId || it.recipientId == userId }
+                    if (ownedList.isNotEmpty()) {
+                        json = gson.toJson(ownedList)
+                        requestsPrefs.edit().putString(scopedKey, json).apply()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                requestsPrefs.edit().remove("friend_requests_json").apply()
+            }
+        }
+
+        if (json.isNullOrBlank()) return emptyList()
+
         return try {
             val type = object : TypeToken<List<FriendRequest>>() {}.type
             gson.fromJson(json, type) ?: emptyList()
@@ -331,9 +357,13 @@ class UserAuthRepository private constructor(private val context: Context) {
         }
     }
 
-    private fun saveFriendRequests(requests: List<FriendRequest>, syncToCloud: Boolean = true) {
+    private fun saveFriendRequests(userId: String, requests: List<FriendRequest>, syncToCloud: Boolean = true) {
+        if (userId.isBlank() || userId.startsWith("guest_")) {
+            _friendRequests.value = emptyList()
+            return
+        }
         _friendRequests.value = requests
-        requestsPrefs.edit().putString("friend_requests_json", gson.toJson(requests)).apply()
+        requestsPrefs.edit().putString(getRequestsPrefKey(userId), gson.toJson(requests)).apply()
     }
 
     fun isFriend(userId: String): Boolean {
@@ -361,8 +391,13 @@ class UserAuthRepository private constructor(private val context: Context) {
     }
 
     fun sendFriendRequest(targetUser: UserProfile): Result<Unit> {
+        val authUid = _authUserId.value
         val current = _currentUser.value
-        if (targetUser.userId == current.userId || targetUser.username.equals(current.username, ignoreCase = true)) {
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return Result.failure(SecurityException("Unauthorized: Guest cannot send friend requests"))
+        }
+
+        if (targetUser.userId == authUid || targetUser.username.equals(current.username, ignoreCase = true)) {
             return Result.failure(IllegalArgumentException("Bạn không thể gửi lời mời kết bạn cho chính mình"))
         }
         if (isFriend(targetUser.userId)) {
@@ -379,7 +414,7 @@ class UserAuthRepository private constructor(private val context: Context) {
 
         val newReq = FriendRequest(
             id = "freq_" + UUID.randomUUID().toString().take(8),
-            senderId = current.userId,
+            senderId = authUid,
             senderUsername = current.username,
             senderDisplayName = current.displayName,
             senderAvatar = current.avatarUrl,
@@ -391,14 +426,19 @@ class UserAuthRepository private constructor(private val context: Context) {
             createdAt = System.currentTimeMillis()
         )
 
-        val updated = _friendRequests.value.filterNot { it.senderId == current.userId && it.recipientId == targetUser.userId } + newReq
-        saveFriendRequests(updated)
+        val currentReqs = _friendRequests.value
+        val updated = currentReqs.filterNot { it.senderId == authUid && it.recipientId == targetUser.userId } + newReq
+        saveFriendRequests(authUid, updated)
 
         coroutineScope.launch {
             try {
-                supabaseClient.sendFriendRequest(newReq)
+                val res = supabaseClient.sendFriendRequest(newReq)
+                if (res.isFailure) {
+                    saveFriendRequests(authUid, currentReqs)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
+                saveFriendRequests(authUid, currentReqs)
             }
         }
 
@@ -406,23 +446,32 @@ class UserAuthRepository private constructor(private val context: Context) {
     }
 
     fun acceptFriendRequest(requestId: String): Result<Unit> {
+        val authUid = _authUserId.value
         val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return Result.failure(SecurityException("Unauthorized: Must be logged in to accept friend requests"))
+        }
+
         val req = _friendRequests.value.find { it.id == requestId }
             ?: return Result.failure(IllegalArgumentException("Không tìm thấy lời mời kết bạn"))
 
-        val targetUserId = if (req.recipientId == current.userId) req.senderId else req.recipientId
-        val targetUsername = if (req.recipientId == current.userId) req.senderUsername else req.recipientUsername
-        val targetDisplayName = if (req.recipientId == current.userId) req.senderDisplayName else req.recipientDisplayName
-        val targetAvatar = if (req.recipientId == current.userId) req.senderAvatar else req.recipientAvatar
+        if (req.status != "PENDING") {
+            return Result.failure(IllegalArgumentException("Lời mời kết bạn đã được xử lý"))
+        }
+
+        if (req.recipientId != authUid || req.senderId == authUid) {
+            return Result.failure(SecurityException("Unauthorized: Cannot accept this friend request"))
+        }
+
+        val targetUserId = req.senderId
+        val targetUsername = req.senderUsername
+        val targetDisplayName = req.senderDisplayName
+        val targetAvatar = req.senderAvatar
 
         val myFriends = _friendIds.value.toMutableSet()
         myFriends.add(targetUserId)
         _friendIds.value = myFriends
-        friendsPrefs.edit().putStringSet(getFriendsPrefKey(current.userId), myFriends).apply()
-
-        val theirFriends = loadFriendIds(targetUserId).toMutableSet()
-        theirFriends.add(current.userId)
-        friendsPrefs.edit().putStringSet(getFriendsPrefKey(targetUserId), theirFriends).apply()
+        friendsPrefs.edit().putStringSet(getFriendsPrefKey(authUid), myFriends).apply()
 
         coroutineScope.launch {
             ensureUserProfileExists(targetUserId, targetUsername, targetDisplayName, targetAvatar)
@@ -431,13 +480,12 @@ class UserAuthRepository private constructor(private val context: Context) {
         val updatedRequests = _friendRequests.value.map {
             if (it.id == requestId) it.copy(status = "ACCEPTED") else it
         }
-        _friendRequests.value = updatedRequests
-        saveFriendRequests(updatedRequests, syncToCloud = false)
+        saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
 
         coroutineScope.launch {
             try {
                 supabaseClient.updateFriendRequestStatus(requestId, "ACCEPTED")
-                supabaseClient.addFriendship(current.userId, targetUserId)
+                supabaseClient.addFriendship(authUid, targetUserId)
                 syncWithSupabaseOnce()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -448,8 +496,21 @@ class UserAuthRepository private constructor(private val context: Context) {
     }
 
     fun declineFriendRequest(requestId: String): Result<Unit> {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return Result.failure(SecurityException("Unauthorized: Must be logged in to decline friend requests"))
+        }
+
+        val req = _friendRequests.value.find { it.id == requestId }
+            ?: return Result.failure(IllegalArgumentException("Không tìm thấy lời mời kết bạn"))
+
+        if (req.status != "PENDING" || req.recipientId != authUid || req.senderId == authUid) {
+            return Result.failure(SecurityException("Unauthorized: Cannot decline this friend request"))
+        }
+
         val updatedRequests = _friendRequests.value.filterNot { it.id == requestId }
-        saveFriendRequests(updatedRequests, syncToCloud = false)
+        saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
 
         coroutineScope.launch {
             try {
@@ -463,16 +524,26 @@ class UserAuthRepository private constructor(private val context: Context) {
         return Result.success(Unit)
     }
 
-    fun cancelFriendRequest(targetUserId: String): Result<Unit> {
-        val currentUid = _currentUser.value.userId
-        val updatedRequests = _friendRequests.value.filterNot {
-            it.senderId == currentUid && it.recipientId == targetUserId && it.status == "PENDING"
+    fun cancelOutgoingFriendRequest(requestId: String): Result<Unit> {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return Result.failure(SecurityException("Unauthorized: Must be logged in to cancel friend requests"))
         }
-        saveFriendRequests(updatedRequests, syncToCloud = false)
+
+        val req = _friendRequests.value.find { it.id == requestId }
+            ?: return Result.failure(IllegalArgumentException("Không tìm thấy lời mời kết bạn"))
+
+        if (req.status != "PENDING" || req.senderId != authUid) {
+            return Result.failure(SecurityException("Unauthorized: Cannot cancel this outgoing friend request"))
+        }
+
+        val updatedRequests = _friendRequests.value.filterNot { it.id == requestId }
+        saveFriendRequests(authUid, updatedRequests, syncToCloud = false)
 
         coroutineScope.launch {
             try {
-                supabaseClient.removeFriendship(currentUid, targetUserId)
+                supabaseClient.removeFriendship(authUid, req.recipientId)
                 syncWithSupabaseOnce()
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -482,17 +553,33 @@ class UserAuthRepository private constructor(private val context: Context) {
         return Result.success(Unit)
     }
 
+    fun cancelFriendRequest(targetUserId: String): Result<Unit> {
+        val authUid = _authUserId.value ?: return Result.failure(SecurityException("Not logged in"))
+        val req = _friendRequests.value.find { it.senderId == authUid && it.recipientId == targetUserId && it.status == "PENDING" }
+            ?: return Result.failure(IllegalArgumentException("No pending request to $targetUserId"))
+        return cancelOutgoingFriendRequest(req.id)
+    }
+
     fun unfriend(targetUserId: String): Result<Unit> {
-        val currentUid = _currentUser.value.userId
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return Result.failure(SecurityException("Unauthorized: Must be logged in to unfriend"))
+        }
+
         val myFriends = _friendIds.value.toMutableSet()
         myFriends.remove(targetUserId)
         _friendIds.value = myFriends
-        friendsPrefs.edit().putStringSet(getFriendsPrefKey(currentUid), myFriends).apply()
+        friendsPrefs.edit().putStringSet(getFriendsPrefKey(authUid), myFriends).apply()
 
         coroutineScope.launch {
             try {
-                supabaseClient.removeFriendship(currentUid, targetUserId)
-                syncWithSupabaseOnce()
+                val res = supabaseClient.removeFriendship(authUid, targetUserId)
+                if (res.isFailure) {
+                    syncWithSupabaseOnce()
+                } else {
+                    syncWithSupabaseOnce()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -804,6 +891,7 @@ class UserAuthRepository private constructor(private val context: Context) {
         editor.apply()
         _currentUser.value = profile
         _friendIds.value = loadFriendIds(profile.userId)
+        _friendRequests.value = loadFriendRequests(profile.userId)
         coroutineScope.launch {
             val entity = userDao.getUserByUid(profile.userId)
             if (entity != null) {

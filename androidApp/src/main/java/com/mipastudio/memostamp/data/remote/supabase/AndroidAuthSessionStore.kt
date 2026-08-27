@@ -7,61 +7,70 @@ import androidx.security.crypto.MasterKey
 
 class AndroidAuthSessionStore(context: Context) {
 
-    private val prefs: SharedPreferences = createEncryptedSharedPreferences(context)
+    val prefs: SharedPreferences? = try {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
 
-    private fun createEncryptedSharedPreferences(context: Context): SharedPreferences {
+        EncryptedSharedPreferences.create(
+            context,
+            "memostamp_secure_session",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Throwable) {
+        System.err.println("SecureSessionStore initialization failed: ${e.message}")
+        null
+    }
+
+    val isAvailable: Boolean get() = prefs != null
+
+    fun save(session: AndroidAuthSession): Boolean {
+        val p = prefs ?: return false
         return try {
-            val masterKey = MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
-
-            EncryptedSharedPreferences.create(
-                context,
-                "memostamp_secure_session",
-                masterKey,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
+            p.edit()
+                .putString("auth_user_id", session.userId)
+                .putString("auth_email", session.email)
+                .putString("access_token", session.accessToken)
+                .putString("refresh_token", session.refreshToken)
+                .putLong("expires_at", session.expiresAt)
+                .commit()
         } catch (e: Throwable) {
-            context.getSharedPreferences("memostamp_secure_session", Context.MODE_PRIVATE)
+            e.printStackTrace()
+            false
         }
     }
 
-    fun save(session: AndroidAuthSession) {
-        prefs.edit()
-            .putString("auth_user_id", session.userId)
-            .putString("auth_email", session.email)
-            .putString("access_token", session.accessToken)
-            .putString("refresh_token", session.refreshToken)
-            .putLong("expires_at", session.expiresAt)
-            .apply()
-    }
-
     fun load(): AndroidAuthSession? {
-        val userId = prefs.getString("auth_user_id", null) ?: return null
-        val accessToken = prefs.getString("access_token", null) ?: return null
-        val refreshToken = prefs.getString("refresh_token", null) ?: return null
-        val email = prefs.getString("auth_email", "") ?: ""
-        val expiresAt = prefs.getLong("expires_at", 0L)
+        val p = prefs ?: return null
+        return try {
+            val userId = p.getString("auth_user_id", null) ?: return null
+            val accessToken = p.getString("access_token", null) ?: return null
+            val refreshToken = p.getString("refresh_token", null) ?: return null
+            val email = p.getString("auth_email", "") ?: ""
+            val expiresAt = p.getLong("expires_at", 0L)
 
-        if (userId.isBlank() || accessToken.isBlank()) return null
+            if (userId.isBlank() || accessToken.isBlank()) return null
 
-        return AndroidAuthSession(
-            accessToken = accessToken,
-            refreshToken = refreshToken,
-            expiresAt = expiresAt,
-            userId = userId,
-            email = email
-        )
+            AndroidAuthSession(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                expiresAt = expiresAt,
+                userId = userId,
+                email = email
+            )
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun clear() {
-        prefs.edit()
-            .remove("auth_user_id")
-            .remove("auth_email")
-            .remove("access_token")
-            .remove("refresh_token")
-            .remove("expires_at")
-            .apply()
+        try {
+            prefs?.edit()?.clear()?.apply()
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 }

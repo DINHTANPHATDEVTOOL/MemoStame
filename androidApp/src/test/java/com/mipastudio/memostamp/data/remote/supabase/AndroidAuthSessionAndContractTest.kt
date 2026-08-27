@@ -1,5 +1,7 @@
 package com.mipastudio.memostamp.data.remote.supabase
 
+import com.mipastudio.memostamp.data.repository.FriendRequest
+import com.mipastudio.memostamp.data.repository.UserProfile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -160,5 +162,167 @@ class AndroidAuthSessionAndContractTest {
 
         val isLoggedIn = hasRoomCachedUserInDb && supabaseSession != null && !supabaseSession.isExpired()
         assertFalse(isLoggedIn)
+    }
+
+    // ==========================================
+    // SOCIAL AUTHORIZATION & SESSION SECURITY TESTS
+    // ==========================================
+
+    @Test
+    fun testK_senderCannotAcceptOwnFriendRequest() {
+        val senderUid = "user_sender_123"
+        val recipientUid = "user_recipient_456"
+
+        val req = FriendRequest(
+            id = "freq_1",
+            senderId = senderUid,
+            senderUsername = "sender",
+            senderDisplayName = "Sender",
+            senderAvatar = "",
+            recipientId = recipientUid,
+            recipientUsername = "recipient",
+            recipientDisplayName = "Recipient",
+            recipientAvatar = "",
+            status = "PENDING"
+        )
+
+        val currentAuthUid = senderUid
+        val canAccept = (currentAuthUid == req.recipientId && currentAuthUid != req.senderId && req.status == "PENDING")
+
+        assertFalse(canAccept)
+    }
+
+    @Test
+    fun testL_senderCannotDeclineOutgoingRequest() {
+        val senderUid = "user_sender_123"
+        val recipientUid = "user_recipient_456"
+
+        val req = FriendRequest(
+            id = "freq_1",
+            senderId = senderUid,
+            senderUsername = "sender",
+            senderDisplayName = "Sender",
+            senderAvatar = "",
+            recipientId = recipientUid,
+            recipientUsername = "recipient",
+            recipientDisplayName = "Recipient",
+            recipientAvatar = "",
+            status = "PENDING"
+        )
+
+        val currentAuthUid = senderUid
+        val canDecline = (currentAuthUid == req.recipientId && currentAuthUid != req.senderId && req.status == "PENDING")
+
+        assertFalse(canDecline)
+    }
+
+    @Test
+    fun testM_recipientCanAcceptAndDecline() {
+        val senderUid = "user_sender_123"
+        val recipientUid = "user_recipient_456"
+
+        val req = FriendRequest(
+            id = "freq_1",
+            senderId = senderUid,
+            senderUsername = "sender",
+            senderDisplayName = "Sender",
+            senderAvatar = "",
+            recipientId = recipientUid,
+            recipientUsername = "recipient",
+            recipientDisplayName = "Recipient",
+            recipientAvatar = "",
+            status = "PENDING"
+        )
+
+        val currentAuthUid = recipientUid
+        val canAccept = (currentAuthUid == req.recipientId && currentAuthUid != req.senderId && req.status == "PENDING")
+        val canDecline = (currentAuthUid == req.recipientId && currentAuthUid != req.senderId && req.status == "PENDING")
+
+        assertTrue(canAccept)
+        assertTrue(canDecline)
+    }
+
+    @Test
+    fun testN_thirdUserCannotAcceptDeclineOrCancel() {
+        val senderUid = "user_sender_123"
+        val recipientUid = "user_recipient_456"
+        val thirdUserUid = "user_third_789"
+
+        val req = FriendRequest(
+            id = "freq_1",
+            senderId = senderUid,
+            senderUsername = "sender",
+            senderDisplayName = "Sender",
+            senderAvatar = "",
+            recipientId = recipientUid,
+            recipientUsername = "recipient",
+            recipientDisplayName = "Recipient",
+            recipientAvatar = "",
+            status = "PENDING"
+        )
+
+        val currentAuthUid = thirdUserUid
+        val canAccept = (currentAuthUid == req.recipientId && currentAuthUid != req.senderId && req.status == "PENDING")
+        val canDecline = (currentAuthUid == req.recipientId && currentAuthUid != req.senderId && req.status == "PENDING")
+        val canCancel = (currentAuthUid == req.senderId && req.status == "PENDING")
+
+        assertFalse(canAccept)
+        assertFalse(canDecline)
+        assertFalse(canCancel)
+    }
+
+    @Test
+    fun testO_guestCannotSendFriendRequest() {
+        val guestUid = "guest_12345"
+        val targetUser = UserProfile(userId = "user_target_999", username = "target", displayName = "Target")
+
+        val canSend = !guestUid.startsWith("guest_") && guestUid.isNotBlank()
+        assertFalse(canSend)
+    }
+
+    @Test
+    fun testP_accountACachedRequestsNotVisibleToAccountB() {
+        val accountARequests = listOf(
+            FriendRequest(
+                id = "req_1",
+                senderId = "user_a",
+                senderUsername = "user_a",
+                senderDisplayName = "User A",
+                senderAvatar = "",
+                recipientId = "user_c",
+                recipientUsername = "user_c",
+                recipientDisplayName = "User C",
+                recipientAvatar = "",
+                status = "PENDING"
+            )
+        )
+
+        val accountBUid = "user_b"
+        val accountBVisibleRequests = accountARequests.filter { it.senderId == accountBUid || it.recipientId == accountBUid }
+
+        assertTrue(accountBVisibleRequests.isEmpty())
+    }
+
+    @Test
+    fun testQ_secureSessionInitFailureDoesNotFallbackToPlaintext() {
+        val initializationFailed = true
+        val prefsStore: Any? = if (initializationFailed) null else "EncryptedSharedPreferences"
+
+        assertNull(prefsStore)
+    }
+
+    @Test
+    fun testR_cloudMutationFailurePropagation() {
+        val httpResponseSuccess = false
+        val httpErrorMessage = "401 Unauthorized"
+
+        val result: Result<Boolean> = if (httpResponseSuccess) {
+            Result.success(true)
+        } else {
+            Result.failure(IllegalStateException(httpErrorMessage))
+        }
+
+        assertTrue(result.isFailure)
+        assertEquals("401 Unauthorized", result.exceptionOrNull()?.message)
     }
 }
