@@ -58,5 +58,9 @@ jobs:
       - name: Build KMP Shared & Android App
         run: |
           chmod +x gradlew
-          ./gradlew :shared:build :androidApp:assembleDebug --no-daemon
+          ./gradlew \
+            :shared:build \
+            :androidApp:testDebugUnitTest \
+            :androidApp:assembleDebug \
+            --no-daemon
 
