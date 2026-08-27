@@ -28,7 +28,7 @@ struct StampVaultScreenView: View {
     var totalTargetCount: Int {
         let collections = (repository.collections.value as? [CollectionItem]) ?? []
         let sum = collections.reduce(0) { $0 + Int($1.targetCount) }
-        return max(1, sum)
+        return max(1, max(stamps.count, sum))
     }
 
     var favoriteStampsCount: Int {

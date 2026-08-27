@@ -20,7 +20,7 @@ struct FriendsAndTradeScreenView: View {
     @StateObject private var langManager = AppLanguageManager.shared
 
     private var currentUid: String {
-        repository.currentUser.value.uid
+        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
     }
 
     var allFriendRequests: [FriendRequestItem] {
@@ -684,7 +684,7 @@ struct FriendsAndTradeScreenView: View {
                 recipientUserId: friend.id,
                 recipientName: friend.displayName,
                 recipientIsOnline: friend.isOnline,
-                currentUserId: repository.currentUser.value.uid,
+                currentUserId: currentUid,
                 repository: repository,
                 onDismiss: { selectedFriendForChat = nil }
             )

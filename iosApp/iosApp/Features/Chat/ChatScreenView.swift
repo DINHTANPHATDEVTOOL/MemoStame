@@ -224,7 +224,11 @@ struct ChatScreenView: View {
                                         title: stamp.title,
                                         imageUrl: stamp.stampImagePath,
                                         location: stamp.location,
-                                        dateStr: stamp.memoryDate.isEmpty ? formatDate(stamp.createdAt) : stamp.memoryDate,
+                                        dateStr: formatDate(
+                                            stamp.memoryDate > 0
+                                                ? stamp.memoryDate
+                                                : stamp.createdAt
+                                        ),
                                         note: stamp.note,
                                         shape: stamp.shape,
                                         isInteractive: false
