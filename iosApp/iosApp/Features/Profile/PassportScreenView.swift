@@ -187,8 +187,11 @@ struct PassportScreenView: View {
                             }
 
                             Button(action: {
-                                let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
-                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                                let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
+                                if !currentUid.isEmpty {
+                                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                                }
+                                SupabaseAuthService.shared.signOut { _ in }
                                 repository.resetUserScopedState()
                                 UserDefaults.standard.set(false, forKey: "isAuthenticated")
                                 presentationMode.wrappedValue.dismiss()
@@ -605,8 +608,11 @@ struct ProfileSettingsSheetView: View {
                         }
 
                         Button(action: {
-                            let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
-                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                            let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
+                            if !currentUid.isEmpty {
+                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                            }
+                            SupabaseAuthService.shared.signOut { _ in }
                             repository.resetUserScopedState()
                             UserDefaults.standard.set(false, forKey: "isAuthenticated")
                             presentationMode.wrappedValue.dismiss()

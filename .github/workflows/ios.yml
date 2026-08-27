@@ -1,4 +1,4 @@
-name: iOS CI Workflow
+name: CI Workflow
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build_ios:
     name: Build KMP Shared & Swift iOS App
     runs-on: macos-14
     steps:
@@ -38,3 +38,25 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             ONLY_ACTIVE_ARCH=NO
+
+  build_android:
+    name: Build KMP Shared & Android App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build KMP Shared & Android App
+        run: |
+          chmod +x gradlew
+          ./gradlew :shared:build :androidApp:assembleDebug --no-daemon
+

@@ -291,6 +291,9 @@ class SupabaseClient constructor(private val context: Context? = null) {
         }
     }
 
+    @Volatile
+    var userAccessToken: String? = null
+
     private fun executeHttp(
         endpoint: String,
         method: String = "GET",
@@ -299,6 +302,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
     ): Result<String> {
         return try {
             val apiKey = getApiKey()
+            val token = userAccessToken.takeIf { !it.isNullOrBlank() } ?: apiKey
             val url = URL(endpoint)
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 if (method == "PATCH") {
@@ -312,7 +316,7 @@ class SupabaseClient constructor(private val context: Context? = null) {
                     requestMethod = method
                 }
                 setRequestProperty("apikey", apiKey)
-                setRequestProperty("Authorization", "Bearer $apiKey")
+                setRequestProperty("Authorization", "Bearer $token")
                 setRequestProperty("Content-Type", "application/json")
                 if (!prefer.isNullOrBlank()) {
                     setRequestProperty("Prefer", prefer)

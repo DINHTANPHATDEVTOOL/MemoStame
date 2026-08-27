@@ -77,6 +77,15 @@ class UserAuthRepository private constructor(private val context: Context) {
     private val _isLoggedIn = MutableStateFlow<Boolean>(prefs.getBoolean("is_logged_in", false))
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
+    private val _authUserId = MutableStateFlow<String?>(prefs.getString("auth_user_id", null))
+    val authUserId: StateFlow<String?> = _authUserId.asStateFlow()
+
+    private val _accessToken = MutableStateFlow<String?>(prefs.getString("auth_access_token", null))
+    val accessToken: StateFlow<String?> = _accessToken.asStateFlow()
+
+    private val _refreshToken = MutableStateFlow<String?>(prefs.getString("auth_refresh_token", null))
+    val refreshToken: StateFlow<String?> = _refreshToken.asStateFlow()
+
     private val _currentUser = MutableStateFlow<UserProfile>(loadInitialUser())
     val currentUser: StateFlow<UserProfile> = _currentUser.asStateFlow()
 
@@ -93,6 +102,7 @@ class UserAuthRepository private constructor(private val context: Context) {
     private val notifiedAcceptedRequestIds = mutableSetOf<String>()
 
     init {
+        supabaseClient.userAccessToken = _accessToken.value
         _friendIds.value = loadFriendIds(_currentUser.value.userId)
         val initialReqs = loadFriendRequests()
         _friendRequests.value = initialReqs

@@ -27,11 +27,12 @@ struct ContentView: View {
     init() {
         let repo = SharedMemoStampRepository()
         let activeUid: String
-        if let name = UserDefaults.standard.string(forKey: "user_displayName"), !name.isEmpty,
-           let username = UserDefaults.standard.string(forKey: "user_username"), !username.isEmpty {
-            let avatar = UserDefaults.standard.string(forKey: "user_avatarUrl") ?? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300"
+        if let session = SupabaseAuthService.shared.activeSession {
+            activeUid = session.userId
+            let name = UserDefaults.standard.string(forKey: "user_displayName") ?? "Collector"
+            let username = UserDefaults.standard.string(forKey: "user_username") ?? "user"
+            let avatar = UserDefaults.standard.string(forKey: "user_avatarUrl") ?? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
             let bio = UserDefaults.standard.string(forKey: "user_bio") ?? "Sưu tầm ký ức qua từng con tem bưu chính 📮"
-            activeUid = "user_" + username
             let profile = UserProfile(
                 uid: activeUid,
                 username: username,
@@ -215,6 +216,33 @@ struct ContentView: View {
                 }
                 .onAppear {
                     LocationManager.shared.requestLocationPermission()
+                    SupabaseAuthService.shared.loadOrRefreshSession { session in
+                        DispatchQueue.main.async {
+                            if let session = session {
+                                let activeUid = session.userId
+                                let name = UserDefaults.standard.string(forKey: "user_displayName") ?? "Collector"
+                                let username = UserDefaults.standard.string(forKey: "user_username") ?? "user"
+                                let avatar = UserDefaults.standard.string(forKey: "user_avatarUrl") ?? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
+                                let bio = UserDefaults.standard.string(forKey: "user_bio") ?? "Sưu tầm ký ức qua từng con tem bưu chính 📮"
+                                let profile = UserProfile(
+                                    uid: activeUid,
+                                    username: username,
+                                    displayName: name,
+                                    avatarUrl: avatar,
+                                    bio: bio,
+                                    stampsCreatedCount: Int32(0),
+                                    stampsCollectedCount: Int32(0),
+                                    placesVisitedCount: Int32(0)
+                                )
+                                self.repository.setCurrentUser(profile: profile)
+                                IOSLocalPersistenceStore.shared.loadData(into: self.repository, userId: activeUid)
+                                self.isAuthenticated = true
+                            } else {
+                                self.repository.resetUserScopedState()
+                                self.isAuthenticated = false
+                            }
+                        }
+                    }
                 }
             }
         }

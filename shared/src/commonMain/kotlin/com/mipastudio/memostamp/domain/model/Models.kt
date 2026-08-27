@@ -254,3 +254,16 @@ data class PassportBadge(
     val iconEmoji: String,
     val isUnlocked: Boolean = false
 )
+
+data class AuthSession(
+    val accessToken: String,
+    val refreshToken: String,
+    val expiresAt: Long,
+    val userId: String,
+    val email: String
+) {
+    fun isExpired(nowSeconds: Long): Boolean {
+        return nowSeconds >= expiresAt - 30
+    }
+}
+
