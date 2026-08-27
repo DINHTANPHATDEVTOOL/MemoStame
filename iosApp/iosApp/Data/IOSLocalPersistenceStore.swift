@@ -131,8 +131,8 @@ class IOSLocalPersistenceStore {
            let legacyData = try? Data(contentsOf: legacyV1Url),
            let legacyPayload = try? JSONDecoder().decode(PersistedPayload.self, from: legacyData) {
 
-            // ONLY migrate when legacyPayload.user?.uid == userId
-            if let legacyUser = legacyPayload.user, legacyUser.uid == userId {
+            let legacyUid = legacyPayload.user?.uid ?? ""
+            if !legacyUid.isEmpty && legacyUid == userId {
                 restorePayload(legacyPayload, into: repository, userId: userId)
                 // Write immediately to v2 file for this user
                 saveData(repository: repository, userId: userId)

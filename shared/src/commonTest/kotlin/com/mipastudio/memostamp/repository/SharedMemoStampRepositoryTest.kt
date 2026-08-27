@@ -352,7 +352,7 @@ class SharedMemoStampRepositoryTest {
         assertTrue(repo.tradeRequests.value.isEmpty())
         assertTrue(repo.feedPosts.value.isEmpty())
         assertTrue(repo.circles.value.isEmpty())
-        assertTrue(repo.badges.value.all { !it.unlocked })
+        assertTrue(repo.badges.value.all { !it.isUnlocked })
     }
 
     @Test
