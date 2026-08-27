@@ -140,8 +140,8 @@ class SharedMemoStampRepositoryTest {
     @Test
     fun testRecipientCanAcceptAndRejectFriendRequest() {
         val repo = SharedMemoStampRepository()
-        val incomingReq = com.mipastudio.memostamp.domain.model.FriendRequestItem(
-            id = "freq_incoming",
+        val incomingReq1 = com.mipastudio.memostamp.domain.model.FriendRequestItem(
+            id = "freq_incoming_1",
             senderName = "Linh Pham",
             senderUsername = "linh_pham",
             senderAvatar = "https://example.com/linh.jpg",
@@ -151,12 +151,139 @@ class SharedMemoStampRepositoryTest {
             recipientId = "user_me",
             recipientUsername = "phat_memostamp"
         )
-        repo.restoreFriendRequests(listOf(incomingReq))
+        val incomingReq2 = com.mipastudio.memostamp.domain.model.FriendRequestItem(
+            id = "freq_incoming_2",
+            senderName = "Nam Vo",
+            senderUsername = "nam_vo",
+            senderAvatar = "https://example.com/nam.jpg",
+            status = "PENDING",
+            createdAt = 1001L,
+            senderId = "user_nam",
+            recipientId = "user_me",
+            recipientUsername = "phat_memostamp"
+        )
+        repo.restoreFriendRequests(listOf(incomingReq1, incomingReq2))
 
-        val accepted = repo.acceptFriendRequest(incomingReq.id)
+        // Recipient can accept
+        val accepted = repo.acceptFriendRequest(incomingReq1.id)
         assertTrue(accepted)
         assertTrue(repo.friends.value.any { it.username == "linh_pham" })
-        assertTrue(repo.friendRequests.value.none { it.id == incomingReq.id })
+        assertTrue(repo.friendRequests.value.none { it.id == incomingReq1.id })
+
+        // Recipient can reject
+        val rejected = repo.rejectFriendRequest(incomingReq2.id)
+        assertTrue(rejected)
+        assertTrue(repo.friendRequests.value.none { it.id == incomingReq2.id })
+    }
+
+    @Test
+    fun testRecipientCanAcceptAndRejectTradeRequest() {
+        val repo = SharedMemoStampRepository()
+        val trade1 = com.mipastudio.memostamp.domain.model.TradeRequest(
+            id = "trade_in_1",
+            senderName = "Linh Pham",
+            senderAvatar = "",
+            stampTitle = "Stamp 1",
+            stampUrl = "",
+            status = "PENDING",
+            createdAt = 1000L,
+            senderId = "user_linh",
+            recipientId = "user_me"
+        )
+        val trade2 = com.mipastudio.memostamp.domain.model.TradeRequest(
+            id = "trade_in_2",
+            senderName = "Nam Vo",
+            senderAvatar = "",
+            stampTitle = "Stamp 2",
+            stampUrl = "",
+            status = "PENDING",
+            createdAt = 1001L,
+            senderId = "user_nam",
+            recipientId = "user_me"
+        )
+        repo.restoreTradeRequests(listOf(trade1, trade2))
+
+        // Recipient accepts trade
+        val accepted = repo.acceptTrade(trade1.id)
+        assertTrue(accepted)
+        assertTrue(repo.tradeRequests.value.none { it.id == trade1.id })
+
+        // Recipient rejects trade
+        val rejected = repo.rejectTrade(trade2.id)
+        assertTrue(rejected)
+        assertTrue(repo.tradeRequests.value.none { it.id == trade2.id })
+    }
+
+    @Test
+    fun testThirdUserCannotAcceptOrRejectOrCancelFriendRequest() {
+        val repo = SharedMemoStampRepository()
+        // Request between user_linh (sender) and user_nam (recipient).
+        // Current user is "user_me".
+        val thirdPartyReq = com.mipastudio.memostamp.domain.model.FriendRequestItem(
+            id = "freq_3rd",
+            senderName = "Linh Pham",
+            senderUsername = "linh_pham",
+            senderAvatar = "",
+            status = "PENDING",
+            createdAt = 1000L,
+            senderId = "user_linh",
+            recipientId = "user_nam",
+            recipientUsername = "nam_vo"
+        )
+        repo.restoreFriendRequests(listOf(thirdPartyReq))
+
+        assertFalse(repo.acceptFriendRequest(thirdPartyReq.id))
+        assertFalse(repo.rejectFriendRequest(thirdPartyReq.id))
+        assertFalse(repo.cancelOutgoingFriendRequest(thirdPartyReq.id))
+        assertTrue(repo.friendRequests.value.any { it.id == thirdPartyReq.id })
+    }
+
+    @Test
+    fun testThirdUserCannotAcceptOrRejectOrCancelTradeRequest() {
+        val repo = SharedMemoStampRepository()
+        // Trade between user_linh (sender) and user_nam (recipient).
+        // Current user is "user_me".
+        val thirdPartyTrade = com.mipastudio.memostamp.domain.model.TradeRequest(
+            id = "trade_3rd",
+            senderName = "Linh Pham",
+            senderAvatar = "",
+            stampTitle = "Stamp 3rd",
+            stampUrl = "",
+            status = "PENDING",
+            createdAt = 1000L,
+            senderId = "user_linh",
+            recipientId = "user_nam"
+        )
+        repo.restoreTradeRequests(listOf(thirdPartyTrade))
+
+        assertFalse(repo.acceptTrade(thirdPartyTrade.id))
+        assertFalse(repo.rejectTrade(thirdPartyTrade.id))
+        assertFalse(repo.cancelOutgoingTrade(thirdPartyTrade.id))
+        assertTrue(repo.tradeRequests.value.any { it.id == thirdPartyTrade.id })
+    }
+
+    @Test
+    fun testRestoreSocialDataMigratesLegacyBlankIds() {
+        val repo = SharedMemoStampRepository()
+        val legacyReq = com.mipastudio.memostamp.domain.model.FriendRequestItem(
+            id = "freq_legacy",
+            senderName = "Legacy User",
+            senderUsername = "legacy_user",
+            senderAvatar = "",
+            status = "PENDING",
+            createdAt = 1000L,
+            senderId = "",
+            recipientId = "",
+            recipientUsername = ""
+        )
+        repo.restoreFriendRequests(listOf(legacyReq))
+
+        val restoredReq = repo.friendRequests.value.first()
+        assertEquals("user_legacy_user", restoredReq.senderId)
+        assertEquals("user_me", restoredReq.recipientId)
+
+        // After migration, current user ("user_me") can accept
+        assertTrue(repo.acceptFriendRequest(restoredReq.id))
     }
 
     @Test

@@ -331,11 +331,7 @@ class SharedMemoStampRepository {
     fun acceptTrade(tradeId: String): Boolean {
         val trade = _tradeRequests.value.find { it.id == tradeId } ?: return false
         val me = _currentUser.value
-        if (trade.senderId.isNotEmpty() && trade.senderId == me.uid && trade.recipientId != me.uid) {
-            return false
-        }
-        val isIncoming = trade.recipientId.isBlank() || trade.recipientId == me.uid
-        if (!isIncoming) {
+        if (trade.recipientId != me.uid || trade.senderId == me.uid) {
             return false
         }
         _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
@@ -345,11 +341,7 @@ class SharedMemoStampRepository {
     fun rejectTrade(tradeId: String): Boolean {
         val trade = _tradeRequests.value.find { it.id == tradeId } ?: return false
         val me = _currentUser.value
-        if (trade.senderId.isNotEmpty() && trade.senderId == me.uid && trade.recipientId != me.uid) {
-            return false
-        }
-        val isIncoming = trade.recipientId.isBlank() || trade.recipientId == me.uid
-        if (!isIncoming) {
+        if (trade.recipientId != me.uid || trade.senderId == me.uid) {
             return false
         }
         _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
@@ -359,8 +351,7 @@ class SharedMemoStampRepository {
     fun cancelOutgoingTrade(tradeId: String): Boolean {
         val trade = _tradeRequests.value.find { it.id == tradeId } ?: return false
         val me = _currentUser.value
-        val isSender = trade.senderId.isBlank() || trade.senderId == me.uid
-        if (!isSender) {
+        if (trade.senderId != me.uid) {
             return false
         }
         _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
@@ -372,11 +363,23 @@ class SharedMemoStampRepository {
     }
 
     fun restoreFriendRequests(requests: List<FriendRequestItem>) {
-        _friendRequests.value = requests
+        val me = _currentUser.value
+        _friendRequests.value = requests.map { r ->
+            r.copy(
+                senderId = if (r.senderId.isBlank()) "user_${r.senderUsername.ifBlank { "legacy_sender" }}" else r.senderId,
+                recipientId = if (r.recipientId.isBlank()) me.uid else r.recipientId
+            )
+        }
     }
 
     fun restoreTradeRequests(trades: List<TradeRequest>) {
-        _tradeRequests.value = trades
+        val me = _currentUser.value
+        _tradeRequests.value = trades.map { t ->
+            t.copy(
+                senderId = if (t.senderId.isBlank()) "user_legacy_sender" else t.senderId,
+                recipientId = if (t.recipientId.isBlank()) me.uid else t.recipientId
+            )
+        }
     }
 
     fun updateProfile(displayName: String, bio: String, avatarUrl: String? = null) {
@@ -423,11 +426,7 @@ class SharedMemoStampRepository {
     fun acceptFriendRequest(requestId: String): Boolean {
         val req = _friendRequests.value.find { it.id == requestId } ?: return false
         val me = _currentUser.value
-        if (req.senderId.isNotEmpty() && req.senderId == me.uid && req.recipientId != me.uid) {
-            return false
-        }
-        val isIncoming = req.recipientId.isBlank() || req.recipientId == me.uid
-        if (!isIncoming) {
+        if (req.recipientId != me.uid || req.senderId == me.uid) {
             return false
         }
         val newFriend = FriendItem(
@@ -446,11 +445,7 @@ class SharedMemoStampRepository {
     fun rejectFriendRequest(requestId: String): Boolean {
         val req = _friendRequests.value.find { it.id == requestId } ?: return false
         val me = _currentUser.value
-        if (req.senderId.isNotEmpty() && req.senderId == me.uid && req.recipientId != me.uid) {
-            return false
-        }
-        val isIncoming = req.recipientId.isBlank() || req.recipientId == me.uid
-        if (!isIncoming) {
+        if (req.recipientId != me.uid || req.senderId == me.uid) {
             return false
         }
         _friendRequests.value = _friendRequests.value.filter { it.id != requestId }
@@ -460,8 +455,7 @@ class SharedMemoStampRepository {
     fun cancelOutgoingFriendRequest(requestId: String): Boolean {
         val req = _friendRequests.value.find { it.id == requestId } ?: return false
         val me = _currentUser.value
-        val isSender = req.senderId.isBlank() || req.senderId == me.uid
-        if (!isSender) {
+        if (req.senderId != me.uid) {
             return false
         }
         _friendRequests.value = _friendRequests.value.filter { it.id != requestId }
