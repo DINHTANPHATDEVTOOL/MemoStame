@@ -307,9 +307,10 @@ class SharedMemoStampRepository {
         return found
     }
 
-    fun sendTradeRequest(friendId: String, stampId: String) {
+    fun sendTradeRequest(friendId: String, stampId: String): Boolean {
         val me = _currentUser.value
-        val stamp = _stamps.value.find { it.id == stampId } ?: return
+        val friend = _friends.value.find { it.id == friendId } ?: return false
+        val stamp = _stamps.value.find { it.id == stampId } ?: return false
         val trade = TradeRequest(
             id = "trade_${currentTimeMillis()}",
             senderName = me.displayName,
@@ -317,12 +318,22 @@ class SharedMemoStampRepository {
             stampTitle = stamp.title,
             stampUrl = stamp.stampImagePath,
             status = "PENDING",
-            createdAt = currentTimeMillis()
+            createdAt = currentTimeMillis(),
+            senderId = me.uid,
+            recipientId = friend.id,
+            recipientName = friend.displayName,
+            stampId = stamp.id
         )
         _tradeRequests.value = listOf(trade) + _tradeRequests.value
+        return true
     }
 
     fun acceptTrade(tradeId: String) {
+        val trade = _tradeRequests.value.find { it.id == tradeId }
+        val me = _currentUser.value
+        if (trade != null && trade.senderId == me.uid && trade.senderId.isNotEmpty()) {
+            return
+        }
         _tradeRequests.value = _tradeRequests.value.filter { it.id != tradeId }
     }
 
@@ -351,21 +362,21 @@ class SharedMemoStampRepository {
         if (existingFriend != null) {
             return FriendRequestResult(false, "${existingFriend.displayName} đã có trong danh sách bạn bè!")
         }
-        val existingRequest = _friendRequests.value.find { it.senderUsername.lowercase() == trimmed }
+        val existingRequest = _friendRequests.value.find { it.senderUsername.lowercase() == trimmed || it.recipientUsername.lowercase() == trimmed }
         if (existingRequest != null) {
             return FriendRequestResult(false, "Đã gửi hoặc đã nhận lời mời kết bạn từ người này!")
         }
 
-        val formattedName = usernameOrCode.trim().replace("#", "").split(" ").joinToString(" ") { word ->
-            word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-        }
         val request = FriendRequestItem(
             id = "freq_${currentTimeMillis()}",
-            senderName = formattedName,
-            senderUsername = trimmed,
-            senderAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+            senderName = me.displayName,
+            senderUsername = me.username,
+            senderAvatar = me.avatarUrl ?: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
             status = "PENDING",
-            createdAt = currentTimeMillis()
+            createdAt = currentTimeMillis(),
+            senderId = me.uid,
+            recipientId = "user_" + trimmed,
+            recipientUsername = trimmed
         )
         _friendRequests.value = listOf(request) + _friendRequests.value
         return FriendRequestResult(true, "Đã gửi lời mời kết bạn tới @$trimmed! 📩")
@@ -373,9 +384,13 @@ class SharedMemoStampRepository {
 
     fun acceptFriendRequest(requestId: String) {
         val req = _friendRequests.value.find { it.id == requestId }
+        val me = _currentUser.value
         if (req != null) {
+            if (req.senderId == me.uid && req.senderId.isNotEmpty()) {
+                return
+            }
             val newFriend = FriendItem(
-                id = "user_${currentTimeMillis()}",
+                id = if (req.senderId.isNotBlank()) req.senderId else "user_${currentTimeMillis()}",
                 displayName = req.senderName,
                 username = req.senderUsername,
                 avatarUrl = req.senderAvatar,

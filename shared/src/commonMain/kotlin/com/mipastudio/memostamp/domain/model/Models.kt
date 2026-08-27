@@ -147,7 +147,11 @@ data class TradeRequest(
     val stampTitle: String,
     val stampUrl: String,
     val status: String = "PENDING", // PENDING, ACCEPTED, REJECTED
-    val createdAt: Long
+    val createdAt: Long,
+    val senderId: String = "",
+    val recipientId: String = "",
+    val recipientName: String = "",
+    val stampId: String = ""
 )
 
 data class FriendRequestItem(
@@ -156,7 +160,10 @@ data class FriendRequestItem(
     val senderUsername: String,
     val senderAvatar: String,
     val status: String = "PENDING", // PENDING, ACCEPTED, REJECTED
-    val createdAt: Long
+    val createdAt: Long,
+    val senderId: String = "",
+    val recipientId: String = "",
+    val recipientUsername: String = ""
 )
 
 data class FriendRequestResult(

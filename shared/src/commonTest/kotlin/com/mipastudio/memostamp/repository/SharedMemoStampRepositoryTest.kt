@@ -89,6 +89,7 @@ class SharedMemoStampRepositoryTest {
     @Test
     fun testSendAndAcceptTradeRequest() {
         val repo = SharedMemoStampRepository()
+        val friend = repo.addFriend("Huy Tran", "user_huy")
         val stamp = repo.addStamp(
             title = "Test Trade Stamp",
             note = "Trade Note",
@@ -96,14 +97,17 @@ class SharedMemoStampRepositoryTest {
             imageUrl = "https://example.com/trade_stamp.jpg"
         )
 
-        repo.sendTradeRequest(friendId = "user_huy", stampId = stamp.id)
+        val success = repo.sendTradeRequest(friendId = friend.id, stampId = stamp.id)
+        assertTrue(success)
         val createdTrade = repo.tradeRequests.value.first()
 
         assertEquals("PENDING", createdTrade.status)
         assertEquals(stamp.title, createdTrade.stampTitle)
+        assertEquals(repo.currentUser.value.uid, createdTrade.senderId)
 
+        // Cannot accept own outgoing trade
         repo.acceptTrade(createdTrade.id)
-        assertTrue(repo.tradeRequests.value.none { it.id == createdTrade.id })
+        assertTrue(repo.tradeRequests.value.any { it.id == createdTrade.id })
     }
 
     @Test

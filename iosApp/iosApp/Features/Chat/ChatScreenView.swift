@@ -1,7 +1,7 @@
 import SwiftUI
 import shared
 
-struct ChatMessage: Identifiable {
+struct ChatMessage: Identifiable, Codable {
     let id: String
     let senderId: String
     let senderName: String
@@ -16,6 +16,7 @@ struct ChatMessage: Identifiable {
 struct ChatScreenView: View {
     let recipientUserId: String
     let recipientName: String
+    var recipientIsOnline: Bool = true
     let currentUserId: String
     var repository: SharedMemoStampRepository? = nil
     var availableStamps: [StampItem] = []
@@ -27,6 +28,11 @@ struct ChatScreenView: View {
     @State private var messages: [ChatMessage] = []
     @State private var showStampPicker: Bool = false
     @State private var selectedStampToAttach: StampItem? = nil
+
+    private var chatStorageKey: String {
+        let uids = [currentUserId, recipientUserId].sorted()
+        return "memostamp_chat_\(uids[0])_\(uids[1])"
+    }
 
     private func formatDate(_ timestamp: Int64) -> String {
         guard timestamp > 0 else {
@@ -69,9 +75,9 @@ struct ChatScreenView: View {
                         .foregroundColor(MSColors.ink)
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(Color.green)
+                            .fill(recipientIsOnline ? Color.green : Color.gray)
                             .frame(width: 6, height: 6)
-                        Text("Online")
+                        Text(recipientIsOnline ? "Online" : "Offline")
                             .font(.caption)
                             .foregroundColor(MSColors.grey)
                     }
@@ -218,7 +224,7 @@ struct ChatScreenView: View {
                                         title: stamp.title,
                                         imageUrl: stamp.stampImagePath,
                                         location: stamp.location,
-                                        dateStr: formatDate(stamp.createdAt),
+                                        dateStr: stamp.memoryDate.isEmpty ? formatDate(stamp.createdAt) : stamp.memoryDate,
                                         note: stamp.note,
                                         shape: stamp.shape,
                                         isInteractive: false
@@ -247,19 +253,18 @@ struct ChatScreenView: View {
     }
 
     private func loadInitialMessages() {
-        messages = [
-            ChatMessage(
-                id: "m1",
-                senderId: recipientUserId,
-                senderName: recipientName,
-                recipientId: currentUserId,
-                text: "Chào bạn! Mình thấy bạn có tem Đà Lạt đẹp quá, có đổi tem với mình không?",
-                timestamp: Date().addingTimeInterval(-3600),
-                stampUrl: nil,
-                stampTitle: nil,
-                isFromCurrentUser: false
-            )
-        ]
+        if let data = UserDefaults.standard.data(forKey: chatStorageKey),
+           let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) {
+            messages = saved
+        } else {
+            messages = []
+        }
+    }
+
+    private func saveMessages() {
+        if let data = try? JSONEncoder().encode(messages) {
+            UserDefaults.standard.set(data, forKey: chatStorageKey)
+        }
     }
 
     private func sendMessage() {
@@ -278,6 +283,7 @@ struct ChatScreenView: View {
             isFromCurrentUser: true
         )
         messages.append(newMsg)
+        saveMessages()
         messageText = ""
         HapticFeedbackManager.shared.playImpact(style: .light)
     }
@@ -295,6 +301,7 @@ struct ChatScreenView: View {
             isFromCurrentUser: true
         )
         messages.append(newMsg)
+        saveMessages()
         HapticFeedbackManager.shared.playImpact(style: .medium)
     }
 }
@@ -309,12 +316,8 @@ struct ChatMessageBubble: View {
             VStack(alignment: message.isFromCurrentUser ? .trailing : .leading, spacing: 6) {
                 if let stampUrl = message.stampUrl {
                     VStack(alignment: .leading, spacing: 4) {
-                        AsyncImage(url: URL(string: stampUrl)) { phase in
-                            if let img = phase.image {
-                                img.resizable().aspectRatio(contentMode: .fill)
-                            } else {
-                                MSColors.lightGrey
-                            }
+                        MemoStampImageView(urlString: stampUrl) {
+                            MSColors.lightGrey
                         }
                         .frame(width: 140, height: 140)
                         .cornerRadius(8)

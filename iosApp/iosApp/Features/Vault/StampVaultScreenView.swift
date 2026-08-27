@@ -13,6 +13,7 @@ struct StampVaultScreenView: View {
     @State private var selectedFilter: String = "Tất cả"
     @State private var activeModal: VaultModalItem? = nil
     @State private var showCreateAlbumModal: Bool = false
+    @State private var refreshTrigger: Bool = false
 
     let columns = [
         GridItem(.flexible(), spacing: 14),
@@ -20,7 +21,18 @@ struct StampVaultScreenView: View {
     ]
 
     var stamps: [StampItem] {
-        (repository.stamps.value as? [StampItem]) ?? []
+        _ = refreshTrigger
+        return (repository.stamps.value as? [StampItem]) ?? []
+    }
+
+    var totalTargetCount: Int {
+        let collections = (repository.collections.value as? [CollectionItem]) ?? []
+        let sum = collections.reduce(0) { $0 + Int($1.targetCount) }
+        return max(1, sum)
+    }
+
+    var favoriteStampsCount: Int {
+        stamps.filter { $0.favorite }.count
     }
 
     private func formatDate(_ timestamp: Int64) -> String {
@@ -61,6 +73,10 @@ struct StampVaultScreenView: View {
             break
         }
         return list
+    }
+
+    var placesVisitedCount: Int {
+        Set(stamps.compactMap { $0.location }.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }).count
     }
 
     var body: some View {
@@ -169,7 +185,7 @@ struct StampVaultScreenView: View {
                                     .font(.caption.bold())
                                     .foregroundColor(MSColors.ink)
                                 Spacer()
-                                Text("\(filteredStamps.count) / 24 Tem")
+                                Text("\(stamps.count) / \(totalTargetCount) Tem")
                                     .font(.caption.bold())
                                     .foregroundColor(MSColors.stamp)
                             }
@@ -181,7 +197,7 @@ struct StampVaultScreenView: View {
                                         .frame(height: 8)
                                     RoundedRectangle(cornerRadius: 6)
                                         .fill(MSColors.stamp)
-                                        .frame(width: min(geo.size.width * CGFloat(filteredStamps.count) / 24.0, geo.size.width), height: 8)
+                                        .frame(width: min(geo.size.width * CGFloat(stamps.count) / CGFloat(totalTargetCount), geo.size.width), height: 8)
                                 }
                             }
                             .frame(height: 8)
@@ -192,7 +208,7 @@ struct StampVaultScreenView: View {
                                 Image(systemName: "mappin.and.ellipse")
                                     .font(.caption)
                                     .foregroundColor(MSColors.stamp)
-                                Text("3 Địa điểm")
+                                Text("\(placesVisitedCount) Địa điểm")
                                     .font(.caption)
                                     .foregroundColor(MSColors.grey)
                             }
@@ -200,7 +216,7 @@ struct StampVaultScreenView: View {
                                 Image(systemName: "sparkles")
                                     .font(.caption)
                                     .foregroundColor(MSColors.gold)
-                                Text("Tem Hiếm #2026")
+                                Text("\(favoriteStampsCount) Tem yêu thích")
                                     .font(.caption)
                                     .foregroundColor(MSColors.grey)
                             }
@@ -242,6 +258,7 @@ struct StampVaultScreenView: View {
                                             Spacer()
                                             Button(action: {
                                                 repository.toggleCollectionPrivacy(collectionId: col.id)
+                                                refreshTrigger.toggle()
                                                 IOSLocalPersistenceStore.shared.saveData(repository: repository)
                                             }) {
                                                 HStack(spacing: 3) {
@@ -285,7 +302,7 @@ struct StampVaultScreenView: View {
                                     title: stamp.title,
                                     imageUrl: stamp.stampImagePath,
                                     location: stamp.location,
-                                    dateStr: formatDate(stamp.createdAt),
+                                    dateStr: formatDate(stamp.memoryDate),
                                     note: stamp.note,
                                     shape: stamp.shape,
                                     isInteractive: false,

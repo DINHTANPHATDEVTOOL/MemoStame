@@ -433,12 +433,8 @@ struct StampBookSlotView: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            AsyncImage(url: URL(string: stamp.imageUrl)) { phase in
-                if let img = phase.image {
-                    img.resizable().aspectRatio(contentMode: .fill)
-                } else {
-                    Color.gray.opacity(0.2)
-                }
+            MemoStampImageView(urlString: stamp.imageUrl, contentMode: .fill) {
+                Color.gray.opacity(0.2)
             }
             .frame(height: 100)
             .clipShape(RoundedRectangle(cornerRadius: 6))

@@ -19,9 +19,25 @@ struct FriendsAndTradeScreenView: View {
     @State private var refreshTrigger: Bool = false
     @StateObject private var langManager = AppLanguageManager.shared
 
-    var friendRequests: [FriendRequestItem] {
+    private var currentUid: String {
+        repository.currentUser.value.uid
+    }
+
+    var allFriendRequests: [FriendRequestItem] {
         _ = refreshTrigger
         return (repository.friendRequests.value as? [FriendRequestItem]) ?? []
+    }
+
+    var incomingFriendRequests: [FriendRequestItem] {
+        allFriendRequests.filter { req in
+            req.recipientId.isEmpty || req.recipientId == currentUid
+        }
+    }
+
+    var outgoingFriendRequests: [FriendRequestItem] {
+        allFriendRequests.filter { req in
+            req.senderId == currentUid && req.recipientId != currentUid
+        }
     }
 
     var friends: [FriendItem] {
@@ -29,9 +45,21 @@ struct FriendsAndTradeScreenView: View {
         return (repository.friends.value as? [FriendItem]) ?? []
     }
 
-    var tradeRequests: [TradeRequest] {
+    var allTradeRequests: [TradeRequest] {
         _ = refreshTrigger
         return (repository.tradeRequests.value as? [TradeRequest]) ?? []
+    }
+
+    var incomingTradeRequests: [TradeRequest] {
+        allTradeRequests.filter { trade in
+            trade.recipientId.isEmpty || trade.recipientId == currentUid
+        }
+    }
+
+    var outgoingTradeRequests: [TradeRequest] {
+        allTradeRequests.filter { trade in
+            trade.senderId == currentUid && trade.recipientId != currentUid
+        }
     }
 
     var stamps: [StampItem] {
@@ -125,7 +153,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "arrow.triangle.2.circlepath")
                                     .font(.caption.bold())
-                                Text("\(langManager.string(vi: "Trao đổi", en: "Trades")) (\(tradeRequests.count))")
+                                Text("\(langManager.string(vi: "Trao đổi", en: "Trades")) (\(incomingTradeRequests.count))")
                                     .font(.subheadline.bold())
                             }
                             .padding(.vertical, 9)
@@ -163,18 +191,18 @@ struct FriendsAndTradeScreenView: View {
                     VStack(spacing: 12) {
                         if selectedTab == 0 {
                             // Incoming Friend Requests Notification Section
-                            if !friendRequests.isEmpty {
+                            if !incomingFriendRequests.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
                                         Image(systemName: "envelope.badge.fill")
                                             .foregroundColor(MSColors.stamp)
-                                        Text("LỜI MỜI KẾT BẠN MỚI (\(friendRequests.count))")
+                                        Text("LỜI MỜI KẾT BẠN MỚI (\(incomingFriendRequests.count))")
                                             .font(.caption2.bold())
                                             .foregroundColor(MSColors.grey)
                                     }
                                     .padding(.horizontal, 4)
 
-                                    ForEach(friendRequests, id: \.id) { req in
+                                    ForEach(incomingFriendRequests, id: \.id) { req in
                                         HStack(spacing: 10) {
                                             AsyncImage(url: URL(string: req.senderAvatar)) { phase in
                                                 if let img = phase.image {
@@ -233,6 +261,57 @@ struct FriendsAndTradeScreenView: View {
                                 }
                                 .padding(.bottom, 8)
                             }
+
+                            // Outgoing Friend Requests Section
+                            if !outgoingFriendRequests.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "paperplane.fill")
+                                            .foregroundColor(MSColors.grey)
+                                        Text("LỜI MỜI ĐÃ GỬI (\(outgoingFriendRequests.count))")
+                                            .font(.caption2.bold())
+                                            .foregroundColor(MSColors.grey)
+                                    }
+                                    .padding(.horizontal, 4)
+
+                                    ForEach(outgoingFriendRequests, id: \.id) { req in
+                                        HStack(spacing: 10) {
+                                            Circle().fill(MSColors.stamp.opacity(0.15))
+                                                .frame(width: 40, height: 40)
+                                                .overlay(
+                                                    Text("@")
+                                                        .font(.caption.bold())
+                                                        .foregroundColor(MSColors.stamp)
+                                                )
+
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("Đã gửi lời mời tới @\(req.recipientUsername.isEmpty ? req.senderUsername : req.recipientUsername)")
+                                                    .font(.subheadline.bold())
+                                                    .foregroundColor(MSColors.ink)
+                                                Text("Đang chờ phản hồi...")
+                                                    .font(.caption)
+                                                    .foregroundColor(MSColors.grey)
+                                            }
+
+                                            Spacer()
+
+                                            Text("ĐÃ GỬI")
+                                                .font(.caption2.bold())
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(Color.gray.opacity(0.15))
+                                                .foregroundColor(MSColors.grey)
+                                                .cornerRadius(8)
+                                        }
+                                        .padding(10)
+                                        .background(Color.white)
+                                        .cornerRadius(14)
+                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.lightGrey, lineWidth: 1))
+                                    }
+                                }
+                                .padding(.bottom, 8)
+                            }
+
                             // Friends List
                             if friends.isEmpty {
                                 VStack(spacing: 10) {
@@ -358,7 +437,7 @@ struct FriendsAndTradeScreenView: View {
                             }
                         } else if selectedTab == 1 {
                             // Trade Requests
-                            if tradeRequests.isEmpty {
+                            if incomingTradeRequests.isEmpty && outgoingTradeRequests.isEmpty {
                                 VStack(spacing: 10) {
                                     Image(systemName: "arrow.triangle.2.circlepath")
                                         .font(.system(size: 38))
@@ -369,80 +448,132 @@ struct FriendsAndTradeScreenView: View {
                                 }
                                 .padding(.top, 40)
                             } else {
-                                ForEach(tradeRequests, id: \.id) { trade in
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack {
-                                            Text(trade.senderName)
-                                                .font(.subheadline.bold())
-                                                .foregroundColor(MSColors.ink)
-                                            Text("sent a trade offer!")
-                                                .font(.subheadline)
-                                                .foregroundColor(MSColors.grey)
-                                            Spacer()
-                                            Text(trade.status)
-                                                .font(.caption2.bold())
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
-                                                .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
-                                                .cornerRadius(8)
-                                        }
+                                if !incomingTradeRequests.isEmpty {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("YÊU CẦU TRAO ĐỔI NHẬN ĐƯỢC (\(incomingTradeRequests.count))")
+                                            .font(.caption2.bold())
+                                            .foregroundColor(MSColors.grey)
+                                            .padding(.horizontal, 4)
 
-                                        HStack(spacing: 12) {
-                                            AsyncImage(url: URL(string: trade.stampUrl)) { phase in
-                                                if let img = phase.image {
-                                                    img.resizable().aspectRatio(contentMode: .fill)
-                                                } else {
-                                                    MSColors.lightGrey
-                                                }
-                                            }
-                                            .frame(width: 60, height: 60)
-                                            .cornerRadius(8)
-
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text(trade.stampTitle)
-                                                    .font(.subheadline.bold())
-                                                    .foregroundColor(MSColors.ink)
-                                                Text("Rare Vintage Series #2026")
-                                                    .font(.caption)
-                                                    .foregroundColor(MSColors.grey)
-                                            }
-                                        }
-
-                                        if trade.status == "PENDING" {
-                                            HStack(spacing: 10) {
-                                                Button(action: {
-                                                    repository.acceptTrade(tradeId: trade.id)
-                                                    refreshTrigger.toggle()
-                                                    triggerToast("Accepted trade offer!")
-                                                }) {
-                                                    Text("Accept Trade")
-                                                        .font(.caption.bold())
-                                                        .frame(maxWidth: .infinity)
-                                                        .padding(.vertical, 8)
-                                                        .background(MSColors.stamp)
-                                                        .foregroundColor(.white)
-                                                        .cornerRadius(10)
+                                        ForEach(incomingTradeRequests, id: \.id) { trade in
+                                            VStack(alignment: .leading, spacing: 10) {
+                                                HStack {
+                                                    Text(trade.senderName)
+                                                        .font(.subheadline.bold())
+                                                        .foregroundColor(MSColors.ink)
+                                                    Text("gửi lời đề nghị trao đổi tem!")
+                                                        .font(.subheadline)
+                                                        .foregroundColor(MSColors.grey)
+                                                    Spacer()
+                                                    Text(trade.status)
+                                                        .font(.caption2.bold())
+                                                        .padding(.horizontal, 8)
+                                                        .padding(.vertical, 4)
+                                                        .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
+                                                        .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
+                                                        .cornerRadius(8)
                                                 }
 
-                                                Button(action: {
-                                                    repository.rejectTrade(tradeId: trade.id)
-                                                    refreshTrigger.toggle()
-                                                }) {
-                                                    Text("Decline")
-                                                        .font(.caption.bold())
-                                                        .padding(.horizontal, 14)
-                                                        .padding(.vertical, 8)
-                                                        .background(Color.gray.opacity(0.15))
-                                                        .foregroundColor(.gray)
-                                                        .cornerRadius(10)
+                                                HStack(spacing: 12) {
+                                                    MemoStampImageView(urlString: trade.stampUrl) {
+                                                        MSColors.lightGrey
+                                                    }
+                                                    .frame(width: 60, height: 60)
+                                                    .cornerRadius(8)
+
+                                                    VStack(alignment: .leading, spacing: 4) {
+                                                        Text(trade.stampTitle)
+                                                            .font(.subheadline.bold())
+                                                            .foregroundColor(MSColors.ink)
+                                                        Text("Bộ sưu tập độc bản #2026")
+                                                            .font(.caption)
+                                                            .foregroundColor(MSColors.grey)
+                                                    }
+                                                }
+
+                                                if trade.status == "PENDING" {
+                                                    HStack(spacing: 10) {
+                                                        Button(action: {
+                                                            repository.acceptTrade(tradeId: trade.id)
+                                                            refreshTrigger.toggle()
+                                                            triggerToast("Đã đồng ý trao đổi tem!")
+                                                        }) {
+                                                            Text("Chấp nhận")
+                                                                .font(.caption.bold())
+                                                                .frame(maxWidth: .infinity)
+                                                                .padding(.vertical, 8)
+                                                                .background(MSColors.stamp)
+                                                                .foregroundColor(.white)
+                                                                .cornerRadius(10)
+                                                        }
+
+                                                        Button(action: {
+                                                            repository.rejectTrade(tradeId: trade.id)
+                                                            refreshTrigger.toggle()
+                                                        }) {
+                                                            Text("Từ chối")
+                                                                .font(.caption.bold())
+                                                                .padding(.horizontal, 14)
+                                                                .padding(.vertical, 8)
+                                                                .background(Color.gray.opacity(0.15))
+                                                                .foregroundColor(.gray)
+                                                                .cornerRadius(10)
+                                                        }
+                                                    }
                                                 }
                                             }
+                                            .padding(14)
+                                            .background(Color.white)
+                                            .cornerRadius(16)
                                         }
                                     }
-                                    .padding(14)
-                                    .background(Color.white)
-                                    .cornerRadius(16)
+                                }
+
+                                if !outgoingTradeRequests.isEmpty {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("YÊU CẦU TRAO ĐỔI ĐÃ GỬI (\(outgoingTradeRequests.count))")
+                                            .font(.caption2.bold())
+                                            .foregroundColor(MSColors.grey)
+                                            .padding(.horizontal, 4)
+
+                                        ForEach(outgoingTradeRequests, id: \.id) { trade in
+                                            VStack(alignment: .leading, spacing: 10) {
+                                                HStack {
+                                                    Text("Đã gửi tới \(trade.recipientName.isEmpty ? "bạn bè" : trade.recipientName)")
+                                                        .font(.subheadline.bold())
+                                                        .foregroundColor(MSColors.ink)
+                                                    Spacer()
+                                                    Text(trade.status)
+                                                        .font(.caption2.bold())
+                                                        .padding(.horizontal, 8)
+                                                        .padding(.vertical, 4)
+                                                        .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
+                                                        .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
+                                                        .cornerRadius(8)
+                                                }
+
+                                                HStack(spacing: 12) {
+                                                    MemoStampImageView(urlString: trade.stampUrl) {
+                                                        MSColors.lightGrey
+                                                    }
+                                                    .frame(width: 60, height: 60)
+                                                    .cornerRadius(8)
+
+                                                    VStack(alignment: .leading, spacing: 4) {
+                                                        Text(trade.stampTitle)
+                                                            .font(.subheadline.bold())
+                                                            .foregroundColor(MSColors.ink)
+                                                        Text("Đang chờ bạn bè xác nhận...")
+                                                            .font(.caption)
+                                                            .foregroundColor(MSColors.grey)
+                                                    }
+                                                }
+                                            }
+                                            .padding(14)
+                                            .background(Color.white)
+                                            .cornerRadius(16)
+                                        }
+                                    }
                                 }
                             }
                         } else {
@@ -538,10 +669,12 @@ struct FriendsAndTradeScreenView: View {
                     friend: friend,
                     stamps: stamps,
                     onSendTrade: { stampId in
-                        repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
+                        let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
                         refreshTrigger.toggle()
                         showTradeModal = false
-                        triggerToast("Sent trade offer to \(friend.displayName)!")
+                        if success {
+                            triggerToast("Sent trade offer to \(friend.displayName)!")
+                        }
                     }
                 )
             }
@@ -550,7 +683,8 @@ struct FriendsAndTradeScreenView: View {
             ChatScreenView(
                 recipientUserId: friend.id,
                 recipientName: friend.displayName,
-                currentUserId: (repository.currentUser.value as? UserProfile)?.uid ?? "user_me",
+                recipientIsOnline: friend.isOnline,
+                currentUserId: repository.currentUser.value.uid,
                 repository: repository,
                 onDismiss: { selectedFriendForChat = nil }
             )

@@ -628,12 +628,8 @@ struct MiniStampReplyCardView: View {
                         .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
 
                     if let url = reply.replyStampUrl, !url.isEmpty {
-                        AsyncImage(url: URL(string: url)) { phase in
-                            if let img = phase.image {
-                                img.resizable().aspectRatio(contentMode: .fit)
-                            } else {
-                                Text("📮").font(.system(size: 24))
-                            }
+                        MemoStampImageView(urlString: url, contentMode: .fit) {
+                            Text("📮").font(.system(size: 24))
                         }
                         .padding(4)
                     } else {
@@ -702,12 +698,8 @@ struct ReplyLightboxView: View, Identifiable {
                     .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
 
                 if let url = reply.replyStampUrl, !url.isEmpty {
-                    AsyncImage(url: URL(string: url)) { phase in
-                        if let img = phase.image {
-                            img.resizable().aspectRatio(contentMode: .fit)
-                        } else {
-                            Text("📮").font(.system(size: 60))
-                        }
+                    MemoStampImageView(urlString: url, contentMode: .fit) {
+                        Text("📮").font(.system(size: 60))
                     }
                     .frame(width: 208, height: 263)
                     .cornerRadius(10)

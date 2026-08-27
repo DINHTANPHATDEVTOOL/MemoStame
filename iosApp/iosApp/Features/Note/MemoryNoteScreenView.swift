@@ -4,15 +4,6 @@ import UIKit
 #endif
 import shared
 
-struct GroundedPlaceItem: Identifiable {
-    let id = UUID()
-    let name: String
-    let address: String
-    let category: String
-    let stampTitle: String
-    let rating: String
-}
-
 struct MemoryNoteScreenView: View {
     let imageUrl: String
     var shape: String = "classic"
@@ -25,7 +16,6 @@ struct MemoryNoteScreenView: View {
     @State private var title: String = ""
     @State private var caption: String = ""
     @State private var locationSearch: String = ""
-    @State private var selectedCategory: String = "Tất cả"
     @State private var selectedAudience: String = "Friends"
     @State private var selectedCollectionId: String? = nil
     @State private var selectedMood: String = "😊 Happy"
@@ -34,16 +24,6 @@ struct MemoryNoteScreenView: View {
     @State private var showRenderError: Bool = false
 
     let moodOptions = ["😊 Happy", "❤️ Love", "✈️ Travel", "☕ Chill", "🔥 Excited", "🕰️ Nostalgic", "🌿 Peaceful", "⭐ Special"]
-    let locationCategories = ["Tất cả", "Biểu tượng", "Cà phê", "Thiên nhiên", "Di tích"]
-    
-    var groundedPlaces: [GroundedPlaceItem] {
-        return []
-    }
-
-    var filteredPlaces: [GroundedPlaceItem] {
-        return groundedPlaces
-    }
-
     let audienceTypes = ["Friends", "Only Me"]
 
     private var formattedDate: String {
@@ -253,31 +233,19 @@ struct MemoryNoteScreenView: View {
                             }
                         }
 
-                        // Google Maps Grounded Location Header
+                        // Location Section Header
                         HStack {
-                            Text("GOOGLE MAPS GROUNDED LOCATION")
+                            Text("ĐỊA ĐIỂM KỶ NIỆM")
                                 .font(.caption2.bold())
                                 .foregroundColor(.secondary)
                             Spacer()
-                            HStack(spacing: 4) {
-                                Image(systemName: "sparkles")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(Color(red: 0.1, green: 0.45, blue: 0.9))
-                                Text("Maps Grounding AI")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(Color(red: 0.1, green: 0.45, blue: 0.9))
-                            }
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(red: 0.1, green: 0.45, blue: 0.9).opacity(0.1))
-                            .cornerRadius(6)
                         }
 
                         // Search Bar
                         HStack {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.gray)
-                            TextField("Search place, landmark, cafe...", text: $locationSearch)
+                            TextField("Nhập địa điểm, quán cà phê...", text: $locationSearch)
                                 .font(.subheadline)
                             if !locationSearch.isEmpty {
                                 Button(action: { locationSearch = "" }) {
@@ -321,69 +289,6 @@ struct MemoryNoteScreenView: View {
                             .padding(10)
                             .background(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.08))
                             .cornerRadius(10)
-                        }
-
-                        // Category Filter Chips
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(locationCategories, id: \.self) { cat in
-                                    Button(action: { selectedCategory = cat }) {
-                                        Text(cat)
-                                            .font(.caption.bold())
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 5)
-                                            .background(selectedCategory == cat ? Color(red: 0.82, green: 0.65, blue: 0.35) : Color.gray.opacity(0.15))
-                                            .foregroundColor(selectedCategory == cat ? .white : .primary)
-                                            .cornerRadius(12)
-                                    }
-                                }
-                            }
-                        }
-
-                        // Grounded Place Cards List
-                        VStack(spacing: 8) {
-                            ForEach(filteredPlaces) { place in
-                                Button(action: {
-                                    locationSearch = place.name
-                                    if title.isEmpty || title == "Memory Stamp" {
-                                        title = place.stampTitle
-                                    }
-                                }) {
-                                    HStack(alignment: .center, spacing: 10) {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            HStack {
-                                                Text(place.name)
-                                                    .font(.subheadline.bold())
-                                                    .foregroundColor(.primary)
-                                                Spacer()
-                                                Text(place.rating)
-                                                    .font(.caption2.bold())
-                                                    .foregroundColor(.orange)
-                                            }
-                                            Text(place.address)
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                                .lineLimit(1)
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "tag.fill")
-                                                    .font(.system(size: 10))
-                                                Text("Gợi ý tem: \(place.stampTitle)")
-                                                    .font(.system(size: 11, weight: .medium))
-                                            }
-                                            .foregroundColor(Color(red: 0.7, green: 0.5, blue: 0.1))
-                                        }
-                                        Image(systemName: locationSearch == place.name ? "checkmark.circle.fill" : "chevron.right")
-                                            .foregroundColor(locationSearch == place.name ? Color(red: 0.85, green: 0.25, blue: 0.20) : .gray.opacity(0.5))
-                                    }
-                                    .padding(10)
-                                    .background(Color.white)
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(locationSearch == place.name ? Color(red: 0.85, green: 0.25, blue: 0.20) : Color.gray.opacity(0.15), lineWidth: 1)
-                                    )
-                                }
-                            }
                         }
 
                         Text("AUDIENCE VISIBILITY")

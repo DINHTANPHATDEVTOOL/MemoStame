@@ -58,6 +58,59 @@ struct PerforatedStampShape: Shape {
     }
 }
 
+struct MemoStampImageView<Placeholder: View>: View {
+    let urlString: String
+    var contentMode: ContentMode = .fill
+    let placeholder: () -> Placeholder
+
+    init(urlString: String, contentMode: ContentMode = .fill, @ViewBuilder placeholder: @escaping () -> Placeholder) {
+        self.urlString = urlString
+        self.contentMode = contentMode
+        self.placeholder = placeholder
+    }
+
+    private func loadImage() -> UIImage? {
+        if urlString.hasPrefix("data:image/") {
+            if let commaIdx = urlString.firstIndex(of: ","),
+               let data = Data(base64Encoded: String(urlString[urlString.index(after: commaIdx)...])) {
+                return UIImage(data: data)
+            }
+        } else {
+            let path = urlString.hasPrefix("file://")
+                ? (URL(string: urlString)?.path ?? urlString.replacingOccurrences(of: "file://", with: ""))
+                : urlString
+            return UIImage(contentsOfFile: path)
+        }
+        return nil
+    }
+
+    var body: some View {
+        if urlString.hasPrefix("http://") || urlString.hasPrefix("https://") {
+            AsyncImage(url: URL(string: urlString)) { phase in
+                if let image = phase.image {
+                    image.resizable().aspectRatio(contentMode: contentMode)
+                } else {
+                    placeholder()
+                }
+            }
+        } else if let uiImage = loadImage() {
+            Image(uiImage: uiImage)
+                .resizable()
+                .aspectRatio(contentMode: contentMode)
+        } else {
+            placeholder()
+        }
+    }
+}
+
+extension MemoStampImageView where Placeholder == Color {
+    init(urlString: String, contentMode: ContentMode = .fill) {
+        self.init(urlString: urlString, contentMode: contentMode) {
+            Color(red: 0.94, green: 0.91, blue: 0.84)
+        }
+    }
+}
+
 struct DieCutStampView: View {
     let title: String
     let imageUrl: String
@@ -121,26 +174,17 @@ struct DieCutStampView: View {
                     // FRONT SIDE: Authentic Die-Cut Photo Stamp
                     ZStack {
                         // Layer 1.1: Captured Photo filling 100% of the stamp viewport
-                        AsyncImage(url: URL(string: imageUrl)) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            case .failure(_), .empty:
-                                ZStack {
-                                    Color(red: 0.94, green: 0.91, blue: 0.84)
-                                    VStack(spacing: 4) {
-                                        Image(systemName: shape.contains("heart") ? "heart.fill" : (shape.contains("royal") ? "crown.fill" : "photo.artframe"))
-                                            .font(.system(size: fittedInGrid ? 18 : 28))
-                                            .foregroundColor(shapeThemeColor)
-                                        Text("MEMOSTAMP")
-                                            .font(.system(size: fittedInGrid ? 6 : 8, weight: .bold, design: .monospaced))
-                                            .foregroundColor(Color(red: 0.65, green: 0.55, blue: 0.45))
-                                    }
+                        MemoStampImageView(urlString: imageUrl, contentMode: .fill) {
+                            ZStack {
+                                Color(red: 0.94, green: 0.91, blue: 0.84)
+                                VStack(spacing: 4) {
+                                    Image(systemName: shape.contains("heart") ? "heart.fill" : (shape.contains("royal") ? "crown.fill" : "photo.artframe"))
+                                        .font(.system(size: fittedInGrid ? 18 : 28))
+                                        .foregroundColor(shapeThemeColor)
+                                    Text("MEMOSTAMP")
+                                        .font(.system(size: fittedInGrid ? 6 : 8, weight: .bold, design: .monospaced))
+                                        .foregroundColor(Color(red: 0.65, green: 0.55, blue: 0.45))
                                 }
-                            @unknown default:
-                                Color.gray.opacity(0.2)
                             }
                         }
                         .frame(width: cardWidth, height: cardHeight)

@@ -38,7 +38,7 @@ class AppSupabaseClientIntegrationTest {
         )
 
         // 1. App calls upsertProfile (UserAuthRepository.updateProfile / register)
-        val upsertRes = client.upsertProfile(userProfile, passwordHash = "hash123")
+        val upsertRes = client.upsertProfile(userProfile)
         assertTrue("upsertProfile from app code should succeed: ${upsertRes.exceptionOrNull()?.message}", upsertRes.isSuccess)
 
         // 2. App calls getProfileByUsername (UserAuthRepository.login)
@@ -158,7 +158,7 @@ class AppSupabaseClientIntegrationTest {
             authorName = "Tác Giả Feed App",
             authorAvatar = "https://i.pravatar.cc/150?u=author",
             caption = "Kỷ niệm đăng từ FeedRepository trên ứng dụng Android",
-            audienceType = AudienceType.EVERYONE,
+            audienceType = AudienceType.FRIENDS,
             createdAt = System.currentTimeMillis(),
             type = FeedPostType.MEMORY,
             location = "Langbiang, Đà Lạt"
