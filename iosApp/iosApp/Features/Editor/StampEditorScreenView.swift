@@ -197,6 +197,7 @@ struct StampEditorScreenView: View {
                                 Toggle("Vân khuôn dập", isOn: $showMoldOverlay)
                                     .font(.caption.bold())
                                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.85, green: 0.25, blue: 0.20)))
+                            }
                         }
                     }
                     .padding(.horizontal, 16)

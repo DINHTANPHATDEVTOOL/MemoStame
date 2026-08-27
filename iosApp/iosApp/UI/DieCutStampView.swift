@@ -110,17 +110,7 @@ struct DieCutStampView: View {
     }
 
     private var shapeThemeColor: Color {
-        let s = shape.lowercased()
-        if s.contains("gold") || s.contains("royal") {
-            return Color(red: 0.82, green: 0.65, blue: 0.35)
-        } else if s.contains("airmail") || s.contains("postmark") {
-            return Color(red: 0.18, green: 0.35, blue: 0.58)
-        } else if s.contains("heart") || s.contains("love") {
-            return Color(red: 0.90, green: 0.30, blue: 0.45)
-        } else if s.contains("vintage") || s.contains("35mm") {
-            return Color(red: 0.75, green: 0.45, blue: 0.25)
-        }
-        return StampRenderEngine.shared.colorFromHex(stampColorHex)
+        StampRenderEngine.shared.colorFromHex(stampColorHex)
     }
 
     var body: some View {

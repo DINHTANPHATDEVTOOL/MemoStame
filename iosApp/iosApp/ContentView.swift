@@ -36,9 +36,9 @@ struct ContentView: View {
                 displayName: name,
                 avatarUrl: avatar,
                 bio: bio,
-                stampsCreatedCount: Int32(14),
-                stampsCollectedCount: Int32(38),
-                placesVisitedCount: Int32(9)
+                stampsCreatedCount: Int32(0),
+                stampsCollectedCount: Int32(0),
+                placesVisitedCount: Int32(0)
             )
             repo.setCurrentUser(profile: profile)
         }
