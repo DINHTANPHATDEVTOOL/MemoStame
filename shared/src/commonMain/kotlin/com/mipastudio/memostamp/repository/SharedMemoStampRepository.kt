@@ -28,6 +28,20 @@ class SharedMemoStampRepository {
         _currentUser.value = profile
     }
 
+    fun resetUserScopedState() {
+        _stamps.value = emptyList()
+        _collections.value = listOf(
+            CollectionItem("col_travel", "Travel & Places", "Destinations & journeys", "plane", "SPECIAL", 12, 0),
+            CollectionItem("col_coffee", "Coffee & Food", "Cafes and meals", "coffee", "NORMAL", 10, 0),
+            CollectionItem("col_daily", "Daily Life", "Everyday moments", "leaf", "NORMAL", 15, 0),
+            CollectionItem("col_special", "Special Moments", "Anniversaries & milestones", "star", "SERIES", 8, 0)
+        )
+        _friends.value = emptyList()
+        _friendRequests.value = emptyList()
+        _tradeRequests.value = emptyList()
+        _feedPosts.value = emptyList()
+    }
+
     private val _circles = MutableStateFlow<List<Circle>>(emptyList())
     val circles: StateFlow<List<Circle>> = _circles.asStateFlow()
 

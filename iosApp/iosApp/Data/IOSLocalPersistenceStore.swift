@@ -89,34 +89,83 @@ class IOSLocalPersistenceStore {
     static let shared = IOSLocalPersistenceStore()
     private let fileManager = FileManager.default
 
-    private var storageUrl: URL {
+    func sanitizeUserId(_ userId: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_-"))
+        let clean = userId.lowercased().components(separatedBy: allowed.inverted).joined(separator: "_")
+        return clean.isEmpty ? "unknown_user" : clean
+    }
+
+    func storageUrl(userId: String) -> URL {
+        let safeUid = sanitizeUserId(userId)
+        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent("memostamp_local_v2_\(safeUid).json")
+    }
+
+    private var legacyV1Url: URL {
         let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return docs.appendingPathComponent("memostamp_local_v1.json")
     }
 
-    func loadData(into repository: SharedMemoStampRepository) {
-        guard fileManager.fileExists(atPath: storageUrl.path),
-              let data = try? Data(contentsOf: storageUrl),
-              let payload = try? JSONDecoder().decode(PersistedPayload.self, from: data) else {
-            return
+    @discardableResult
+    func loadData(into repository: SharedMemoStampRepository, userId: String) -> Bool {
+        guard !userId.isEmpty else { return false }
+        let targetUrl = storageUrl(userId: userId)
+
+        // 1. Check account-scoped V2 file
+        if fileManager.fileExists(atPath: targetUrl.path),
+           let data = try? Data(contentsOf: targetUrl),
+           let payload = try? JSONDecoder().decode(PersistedPayload.self, from: data) {
+
+            // Guard: Never let a persistence file silently switch identity
+            if let user = payload.user, !user.uid.isEmpty && user.uid != userId {
+                print("Persistence identity mismatch: file uid '\(user.uid)' != requested userId '\(userId)'")
+                return false
+            }
+
+            restorePayload(payload, into: repository, userId: userId)
+            return true
         }
 
-        // Restore User Profile if present
+        // 2. Legacy V1 Migration fallback
+        if fileManager.fileExists(atPath: legacyV1Url.path),
+           let legacyData = try? Data(contentsOf: legacyV1Url),
+           let legacyPayload = try? JSONDecoder().decode(PersistedPayload.self, from: legacyData) {
+
+            let legacyUid = legacyPayload.user?.uid ?? ""
+            // Only migrate if legacy file matches target user or legacy default identity
+            if legacyUid == userId || legacyUid == "user_me" || legacyUid.isEmpty {
+                restorePayload(legacyPayload, into: repository, userId: userId)
+                // Write immediately to v2 file for this user
+                saveData(repository: repository, userId: userId)
+                // Remove old v1 file after successful migration
+                try? fileManager.removeItem(at: legacyV1Url)
+                return true
+            } else {
+                print("Legacy V1 identity mismatch: payload user '\(legacyUid)' != requested userId '\(userId)'")
+                return false
+            }
+        }
+
+        return false
+    }
+
+    private func restorePayload(_ payload: PersistedPayload, into repository: SharedMemoStampRepository, userId: String) {
         if let user = payload.user {
+            let current = (repository.currentUser.value as? UserProfile)
             let profile = UserProfile(
-                uid: user.uid,
-                username: user.username,
-                displayName: user.displayName,
-                avatarUrl: user.avatarUrl,
-                bio: user.bio,
-                stampsCreatedCount: user.stampsCreatedCount,
-                stampsCollectedCount: user.stampsCollectedCount,
-                placesVisitedCount: user.placesVisitedCount
+                uid: userId,
+                username: current?.username ?? user.username,
+                displayName: current?.displayName ?? user.displayName,
+                avatarUrl: current?.avatarUrl ?? user.avatarUrl,
+                bio: current?.bio ?? user.bio,
+                stampsCreatedCount: max(current?.stampsCreatedCount ?? 0, user.stampsCreatedCount),
+                stampsCollectedCount: max(current?.stampsCollectedCount ?? 0, user.stampsCollectedCount),
+                placesVisitedCount: max(current?.placesVisitedCount ?? 0, user.placesVisitedCount)
             )
             repository.setCurrentUser(profile: profile)
         }
 
-        // Unconditionally restore Collections (including empty list)
+        // Restore Collections
         let loadedCollections = payload.collections.map { c in
             CollectionItem(
                 id: c.id,
@@ -131,7 +180,7 @@ class IOSLocalPersistenceStore {
         }
         repository.restoreCollections(collections: loadedCollections)
 
-        // Unconditionally restore Stamps (including empty list)
+        // Restore Stamps
         let loadedStamps = payload.stamps.map { s in
             StampItem(
                 id: s.id,
@@ -152,7 +201,7 @@ class IOSLocalPersistenceStore {
         }
         repository.restoreStamps(stamps: loadedStamps)
 
-        // Restore Friends if present
+        // Restore Friends
         if let friends = payload.friends {
             let loadedFriends = friends.map { f in
                 FriendItem(
@@ -165,9 +214,11 @@ class IOSLocalPersistenceStore {
                 )
             }
             repository.restoreFriends(friends: loadedFriends)
+        } else {
+            repository.restoreFriends(friends: [])
         }
 
-        // Restore Friend Requests if present
+        // Restore Friend Requests
         if let requests = payload.friendRequests {
             let loadedReqs = requests.map { r in
                 FriendRequestItem(
@@ -183,9 +234,11 @@ class IOSLocalPersistenceStore {
                 )
             }
             repository.restoreFriendRequests(requests: loadedReqs)
+        } else {
+            repository.restoreFriendRequests(requests: [])
         }
 
-        // Restore Trade Requests if present
+        // Restore Trade Requests
         if let trades = payload.tradeRequests {
             let loadedTrades = trades.map { t in
                 TradeRequest(
@@ -203,14 +256,19 @@ class IOSLocalPersistenceStore {
                 )
             }
             repository.restoreTradeRequests(trades: loadedTrades)
+        } else {
+            repository.restoreTradeRequests(trades: [])
         }
     }
 
-    func saveData(repository: SharedMemoStampRepository) {
+    func saveData(repository: SharedMemoStampRepository, userId: String) {
+        guard !userId.isEmpty else { return }
+        let targetUrl = storageUrl(userId: userId)
+
         let userData: PersistedUserData?
         if let currentUser = repository.currentUser.value as? UserProfile {
             userData = PersistedUserData(
-                uid: currentUser.uid,
+                uid: userId,
                 username: currentUser.username,
                 displayName: currentUser.displayName,
                 avatarUrl: currentUser.avatarUrl,
@@ -311,7 +369,7 @@ class IOSLocalPersistenceStore {
         )
 
         if let encoded = try? JSONEncoder().encode(payload) {
-            try? encoded.write(to: storageUrl, options: .atomic)
+            try? encoded.write(to: targetUrl, options: .atomic)
         }
     }
 }

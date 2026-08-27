@@ -26,6 +26,10 @@ struct MemoryNoteScreenView: View {
     let moodOptions = ["😊 Happy", "❤️ Love", "✈️ Travel", "☕ Chill", "🔥 Excited", "🕰️ Nostalgic", "🌿 Peaceful", "⭐ Special"]
     let audienceTypes = ["Friends", "Only Me"]
 
+    private var currentUid: String {
+        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+    }
+
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM.dd"
@@ -103,7 +107,7 @@ struct MemoryNoteScreenView: View {
                         mood: selectedMood,
                         memoryDate: Int64(memoryDate.timeIntervalSince1970 * 1000)
                     )
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
                     onSavedSuccess()
                 }) {
                     Text("Lưu Tem")

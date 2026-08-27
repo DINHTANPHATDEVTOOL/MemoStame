@@ -330,4 +330,25 @@ class SharedMemoStampRepositoryTest {
         assertEquals("New Bio KMP", updatedUser.bio)
         assertEquals("https://example.com/new_avatar.jpg", updatedUser.avatarUrl)
     }
+
+    @Test
+    fun testResetUserScopedStateClearsRuntimeData() {
+        val repo = SharedMemoStampRepository()
+        repo.loadDemoFixtures()
+        repo.addFriend("Test Friend", "user_test")
+        repo.addStamp("Test Stamp", "Note", "Loc", "https://example.com/img.png")
+        repo.sendFriendRequest("target_user")
+
+        assertTrue(repo.stamps.value.isNotEmpty())
+        assertTrue(repo.friends.value.isNotEmpty())
+        assertTrue(repo.friendRequests.value.isNotEmpty())
+
+        repo.resetUserScopedState()
+
+        assertTrue(repo.stamps.value.isEmpty())
+        assertTrue(repo.friends.value.isEmpty())
+        assertTrue(repo.friendRequests.value.isEmpty())
+        assertTrue(repo.tradeRequests.value.isEmpty())
+        assertTrue(repo.feedPosts.value.isEmpty())
+    }
 }

@@ -187,6 +187,9 @@ struct PassportScreenView: View {
                             }
 
                             Button(action: {
+                                let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                                repository.resetUserScopedState()
                                 UserDefaults.standard.set(false, forKey: "isAuthenticated")
                                 presentationMode.wrappedValue.dismiss()
                             }) {
@@ -602,6 +605,9 @@ struct ProfileSettingsSheetView: View {
                         }
 
                         Button(action: {
+                            let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                            repository.resetUserScopedState()
                             UserDefaults.standard.set(false, forKey: "isAuthenticated")
                             presentationMode.wrappedValue.dismiss()
                         }) {

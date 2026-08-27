@@ -400,8 +400,9 @@ struct AuthLoginScreenView: View {
                             UserDefaults.standard.set(avatarUrl, forKey: "user_avatarUrl")
                             UserDefaults.standard.set(bio, forKey: "user_bio")
 
+                            let targetUid = "user_" + cleanUsername
                             let newProfile = UserProfile(
-                                uid: "user_" + cleanUsername,
+                                uid: targetUid,
                                 username: cleanUsername,
                                 displayName: finalDisplayName,
                                 avatarUrl: avatarUrl,
@@ -410,7 +411,9 @@ struct AuthLoginScreenView: View {
                                 stampsCollectedCount: Int32(0),
                                 placesVisitedCount: Int32(0)
                             )
+                            repository.resetUserScopedState()
                             repository.setCurrentUser(profile: newProfile)
+                            IOSLocalPersistenceStore.shared.loadData(into: repository, userId: targetUid)
 
                             isLoading = false
                             onLoginSuccess()
@@ -435,8 +438,9 @@ struct AuthLoginScreenView: View {
                 UserDefaults.standard.set(localAccount.avatarUrl, forKey: "user_avatarUrl")
                 UserDefaults.standard.set(localAccount.bio, forKey: "user_bio")
 
+                let targetUid = "user_" + localAccount.username
                 let newProfile = UserProfile(
-                    uid: "user_" + localAccount.username,
+                    uid: targetUid,
                     username: localAccount.username,
                     displayName: localAccount.displayName,
                     avatarUrl: localAccount.avatarUrl,
@@ -445,7 +449,9 @@ struct AuthLoginScreenView: View {
                     stampsCollectedCount: Int32(0),
                     placesVisitedCount: Int32(0)
                 )
+                repository.resetUserScopedState()
                 repository.setCurrentUser(profile: newProfile)
+                IOSLocalPersistenceStore.shared.loadData(into: repository, userId: targetUid)
 
                 isLoading = false
                 onLoginSuccess()
@@ -486,7 +492,9 @@ struct AuthLoginScreenView: View {
             stampsCollectedCount: Int32(0),
             placesVisitedCount: Int32(0)
         )
+        repository.resetUserScopedState()
         repository.setCurrentUser(profile: newProfile)
+        IOSLocalPersistenceStore.shared.loadData(into: repository, userId: uid)
 
         onLoginSuccess()
     }

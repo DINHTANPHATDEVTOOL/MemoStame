@@ -26,12 +26,14 @@ struct ContentView: View {
 
     init() {
         let repo = SharedMemoStampRepository()
+        let activeUid: String
         if let name = UserDefaults.standard.string(forKey: "user_displayName"), !name.isEmpty,
            let username = UserDefaults.standard.string(forKey: "user_username"), !username.isEmpty {
             let avatar = UserDefaults.standard.string(forKey: "user_avatarUrl") ?? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300"
             let bio = UserDefaults.standard.string(forKey: "user_bio") ?? "Sưu tầm ký ức qua từng con tem bưu chính 📮"
+            activeUid = "user_" + username
             let profile = UserProfile(
-                uid: "user_" + username,
+                uid: activeUid,
                 username: username,
                 displayName: name,
                 avatarUrl: avatar,
@@ -41,8 +43,10 @@ struct ContentView: View {
                 placesVisitedCount: Int32(0)
             )
             repo.setCurrentUser(profile: profile)
+        } else {
+            activeUid = (repo.currentUser.value as? UserProfile)?.uid ?? "user_me"
         }
-        IOSLocalPersistenceStore.shared.loadData(into: repo)
+        IOSLocalPersistenceStore.shared.loadData(into: repo, userId: activeUid)
         self.repository = repo
         _homeViewModel = StateObject(wrappedValue: HomeObservableViewModel(repository: repo))
     }

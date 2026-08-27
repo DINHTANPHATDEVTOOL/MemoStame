@@ -20,6 +20,10 @@ struct StampVaultScreenView: View {
         GridItem(.flexible(), spacing: 14)
     ]
 
+    private var currentUid: String {
+        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+    }
+
     var stamps: [StampItem] {
         _ = refreshTrigger
         return (repository.stamps.value as? [StampItem]) ?? []
@@ -259,7 +263,7 @@ struct StampVaultScreenView: View {
                                             Button(action: {
                                                 repository.toggleCollectionPrivacy(collectionId: col.id)
                                                 refreshTrigger.toggle()
-                                                IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
                                             }) {
                                                 HStack(spacing: 3) {
                                                     Image(systemName: col.privacy == "ONLY_ME" ? "lock.fill" : "person.2.fill")
@@ -404,6 +408,10 @@ struct StampDetailModalView: View {
         _isFavorite = State(initialValue: stamp.favorite)
     }
 
+    private var currentUid: String {
+        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Capsule()
@@ -419,7 +427,7 @@ struct StampDetailModalView: View {
                 Button(action: {
                     _ = repository.toggleFavorite(stampId: stamp.id)
                     isFavorite.toggle()
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
                     HapticFeedbackManager.shared.playSuccess()
                 }) {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
@@ -577,7 +585,7 @@ struct StampDetailModalView: View {
                 message: Text("Hành động này sẽ xóa con tem khỏi Bộ sưu tập của bạn."),
                 primaryButton: .destructive(Text("Xóa")) {
                     _ = repository.deleteStamp(stampId: stamp.id)
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
                     onDismiss()
                 },
                 secondaryButton: .cancel()
@@ -694,7 +702,7 @@ struct CreateAlbumSheetView: View {
                         let name = albumName.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !name.isEmpty {
                             _ = repository.createCollection(name: name, description: albumDesc, iconEmoji: selectedEmoji, privacy: selectedPrivacy)
-                            IOSLocalPersistenceStore.shared.saveData(repository: repository)
+                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
                             presentationMode.wrappedValue.dismiss()
                         }
                     }) {
