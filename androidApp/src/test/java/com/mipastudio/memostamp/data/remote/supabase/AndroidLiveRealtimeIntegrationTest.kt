@@ -9,6 +9,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import java.io.File
@@ -37,12 +39,30 @@ class AndroidLiveRealtimeIntegrationTest {
     @Before
     fun setUp() = runBlocking {
         val envMap = loadEnvMap()
+        val runLiveEnv = System.getenv("RUN_LIVE_SUPABASE_TESTS") ?: envMap["RUN_LIVE_SUPABASE_TESTS"] ?: ""
+        val isOptIn = runLiveEnv.equals("true", ignoreCase = true)
+
         userAEmail = System.getenv("TEST_USER_A_EMAIL") ?: envMap["TEST_USER_A_EMAIL"] ?: ""
         userAPassword = System.getenv("TEST_USER_A_PASSWORD") ?: envMap["TEST_USER_A_PASSWORD"] ?: ""
         userBEmail = System.getenv("TEST_USER_B_EMAIL") ?: envMap["TEST_USER_B_EMAIL"] ?: ""
         userBPassword = System.getenv("TEST_USER_B_PASSWORD") ?: envMap["TEST_USER_B_PASSWORD"] ?: ""
         userCEmail = System.getenv("TEST_USER_C_EMAIL") ?: envMap["TEST_USER_C_EMAIL"] ?: ""
         userCPassword = System.getenv("TEST_USER_C_PASSWORD") ?: envMap["TEST_USER_C_PASSWORD"] ?: ""
+
+        val hasCredentials = userAEmail.isNotBlank() && userAPassword.isNotBlank() &&
+                userBEmail.isNotBlank() && userBPassword.isNotBlank() &&
+                userCEmail.isNotBlank() && userCPassword.isNotBlank()
+
+        // 1. If RUN_LIVE_SUPABASE_TESTS is NOT true (e.g. standard GitHub CI), skip cleanly
+        Assume.assumeTrue(
+            "Skipping AndroidLiveRealtimeIntegrationTest: RUN_LIVE_SUPABASE_TESTS is not set to true",
+            isOptIn
+        )
+
+        // 2. If RUN_LIVE_SUPABASE_TESTS=true BUT credentials missing, fail explicitly
+        if (!hasCredentials) {
+            fail("RUN_LIVE_SUPABASE_TESTS=true but test user credentials (TEST_USER_A/B/C) are missing in environment or .env.test")
+        }
 
         if (userAEmail.isNotBlank() && userAPassword.isNotBlank()) {
             val resA = authService.signIn(userAEmail, userAPassword)
@@ -59,9 +79,9 @@ class AndroidLiveRealtimeIntegrationTest {
             sessionC = resC.getOrNull()
             if (resC.isFailure) System.err.println("Session C login failed: ${resC.exceptionOrNull()?.message}")
         }
-        assertNotNull("Session A must be logged in", sessionA)
-        assertNotNull("Session B must be logged in", sessionB)
-        assertNotNull("Session C must be logged in", sessionC)
+        assertNotNull("Session A must be logged in when live tests are enabled", sessionA)
+        assertNotNull("Session B must be logged in when live tests are enabled", sessionB)
+        assertNotNull("Session C must be logged in when live tests are enabled", sessionC)
     }
 
     private fun loadEnvMap(): Map<String, String> {
@@ -154,6 +174,24 @@ class AndroidLiveRealtimeIntegrationTest {
         val clientB = SupabaseClient()
         clientB.userAccessToken = sessB.accessToken
 
+        val realtimeA = SupabaseRealtimeClient()
+        val deferredUpdateA = CompletableDeferred<DirectMessage>()
+        var targetMsgId: String? = null
+
+        realtimeA.connectAndSubscribe(sessA.userId, sessA.accessToken) { msg ->
+            val expectedId = targetMsgId
+            if (expectedId != null && msg.id == expectedId && msg.isRead && !deferredUpdateA.isCompleted) {
+                deferredUpdateA.complete(msg)
+            }
+        }
+
+        var waitingAck = 0
+        while (!realtimeA.isSubscribedState() && waitingAck < 30) {
+            kotlinx.coroutines.delay(200)
+            waitingAck++
+        }
+        assertTrue("Realtime channel direct_messages joined successfully for User A", realtimeA.isSubscribedState())
+
         // Step A: A sends message to B
         val sendMsg = DirectMessage(
             id = UUID.randomUUID().toString(),
@@ -169,22 +207,7 @@ class AndroidLiveRealtimeIntegrationTest {
         val sendRes = clientA.sendDirectMessage(sendMsg)
         assertTrue(sendRes.isSuccess)
         val canonicalMsg = sendRes.getOrThrow()
-
-        val realtimeA = SupabaseRealtimeClient()
-        val deferredUpdateA = CompletableDeferred<DirectMessage>()
-
-        realtimeA.connectAndSubscribe(sessA.userId, sessA.accessToken) { msg ->
-            if (msg.id == canonicalMsg.id && msg.isRead && !deferredUpdateA.isCompleted) {
-                deferredUpdateA.complete(msg)
-            }
-        }
-
-        var waitingAck = 0
-        while (!realtimeA.isSubscribedState() && waitingAck < 30) {
-            kotlinx.coroutines.delay(200)
-            waitingAck++
-        }
-        assertTrue("Realtime channel direct_messages joined successfully for User A", realtimeA.isSubscribedState())
+        targetMsgId = canonicalMsg.id
 
         // Step B: B calls mark_direct_messages_read RPC
         val markRes = clientB.markMessagesAsRead(senderId = sessA.userId, recipientId = sessB.userId)

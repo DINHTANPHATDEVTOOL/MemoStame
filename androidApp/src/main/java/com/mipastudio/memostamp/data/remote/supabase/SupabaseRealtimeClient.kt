@@ -88,13 +88,11 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             return
         }
         if (currentAccessToken != newAccessToken) {
-            Log.d(TAG, "Access token refreshed for user: $userId")
+            Log.d(TAG, "Access token refreshed for user: $userId. Reconnecting with new JWT.")
+            disconnectInternal(clearState = false)
+            this.currentUserId = userId
             this.currentAccessToken = newAccessToken
-            if (isConnected) {
-                subscribeToDirectMessages()
-            } else {
-                startWebSocket()
-            }
+            startWebSocket()
         }
     }
 
@@ -118,10 +116,12 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             return
         }
 
-        if (currentUserId == userId && isConnected && currentAccessToken != accessToken) {
-            Log.d(TAG, "Updating access token for active user: $userId")
+        if (currentUserId == userId && currentAccessToken != accessToken) {
+            Log.d(TAG, "Updating access token for active user: $userId. Reconnecting with new JWT.")
+            disconnectInternal(clearState = false)
+            this.currentUserId = userId
             this.currentAccessToken = accessToken
-            subscribeToDirectMessages()
+            startWebSocket()
             return
         }
 

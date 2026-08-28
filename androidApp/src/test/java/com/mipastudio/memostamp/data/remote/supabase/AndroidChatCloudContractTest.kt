@@ -427,6 +427,7 @@ class AndroidChatCloudContractTest {
         assertEquals("new_refreshed_token_456", realtimeClient.getCurrentAccessToken())
         assertNotEquals("old_token_123", realtimeClient.getCurrentAccessToken())
         assertEquals("user_a", realtimeClient.getCurrentUserId())
+        assertFalse("Old subscription cannot continue and state resets on token update", realtimeClient.isSubscribedState())
     }
 
     @Test
