@@ -113,28 +113,11 @@ struct SupabaseFriendRecord: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case userId1 = "user_id_1"
         case userId2 = "user_id_2"
-        case userId = "user_id"
-        case friendId = "friend_id"
-        case senderId = "sender_id"
-        case recipientId = "recipient_id"
     }
 
     init(userId1: String, userId2: String) {
         self.userId1 = userId1
         self.userId2 = userId2
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let u1 = try? container.decode(String.self, forKey: .userId1)
-        let u2 = try? container.decode(String.self, forKey: .userId2)
-        let uid = try? container.decode(String.self, forKey: .userId)
-        let fid = try? container.decode(String.self, forKey: .friendId)
-        let sid = try? container.decode(String.self, forKey: .senderId)
-        let rid = try? container.decode(String.self, forKey: .recipientId)
-
-        self.userId1 = u1 ?? uid ?? sid ?? ""
-        self.userId2 = u2 ?? fid ?? rid ?? ""
     }
 }
 
@@ -183,9 +166,9 @@ class SupabaseSocialClient {
     private func executeHttp(
         endpoint: String,
         method: String = "GET",
-        jsonBody: String? = null,
+        jsonBody: String? = nil,
         prefer: String? = nil,
-        requireUserAuth: Boolean = true,
+        requireUserAuth: Bool = true,
         completion: @escaping (Result<Data, Error>) -> Void
     ) {
         let token = SupabaseAuthService.shared.activeSession?.accessToken

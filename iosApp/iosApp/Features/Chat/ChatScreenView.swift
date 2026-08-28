@@ -1,7 +1,7 @@
 import SwiftUI
 import shared
 
-struct ChatMessage: Identifiable, Codable {
+struct ChatMessage: Identifiable {
     let id: String
     let senderId: String
     let senderName: String

@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import shared
 
 struct PersistedIOSChatPayload: Codable {
     let userId: String
@@ -107,7 +108,22 @@ class IOSChatRepository: ObservableObject {
         let domainMsgs = payload.messages.map { m in
             var stamp: StampItem? = nil
             if let sid = m.stampId, !sid.isEmpty {
-                stamp = StampItem(id: sid, title: m.stampTitle ?? "", stampImagePath: m.stampImageUrl ?? "", locationName: m.stampLocation ?? "", dateCreated: "")
+                stamp = StampItem(
+                    id: sid,
+                    originalImagePath: m.stampImageUrl ?? "",
+                    stampImagePath: m.stampImageUrl ?? "",
+                    title: m.stampTitle ?? "",
+                    note: "",
+                    createdAt: "",
+                    memoryDate: "",
+                    location: m.stampLocation ?? "",
+                    mood: "",
+                    collectionId: nil,
+                    favorite: false,
+                    filterId: "",
+                    shape: "",
+                    preset: "NATURAL"
+                )
             }
             return ChatMessage(
                 id: m.id,
@@ -199,7 +215,22 @@ class IOSChatRepository: ObservableObject {
 
                         var stamp: StampItem? = nil
                         if let sid = r.stampId, !sid.isEmpty {
-                            stamp = StampItem(id: sid, title: r.stampTitle ?? "", stampImagePath: r.stampImageUrl ?? "", locationName: r.stampLocation ?? "", dateCreated: "")
+                            stamp = StampItem(
+                                id: sid,
+                                originalImagePath: r.stampImageUrl ?? "",
+                                stampImagePath: r.stampImageUrl ?? "",
+                                title: r.stampTitle ?? "",
+                                note: "",
+                                createdAt: "",
+                                memoryDate: "",
+                                location: r.stampLocation ?? "",
+                                mood: "",
+                                collectionId: nil,
+                                favorite: false,
+                                filterId: "",
+                                shape: "",
+                                preset: "NATURAL"
+                            )
                         }
 
                         return ChatMessage(
@@ -259,6 +290,8 @@ class IOSChatRepository: ObservableObject {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let isoCreatedAt = formatter.string(from: Date())
 
+        let remoteStampUrl = (stamp?.stampImagePath.hasPrefix("http") == true) ? stamp?.stampImagePath : nil
+
         let record = SupabaseDirectMessageRecord(
             id: validUuid,
             senderId: activeUserId,
@@ -270,8 +303,8 @@ class IOSChatRepository: ObservableObject {
             text: trimmedText,
             stampId: stamp?.id,
             stampTitle: stamp?.title,
-            stampImageUrl: stamp?.stampImagePath,
-            stampLocation: stamp?.locationName,
+            stampImageUrl: remoteStampUrl,
+            stampLocation: stamp?.location,
             createdAt: isoCreatedAt,
             isRead: false
         )
@@ -286,7 +319,22 @@ class IOSChatRepository: ObservableObject {
 
                     var msgStamp: StampItem? = nil
                     if let sid = serverRecord.stampId, !sid.isEmpty {
-                        msgStamp = StampItem(id: sid, title: serverRecord.stampTitle ?? "", stampImagePath: serverRecord.stampImageUrl ?? "", locationName: serverRecord.stampLocation ?? "", dateCreated: "")
+                        msgStamp = StampItem(
+                            id: sid,
+                            originalImagePath: serverRecord.stampImageUrl ?? "",
+                            stampImagePath: serverRecord.stampImageUrl ?? "",
+                            title: serverRecord.stampTitle ?? "",
+                            note: "",
+                            createdAt: "",
+                            memoryDate: "",
+                            location: serverRecord.stampLocation ?? "",
+                            mood: "",
+                            collectionId: nil,
+                            favorite: false,
+                            filterId: "",
+                            shape: "",
+                            preset: "NATURAL"
+                        )
                     }
 
                     let serverMsg = ChatMessage(
@@ -368,7 +416,22 @@ class IOSChatRepository: ObservableObject {
 
         var stamp: StampItem? = nil
         if let sid = record.stampId, !sid.isEmpty {
-            stamp = StampItem(id: sid, title: record.stampTitle ?? "", stampImagePath: record.stampImageUrl ?? "", locationName: record.stampLocation ?? "", dateCreated: "")
+            stamp = StampItem(
+                id: sid,
+                originalImagePath: record.stampImageUrl ?? "",
+                stampImagePath: record.stampImageUrl ?? "",
+                title: record.stampTitle ?? "",
+                note: "",
+                createdAt: "",
+                memoryDate: "",
+                location: record.stampLocation ?? "",
+                mood: "",
+                collectionId: nil,
+                favorite: false,
+                filterId: "",
+                shape: "",
+                preset: "NATURAL"
+            )
         }
 
         let newMsg = ChatMessage(

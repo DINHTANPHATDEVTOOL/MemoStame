@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import shared
 
 struct PersistedIOSFriendPayload: Codable {
     let userId: String
