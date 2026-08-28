@@ -7,6 +7,8 @@ import com.mipastudio.memostamp.domain.model.DirectMessage
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -43,7 +45,11 @@ class AndroidChatCloudContractTest {
     @Test
     fun test2_sendUsesAuthenticatedSender() = runBlocking {
         val transport = FakeSupabaseHttpTransport()
-        transport.defaultResponse = Result.success("{}")
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val representationJson = """
+            [{"id":"$validUuid","sender_id":"user_a","sender_name":"User A","recipient_id":"user_b","recipient_name":"User B","text":"Hello B","created_at":"2026-08-28T03:11:16.123Z","is_read":false}]
+        """.trimIndent()
+        transport.defaultResponse = Result.success(representationJson)
 
         val (chatRepo, authRepo) = createChatRepository(transport)
         val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
@@ -363,8 +369,12 @@ class AndroidChatCloudContractTest {
 
     @Test
     fun test14_outgoingDirectMessageIdIsValidUUIDString() = runBlocking {
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val representationJson = """
+            [{"id":"$validUuid","sender_id":"user_a","sender_name":"User A","recipient_id":"user_b","recipient_name":"User B","text":"Test UUID","created_at":"2026-08-28T03:11:16.123Z","is_read":false}]
+        """.trimIndent()
         val transport = FakeSupabaseHttpTransport()
-        transport.defaultResponse = Result.success("{}")
+        transport.defaultResponse = Result.success(representationJson)
 
         val (chatRepo, authRepo) = createChatRepository(transport)
         val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
@@ -377,6 +387,7 @@ class AndroidChatCloudContractTest {
         val sentMsg = result.getOrThrow()
         assertFalse(sentMsg.id.startsWith("msg_"))
         assertTrue(SupabaseClient.isValidUuid(sentMsg.id))
+        assertEquals(validUuid, sentMsg.id)
     }
 
     @Test
@@ -401,5 +412,168 @@ class AndroidChatCloudContractTest {
         }
 
         assertFalse(received)
+    }
+
+    @Test
+    fun test17_realtimeJwtRefreshUpdatesCredentialsAndPreventsStaleToken() {
+        val realtimeClient = SupabaseRealtimeClient()
+        realtimeClient.connectAndSubscribe("user_a", "old_token_123") {}
+
+        assertEquals("old_token_123", realtimeClient.getCurrentAccessToken())
+        assertEquals("user_a", realtimeClient.getCurrentUserId())
+
+        realtimeClient.updateTokenOrReconnect("user_a", "new_refreshed_token_456")
+
+        assertEquals("new_refreshed_token_456", realtimeClient.getCurrentAccessToken())
+        assertNotEquals("old_token_123", realtimeClient.getCurrentAccessToken())
+        assertEquals("user_a", realtimeClient.getCurrentUserId())
+    }
+
+    @Test
+    fun test18_realtimeLogoutClearsTokenAndSubscriptionState() {
+        val realtimeClient = SupabaseRealtimeClient()
+        realtimeClient.connectAndSubscribe("user_a", "token_xyz") {}
+
+        assertEquals("user_a", realtimeClient.getCurrentUserId())
+        assertEquals("token_xyz", realtimeClient.getCurrentAccessToken())
+
+        realtimeClient.disconnect()
+
+        assertNull(realtimeClient.getCurrentUserId())
+        assertNull(realtimeClient.getCurrentAccessToken())
+        assertFalse(realtimeClient.isSubscribedState())
+        assertFalse(realtimeClient.isConnectedState())
+    }
+
+    @Test
+    fun test19_realtimeUserSwitchGetsNewUserTokenOnly() {
+        val realtimeClient = SupabaseRealtimeClient()
+        realtimeClient.connectAndSubscribe("user_a", "token_a") {}
+
+        assertEquals("user_a", realtimeClient.getCurrentUserId())
+        assertEquals("token_a", realtimeClient.getCurrentAccessToken())
+
+        realtimeClient.connectAndSubscribe("user_b", "token_b") {}
+
+        assertEquals("user_b", realtimeClient.getCurrentUserId())
+        assertEquals("token_b", realtimeClient.getCurrentAccessToken())
+        assertNotEquals("token_a", realtimeClient.getCurrentAccessToken())
+    }
+
+    @Test
+    fun test20_validServerRepresentationReturnsCanonicalRow() = runBlocking {
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val json = """
+            [{"id":"$validUuid","sender_id":"user_a","sender_name":"User A","recipient_id":"user_b","recipient_name":"User B","text":"Canonical Server Text","created_at":"2026-08-28T03:30:00.000Z","is_read":false}]
+        """.trimIndent()
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.success(json)
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val res = chatRepo.sendMessageCloud(recipient = userB, text = "Local draft")
+        assertTrue(res.isSuccess)
+        val serverMsg = res.getOrThrow()
+        assertEquals(validUuid, serverMsg.id)
+        assertEquals("Canonical Server Text", serverMsg.text)
+    }
+
+    @Test
+    fun test21_httpSuccessWithEmptyArrayFailsClosed() = runBlocking {
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.success("[]")
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val res = chatRepo.sendMessageCloud(recipient = userB, text = "Hello")
+        assertTrue(res.isFailure)
+    }
+
+    @Test
+    fun test22_httpSuccessWithEmptyObjectFailsClosed() = runBlocking {
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.success("{}")
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val res = chatRepo.sendMessageCloud(recipient = userB, text = "Hello")
+        assertTrue(res.isFailure)
+    }
+
+    @Test
+    fun test23_malformedServerResponseFailsClosed() = runBlocking {
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.success("<html>Error 502 Bad Gateway</html>")
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val res = chatRepo.sendMessageCloud(recipient = userB, text = "Hello")
+        assertTrue(res.isFailure)
+    }
+
+    @Test
+    fun test24_invalidUuidServerIdFailsClosed() = runBlocking {
+        val json = """
+            [{"id":"msg_invalid_123","sender_id":"user_a","sender_name":"User A","recipient_id":"user_b","recipient_name":"User B","text":"Text","created_at":"2026-08-28T03:30:00Z","is_read":false}]
+        """.trimIndent()
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.success(json)
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val res = chatRepo.sendMessageCloud(recipient = userB, text = "Hello")
+        assertTrue(res.isFailure)
+        assertTrue(res.exceptionOrNull() is IllegalArgumentException)
+    }
+
+    @Test
+    fun test25_mismatchedSenderIdFailsClosed() = runBlocking {
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val json = """
+            [{"id":"$validUuid","sender_id":"attacker_user","sender_name":"Attacker","recipient_id":"user_b","recipient_name":"User B","text":"Spoofed Sender","created_at":"2026-08-28T03:30:00Z","is_read":false}]
+        """.trimIndent()
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.success(json)
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val res = chatRepo.sendMessageCloud(recipient = userB, text = "Hello")
+        assertTrue(res.isFailure)
+        assertTrue(res.exceptionOrNull() is SecurityException)
+    }
+
+    @Test
+    fun test26_sendFailureLeavesLocalChatUnchanged() = runBlocking {
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.failure(Exception("Network error"))
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val initialMessages = chatRepo.messages.value.size
+        val res = chatRepo.sendMessageCloud(recipient = userB, text = "Failure Test")
+
+        assertTrue(res.isFailure)
+        assertEquals(initialMessages, chatRepo.messages.value.size)
     }
 }

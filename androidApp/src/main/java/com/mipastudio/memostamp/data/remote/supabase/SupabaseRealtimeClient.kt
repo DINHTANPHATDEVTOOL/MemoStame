@@ -51,6 +51,11 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
     private var onMessageCallback: ((DirectMessage) -> Unit)? = null
     private val refCounter = AtomicInteger(1)
 
+    fun getCurrentUserId(): String? = currentUserId
+    fun getCurrentAccessToken(): String? = currentAccessToken
+    fun isSubscribedState(): Boolean = isSubscribed
+    fun isConnectedState(): Boolean = isConnected
+
     companion object {
         private const val TAG = "SupabaseRealtime"
 
@@ -66,10 +71,31 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
     }
 
     private fun getWsUrl(): String {
-        val httpUrl = if (context != null) SupabaseConfig.getSupabaseUrl(context).trimEnd('/') else "https://fake.supabase.co"
-        val apiKey = if (context != null) SupabaseConfig.getAnonKey(context).trim() else "fake_anon_key"
+        val httpUrl = SupabaseConfig.getSupabaseUrl(context).trimEnd('/')
+        val apiKey = SupabaseConfig.getAnonKey(context).trim()
         val baseWs = httpUrl.replace("https://", "wss://").replace("http://", "ws://")
         return "$baseWs/realtime/v1/websocket?apikey=$apiKey&vsn=1.0.0"
+    }
+
+    @Synchronized
+    fun updateTokenOrReconnect(userId: String, newAccessToken: String?) {
+        if (userId.isBlank() || userId.startsWith("guest_") || newAccessToken.isNullOrBlank()) {
+            disconnect()
+            return
+        }
+        if (currentUserId != userId) {
+            connectAndSubscribe(userId, newAccessToken, onMessageCallback ?: {})
+            return
+        }
+        if (currentAccessToken != newAccessToken) {
+            Log.d(TAG, "Access token refreshed for user: $userId")
+            this.currentAccessToken = newAccessToken
+            if (isConnected) {
+                subscribeToDirectMessages()
+            } else {
+                startWebSocket()
+            }
+        }
     }
 
     @Synchronized
@@ -84,10 +110,18 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             return
         }
 
-        // Duplicate subscription prevention
-        if (currentUserId == userId && isConnected && isSubscribed) {
+        this.onMessageCallback = onMessageReceived
+
+        // Duplicate subscription & token check
+        if (currentUserId == userId && currentAccessToken == accessToken && isConnected && isSubscribed) {
             Log.d(TAG, "Already connected and subscribed for user: $userId")
-            this.onMessageCallback = onMessageReceived
+            return
+        }
+
+        if (currentUserId == userId && isConnected && currentAccessToken != accessToken) {
+            Log.d(TAG, "Updating access token for active user: $userId")
+            this.currentAccessToken = accessToken
+            subscribeToDirectMessages()
             return
         }
 
@@ -95,7 +129,6 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
 
         this.currentUserId = userId
         this.currentAccessToken = accessToken
-        this.onMessageCallback = onMessageReceived
 
         startWebSocket()
     }

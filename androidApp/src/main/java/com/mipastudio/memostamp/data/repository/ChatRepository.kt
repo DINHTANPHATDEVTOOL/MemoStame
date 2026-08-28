@@ -62,6 +62,18 @@ class ChatRepository internal constructor(
                 }
             }
         }
+        coroutineScope.launch {
+            authRepo.accessToken.collect { token ->
+                val currentUid = activeUserId
+                if (!currentUid.isNullOrBlank() && !currentUid.startsWith("guest_")) {
+                    if (token.isNullOrBlank()) {
+                        onLogout()
+                    } else {
+                        realtimeClient.updateTokenOrReconnect(currentUid, token)
+                    }
+                }
+            }
+        }
     }
 
     private fun getMessagesPrefKey(userId: String): String = "direct_messages_of_$userId"
@@ -316,79 +328,7 @@ class ChatRepository internal constructor(
         Result.success(serverMsg)
     }
 
-    @Deprecated("Use sendMessageCloud for cloud-authoritative synchronization", ReplaceWith("sendMessageCloud(recipient, text, stampId, stampTitle, stampImageUrl, stampLocation)"))
-    fun sendMessage(
-        recipient: UserProfile,
-        text: String,
-        stampId: String? = null,
-        stampTitle: String? = null,
-        stampImageUrl: String? = null,
-        stampLocation: String? = null
-    ): DirectMessage {
-        val currentUid = authRepo.currentUser.value.userId
-        val current = authRepo.currentUser.value
-        val cleanText = text.trim()
-        val fallbackText = if (cleanText.isBlank() && !stampTitle.isNullOrBlank()) {
-            "📮 Đã gửi con tem: $stampTitle"
-        } else if (cleanText.isBlank() && !stampImageUrl.isNullOrBlank()) {
-            "📮 Đã gửi một con tem kỷ niệm"
-        } else {
-            cleanText
-        }
 
-        val resolvedImage = encodeLocalImageToBase64IfNeeded(stampImageUrl) ?: stampImageUrl
-
-        val msg = DirectMessage(
-            id = UUID.randomUUID().toString(),
-            senderId = currentUid,
-            senderName = current.displayName,
-            senderAvatar = current.avatarUrl,
-            recipientId = recipient.userId,
-            recipientName = recipient.displayName,
-            recipientAvatar = recipient.avatarUrl,
-            text = fallbackText,
-            stampId = stampId,
-            stampTitle = stampTitle,
-            stampImageUrl = resolvedImage,
-            stampLocation = stampLocation,
-            createdAt = System.currentTimeMillis(),
-            isRead = false
-        )
-        val updated = _messages.value + msg
-        saveMessagesForUser(currentUid, updated)
-
-        coroutineScope.launch {
-            try {
-                supabaseClient.sendDirectMessage(msg)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
-        return msg
-    }
-
-    fun markAsRead(otherUserId: String) {
-        val currentUid = authRepo.currentUser.value.userId
-        if (currentUid.isBlank() || currentUid.startsWith("guest_")) return
-
-        val updated = _messages.value.map { msg ->
-            if (msg.senderId == otherUserId && msg.recipientId == currentUid && !msg.isRead) {
-                msg.copy(isRead = true)
-            } else {
-                msg
-            }
-        }
-        saveMessagesForUser(currentUid, updated)
-
-        coroutineScope.launch {
-            try {
-                supabaseClient.markMessagesAsRead(otherUserId, currentUid)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
 
     suspend fun markAsReadCloud(otherUserId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val currentUid = authRepo.currentUser.value.userId

@@ -77,9 +77,29 @@ data class SupabaseDirectMessageRecord(
     @SerializedName("stamp_title") val stampTitle: String? = null,
     @SerializedName("stamp_image_url") val stampImageUrl: String? = null,
     @SerializedName("stamp_location") val stampLocation: String? = null,
-    @SerializedName("created_at") val createdAt: Long? = System.currentTimeMillis(),
+    @SerializedName("created_at") val createdAt: Any? = null,
     @SerializedName("is_read") val isRead: Boolean = false
-)
+) {
+    fun toDomain(): DirectMessage {
+        val millis = SupabaseClient.parseIsoStringToMillis(createdAt?.toString() ?: "")
+        return DirectMessage(
+            id = id,
+            senderId = senderId,
+            senderName = senderName,
+            senderAvatar = senderAvatar.orEmpty(),
+            recipientId = recipientId,
+            recipientName = recipientName,
+            recipientAvatar = recipientAvatar.orEmpty(),
+            text = text,
+            stampId = stampId,
+            stampTitle = stampTitle,
+            stampImageUrl = stampImageUrl,
+            stampLocation = stampLocation,
+            createdAt = millis,
+            isRead = isRead
+        )
+    }
+}
 
 data class SupabaseFeedPostRecord(
     @SerializedName("id") val id: String? = null,
@@ -244,8 +264,8 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         }
     }
 
-    private fun getBaseUrl(): String = if (context != null) SupabaseConfig.getSupabaseUrl(context).trimEnd('/') else "https://fake.supabase.co"
-    private fun getApiKey(): String = if (context != null) SupabaseConfig.getAnonKey(context).trim() else "fake_anon_key"
+    private fun getBaseUrl(): String = SupabaseConfig.getSupabaseUrl(context).trimEnd('/')
+    private fun getApiKey(): String = SupabaseConfig.getAnonKey(context).trim()
 
     suspend fun testConnection(overrideUrl: String? = null, overrideKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         val baseUrl = (overrideUrl ?: getBaseUrl()).trimEnd('/')
@@ -713,6 +733,11 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
 
     suspend fun sendDirectMessage(msg: DirectMessage): Result<DirectMessage> = withContext(Dispatchers.IO) {
         val validId = if (isValidUuid(msg.id)) msg.id else java.util.UUID.randomUUID().toString()
+        val isoCreatedAt = try {
+            java.time.Instant.ofEpochMilli(msg.createdAt).toString()
+        } catch (_: Throwable) {
+            null
+        }
         val record = SupabaseDirectMessageRecord(
             id = validId,
             senderId = msg.senderId,
@@ -726,39 +751,50 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
             stampTitle = msg.stampTitle,
             stampImageUrl = msg.stampImageUrl,
             stampLocation = msg.stampLocation,
-            createdAt = msg.createdAt,
+            createdAt = isoCreatedAt,
             isRead = msg.isRead
         )
         val json = gson.toJson(record)
         val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?on_conflict=id"
         val res = executeHttp(endpoint, method = "POST", jsonBody = json, prefer = "return=representation", requireUserAuth = true)
         if (res.isSuccess) {
-            val responseJson = res.getOrNull() ?: ""
-            val serverMsg = try {
-                val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
-                val list: List<SupabaseDirectMessageRecord>? = gson.fromJson(responseJson, listType)
-                val first = list?.firstOrNull()
-                if (first != null) {
-                    DirectMessage(
-                        id = first.id,
-                        senderId = first.senderId,
-                        senderName = first.senderName,
-                        senderAvatar = first.senderAvatar ?: msg.senderAvatar,
-                        recipientId = first.recipientId,
-                        recipientName = first.recipientName,
-                        recipientAvatar = first.recipientAvatar ?: msg.recipientAvatar,
-                        text = first.text,
-                        stampId = first.stampId,
-                        stampTitle = first.stampTitle,
-                        stampImageUrl = first.stampImageUrl,
-                        stampLocation = first.stampLocation,
-                        createdAt = first.createdAt ?: msg.createdAt,
-                        isRead = first.isRead
-                    )
-                } else null
-            } catch (_: Exception) { null }
+            val responseJson = (res.getOrNull() ?: "").trim()
+            if (responseJson.isBlank()) {
+                return@withContext Result.failure(IllegalStateException("Server returned empty representation payload"))
+            }
 
-            Result.success(serverMsg ?: msg.copy(id = validId))
+            val serverRecord = try {
+                if (responseJson.startsWith("[")) {
+                    val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
+                    val list: List<SupabaseDirectMessageRecord>? = gson.fromJson(responseJson, listType)
+                    list?.firstOrNull()
+                } else if (responseJson.startsWith("{")) {
+                    gson.fromJson(responseJson, SupabaseDirectMessageRecord::class.java)
+                } else {
+                    null
+                }
+            } catch (_: Exception) {
+                null
+            }
+
+            if (serverRecord == null || serverRecord.id.isBlank()) {
+                return@withContext Result.failure(IllegalStateException("Failed to parse valid server DirectMessage representation"))
+            }
+
+            if (!isValidUuid(serverRecord.id)) {
+                return@withContext Result.failure(IllegalArgumentException("Server returned invalid UUID message ID: ${serverRecord.id}"))
+            }
+
+            if (serverRecord.senderId != msg.senderId) {
+                return@withContext Result.failure(SecurityException("Server returned message with mismatched senderId: ${serverRecord.senderId} vs ${msg.senderId}"))
+            }
+
+            if (serverRecord.recipientId != msg.recipientId) {
+                return@withContext Result.failure(IllegalArgumentException("Server returned message with mismatched recipientId: ${serverRecord.recipientId} vs ${msg.recipientId}"))
+            }
+
+            val serverMsg = serverRecord.toDomain()
+            Result.success(serverMsg)
         } else {
             Result.failure(res.exceptionOrNull() ?: Exception("Send direct message failed"))
         }
@@ -775,24 +811,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
             try {
                 val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
                 val list: List<SupabaseDirectMessageRecord> = gson.fromJson(json, listType) ?: emptyList()
-                val mapped = list.map {
-                    DirectMessage(
-                        id = it.id,
-                        senderId = it.senderId,
-                        senderName = it.senderName,
-                        senderAvatar = it.senderAvatar ?: "https://i.pravatar.cc/150?u=${it.senderId}",
-                        recipientId = it.recipientId,
-                        recipientName = it.recipientName,
-                        recipientAvatar = it.recipientAvatar ?: "https://i.pravatar.cc/150?u=${it.recipientId}",
-                        text = it.text,
-                        stampId = it.stampId,
-                        stampTitle = it.stampTitle,
-                        stampImageUrl = it.stampImageUrl,
-                        stampLocation = it.stampLocation,
-                        createdAt = it.createdAt ?: System.currentTimeMillis(),
-                        isRead = it.isRead
-                    )
-                }
+                val mapped = list.map { it.toDomain() }
                 Result.success(mapped)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -812,24 +831,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
             try {
                 val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
                 val list: List<SupabaseDirectMessageRecord> = gson.fromJson(json, listType) ?: emptyList()
-                val mapped = list.map {
-                    DirectMessage(
-                        id = it.id,
-                        senderId = it.senderId,
-                        senderName = it.senderName,
-                        senderAvatar = it.senderAvatar ?: "https://i.pravatar.cc/150?u=${it.senderId}",
-                        recipientId = it.recipientId,
-                        recipientName = it.recipientName,
-                        recipientAvatar = it.recipientAvatar ?: "https://i.pravatar.cc/150?u=${it.recipientId}",
-                        text = it.text,
-                        stampId = it.stampId,
-                        stampTitle = it.stampTitle,
-                        stampImageUrl = it.stampImageUrl,
-                        stampLocation = it.stampLocation,
-                        createdAt = it.createdAt ?: System.currentTimeMillis(),
-                        isRead = it.isRead
-                    )
-                }
+                val mapped = list.map { it.toDomain() }
                 Result.success(mapped)
             } catch (e: Exception) {
                 Result.failure(e)
