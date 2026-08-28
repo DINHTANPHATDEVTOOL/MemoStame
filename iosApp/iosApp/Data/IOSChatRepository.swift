@@ -114,14 +114,14 @@ class IOSChatRepository: ObservableObject {
                     stampImagePath: m.stampImageUrl ?? "",
                     title: m.stampTitle ?? "",
                     note: "",
-                    createdAt: "",
-                    memoryDate: "",
-                    location: m.stampLocation ?? "",
-                    mood: "",
+                    createdAt: m.createdAt,
+                    memoryDate: m.createdAt,
+                    location: m.stampLocation,
+                    mood: nil,
                     collectionId: nil,
                     favorite: false,
-                    filterId: "",
-                    shape: "",
+                    filterId: nil,
+                    shape: "classic",
                     preset: "NATURAL"
                 )
             }
@@ -165,7 +165,7 @@ class IOSChatRepository: ObservableObject {
                 stampId: m.stamp?.id,
                 stampTitle: m.stamp?.title,
                 stampImageUrl: m.stamp?.stampImagePath,
-                stampLocation: m.stamp?.locationName
+                stampLocation: m.stamp?.location
             )
         }
 
@@ -221,14 +221,14 @@ class IOSChatRepository: ObservableObject {
                                 stampImagePath: r.stampImageUrl ?? "",
                                 title: r.stampTitle ?? "",
                                 note: "",
-                                createdAt: "",
-                                memoryDate: "",
-                                location: r.stampLocation ?? "",
-                                mood: "",
+                                createdAt: timestamp,
+                                memoryDate: timestamp,
+                                location: r.stampLocation,
+                                mood: nil,
                                 collectionId: nil,
                                 favorite: false,
-                                filterId: "",
-                                shape: "",
+                                filterId: nil,
+                                shape: "classic",
                                 preset: "NATURAL"
                             )
                         }
@@ -325,14 +325,14 @@ class IOSChatRepository: ObservableObject {
                             stampImagePath: serverRecord.stampImageUrl ?? "",
                             title: serverRecord.stampTitle ?? "",
                             note: "",
-                            createdAt: "",
-                            memoryDate: "",
-                            location: serverRecord.stampLocation ?? "",
-                            mood: "",
+                            createdAt: timestamp,
+                            memoryDate: timestamp,
+                            location: serverRecord.stampLocation,
+                            mood: nil,
                             collectionId: nil,
                             favorite: false,
-                            filterId: "",
-                            shape: "",
+                            filterId: nil,
+                            shape: "classic",
                             preset: "NATURAL"
                         )
                     }
@@ -422,14 +422,14 @@ class IOSChatRepository: ObservableObject {
                 stampImagePath: record.stampImageUrl ?? "",
                 title: record.stampTitle ?? "",
                 note: "",
-                createdAt: "",
-                memoryDate: "",
-                location: record.stampLocation ?? "",
-                mood: "",
+                createdAt: timestamp,
+                memoryDate: timestamp,
+                location: record.stampLocation,
+                mood: nil,
                 collectionId: nil,
                 favorite: false,
-                filterId: "",
-                shape: "",
+                filterId: nil,
+                shape: "classic",
                 preset: "NATURAL"
             )
         }
