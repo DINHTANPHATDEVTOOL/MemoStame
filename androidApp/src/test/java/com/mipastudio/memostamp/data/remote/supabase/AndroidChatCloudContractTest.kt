@@ -360,4 +360,46 @@ class AndroidChatCloudContractTest {
         val hasPatchCall = transport.callLogs.any { it.startsWith("PATCH") && it.contains("direct_messages") }
         assertFalse(hasPatchCall)
     }
+
+    @Test
+    fun test14_outgoingDirectMessageIdIsValidUUIDString() = runBlocking {
+        val transport = FakeSupabaseHttpTransport()
+        transport.defaultResponse = Result.success("{}")
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val result = chatRepo.sendMessageCloud(recipient = userB, text = "Test UUID")
+
+        assertTrue(result.isSuccess)
+        val sentMsg = result.getOrThrow()
+        assertFalse(sentMsg.id.startsWith("msg_"))
+        assertTrue(SupabaseClient.isValidUuid(sentMsg.id))
+    }
+
+    @Test
+    fun test15_realtimeIsoTimestampParsingAndChronologicalOrdering() {
+        val isoMicro = "2026-08-28T03:11:16.123456+00:00"
+        val isoZ = "2026-08-28T03:12:16Z"
+
+        val millisMicro = SupabaseClient.parseIsoStringToMillis(isoMicro)
+        val millisZ = SupabaseClient.parseIsoStringToMillis(isoZ)
+
+        assertTrue(millisMicro > 0L)
+        assertTrue(millisZ > millisMicro)
+    }
+
+    @Test
+    fun test16_realtimeJoinWithoutJwtFailsClosed() {
+        val realtimeClient = SupabaseRealtimeClient()
+        var received = false
+
+        realtimeClient.connectAndSubscribe("user_a", accessToken = null) {
+            received = true
+        }
+
+        assertFalse(received)
+    }
 }

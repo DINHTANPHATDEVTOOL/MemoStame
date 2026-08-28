@@ -210,14 +210,36 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
                 .create()
         }
 
-        private fun parseIsoStringToMillis(str: String): Long {
+        fun parseIsoStringToMillis(str: String): Long {
+            if (str.isBlank()) return System.currentTimeMillis()
+            val asLong = str.toLongOrNull()
+            if (asLong != null) {
+                return if (asLong < 10000000000L) asLong * 1000 else asLong
+            }
             return try {
-                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
-                sdf.timeZone = TimeZone.getTimeZone("UTC")
-                val cleanStr = if (str.contains(".")) str.substringBefore(".") else str.substringBefore("+").substringBefore("Z")
-                sdf.parse(cleanStr)?.time ?: System.currentTimeMillis()
-            } catch (e: Exception) {
-                System.currentTimeMillis()
+                java.time.OffsetDateTime.parse(str).toInstant().toEpochMilli()
+            } catch (_: Throwable) {
+                try {
+                    java.time.Instant.parse(str).toEpochMilli()
+                } catch (_: Throwable) {
+                    try {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                        sdf.timeZone = TimeZone.getTimeZone("UTC")
+                        val cleanStr = if (str.contains(".")) str.substringBefore(".") else str.substringBefore("+").substringBefore("Z")
+                        sdf.parse(cleanStr)?.time ?: System.currentTimeMillis()
+                    } catch (_: Throwable) {
+                        System.currentTimeMillis()
+                    }
+                }
+            }
+        }
+
+        fun isValidUuid(id: String): Boolean {
+            return try {
+                java.util.UUID.fromString(id)
+                true
+            } catch (_: Exception) {
+                false
             }
         }
     }
@@ -689,9 +711,10 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
     // DIRECT MESSAGES (CHAT)
     // ==========================================
 
-    suspend fun sendDirectMessage(msg: DirectMessage): Result<Boolean> = withContext(Dispatchers.IO) {
+    suspend fun sendDirectMessage(msg: DirectMessage): Result<DirectMessage> = withContext(Dispatchers.IO) {
+        val validId = if (isValidUuid(msg.id)) msg.id else java.util.UUID.randomUUID().toString()
         val record = SupabaseDirectMessageRecord(
-            id = msg.id,
+            id = validId,
             senderId = msg.senderId,
             senderName = msg.senderName,
             senderAvatar = msg.senderAvatar,
@@ -708,8 +731,37 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         )
         val json = gson.toJson(record)
         val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?on_conflict=id"
-        val res = executeHttp(endpoint, method = "POST", jsonBody = json, prefer = "resolution=merge-duplicates", requireUserAuth = true)
-        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Unknown error"))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = json, prefer = "return=representation", requireUserAuth = true)
+        if (res.isSuccess) {
+            val responseJson = res.getOrNull() ?: ""
+            val serverMsg = try {
+                val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
+                val list: List<SupabaseDirectMessageRecord>? = gson.fromJson(responseJson, listType)
+                val first = list?.firstOrNull()
+                if (first != null) {
+                    DirectMessage(
+                        id = first.id,
+                        senderId = first.senderId,
+                        senderName = first.senderName,
+                        senderAvatar = first.senderAvatar ?: msg.senderAvatar,
+                        recipientId = first.recipientId,
+                        recipientName = first.recipientName,
+                        recipientAvatar = first.recipientAvatar ?: msg.recipientAvatar,
+                        text = first.text,
+                        stampId = first.stampId,
+                        stampTitle = first.stampTitle,
+                        stampImageUrl = first.stampImageUrl,
+                        stampLocation = first.stampLocation,
+                        createdAt = first.createdAt ?: msg.createdAt,
+                        isRead = first.isRead
+                    )
+                } else null
+            } catch (_: Exception) { null }
+
+            Result.success(serverMsg ?: msg.copy(id = validId))
+        } else {
+            Result.failure(res.exceptionOrNull() ?: Exception("Send direct message failed"))
+        }
     }
 
     suspend fun getMessagesForUser(userId: String): Result<List<DirectMessage>> = withContext(Dispatchers.IO) {

@@ -285,7 +285,7 @@ class ChatRepository internal constructor(
         val resolvedImage = encodeLocalImageToBase64IfNeeded(stampImageUrl) ?: stampImageUrl
 
         val msg = DirectMessage(
-            id = "msg_" + UUID.randomUUID().toString(),
+            id = UUID.randomUUID().toString(),
             senderId = currentUid,
             senderName = current.displayName,
             senderAvatar = current.avatarUrl,
@@ -301,18 +301,22 @@ class ChatRepository internal constructor(
             isRead = false
         )
 
-        // Validate payload before transport
+        // Validate payload before transport & retrieve authoritative server row
         val res = supabaseClient.sendDirectMessage(msg)
         if (res.isFailure) {
             return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Send direct message failed"))
         }
 
-        val updated = _messages.value + msg
+        val serverMsg = res.getOrNull() ?: msg
+        val map = _messages.value.associateBy { it.id }.toMutableMap()
+        map[serverMsg.id] = serverMsg
+        val updated = map.values.sortedWith(compareBy<DirectMessage> { it.createdAt }.thenBy { it.id })
         saveMessagesForUser(currentUid, updated)
 
-        Result.success(msg)
+        Result.success(serverMsg)
     }
 
+    @Deprecated("Use sendMessageCloud for cloud-authoritative synchronization", ReplaceWith("sendMessageCloud(recipient, text, stampId, stampTitle, stampImageUrl, stampLocation)"))
     fun sendMessage(
         recipient: UserProfile,
         text: String,
@@ -335,7 +339,7 @@ class ChatRepository internal constructor(
         val resolvedImage = encodeLocalImageToBase64IfNeeded(stampImageUrl) ?: stampImageUrl
 
         val msg = DirectMessage(
-            id = "msg_" + UUID.randomUUID().toString().take(10),
+            id = UUID.randomUUID().toString(),
             senderId = currentUid,
             senderName = current.displayName,
             senderAvatar = current.avatarUrl,
@@ -394,16 +398,20 @@ class ChatRepository internal constructor(
             return@withContext Result.failure(SecurityException("Authentication required"))
         }
 
-        val updated = _messages.value.map { msg ->
-            if (msg.senderId == otherUserId && msg.recipientId == currentUid && !msg.isRead) {
-                msg.copy(isRead = true)
-            } else {
-                msg
+        val res = supabaseClient.markMessagesAsRead(otherUserId, currentUid)
+        if (res.isSuccess) {
+            val updated = _messages.value.map { msg ->
+                if (msg.senderId == otherUserId && msg.recipientId == currentUid && !msg.isRead) {
+                    msg.copy(isRead = true)
+                } else {
+                    msg
+                }
             }
+            saveMessagesForUser(currentUid, updated)
+            Result.success(true)
+        } else {
+            Result.failure(res.exceptionOrNull() ?: Exception("Mark read failed"))
         }
-        saveMessagesForUser(currentUid, updated)
-
-        supabaseClient.markMessagesAsRead(otherUserId, currentUid)
     }
 
     fun deleteMessage(messageId: String) {

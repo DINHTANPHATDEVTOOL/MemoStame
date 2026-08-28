@@ -88,7 +88,10 @@ fun ChatScreen(
 
     DisposableEffect(recipient.userId) {
         chatRepo.activeChattingUserId = recipient.userId
-        chatRepo.markAsRead(recipient.userId)
+        coroutineScope.launch {
+            chatRepo.loadConversation(recipient.userId)
+            chatRepo.markAsReadCloud(recipient.userId)
+        }
         onDispose {
             chatRepo.activeChattingUserId = null
         }
@@ -96,7 +99,7 @@ fun ChatScreen(
 
     LaunchedEffect(conversationMessages) {
         if (conversationMessages.any { it.senderId == recipient.userId && !it.isRead }) {
-            chatRepo.markAsRead(recipient.userId)
+            chatRepo.markAsReadCloud(recipient.userId)
         }
     }
 
@@ -111,17 +114,23 @@ fun ChatScreen(
         if (clean.isBlank() && selectedStampToSend == null) return
 
         val stamp = selectedStampToSend
-        chatRepo.sendMessage(
-            recipient = recipient,
-            text = clean,
-            stampId = stamp?.id,
-            stampTitle = stamp?.title,
-            stampImageUrl = stamp?.stampImagePath,
-            stampLocation = stamp?.location
-        )
-        textInput = ""
-        selectedStampToSend = null
-        focusManager.clearFocus()
+        coroutineScope.launch {
+            val res = chatRepo.sendMessageCloud(
+                recipient = recipient,
+                text = clean,
+                stampId = stamp?.id,
+                stampTitle = stamp?.title,
+                stampImageUrl = stamp?.stampImagePath,
+                stampLocation = stamp?.location
+            )
+            if (res.isSuccess) {
+                textInput = ""
+                selectedStampToSend = null
+                focusManager.clearFocus()
+            } else {
+                Toast.makeText(context, "Gửi tin nhắn thất bại: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     Scaffold(

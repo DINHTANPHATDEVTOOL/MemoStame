@@ -78,7 +78,8 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
         accessToken: String?,
         onMessageReceived: (DirectMessage) -> Unit
     ) {
-        if (userId.isBlank() || userId.startsWith("guest_")) {
+        if (userId.isBlank() || userId.startsWith("guest_") || accessToken.isNullOrBlank()) {
+            Log.w(TAG, "Cannot subscribe to Realtime: valid user authentication token required")
             disconnect()
             return
         }
@@ -141,7 +142,11 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
 
     private fun subscribeToDirectMessages() {
         val uid = currentUserId ?: return
-        val token = currentAccessToken ?: ""
+        val token = currentAccessToken
+        if (token.isNullOrBlank()) {
+            Log.w(TAG, "Cannot subscribe to direct_messages: missing JWT access token")
+            return
+        }
         val joinRef = refCounter.getAndIncrement().toString()
         val topic = "realtime:public:direct_messages"
 
@@ -165,10 +170,8 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             "ref" to joinRef
         )
 
-        val jsonStr = gson.toJson(joinMsg)
-        Log.d(TAG, "Subscribing to direct_messages: $jsonStr")
-        webSocket?.send(jsonStr)
-        isSubscribed = true
+        Log.d(TAG, "Subscribing to direct_messages topic=$topic for user=$uid")
+        webSocket?.send(gson.toJson(joinMsg))
     }
 
     private fun startHeartbeat() {
@@ -193,8 +196,24 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
     private fun handleIncomingMessage(jsonText: String) {
         try {
             val root = gson.fromJson(jsonText, Map::class.java) as? Map<*, *> ?: return
+            val topic = (root["topic"] as? String) ?: ""
             val event = root["event"] as? String ?: return
             val payload = root["payload"] as? Map<*, *> ?: return
+
+            // Handle Phoenix Join Acknowledgments
+            if (event == "phx_reply") {
+                val status = payload["status"] as? String
+                if (status == "ok") {
+                    if (topic == "realtime:public:direct_messages" || topic.contains("direct_messages")) {
+                        isSubscribed = true
+                        Log.i(TAG, "Realtime channel direct_messages joined successfully (ACK received)")
+                    }
+                } else if (status == "error") {
+                    isSubscribed = false
+                    Log.e(TAG, "Realtime channel direct_messages join failed: ${payload["response"]}")
+                }
+                return
+            }
 
             if (event == "postgres_changes" || event == "INSERT" || event == "UPDATE") {
                 val recordMap = extractRecord(payload) ?: return
@@ -243,7 +262,7 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
         val stampImageUrl = map["stamp_image_url"]?.toString()
         val stampLocation = map["stamp_location"]?.toString()
         val isRead = (map["is_read"] as? Boolean) ?: false
-        val createdAt = (map["created_at"] as? Number)?.toLong() ?: System.currentTimeMillis()
+        val createdAt = SupabaseClient.parseIsoStringToMillis((map["created_at"] ?: map["createdAt"] ?: System.currentTimeMillis()).toString())
 
         return DirectMessage(
             id = id,

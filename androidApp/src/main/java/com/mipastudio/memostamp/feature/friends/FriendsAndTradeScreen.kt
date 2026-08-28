@@ -1373,14 +1373,16 @@ fun FriendsAndTradeScreen(
                             inboxItems = listOf(newOffer) + inboxItems
 
                             // Send through ChatRepository to deliver to Supabase & recipient inbox
-                            chatRepo.sendMessage(
-                                recipient = friend,
-                                text = noteText,
-                                stampId = sel?.id,
-                                stampTitle = sel?.title ?: "Tem kỷ niệm",
-                                stampImageUrl = sel?.stampImagePath,
-                                stampLocation = sel?.location ?: currentUser.city
-                            )
+                            coroutineScope.launch {
+                                chatRepo.sendMessageCloud(
+                                    recipient = friend,
+                                    text = noteText,
+                                    stampId = sel?.id,
+                                    stampTitle = sel?.title ?: "Tem kỷ niệm",
+                                    stampImageUrl = sel?.stampImagePath,
+                                    stampLocation = sel?.location ?: currentUser.city
+                                )
+                            }
 
                             friendToTradeWith = null
                             Toast.makeText(context, "Đã gửi tem và lời nhắn cho @${friend.username}! 📮", Toast.LENGTH_SHORT).show()
