@@ -101,7 +101,7 @@ class IOSFriendRepository: ObservableObject {
         }
 
         let outgoingDatas = outgoingRequests.map { r in
-            PersistedFriendRequestData(id: r.id, senderName: r.senderName, senderUsername: r.senderUsername, avatarUrl: r.senderAvatar, status: r.status, createdAt: r.createdAt, senderId: r.senderId, recipientId: r.recipientId, recipientUsername: r.recipientUsername)
+            PersistedFriendRequestData(id: r.id, senderName: r.senderName, senderUsername: r.senderUsername, senderAvatar: r.senderAvatar, status: r.status, createdAt: r.createdAt, senderId: r.senderId, recipientId: r.recipientId, recipientUsername: r.recipientUsername)
         }
 
         let payload = PersistedIOSFriendPayload(userId: activeUserId, friends: friendDatas, incomingRequests: incomingDatas, outgoingRequests: outgoingDatas)
@@ -112,61 +112,44 @@ class IOSFriendRepository: ObservableObject {
 
     // MARK: - Cloud Synchronization
     func loadCloudData() {
-        guard !activeUserId.isEmpty else { return }
-        isLoading = true
+        guard let activeUserId = SupabaseSocialClient.shared.currentUserId else {
+            self.isLoading = false
+            return
+        }
 
+        self.isLoading = true
         let group = DispatchGroup()
 
-        // 1. Load Friend Requests
+        // 1. Fetch friend requests
         group.enter()
-        SupabaseSocialClient.shared.getFriendRequests(userId: activeUserId) { [weak self] result in
+        SupabaseSocialClient.shared.fetchFriendRequests { [weak self] result in
             defer { group.leave() }
-            guard let self = self else { return }
             DispatchQueue.main.async {
                 switch result {
-                case .success(let reqRecords):
-                    // On cloud success []: clear stale server-derived requests
-                    let incoming = reqRecords.filter { $0.recipientId == self.activeUserId && $0.status == "PENDING" }.map { r in
+                case .success(let requests):
+                    self?.incomingRequests = requests.filter { $0.recipientId == activeUserId }.map { r in
                         FriendRequestItem(id: r.id, senderName: r.senderDisplayName, senderUsername: r.senderUsername, senderAvatar: r.senderAvatar ?? "https://i.pravatar.cc/150?u=\(r.senderId)", status: r.status, createdAt: Int64(r.createdAt ?? Double(Date().timeIntervalSince1970 * 1000)), senderId: r.senderId, recipientId: r.recipientId, recipientUsername: r.recipientUsername)
                     }
-
-                    let outgoing = reqRecords.filter { $0.senderId == self.activeUserId && $0.status == "PENDING" }.map { r in
+                    self?.outgoingRequests = requests.filter { $0.senderId == activeUserId }.map { r in
                         FriendRequestItem(id: r.id, senderName: r.senderDisplayName, senderUsername: r.senderUsername, senderAvatar: r.senderAvatar ?? "https://i.pravatar.cc/150?u=\(r.senderId)", status: r.status, createdAt: Int64(r.createdAt ?? Double(Date().timeIntervalSince1970 * 1000)), senderId: r.senderId, recipientId: r.recipientId, recipientUsername: r.recipientUsername)
                     }
-
-                    self.incomingRequests = incoming
-                    self.outgoingRequests = outgoing
                 case .failure(let err):
-                    // On cloud failure: retain offline cache
+                    // Network failure retains cached state
                     print("Friend requests cloud sync error (retaining offline cache): \(err.localizedDescription)")
                 }
             }
         }
 
-        // 2. Load Friends
+        // 2. Fetch accepted friends list
         group.enter()
-        SupabaseSocialClient.shared.getFriends(userId: activeUserId) { [weak self] result in
+        SupabaseSocialClient.shared.fetchAcceptedFriendUserIds { [weak self] result in
             defer { group.leave() }
-            guard let self = self else { return }
             DispatchQueue.main.async {
                 switch result {
-                case .success(let friendRecords):
-                    // Extract canonical friend IDs
-                    var friendIds = Set<String>()
-                    for record in friendRecords {
-                        if record.userId1 == self.activeUserId && !record.userId2.isEmpty && record.userId2 != self.activeUserId {
-                            friendIds.insert(record.userId2)
-                        }
-                        if record.userId2 == self.activeUserId && !record.userId1.isEmpty && record.userId1 != self.activeUserId {
-                            friendIds.insert(record.userId1)
-                        }
-                    }
-
+                case .success(let friendIds):
                     if friendIds.isEmpty {
-                        // Successful cloud [] clears stale friend list
-                        self.friends = []
+                        self?.friends = []
                     } else {
-                        // Fetch public profile info for friends
                         SupabaseSocialClient.shared.searchPublicProfiles(query: "") { profileRes in
                             DispatchQueue.main.async {
                                 if case .success(let profiles) = profileRes {
@@ -179,10 +162,10 @@ class IOSFriendRepository: ObservableObject {
                                             username: prof?.username ?? fid,
                                             avatarUrl: prof?.avatarUrl ?? "https://i.pravatar.cc/150?u=\(fid)",
                                             isOnline: true,
-                                            tradeCount: 0
+                                            tradeCount: Int32(0)
                                         )
                                     }
-                                    self.friends = updatedFriends
+                                    self?.friends = updatedFriends
                                 }
                             }
                         }
@@ -212,7 +195,7 @@ class IOSFriendRepository: ObservableObject {
                 switch result {
                 case .success(let profiles):
                     self?.searchedProfiles = profiles.map { p in
-                        UserProfile(uid: p.userId, username: p.username, displayName: p.displayName, avatarUrl: p.avatarUrl, bio: p.bio ?? "", stampsCreatedCount: 0, stampsCollectedCount: 0, placesVisitedCount: 0)
+                        UserProfile(uid: p.userId, username: p.username, displayName: p.displayName, avatarUrl: p.avatarUrl, bio: p.bio ?? "", stampsCreatedCount: Int32(0), stampsCollectedCount: Int32(0), placesVisitedCount: Int32(0))
                     }
                 case .failure(let err):
                     self?.errorMessage = err.localizedDescription
