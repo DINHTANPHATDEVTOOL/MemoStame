@@ -31,3 +31,6 @@ supabase/.temp/
 .env
 .ai/autofix/runtime/
 .autofix-worktrees/
+
+__pycache__/
+*.pyc
