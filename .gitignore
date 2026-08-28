@@ -21,3 +21,8 @@ ipa/
 *.ipa
 
 .kotlin/
+.env.test
+node_modules/
+package-lock.json
+package.json
+supabase/.temp/

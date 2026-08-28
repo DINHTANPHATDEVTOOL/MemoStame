@@ -11,10 +11,13 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
+import org.junit.Ignore
+
 /**
  * Live Integration Test Suite connecting directly to the real Supabase Cloud Database:
  * Base URL: https://mghmhhbyhmuvherlyrqa.supabase.co
  */
+@Ignore("Live cloud network test")
 class SupabaseCloudIntegrationTest {
 
     private val baseUrl = "https://mghmhhbyhmuvherlyrqa.supabase.co"

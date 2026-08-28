@@ -1027,8 +1027,10 @@ class UserAuthRepository internal constructor(
         _friendIds.value = friends
         _friendRequests.value = requests
         if (authUser != null && !authUser.userId.startsWith("guest_")) {
+            _accessToken.value = "test_jwt_${authUser.userId}"
             supabaseClient.userAccessToken = "test_jwt_${authUser.userId}"
         } else {
+            _accessToken.value = null
             supabaseClient.userAccessToken = null
         }
     }

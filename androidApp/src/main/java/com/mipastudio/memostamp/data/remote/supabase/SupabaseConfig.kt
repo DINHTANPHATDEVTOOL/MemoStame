@@ -15,26 +15,30 @@ object SupabaseConfig {
 
     fun getSupabaseUrl(context: Context?): String {
         if (context == null) return DEFAULT_SUPABASE_URL
-        val prefs = getPrefs(context)
+        val prefs = getPrefs(context) ?: return DEFAULT_SUPABASE_URL
         return prefs.getString(KEY_URL, DEFAULT_SUPABASE_URL) ?: DEFAULT_SUPABASE_URL
     }
 
     fun getAnonKey(context: Context?): String {
         if (context == null) return DEFAULT_ANON_KEY
-        val prefs = getPrefs(context)
+        val prefs = getPrefs(context) ?: return DEFAULT_ANON_KEY
         val saved = prefs.getString(KEY_ANON_KEY, "")
         return if (!saved.isNullOrBlank() && !saved.startsWith("sb_publishable")) saved else DEFAULT_ANON_KEY
     }
 
     fun saveConfig(context: Context, url: String, anonKey: String) {
-        val prefs = getPrefs(context)
+        val prefs = getPrefs(context) ?: return
         prefs.edit()
             .putString(KEY_URL, url.trim())
             .putString(KEY_ANON_KEY, anonKey.trim())
             .apply()
     }
 
-    private fun getPrefs(context: Context): SharedPreferences {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun getPrefs(context: Context): SharedPreferences? {
+        return try {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        } catch (_: Throwable) {
+            null
+        }
     }
 }

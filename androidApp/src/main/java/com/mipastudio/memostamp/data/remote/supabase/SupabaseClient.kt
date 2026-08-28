@@ -712,15 +712,18 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Unknown error"))
     }
 
-    suspend fun getMessagesForUser(userId: String): List<DirectMessage> = withContext(Dispatchers.IO) {
+    suspend fun getMessagesForUser(userId: String): Result<List<DirectMessage>> = withContext(Dispatchers.IO) {
+        if (userAccessToken.isNullOrBlank()) {
+            return@withContext Result.failure(IllegalStateException("User authentication token required for RLS mutation"))
+        }
         val encoded = URLEncoder.encode(userId.trim(), "UTF-8")
-        val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?or=(sender_id.eq.$encoded,recipient_id.eq.$encoded)&select=*&order=created_at.asc"
-        val res = executeHttp(endpoint, method = "GET")
+        val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?or=(sender_id.eq.$encoded,recipient_id.eq.$encoded)&select=*&order=created_at.asc,id.asc"
+        val res = executeHttp(endpoint, method = "GET", requireUserAuth = true)
         res.getOrNull()?.let { json ->
             try {
                 val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
                 val list: List<SupabaseDirectMessageRecord> = gson.fromJson(json, listType) ?: emptyList()
-                list.map {
+                val mapped = list.map {
                     DirectMessage(
                         id = it.id,
                         senderId = it.senderId,
@@ -738,13 +741,54 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
                         isRead = it.isRead
                     )
                 }
+                Result.success(mapped)
             } catch (e: Exception) {
-                emptyList()
+                Result.failure(e)
             }
-        } ?: emptyList()
+        } ?: Result.failure(res.exceptionOrNull() ?: Exception("Get messages failed"))
+    }
+
+    suspend fun getConversationBetween(userId1: String, userId2: String): Result<List<DirectMessage>> = withContext(Dispatchers.IO) {
+        if (userAccessToken.isNullOrBlank()) {
+            return@withContext Result.failure(IllegalStateException("User authentication token required for RLS mutation"))
+        }
+        val u1 = URLEncoder.encode(userId1.trim(), "UTF-8")
+        val u2 = URLEncoder.encode(userId2.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/direct_messages?or=(and(sender_id.eq.$u1,recipient_id.eq.$u2),and(sender_id.eq.$u2,recipient_id.eq.$u1))&select=*&order=created_at.asc,id.asc"
+        val res = executeHttp(endpoint, method = "GET", requireUserAuth = true)
+        res.getOrNull()?.let { json ->
+            try {
+                val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
+                val list: List<SupabaseDirectMessageRecord> = gson.fromJson(json, listType) ?: emptyList()
+                val mapped = list.map {
+                    DirectMessage(
+                        id = it.id,
+                        senderId = it.senderId,
+                        senderName = it.senderName,
+                        senderAvatar = it.senderAvatar ?: "https://i.pravatar.cc/150?u=${it.senderId}",
+                        recipientId = it.recipientId,
+                        recipientName = it.recipientName,
+                        recipientAvatar = it.recipientAvatar ?: "https://i.pravatar.cc/150?u=${it.recipientId}",
+                        text = it.text,
+                        stampId = it.stampId,
+                        stampTitle = it.stampTitle,
+                        stampImageUrl = it.stampImageUrl,
+                        stampLocation = it.stampLocation,
+                        createdAt = it.createdAt ?: System.currentTimeMillis(),
+                        isRead = it.isRead
+                    )
+                }
+                Result.success(mapped)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        } ?: Result.failure(res.exceptionOrNull() ?: Exception("Get conversation failed"))
     }
 
     suspend fun markMessagesAsRead(senderId: String, recipientId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        if (userAccessToken.isNullOrBlank()) {
+            return@withContext Result.failure(IllegalStateException("User authentication token required for RLS mutation"))
+        }
         val rpcEndpoint = "${getBaseUrl()}/rest/v1/rpc/mark_direct_messages_read"
         val body = gson.toJson(mapOf("p_sender_id" to senderId.trim()))
         val rpcRes = executeHttp(rpcEndpoint, method = "POST", jsonBody = body, requireUserAuth = true)
