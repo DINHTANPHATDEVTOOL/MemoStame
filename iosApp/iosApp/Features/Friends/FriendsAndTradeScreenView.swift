@@ -18,31 +18,26 @@ struct FriendsAndTradeScreenView: View {
     @State private var showToast: Bool = false
     @State private var refreshTrigger: Bool = false
     @StateObject private var langManager = AppLanguageManager.shared
+    @ObservedObject private var friendRepo = IOSFriendRepository.shared
 
     private var currentUid: String {
-        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+        SupabaseAuthService.shared.currentUserId ?? (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
     }
 
     var allFriendRequests: [FriendRequestItem] {
-        _ = refreshTrigger
-        return (repository.friendRequests.value as? [FriendRequestItem]) ?? []
+        friendRepo.incomingRequests + friendRepo.outgoingRequests
     }
 
     var incomingFriendRequests: [FriendRequestItem] {
-        allFriendRequests.filter { req in
-            req.recipientId == currentUid
-        }
+        friendRepo.incomingRequests
     }
 
     var outgoingFriendRequests: [FriendRequestItem] {
-        allFriendRequests.filter { req in
-            req.senderId == currentUid && req.recipientId != currentUid
-        }
+        friendRepo.outgoingRequests
     }
 
     var friends: [FriendItem] {
-        _ = refreshTrigger
-        return (repository.friends.value as? [FriendItem]) ?? []
+        friendRepo.friends
     }
 
     var allTradeRequests: [TradeRequest] {
@@ -107,12 +102,14 @@ struct FriendsAndTradeScreenView: View {
                             .font(.subheadline)
                             .foregroundColor(MSColors.ink)
                         Button(action: {
-                            let result = repository.sendFriendRequest(usernameOrCode: friendCode)
-                            triggerToast(result.message)
-                            if result.success {
-                                friendCode = ""
-                                refreshTrigger.toggle()
-                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                            friendRepo.sendFriendRequestByUsernameOrId(input: friendCode) { result in
+                                switch result {
+                                case .success(let msg):
+                                    triggerToast(msg)
+                                    friendCode = ""
+                                case .failure(let err):
+                                    triggerToast(err.localizedDescription)
+                                }
                             }
                         }) {
                             Text(langManager.string(vi: "Gửi Mời", en: "Invite"))
@@ -225,13 +222,13 @@ struct FriendsAndTradeScreenView: View {
                                             }
 
                                               Button(action: {
-                                                let success = repository.acceptFriendRequest(requestId: req.id)
-                                                refreshTrigger.toggle()
-                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                                if success {
-                                                    triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
-                                                } else {
-                                                    triggerToast("Không có quyền chấp nhận lời mời này.")
+                                                friendRepo.acceptRequest(requestId: req.id) { result in
+                                                    switch result {
+                                                    case .success:
+                                                        triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
+                                                    case .failure(let err):
+                                                        triggerToast("Lỗi: \(err.localizedDescription)")
+                                                    }
                                                 }
                                             }) {
                                                 Text("Chấp nhận")
@@ -244,13 +241,13 @@ struct FriendsAndTradeScreenView: View {
                                             }
 
                                             Button(action: {
-                                                let success = repository.rejectFriendRequest(requestId: req.id)
-                                                refreshTrigger.toggle()
-                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                                if success {
-                                                    triggerToast("Đã từ chối lời mời kết bạn.")
-                                                } else {
-                                                    triggerToast("Không thể thực hiện thao tác.")
+                                                friendRepo.declineRequest(requestId: req.id) { result in
+                                                    switch result {
+                                                    case .success:
+                                                        triggerToast("Đã từ chối lời mời kết bạn.")
+                                                    case .failure(let err):
+                                                        triggerToast("Lỗi: \(err.localizedDescription)")
+                                                    }
                                                 }
                                             }) {
                                                 Text("Từ chối")
@@ -305,13 +302,13 @@ struct FriendsAndTradeScreenView: View {
                                             Spacer()
 
                                             Button(action: {
-                                                let success = repository.cancelOutgoingFriendRequest(requestId: req.id)
-                                                refreshTrigger.toggle()
-                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                                if success {
-                                                    triggerToast("Đã hủy lời mời kết bạn.")
-                                                } else {
-                                                    triggerToast("Không thể hủy lời mời.")
+                                                friendRepo.cancelRequest(requestId: req.id) { result in
+                                                    switch result {
+                                                    case .success:
+                                                        triggerToast("Đã hủy lời mời kết bạn.")
+                                                    case .failure(let err):
+                                                        triggerToast("Lỗi: \(err.localizedDescription)")
+                                                    }
                                                 }
                                             }) {
                                                 Text("Hủy lời mời")
@@ -436,10 +433,14 @@ struct FriendsAndTradeScreenView: View {
                                             }
 
                                             Button(action: {
-                                                repository.removeFriend(friendId: friend.id)
-                                                refreshTrigger.toggle()
-                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                                triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
+                                                friendRepo.unfriendUser(friendId: friend.id) { result in
+                                                    switch result {
+                                                    case .success:
+                                                        triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
+                                                    case .failure(let err):
+                                                        triggerToast("Lỗi: \(err.localizedDescription)")
+                                                    }
+                                                }
                                             }) {
                                                 Image(systemName: "person.badge.minus")
                                                     .font(.system(size: 14))
@@ -743,6 +744,9 @@ struct FriendsAndTradeScreenView: View {
         .sheet(isPresented: $showQrCodeModal) {
             FriendQrCodeSheetView(repository: repository)
         }
+        .onAppear {
+            friendRepo.loadCloudData()
+        }
     }
 
     private func triggerToast(_ msg: String) {
@@ -907,11 +911,14 @@ struct FriendQrCodeSheetView: View {
                         .font(.subheadline)
                         .foregroundColor(MSColors.ink)
                     Button(action: {
-                        let result = repository.sendFriendRequest(usernameOrCode: scannedCode)
-                        toastMsg = result.message
-                        if result.success {
-                            scannedCode = ""
-                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: user.uid)
+                        friendRepo.sendFriendRequestByUsernameOrId(input: scannedCode) { result in
+                            switch result {
+                            case .success(let msg):
+                                toastMsg = msg
+                                scannedCode = ""
+                            case .failure(let err):
+                                toastMsg = err.localizedDescription
+                            }
                         }
                     }) {
                         Text("Kết Bạn")

@@ -5,12 +5,42 @@ struct ChatMessage: Identifiable, Codable {
     let id: String
     let senderId: String
     let senderName: String
+    let senderAvatar: String
     let recipientId: String
     let text: String
-    let timestamp: Date
-    let stampUrl: String?
-    let stampTitle: String?
-    let isFromCurrentUser: Bool
+    let createdAt: Int64
+    let isMe: Bool
+    var isRead: Bool
+    let stamp: StampItem?
+
+    var timestamp: Date {
+        Date(timeIntervalSince1970: TimeInterval(createdAt) / 1000.0)
+    }
+
+    var isFromCurrentUser: Bool {
+        isMe
+    }
+
+    var stampUrl: String? {
+        stamp?.stampImagePath
+    }
+
+    var stampTitle: String? {
+        stamp?.title
+    }
+
+    init(id: String, senderId: String, senderName: String, senderAvatar: String = "", recipientId: String, text: String, createdAt: Int64, isMe: Bool, isRead: Bool = false, stamp: StampItem? = nil) {
+        self.id = id
+        self.senderId = senderId
+        self.senderName = senderName
+        self.senderAvatar = senderAvatar
+        self.recipientId = recipientId
+        self.text = text
+        self.createdAt = createdAt
+        self.isMe = isMe
+        self.isRead = isRead
+        self.stamp = stamp
+    }
 }
 
 struct ChatScreenView: View {
@@ -23,15 +53,14 @@ struct ChatScreenView: View {
     var onDismiss: (() -> Void)? = nil
 
     @Environment(\.presentationMode) var presentationMode
+    @ObservedObject private var chatRepo = IOSChatRepository.shared
 
     @State private var messageText: String = ""
-    @State private var messages: [ChatMessage] = []
     @State private var showStampPicker: Bool = false
-    @State private var selectedStampToAttach: StampItem? = nil
+    @State private var toastMessage: String? = nil
 
-    private var chatStorageKey: String {
-        let uids = [currentUserId, recipientUserId].sorted()
-        return "memostamp_chat_\(uids[0])_\(uids[1])"
+    private var messages: [ChatMessage] {
+        chatRepo.conversationMessages[recipientUserId] ?? []
     }
 
     private func formatDate(_ timestamp: Int64) -> String {
@@ -86,6 +115,7 @@ struct ChatScreenView: View {
                 Spacer()
 
                 Button(action: {
+                    chatRepo.activeRecipientId = nil
                     if let dismiss = onDismiss {
                         dismiss()
                     } else {
@@ -108,7 +138,7 @@ struct ChatScreenView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 12) {
-                        if messages.isEmpty {
+                        if messages.isEmpty && !chatRepo.isLoading {
                             VStack(spacing: 8) {
                                 Image(systemName: "bubble.left.and.bubble.right.fill")
                                     .font(.system(size: 40))
@@ -189,7 +219,14 @@ struct ChatScreenView: View {
         }
         .background(MSColors.paper.ignoresSafeArea())
         .onAppear {
-            loadInitialMessages()
+            chatRepo.activeRecipientId = recipientUserId
+            chatRepo.loadConversation(otherUserId: recipientUserId) { _ in }
+            chatRepo.markMessagesAsRead(senderId: recipientUserId)
+        }
+        .onDisappear {
+            if chatRepo.activeRecipientId == recipientUserId {
+                chatRepo.activeRecipientId = nil
+            }
         }
         .sheet(isPresented: $showStampPicker) {
             VStack(spacing: 16) {
@@ -256,57 +293,36 @@ struct ChatScreenView: View {
         }
     }
 
-    private func loadInitialMessages() {
-        if let data = UserDefaults.standard.data(forKey: chatStorageKey),
-           let saved = try? JSONDecoder().decode([ChatMessage].self, from: data) {
-            messages = saved
-        } else {
-            messages = []
-        }
-    }
-
-    private func saveMessages() {
-        if let data = try? JSONEncoder().encode(messages) {
-            UserDefaults.standard.set(data, forKey: chatStorageKey)
-        }
-    }
-
     private func sendMessage() {
         let trimmed = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        let newMsg = ChatMessage(
-            id: UUID().uuidString,
-            senderId: currentUserId,
-            senderName: "Me",
-            recipientId: recipientUserId,
-            text: trimmed,
-            timestamp: Date(),
-            stampUrl: nil,
-            stampTitle: nil,
-            isFromCurrentUser: true
-        )
-        messages.append(newMsg)
-        saveMessages()
+        let textToSend = trimmed
         messageText = ""
         HapticFeedbackManager.shared.playImpact(style: .light)
+
+        chatRepo.sendMessageCloud(recipientId: recipientUserId, text: textToSend) { result in
+            switch result {
+            case .success:
+                print("Cloud DM sent successfully to \(recipientUserId)")
+            case .failure(let err):
+                print("Cloud DM send error: \(err.localizedDescription)")
+            }
+        }
     }
 
     private func sendStampMessage(stamp: StampItem) {
-        let newMsg = ChatMessage(
-            id: UUID().uuidString,
-            senderId: currentUserId,
-            senderName: "Me",
-            recipientId: recipientUserId,
-            text: "Đã gửi tem kỷ niệm: \(stamp.title)",
-            timestamp: Date(),
-            stampUrl: stamp.stampImagePath,
-            stampTitle: stamp.title,
-            isFromCurrentUser: true
-        )
-        messages.append(newMsg)
-        saveMessages()
+        let textToSend = "Đã gửi tem kỷ niệm: \(stamp.title)"
         HapticFeedbackManager.shared.playImpact(style: .medium)
+
+        chatRepo.sendMessageCloud(recipientId: recipientUserId, text: textToSend, stamp: stamp) { result in
+            switch result {
+            case .success:
+                print("Cloud Stamp DM sent successfully")
+            case .failure(let err):
+                print("Cloud Stamp DM send error: \(err.localizedDescription)")
+            }
+        }
     }
 }
 
@@ -318,7 +334,7 @@ struct ChatMessageBubble: View {
             if message.isFromCurrentUser { Spacer() }
 
             VStack(alignment: message.isFromCurrentUser ? .trailing : .leading, spacing: 6) {
-                if let stampUrl = message.stampUrl {
+                if let stampUrl = message.stampUrl, !stampUrl.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         MemoStampImageView(urlString: stampUrl) {
                             MSColors.lightGrey
@@ -338,23 +354,33 @@ struct ChatMessageBubble: View {
                     .shadow(color: Color.black.opacity(0.06), radius: 3, x: 0, y: 2)
                 }
 
-                Text(message.text)
-                    .font(.subheadline)
-                    .foregroundColor(message.isFromCurrentUser ? .white : MSColors.ink)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(message.isFromCurrentUser ? MSColors.stamp : Color.white)
-                    .cornerRadius(18)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(message.isFromCurrentUser ? Color.clear : MSColors.lightGrey, lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+                if !message.text.isEmpty {
+                    Text(message.text)
+                        .font(.subheadline)
+                        .foregroundColor(message.isFromCurrentUser ? .white : MSColors.ink)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(message.isFromCurrentUser ? MSColors.stamp : Color.white)
+                        .cornerRadius(18)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(message.isFromCurrentUser ? Color.clear : MSColors.lightGrey, lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+                }
 
-                Text(DateFormatter.localizedString(from: message.timestamp, dateStyle: .none, timeStyle: .short))
-                    .font(.caption2)
-                    .foregroundColor(MSColors.grey)
-                    .padding(.horizontal, 4)
+                HStack(spacing: 4) {
+                    Text(DateFormatter.localizedString(from: message.timestamp, dateStyle: .none, timeStyle: .short))
+                        .font(.caption2)
+                        .foregroundColor(MSColors.grey)
+
+                    if message.isFromCurrentUser {
+                        Image(systemName: message.isRead ? "checkmark.circle.fill" : "checkmark")
+                            .font(.system(size: 10))
+                            .foregroundColor(message.isRead ? Color.blue : MSColors.grey)
+                    }
+                }
+                .padding(.horizontal, 4)
             }
 
             if !message.isFromCurrentUser { Spacer() }

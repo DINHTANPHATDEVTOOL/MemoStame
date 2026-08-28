@@ -29,10 +29,19 @@ class SupabaseAuthService {
     let supabaseUrl = "https://mghmhhbyhmuvherlyrqa.supabase.co"
     let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1naG1oaGJ5aG11dmhlcmx5cnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMDc1MTksImV4cCI6MjEwMjc4MzUxOX0._vviFZ3q8aSl-7wTX8nDXVN6KtN9eF-B5fBndlO6KRc"
 
-    private(set) var activeSession: AuthSessionData?
+    private(set) var activeSession: AuthSessionData? {
+        didSet {
+            let uid = activeSession?.userId ?? ""
+            IOSFriendRepository.shared.onUserChanged(newUserId: uid)
+            IOSChatRepository.shared.onUserChanged(newUserId: uid)
+        }
+    }
 
     private init() {
         self.activeSession = KeychainStore.loadSession()
+        let uid = activeSession?.userId ?? ""
+        IOSFriendRepository.shared.onUserChanged(newUserId: uid)
+        IOSChatRepository.shared.onUserChanged(newUserId: uid)
     }
 
     var currentUserId: String? {
@@ -85,7 +94,7 @@ class SupabaseAuthService {
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            self?.handleAuthResponse(data: data, response: response, error: error, completion: completion)
+            self?.handleAuthResponse(data: data, response: response, error: error, isSignUp: true, completion: completion)
         }.resume()
     }
 
@@ -138,6 +147,9 @@ class SupabaseAuthService {
         let token = activeSession?.accessToken
         activeSession = nil
         KeychainStore.deleteSession()
+        SupabaseRealtimeClient.shared.disconnect(clearState: true)
+        IOSFriendRepository.shared.onUserChanged(newUserId: "")
+        IOSChatRepository.shared.onUserChanged(newUserId: "")
 
         guard let accessToken = token, let url = URL(string: "\(supabaseUrl)/auth/v1/logout") else {
             completion(true)
@@ -207,6 +219,7 @@ class SupabaseAuthService {
         data: Data?,
         response: URLResponse?,
         error: Error?,
+        isSignUp: Bool = false,
         completion: @escaping (Result<AuthSessionData, Error>) -> Void
     ) {
         if let err = error {
@@ -230,15 +243,25 @@ class SupabaseAuthService {
             return
         }
 
-        guard let accessToken = json["access_token"] as? String,
-              let refreshToken = json["refresh_token"] as? String,
-              let userDict = json["user"] as? [String: Any],
-              let userId = userDict["id"] as? String else {
+        let accessToken = json["access_token"] as? String
+        let refreshToken = json["refresh_token"] as? String
+        let userDict = json["user"] as? [String: Any]
+        let userId = userDict?["id"] as? String
+
+        if isSignUp && (accessToken == nil || accessToken?.isEmpty == true) {
+            // Confirm email is enabled on backend, handle explicitly without setting active session
+            completion(.failure(SupabaseAuthError.serverError(200, "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập.")))
+            return
+        }
+
+        guard let validToken = accessToken, !validToken.isEmpty,
+              let validRefresh = refreshToken, !validRefresh.isEmpty,
+              let validUid = userId, !validUid.isEmpty else {
             completion(.failure(SupabaseAuthError.parseError))
             return
         }
 
-        let userEmail = (userDict["email"] as? String) ?? ""
+        let userEmail = (userDict?["email"] as? String) ?? ""
         let expiresIn = (json["expires_in"] as? Double) ?? 3600
         let expiresAt: Int64
         if let expAt = json["expires_at"] as? Double {
@@ -248,10 +271,10 @@ class SupabaseAuthService {
         }
 
         let session = AuthSessionData(
-            accessToken: accessToken,
-            refreshToken: refreshToken,
+            accessToken: validToken,
+            refreshToken: validRefresh,
             expiresAt: expiresAt,
-            userId: userId,
+            userId: validUid,
             email: userEmail
         )
 
