@@ -339,8 +339,20 @@ struct AuthLoginScreenView: View {
 
                                             let finalUsername = cloud.username.isEmpty ? cleanUsername : cloud.username
                                             let finalDisplayName = cloud.displayName.isEmpty ? fallbackDisplayName : cloud.displayName
-                                            let finalAvatarUrl = (cloud.avatarUrl != nil && !cloud.avatarUrl!.isEmpty) ? cloud.avatarUrl : fallbackAvatarUrl
-                                            let finalBio = (cloud.bio != nil && !cloud.bio!.isEmpty) ? cloud.bio : fallbackBio
+
+                                            let finalAvatarUrl: String
+                                            if let ca = cloud.avatarUrl, !ca.isEmpty {
+                                                finalAvatarUrl = ca
+                                            } else {
+                                                finalAvatarUrl = fallbackAvatarUrl
+                                            }
+
+                                            let finalBio: String
+                                            if let cb = cloud.bio, !cb.isEmpty {
+                                                finalBio = cb
+                                            } else {
+                                                finalBio = fallbackBio
+                                            }
 
                                             let hydratedProfile = UserProfile(
                                                 uid: authUid,
