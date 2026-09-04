@@ -217,6 +217,47 @@ class SupabaseAuthService {
         }.resume()
     }
 
+    func updateUserPassword(accessToken: String, newPassword: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let url = URL(string: "\(supabaseUrl)/auth/v1/user") else {
+            completion(.failure(SupabaseAuthError.invalidUrl))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "password": newPassword
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let err = error {
+                completion(.failure(SupabaseAuthError.networkError(err.localizedDescription)))
+                return
+            }
+
+            guard let httpRes = response as? HTTPURLResponse else {
+                completion(.failure(SupabaseAuthError.parseError))
+                return
+            }
+
+            if (200...299).contains(httpRes.statusCode) {
+                completion(.success(()))
+            } else {
+                var msg = "Password update failed"
+                if let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    msg = (json["msg"] as? String) ?? (json["error_description"] as? String) ?? (json["message"] as? String) ?? (json["error"] as? String) ?? msg
+                }
+                completion(.failure(SupabaseAuthError.serverError(httpRes.statusCode, msg)))
+            }
+        }.resume()
+    }
+
     private func handleAuthResponse(
         data: Data?,
         response: URLResponse?,

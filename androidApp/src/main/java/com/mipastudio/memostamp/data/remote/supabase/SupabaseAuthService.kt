@@ -78,6 +78,48 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
         }
     }
 
+    suspend fun updateUserPassword(
+        accessToken: String,
+        newPassword: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/auth/v1/user"
+        val bodyMap = mapOf("password" to newPassword)
+        return@withContext putAuthRequest(endpoint, accessToken, gson.toJson(bodyMap))
+    }
+
+    private fun putAuthRequest(endpoint: String, accessToken: String, jsonBody: String): Result<Unit> {
+        return try {
+            val url = URL(endpoint)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "PUT"
+                setRequestProperty("apikey", getApiKey())
+                setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty("Content-Type", "application/json")
+                connectTimeout = 12000
+                readTimeout = 12000
+                doOutput = true
+                OutputStreamWriter(outputStream).use { writer ->
+                    writer.write(jsonBody)
+                    writer.flush()
+                }
+            }
+
+            val code = conn.responseCode
+            val isSuccess = code in 200..299
+            val stream = if (isSuccess) conn.inputStream else conn.errorStream
+            val responseText = stream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+
+            if (!isSuccess) {
+                val errorMsg = parseErrorMessage(responseText) ?: "Password update failed [$code]"
+                return Result.failure(IllegalStateException(errorMsg))
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun postAuthRequest(endpoint: String, jsonBody: String): Result<AndroidAuthSession> {
         return try {
             val url = URL(endpoint)

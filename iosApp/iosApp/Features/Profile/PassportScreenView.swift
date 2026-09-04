@@ -558,10 +558,40 @@ struct ProfileSettingsSheetView: View {
                                 passwordToastMessage = langManager.string(vi: "⚠️ Mật khẩu xác nhận không khớp", en: "⚠️ Passwords do not match")
                                 return
                             }
-                            passwordToastMessage = langManager.string(vi: "✅ Đã đổi mật khẩu thành công!", en: "✅ Password updated successfully!")
-                            currentPassword = ""
-                            newPassword = ""
-                            confirmPassword = ""
+
+                            let activeSession = SupabaseAuthService.shared.activeSession
+                            let emailToUse = (activeSession?.email.isEmpty == false)
+                                ? activeSession!.email
+                                : ((repository.currentUser.value as? UserProfile)?.email ?? "")
+                            let identifier = emailToUse.isEmpty ? ((repository.currentUser.value as? UserProfile)?.username ?? "") : emailToUse
+                            let targetNewPassword = newPassword
+
+                            passwordToastMessage = langManager.string(vi: "⏳ Đang cập nhật mật khẩu...", en: "⏳ Updating password...")
+
+                            SupabaseAuthService.shared.signIn(email: identifier, password: currentPassword) { result in
+                                DispatchQueue.main.async {
+                                    switch result {
+                                    case .failure(let error):
+                                        let errMsg = error.localizedDescription
+                                        self.passwordToastMessage = "⚠️ \(errMsg)"
+                                    case .success(let session):
+                                        SupabaseAuthService.shared.updateUserPassword(accessToken: session.accessToken, newPassword: targetNewPassword) { updateResult in
+                                            DispatchQueue.main.async {
+                                                switch updateResult {
+                                                case .failure(let updateErr):
+                                                    let errMsg = updateErr.localizedDescription
+                                                    self.passwordToastMessage = "⚠️ \(errMsg)"
+                                                case .success:
+                                                    self.passwordToastMessage = self.langManager.string(vi: "✅ Đã đổi mật khẩu thành công!", en: "✅ Password updated successfully!")
+                                                    self.currentPassword = ""
+                                                    self.newPassword = ""
+                                                    self.confirmPassword = ""
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }) {
                             HStack {
                                 Image(systemName: "key.fill")

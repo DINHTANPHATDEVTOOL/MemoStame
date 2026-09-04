@@ -992,6 +992,40 @@ class UserAuthRepository internal constructor(
         saveUserProfile(updated, markLoggedIn = true)
     }
 
+    suspend fun updatePassword(
+        currentPassword: String,
+        newPassword: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val currentProfile = _currentUser.value
+        val sessionEmail = currentProfile.email.ifBlank {
+            sessionStore.load()?.email ?: ""
+        }
+        val identifier = if (sessionEmail.isNotBlank()) sessionEmail else currentProfile.username
+        if (identifier.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Chưa xác định được tài khoản người dùng"))
+        }
+
+        val authResult = supabaseAuthService.signIn(identifier, currentPassword)
+        if (authResult.isFailure) {
+            val errMsg = authResult.exceptionOrNull()?.message ?: "Mật khẩu hiện tại không chính xác"
+            return@withContext Result.failure(IllegalArgumentException(errMsg))
+        }
+
+        val newSession = authResult.getOrThrow()
+        sessionStore.save(newSession)
+        _accessToken.value = newSession.accessToken
+        _refreshToken.value = newSession.refreshToken
+        supabaseClient.userAccessToken = newSession.accessToken
+
+        val updateResult = supabaseAuthService.updateUserPassword(newSession.accessToken, newPassword)
+        if (updateResult.isFailure) {
+            val errMsg = updateResult.exceptionOrNull()?.message ?: "Cập nhật mật khẩu thất bại"
+            return@withContext Result.failure(IllegalStateException(errMsg))
+        }
+
+        Result.success(Unit)
+    }
+
     fun logout() {
         val currentToken = _accessToken.value
         if (!currentToken.isNullOrBlank()) {

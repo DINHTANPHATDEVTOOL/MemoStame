@@ -947,10 +947,19 @@ fun PassportScreen(
                                     passMessage = "⚠️ Mật khẩu mới không trùng khớp"
                                     return@Button
                                 }
-                                passMessage = "✅ Đã đổi mật khẩu thành công!"
-                                currentPassword = ""
-                                newPassword = ""
-                                confirmPassword = ""
+                                passMessage = "⏳ Đang cập nhật mật khẩu..."
+                                coroutineScope.launch {
+                                    val res = authRepo.updatePassword(currentPassword, newPassword)
+                                    if (res.isSuccess) {
+                                        passMessage = "✅ Đã đổi mật khẩu thành công!"
+                                        currentPassword = ""
+                                        newPassword = ""
+                                        confirmPassword = ""
+                                    } else {
+                                        val err = res.exceptionOrNull()?.message ?: "Đổi mật khẩu thất bại"
+                                        passMessage = "⚠️ $err"
+                                    }
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                             modifier = Modifier.fillMaxWidth()
