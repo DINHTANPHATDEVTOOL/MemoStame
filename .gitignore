@@ -26,3 +26,11 @@ node_modules/
 package-lock.json
 package.json
 supabase/.temp/
+
+# Autofix Agent Runtime
+.env
+.ai/autofix/runtime/
+.autofix-worktrees/
+
+__pycache__/
+*.pyc
