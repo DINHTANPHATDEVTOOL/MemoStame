@@ -311,8 +311,8 @@ struct FriendsAndTradeScreenView: View {
                 chatRepo.loadConversation(otherUserId: friend.id)
             }
         }
+    }
 
-    
     // MARK: - Tab Content Subviews
     @ViewBuilder
     private var friendsTabContent: some View {
@@ -757,7 +757,6 @@ struct FriendsAndTradeScreenView: View {
                                         }
                                     }
                                 }
-                            }
     }
 
     @ViewBuilder
