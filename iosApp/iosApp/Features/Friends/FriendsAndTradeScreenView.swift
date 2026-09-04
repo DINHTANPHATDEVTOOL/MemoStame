@@ -48,6 +48,14 @@ struct FriendsAndTradeScreenView: View {
         return formatter.string(from: date)
     }
 
+    private func formattedTime(_ timestampMillis: Int64) -> String {
+        guard timestampMillis > 0 else { return "" }
+        let date = Date(timeIntervalSince1970: Double(timestampMillis) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
     var visibleReceivedStamps: [ChatMessage] {
         _ = refreshTrigger
         let processedIds = getProcessedInboxIds(for: currentUid)
@@ -205,7 +213,8 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "bubble.left.and.bubble.right.fill")
                                     .font(.caption.bold())
-                                Text(langManager.string(vi: "Trò chuyện", en: "Chat"))
+                                let unreadChat = chatRepo.totalUnreadCount
+                                Text(unreadChat > 0 ? "\(langManager.string(vi: "Trò chuyện", en: "Chat")) (\(unreadChat))" : langManager.string(vi: "Trò chuyện", en: "Chat"))
                                     .font(.subheadline.bold())
                             }
                             .padding(.vertical, 9)
@@ -761,93 +770,138 @@ struct FriendsAndTradeScreenView: View {
 
     @ViewBuilder
     private var directChatTabContent: some View {
-                            // Tab 2: Direct Chat Conversations
-                            if friends.isEmpty {
-                                VStack(spacing: 12) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(MSColors.stamp.opacity(0.12))
-                                            .frame(width: 64, height: 64)
-                                        Image(systemName: "bubble.left.and.bubble.right.fill")
-                                            .font(.system(size: 28))
-                                            .foregroundColor(MSColors.stamp)
-                                    }
-                                    Text(langManager.string(vi: "Chưa có cuộc trò chuyện nào", en: "No conversations yet"))
-                                        .font(.headline.bold())
-                                        .foregroundColor(MSColors.ink)
-                                    Text(langManager.string(vi: "Kết nối với bạn bè để trò chuyện và chia sẻ tem thư kỷ niệm nhé!", en: "Connect with friends to chat and share memory stamps!"))
-                                        .font(.caption)
-                                        .foregroundColor(MSColors.grey)
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal, 24)
-                                    Button(action: { selectedTab = 0 }) {
-                                        HStack(spacing: 6) {
-                                            Image(systemName: "person.2.fill")
-                                                .font(.caption.bold())
-                                            Text(langManager.string(vi: "Xem danh sách bạn bè", en: "View friends list"))
-                                                .font(.caption.bold())
-                                        }
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 10)
-                                        .background(MSColors.stamp)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(16)
-                                    }
-                                    .padding(.top, 4)
-                                }
-                                .padding(.top, 40)
-                                .padding(.horizontal, 24)
+        let conversationList = chatRepo.getConversationList(friends: friends)
+        if conversationList.isEmpty {
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(MSColors.stamp.opacity(0.12))
+                        .frame(width: 64, height: 64)
+                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(MSColors.stamp)
+                }
+                Text(langManager.string(vi: "Chưa có cuộc trò chuyện nào", en: "No conversations yet"))
+                    .font(.headline.bold())
+                    .foregroundColor(MSColors.ink)
+                Text(langManager.string(vi: "Kết nối với bạn bè để trò chuyện và chia sẻ tem thư kỷ niệm nhé!", en: "Connect with friends to chat and share memory stamps!"))
+                    .font(.caption)
+                    .foregroundColor(MSColors.grey)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+                Button(action: { selectedTab = 0 }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.2.fill")
+                            .font(.caption.bold())
+                        Text(langManager.string(vi: "Xem danh sách bạn bè", en: "View friends list"))
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(MSColors.stamp)
+                    .foregroundColor(.white)
+                    .cornerRadius(16)
+                }
+                .padding(.top, 4)
+            }
+            .padding(.top, 40)
+            .padding(.horizontal, 24)
+        } else {
+            ForEach(conversationList) { conv in
+                let friend = conv.otherUser
+                let lastMsg = conv.lastMessage
+                let isMe = lastMsg?.isMe ?? false
+
+                HStack(spacing: 12) {
+                    ZStack(alignment: .bottomTrailing) {
+                        AsyncImage(url: URL(string: friend.avatarUrl)) { phase in
+                            if let img = phase.image {
+                                img.resizable().aspectRatio(contentMode: .fill)
                             } else {
-                                ForEach(friends, id: \.id) { friend in
-                                    HStack(spacing: 12) {
-                                        ZStack(alignment: .bottomTrailing) {
-                                            AsyncImage(url: URL(string: friend.avatarUrl)) { phase in
-                                                if let img = phase.image {
-                                                    img.resizable().aspectRatio(contentMode: .fill)
-                                                } else {
-                                                    Circle().fill(MSColors.lightGrey)
-                                                }
-                                            }
-                                            .frame(width: 48, height: 48)
-                                            .clipShape(Circle())
+                                Circle().fill(MSColors.lightGrey)
+                            }
+                        }
+                        .frame(width: 48, height: 48)
+                        .clipShape(Circle())
 
-                                            if friend.isOnline {
-                                                Circle()
-                                                    .fill(Color.green)
-                                                    .frame(width: 10, height: 10)
-                                                    .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
-                                            }
-                                        }
+                        if friend.isOnline {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 10, height: 10)
+                                .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                        }
+                    }
 
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            HStack {
-                                                Text(friend.displayName)
-                                                    .font(.subheadline.bold())
-                                                    .foregroundColor(MSColors.ink)
-                                                Spacer()
-                                                Text("Mới đây")
-                                                    .font(.caption2)
-                                                    .foregroundColor(MSColors.grey)
-                                            }
-                                            Text("Sẵn sàng nhắn tin và trao đổi tem kỷ niệm!")
-                                                .font(.caption)
-                                                .foregroundColor(MSColors.grey)
-                                                .lineLimit(1)
-                                        }
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack {
+                            Text(friend.displayName)
+                                .font(.subheadline.bold())
+                                .foregroundColor(MSColors.ink)
+                            Spacer()
+                            if let last = lastMsg {
+                                Text(formattedTime(last.createdAt))
+                                    .font(.caption2)
+                                    .foregroundColor(MSColors.grey)
+                            }
+                        }
 
-                                        Image(systemName: "chevron.right")
-                                            .font(.caption.bold())
-                                            .foregroundColor(MSColors.grey)
-                                    }
-                                    .padding(14)
-                                    .background(Color.white)
-                                    .cornerRadius(16)
-                                    .onTapGesture {
-                                        selectedFriendForChat = friend
-                                        showChatModal = true
-                                    }
+                        HStack {
+                            let basePreview: String = {
+                                guard let msg = lastMsg else {
+                                    return langManager.string(vi: "Chạm để bắt đầu nhắn tin", en: "Tap to message")
+                                }
+                                if msg.stamp != nil || isValidRemoteStampUrl(msg.stampUrl) {
+                                    return "📮 [Tem: \(msg.stampTitle ?? "Kỷ niệm")] \(msg.text)"
+                                }
+                                return msg.text
+                            }()
+                            let displayText = isMe ? "Bạn: \(basePreview)" : basePreview
+
+                            Text(displayText)
+                                .font(.caption)
+                                .foregroundColor(conv.unreadCount > 0 ? MSColors.ink : MSColors.grey)
+                                .fontWeight(conv.unreadCount > 0 ? .bold : .regular)
+                                .lineLimit(1)
+
+                            Spacer()
+
+                            if isMe, let last = lastMsg {
+                                if last.isRead {
+                                    Text("Đã xem ✓✓")
+                                        .font(.caption2.bold())
+                                        .foregroundColor(MSColors.stamp)
+                                } else {
+                                    Text("Đã gửi ✓")
+                                        .font(.caption2)
+                                        .foregroundColor(MSColors.grey)
                                 }
                             }
+
+                            if conv.unreadCount > 0 {
+                                Text("\(conv.unreadCount) mới")
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 2)
+                                    .background(MSColors.stamp)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                        }
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.bold())
+                        .foregroundColor(MSColors.grey)
+                }
+                .padding(14)
+                .background(Color.white)
+                .cornerRadius(16)
+                .onTapGesture {
+                    selectedFriendForChat = friend
+                    showChatModal = true
+                }
+            }
+        }
     }
 
     @ViewBuilder
