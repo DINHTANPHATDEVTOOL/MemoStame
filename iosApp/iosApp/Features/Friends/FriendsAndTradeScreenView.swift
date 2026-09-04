@@ -838,6 +838,7 @@ struct TradeStampModalView: View {
 struct FriendQrCodeSheetView: View {
     let repository: SharedMemoStampRepository
     @Environment(\.presentationMode) var presentationMode
+    @ObservedObject private var friendRepo = IOSFriendRepository.shared
     @State private var scannedCode: String = ""
     @State private var toastMsg: String? = nil
 
