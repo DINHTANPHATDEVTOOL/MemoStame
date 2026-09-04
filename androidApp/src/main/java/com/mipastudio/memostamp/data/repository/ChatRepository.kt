@@ -294,7 +294,7 @@ class ChatRepository internal constructor(
             cleanText
         }
 
-        val resolvedImage = encodeLocalImageToBase64IfNeeded(stampImageUrl) ?: stampImageUrl
+        val resolvedImage = if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stampImageUrl)) stampImageUrl?.trim() else null
 
         val msg = DirectMessage(
             id = UUID.randomUUID().toString(),
@@ -395,58 +395,7 @@ class ChatRepository internal constructor(
     }
 
     fun encodeLocalImageToBase64IfNeeded(pathOrUrl: String?): String? {
-        if (pathOrUrl.isNullOrBlank()) return null
-        if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://") || pathOrUrl.startsWith("data:image/")) {
-            return pathOrUrl
-        }
-        return try {
-            val file = File(pathOrUrl)
-            if (!file.exists() || file.length() == 0L) return pathOrUrl
-            val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeFile(file.absolutePath, boundsOptions)
-            
-            val targetMaxDim = 480
-            var sampleSize = 1
-            while (boundsOptions.outWidth / (sampleSize * 2) >= targetMaxDim || boundsOptions.outHeight / (sampleSize * 2) >= targetMaxDim) {
-                sampleSize *= 2
-            }
-            val decodeOptions = BitmapFactory.Options().apply { 
-                inSampleSize = sampleSize
-                inPreferredConfig = Bitmap.Config.RGB_565
-            }
-            val sourceBitmap = BitmapFactory.decodeFile(file.absolutePath, decodeOptions) ?: return pathOrUrl
-            
-            val srcW = sourceBitmap.width
-            val srcH = sourceBitmap.height
-            val scale = (targetMaxDim.toFloat() / Math.max(srcW, srcH)).coerceAtMost(1.0f)
-            val finalW = (srcW * scale).toInt().coerceAtLeast(1)
-            val finalH = (srcH * scale).toInt().coerceAtLeast(1)
-            
-            val scaledBitmap = if (scale < 1.0f) {
-                Bitmap.createScaledBitmap(sourceBitmap, finalW, finalH, true)
-            } else {
-                sourceBitmap
-            }
-
-            val baos = ByteArrayOutputStream()
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                scaledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 68, baos)
-            } else {
-                @Suppress("DEPRECATION")
-                scaledBitmap.compress(Bitmap.CompressFormat.WEBP, 68, baos)
-            }
-            val bytes = baos.toByteArray()
-            if (scaledBitmap != sourceBitmap) {
-                scaledBitmap.recycle()
-            }
-            sourceBitmap.recycle()
-
-            val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-            "data:image/webp;base64,$base64"
-        } catch (e: Exception) {
-            e.printStackTrace()
-            pathOrUrl
-        }
+        return if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(pathOrUrl)) pathOrUrl?.trim() else null
     }
 
     companion object {

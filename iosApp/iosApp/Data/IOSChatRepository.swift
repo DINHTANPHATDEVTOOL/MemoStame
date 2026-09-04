@@ -290,7 +290,7 @@ class IOSChatRepository: ObservableObject {
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let isoCreatedAt = formatter.string(from: Date())
 
-        let remoteStampUrl = (stamp?.stampImagePath.hasPrefix("http") == true) ? stamp?.stampImagePath : nil
+        let remoteStampUrl = isValidRemoteStampUrl(stamp?.stampImagePath) ? stamp?.stampImagePath : nil
 
         let record = SupabaseDirectMessageRecord(
             id: validUuid,

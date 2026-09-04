@@ -153,6 +153,60 @@ struct SupabaseDirectMessageRecord: Codable, Identifiable {
         case createdAt = "created_at"
         case isRead = "is_read"
     }
+
+    init(id: String, senderId: String, senderName: String, senderAvatar: String?, recipientId: String, recipientName: String, recipientAvatar: String?, text: String, stampId: String?, stampTitle: String?, stampImageUrl: String?, stampLocation: String?, createdAt: String?, isRead: Bool?) {
+        self.id = id
+        self.senderId = senderId
+        self.senderName = senderName
+        self.senderAvatar = senderAvatar
+        self.recipientId = recipientId
+        self.recipientName = recipientName
+        self.recipientAvatar = recipientAvatar
+        self.text = text
+        self.stampId = stampId
+        self.stampTitle = stampTitle
+        self.stampImageUrl = isValidRemoteStampUrl(stampImageUrl) ? stampImageUrl?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+        self.stampLocation = stampLocation
+        self.createdAt = createdAt
+        self.isRead = isRead
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(String.self, forKey: .id)) ?? ""
+        self.senderId = (try? container.decode(String.self, forKey: .senderId)) ?? ""
+        self.senderName = (try? container.decode(String.self, forKey: .senderName)) ?? ""
+        self.senderAvatar = try? container.decode(String.self, forKey: .senderAvatar)
+        self.recipientId = (try? container.decode(String.self, forKey: .recipientId)) ?? ""
+        self.recipientName = (try? container.decode(String.self, forKey: .recipientName)) ?? ""
+        self.recipientAvatar = try? container.decode(String.self, forKey: .recipientAvatar)
+        self.text = (try? container.decode(String.self, forKey: .text)) ?? ""
+        self.stampId = try? container.decode(String.self, forKey: .stampId)
+        self.stampTitle = try? container.decode(String.self, forKey: .stampTitle)
+        let rawUrl = try? container.decode(String.self, forKey: .stampImageUrl)
+        self.stampImageUrl = isValidRemoteStampUrl(rawUrl) ? rawUrl?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+        self.stampLocation = try? container.decode(String.self, forKey: .stampLocation)
+        self.createdAt = try? container.decode(String.self, forKey: .createdAt)
+        self.isRead = try? container.decode(Bool.self, forKey: .isRead)
+    }
+}
+
+func isValidRemoteStampUrl(_ url: String?) -> Bool {
+    guard let url = url?.trimmingCharacters(in: .whitespacesAndNewlines), !url.isEmpty else {
+        return false
+    }
+    let lower = url.lowercased()
+    guard lower.hasPrefix("http://") || lower.hasPrefix("https://") else {
+        return false
+    }
+    if lower.hasPrefix("data:image/") ||
+       lower.hasPrefix("file://") ||
+       lower.hasPrefix("content://") ||
+       lower.hasPrefix("/data/") ||
+       lower.hasPrefix("/storage/") {
+        return false
+    }
+    return true
 }
 
 class SupabaseSocialClient {

@@ -577,4 +577,140 @@ class AndroidChatCloudContractTest {
         assertTrue(res.isFailure)
         assertEquals(initialMessages, chatRepo.messages.value.size)
     }
+
+    @Test
+    fun test27_isValidRemoteStampUrlValidationScenarios() {
+        // Scenario 1: https URL -> ACCEPTED
+        assertTrue(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("https://example.com/stamp.jpg"))
+        // Scenario 2: http URL -> ACCEPTED
+        assertTrue(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("http://example.com/stamp.jpg"))
+        // Scenario 3: /data/user path -> REJECTED
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("/data/user/0/com.mipastudio.memostamp/files/stamp.png"))
+        // Scenario 4: /storage path -> REJECTED
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("/storage/emulated/0/Pictures/stamp.png"))
+        // Scenario 5: file:// URL -> REJECTED
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("file:///data/user/0/app/stamp.png"))
+        // Scenario 6: content:// URI -> REJECTED
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("content://media/external/images/media/12345"))
+        // Scenario 7: data:image base64 -> REJECTED
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="))
+        // Scenario 8: raw base64 string -> REJECTED
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="))
+        // Null / blank -> REJECTED
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(null))
+        assertFalse(com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl("  "))
+    }
+
+    @Test
+    fun test28_sendMessageWithLocalImagePathStripsImageAndPreservesText() = runBlocking {
+        // Scenario 9: invalid/local image + text -> stamp_image_url is null, text sends safely
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val transport = FakeSupabaseHttpTransport()
+        transport.endpointResponses["direct_messages"] = Result.success("""
+            [{"id":"$validUuid","sender_id":"user_a","sender_name":"User A","recipient_id":"user_b","recipient_name":"User B","text":"Check this stamp!","stamp_id":"stamp_123","stamp_title":"My Local Stamp","stamp_image_url":null,"created_at":"2026-08-28T03:11:16.123Z","is_read":false}]
+        """.trimIndent())
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val result = chatRepo.sendMessageCloud(
+            recipient = userB,
+            text = "Check this stamp!",
+            stampId = "stamp_123",
+            stampTitle = "My Local Stamp",
+            stampImageUrl = "/data/user/0/com.mipastudio.memostamp/files/local_stamp.png",
+            stampLocation = "Hà Nội"
+        )
+
+        assertTrue(result.isSuccess)
+        val sentMsg = result.getOrThrow()
+        assertNull(sentMsg.stampImageUrl)
+        assertEquals("Check this stamp!", sentMsg.text)
+        assertEquals("My Local Stamp", sentMsg.stampTitle)
+        assertEquals("stamp_123", sentMsg.stampId)
+    }
+
+    @Test
+    fun test29_sendMessageWithBase64ImageStripsImageAndPreservesMetadata() = runBlocking {
+        // Scenario 10: invalid/local image (base64) + stamp metadata -> metadata remains usable, no base64 URI sent
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val transport = FakeSupabaseHttpTransport()
+        transport.endpointResponses["direct_messages"] = Result.success("""
+            [{"id":"$validUuid","sender_id":"user_a","sender_name":"User A","recipient_id":"user_b","recipient_name":"User B","text":"📮 Đã gửi con tem: Vintage Stamp","stamp_id":"stamp_456","stamp_title":"Vintage Stamp","stamp_image_url":null,"stamp_location":"Đà Nẵng","created_at":"2026-08-28T03:11:16.123Z","is_read":false}]
+        """.trimIndent())
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val result = chatRepo.sendMessageCloud(
+            recipient = userB,
+            text = "",
+            stampId = "stamp_456",
+            stampTitle = "Vintage Stamp",
+            stampImageUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+            stampLocation = "Đà Nẵng"
+        )
+
+        assertTrue(result.isSuccess)
+        val sentMsg = result.getOrThrow()
+        assertNull(sentMsg.stampImageUrl)
+        assertEquals("stamp_456", sentMsg.stampId)
+        assertEquals("Vintage Stamp", sentMsg.stampTitle)
+        assertEquals("Đà Nẵng", sentMsg.stampLocation)
+    }
+
+    @Test
+    fun test30_receivedMessageWithNullOrLocalImageSanitizesToNull() = runBlocking {
+        // Scenario 11: received message with null or invalid image in Supabase record is sanitized to null in domain model
+        val recordWithLocalPath = SupabaseDirectMessageRecord(
+            id = java.util.UUID.randomUUID().toString(),
+            senderId = "user_b",
+            senderName = "User B",
+            recipientId = "user_a",
+            recipientName = "User A",
+            text = "Sent message with rogue path",
+            stampId = "stamp_789",
+            stampTitle = "Rogue Stamp",
+            stampImageUrl = "/storage/emulated/0/Pictures/rogue.jpg",
+            createdAt = "2026-08-28T03:11:16.123Z"
+        )
+
+        val domainMsg = recordWithLocalPath.toDomain()
+        assertNull("Rogue local path must be sanitized to null", domainMsg.stampImageUrl)
+        assertEquals("stamp_789", domainMsg.stampId)
+        assertEquals("Rogue Stamp", domainMsg.stampTitle)
+    }
+
+    @Test
+    fun test31_sendMessageWithValidRemoteUrlPreservesRemoteUrl() = runBlocking {
+        // Scenario 12: Valid HTTPS URL is preserved end to end
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val remoteUrl = "https://mghmhhbyhmuvherlyrqa.supabase.co/storage/v1/object/public/stamps/stamp_1.png"
+        val transport = FakeSupabaseHttpTransport()
+        transport.endpointResponses["direct_messages"] = Result.success("""
+            [{"id":"$validUuid","sender_id":"user_a","sender_name":"User A","recipient_id":"user_b","recipient_name":"User B","text":"Remote Stamp","stamp_id":"stamp_999","stamp_title":"Cloud Stamp","stamp_image_url":"$remoteUrl","created_at":"2026-08-28T03:11:16.123Z","is_read":false}]
+        """.trimIndent())
+
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        val userB = UserProfile(userId = "user_b", username = "userb", displayName = "User B")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val result = chatRepo.sendMessageCloud(
+            recipient = userB,
+            text = "Remote Stamp",
+            stampId = "stamp_999",
+            stampTitle = "Cloud Stamp",
+            stampImageUrl = remoteUrl,
+            stampLocation = "Sài Gòn"
+        )
+
+        assertTrue(result.isSuccess)
+        val sentMsg = result.getOrThrow()
+        assertEquals(remoteUrl, sentMsg.stampImageUrl)
+    }
 }
