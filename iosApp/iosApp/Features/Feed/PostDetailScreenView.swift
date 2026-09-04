@@ -15,6 +15,67 @@ struct PostDetailScreenView: View {
     @State private var localComments: [FeedComment] = []
     @State private var activeLightboxReply: FeedReply? = nil
     @State private var showHeartAnimation: Bool = false
+    @State private var commentErrorMessage: String? = nil
+
+    private var authenticatedUid: String? {
+        guard let raw = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty,
+              raw.lowercased() != "user_me",
+              !raw.lowercased().hasPrefix("guest_") else {
+            return nil
+        }
+        return raw
+    }
+
+    private func refreshCommentsFromRepository() {
+        let feedPosts = (repository.feedPosts.value as? [FeedPost]) ?? []
+        if let repoPost = feedPosts.first(where: { $0.id == post.id }) {
+            self.localComments = repoPost.comments
+        }
+    }
+
+    private func canDeleteComment(_ c: FeedComment) -> Bool {
+        guard let authUid = authenticatedUid else { return false }
+        return c.authorId == authUid
+    }
+
+    private func handleAddComment() {
+        guard isInputValid else { return }
+        let trimmed = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let authUid = authenticatedUid else {
+            commentErrorMessage = "Bạn cần đăng nhập để bình luận."
+            return
+        }
+
+        let repoUser = repository.currentUser.value as? UserProfile
+        guard repoUser?.uid == authUid else {
+            commentErrorMessage = "Không thể xác minh tài khoản. Vui lòng thử lại."
+            return
+        }
+
+        repository.addComment(postId: post.id, content: trimmed)
+        refreshCommentsFromRepository()
+        commentText = ""
+        commentErrorMessage = nil
+    }
+
+    private func handleDeleteComment(_ c: FeedComment) {
+        guard let authUid = authenticatedUid, c.authorId == authUid else {
+            commentErrorMessage = "Không có quyền xóa bình luận này."
+            return
+        }
+
+        let repoUser = repository.currentUser.value as? UserProfile
+        guard repoUser?.uid == authUid else {
+            commentErrorMessage = "Không thể xác minh tài khoản. Vui lòng thử lại."
+            return
+        }
+
+        repository.deleteComment(postId: post.id, commentId: c.id)
+        refreshCommentsFromRepository()
+        commentErrorMessage = nil
+    }
 
     private var formattedDate: String {
         guard post.createdAt > 0 else {
@@ -199,9 +260,9 @@ struct PostDetailScreenView: View {
 
                                     Spacer()
 
-                                    if c.authorId == "user_me" {
+                                    if canDeleteComment(c) {
                                         Button(action: {
-                                            localComments.removeAll { $0.id == c.id }
+                                            handleDeleteComment(c)
                                         }) {
                                             Image(systemName: "trash")
                                                 .font(.caption)
@@ -217,28 +278,32 @@ struct PostDetailScreenView: View {
                 .padding(.top, 12)
             }
 
+            if let error = commentErrorMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
+                    Spacer()
+                    Button(action: { commentErrorMessage = nil }) {
+                        Image(systemName: "xmark")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.1))
+            }
+
             // Comment Input Row at bottom
             HStack(spacing: 10) {
                 TextField("Write a comment...", text: $commentText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
 
-                Button(action: {
-                    if isInputValid {
-                        let currentUser = repository.currentUser.value as? UserProfile
-                        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
-                        let c = FeedComment(
-                            id: "c_\(nowMs)",
-                            postId: post.id,
-                            authorId: currentUser?.uid ?? "user_me",
-                            authorName: currentUser?.displayName ?? "User",
-                            authorAvatar: currentUser?.avatarUrl ?? "",
-                            content: commentText.trimmingCharacters(in: .whitespacesAndNewlines),
-                            createdAt: nowMs
-                        )
-                        localComments.append(c)
-                        commentText = ""
-                    }
-                }) {
+                Button(action: handleAddComment) {
                     Image(systemName: "paperplane.fill")
                         .foregroundColor(isInputValid ? Color(red: 0.85, green: 0.25, blue: 0.20) : .gray)
                         .padding(8)
@@ -252,7 +317,12 @@ struct PostDetailScreenView: View {
             .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: -2)
         }
         .onAppear {
-            self.localComments = post.comments
+            let feedPosts = (repository.feedPosts.value as? [FeedPost]) ?? []
+            if let repoPost = feedPosts.first(where: { $0.id == post.id }) {
+                self.localComments = repoPost.comments
+            } else {
+                self.localComments = post.comments
+            }
         }
         .background(Color(red: 0.98, green: 0.96, blue: 0.92).ignoresSafeArea())
         .sheet(item: $activeLightboxReply) { reply in
