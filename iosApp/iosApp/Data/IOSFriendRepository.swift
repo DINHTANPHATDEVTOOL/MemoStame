@@ -112,7 +112,8 @@ class IOSFriendRepository: ObservableObject {
 
     // MARK: - Cloud Synchronization
     func loadCloudData() {
-        guard let activeUserId = SupabaseSocialClient.shared.currentUserId else {
+        guard let activeUserId = SupabaseAuthService.shared.currentUserId,
+              !activeUserId.isEmpty else {
             self.isLoading = false
             return
         }
@@ -122,9 +123,9 @@ class IOSFriendRepository: ObservableObject {
 
         // 1. Fetch friend requests
         group.enter()
-        SupabaseSocialClient.shared.fetchFriendRequests { [weak self] result in
-            defer { group.leave() }
+        SupabaseSocialClient.shared.getFriendRequests(userId: activeUserId) { [weak self] result in
             DispatchQueue.main.async {
+                defer { group.leave() }
                 switch result {
                 case .success(let requests):
                     self?.incomingRequests = requests.filter { $0.recipientId == activeUserId }.map { r in
@@ -142,37 +143,51 @@ class IOSFriendRepository: ObservableObject {
 
         // 2. Fetch accepted friends list
         group.enter()
-        SupabaseSocialClient.shared.fetchAcceptedFriendUserIds { [weak self] result in
-            defer { group.leave() }
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let friendIds):
-                    if friendIds.isEmpty {
+        SupabaseSocialClient.shared.getFriends(userId: activeUserId) { [weak self] result in
+            switch result {
+            case .success(let records):
+                let friendIds = Array(Set(records.compactMap { record -> String? in
+                    if record.userId1 == activeUserId {
+                        return record.userId2
+                    }
+                    if record.userId2 == activeUserId {
+                        return record.userId1
+                    }
+                    return nil
+                }))
+
+                if friendIds.isEmpty {
+                    DispatchQueue.main.async {
                         self?.friends = []
-                    } else {
-                        SupabaseSocialClient.shared.searchPublicProfiles(query: "") { profileRes in
-                            DispatchQueue.main.async {
-                                if case .success(let profiles) = profileRes {
-                                    let profileMap = Dictionary(uniqueKeysWithValues: profiles.map { ($0.userId, $0) })
-                                    let updatedFriends = friendIds.map { fid in
-                                        let prof = profileMap[fid]
-                                        return FriendItem(
-                                            id: fid,
-                                            displayName: prof?.displayName ?? "Bạn bè",
-                                            username: prof?.username ?? fid,
-                                            avatarUrl: prof?.avatarUrl ?? "https://i.pravatar.cc/150?u=\(fid)",
-                                            isOnline: true,
-                                            tradeCount: Int32(0)
-                                        )
-                                    }
-                                    self?.friends = updatedFriends
+                        group.leave()
+                    }
+                } else {
+                    SupabaseSocialClient.shared.searchPublicProfiles(query: "") { profileRes in
+                        DispatchQueue.main.async {
+                            defer { group.leave() }
+                            if case .success(let profiles) = profileRes {
+                                let profileMap = Dictionary(uniqueKeysWithValues: profiles.map { ($0.userId, $0) })
+                                let updatedFriends = friendIds.map { fid in
+                                    let prof = profileMap[fid]
+                                    return FriendItem(
+                                        id: fid,
+                                        displayName: prof?.displayName ?? "Bạn bè",
+                                        username: prof?.username ?? fid,
+                                        avatarUrl: prof?.avatarUrl ?? "https://i.pravatar.cc/150?u=\(fid)",
+                                        isOnline: true,
+                                        tradeCount: Int32(0)
+                                    )
                                 }
+                                self?.friends = updatedFriends
                             }
                         }
                     }
-                case .failure(let err):
-                    // Network failure retains cached state
-                    print("Friends list cloud sync error (retaining offline cache): \(err.localizedDescription)")
+                }
+            case .failure(let err):
+                // Network failure retains cached state
+                print("Friends list cloud sync error (retaining offline cache): \(err.localizedDescription)")
+                DispatchQueue.main.async {
+                    group.leave()
                 }
             }
         }
