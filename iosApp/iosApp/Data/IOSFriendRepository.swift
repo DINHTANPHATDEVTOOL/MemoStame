@@ -166,7 +166,7 @@ class IOSFriendRepository: ObservableObject {
                         DispatchQueue.main.async {
                             defer { group.leave() }
                             if case .success(let profiles) = profileRes {
-                                let profileMap = Dictionary(uniqueKeysWithValues: profiles.map { ($0.userId, $0) })
+                                let profileMap = Dictionary(profiles.map { ($0.userId, $0) }, uniquingKeysWith: { first, _ in first })
                                 let updatedFriends = friendIds.map { fid in
                                     let prof = profileMap[fid]
                                     return FriendItem(
