@@ -32,16 +32,18 @@ class SupabaseAuthService {
     private(set) var activeSession: AuthSessionData? {
         didSet {
             let uid = activeSession?.userId ?? ""
+            let token = activeSession?.accessToken
             IOSFriendRepository.shared.onUserChanged(newUserId: uid)
-            IOSChatRepository.shared.onUserChanged(newUserId: uid)
+            IOSChatRepository.shared.onSessionChanged(userId: uid, accessToken: token)
         }
     }
 
     private init() {
         self.activeSession = KeychainStore.loadSession()
         let uid = activeSession?.userId ?? ""
+        let token = activeSession?.accessToken
         IOSFriendRepository.shared.onUserChanged(newUserId: uid)
-        IOSChatRepository.shared.onUserChanged(newUserId: uid)
+        IOSChatRepository.shared.onSessionChanged(userId: uid, accessToken: token)
     }
 
     var currentUserId: String? {
@@ -149,7 +151,7 @@ class SupabaseAuthService {
         KeychainStore.deleteSession()
         SupabaseRealtimeClient.shared.disconnect(clearState: true)
         IOSFriendRepository.shared.onUserChanged(newUserId: "")
-        IOSChatRepository.shared.onUserChanged(newUserId: "")
+        IOSChatRepository.shared.onSessionChanged(userId: "", accessToken: nil)
 
         guard let accessToken = token, let url = URL(string: "\(supabaseUrl)/auth/v1/logout") else {
             completion(true)
