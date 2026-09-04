@@ -27,7 +27,7 @@ struct MemoryNoteScreenView: View {
     let audienceTypes = ["Friends", "Only Me"]
 
     private var currentUid: String {
-        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+        SupabaseAuthService.shared.currentUserId ?? ""
     }
 
     private var formattedDate: String {
@@ -53,6 +53,12 @@ struct MemoryNoteScreenView: View {
                 Spacer()
 
                 Button(action: {
+                    let authUid = SupabaseAuthService.shared.currentUserId ?? ""
+                    guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
+                        showRenderError = true
+                        return
+                    }
+
                     var audience = AudienceType.friends
                     if selectedAudience.contains("Only Me") {
                         audience = AudienceType.onlyMe
@@ -107,7 +113,7 @@ struct MemoryNoteScreenView: View {
                         mood: selectedMood,
                         memoryDate: Int64(memoryDate.timeIntervalSince1970 * 1000)
                     )
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                     onSavedSuccess()
                 }) {
                     Text("Lưu Tem")
