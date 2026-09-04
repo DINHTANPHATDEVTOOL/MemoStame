@@ -851,199 +851,215 @@ struct FriendsAndTradeScreenView: View {
     }
 
     @ViewBuilder
+    @ViewBuilder
     private var receivedStampsInboxTabContent: some View {
-                        // Tab 3: Received Stamps Inbox
-                        if visibleReceivedStamps.isEmpty {
-                            VStack(spacing: 12) {
-                                ZStack {
-                                    Circle()
-                                        .fill(MSColors.stamp.opacity(0.12))
-                                        .frame(width: 64, height: 64)
-                                    Image(systemName: "envelope.open.fill")
-                                        .font(.system(size: 28))
-                                        .foregroundColor(MSColors.stamp)
-                                }
-                                Text(langManager.string(vi: "Hộp thư kỷ niệm trống", en: "Inbox is empty"))
-                                    .font(.headline.bold())
-                                    .foregroundColor(MSColors.ink)
-                                Text(langManager.string(vi: "Bạn chưa có con tem thư kỷ niệm nào mới trong hộp thư.", en: "No new memory stamps received in your inbox."))
-                                    .font(.caption)
-                                    .foregroundColor(MSColors.grey)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 24)
-                            }
-                            .padding(.top, 40)
-                            .padding(.horizontal, 24)
+        if visibleReceivedStamps.isEmpty {
+            receivedStampsEmptyView
+        } else {
+            receivedStampsListView
+        }
+    }
+
+    @ViewBuilder
+    private var receivedStampsEmptyView: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(MSColors.stamp.opacity(0.12))
+                    .frame(width: 64, height: 64)
+                Image(systemName: "envelope.open.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(MSColors.stamp)
+            }
+            Text(langManager.string(vi: "Hộp thư kỷ niệm trống", en: "Inbox is empty"))
+                .font(.headline.bold())
+                .foregroundColor(MSColors.ink)
+            Text(langManager.string(vi: "Bạn chưa có con tem thư kỷ niệm nào mới trong hộp thư.", en: "No new memory stamps received in your inbox."))
+                .font(.caption)
+                .foregroundColor(MSColors.grey)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+        }
+        .padding(.top, 40)
+        .padding(.horizontal, 24)
+    }
+
+    @ViewBuilder
+    private var receivedStampsListView: some View {
+        ForEach(visibleReceivedStamps, id: \.id) { msg in
+            inboxStampRow(msg)
+        }
+    }
+
+    @ViewBuilder
+    private func inboxStampRow(_ msg: ChatMessage) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header: Sender info
+            HStack(spacing: 10) {
+                if isValidRemoteStampUrl(msg.senderAvatar) {
+                    AsyncImage(url: URL(string: msg.senderAvatar)) { phase in
+                        if let img = phase.image {
+                            img.resizable().aspectRatio(contentMode: .fill)
                         } else {
-                            ForEach(visibleReceivedStamps, id: \.id) { msg in
-                                VStack(alignment: .leading, spacing: 10) {
-                                    // Header: Sender info
-                                    HStack(spacing: 10) {
-                                        if isValidRemoteStampUrl(msg.senderAvatar) {
-                                            AsyncImage(url: URL(string: msg.senderAvatar)) { phase in
-                                                if let img = phase.image {
-                                                    img.resizable().aspectRatio(contentMode: .fill)
-                                                } else {
-                                                    Circle().fill(MSColors.stamp.opacity(0.15))
-                                                }
-                                            }
-                                            .frame(width: 36, height: 36)
-                                            .clipShape(Circle())
-                                        } else {
-                                            Circle().fill(MSColors.stamp.opacity(0.15))
-                                                .frame(width: 36, height: 36)
-                                                .overlay(
-                                                    Text(String(msg.senderName.prefix(1)).uppercased())
-                                                        .font(.caption.bold())
-                                                        .foregroundColor(MSColors.stamp)
-                                                )
-                                        }
+                            Circle().fill(MSColors.stamp.opacity(0.15))
+                        }
+                    }
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                } else {
+                    Circle().fill(MSColors.stamp.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Text(String(msg.senderName.prefix(1)).uppercased())
+                                .font(.caption.bold())
+                                .foregroundColor(MSColors.stamp)
+                        )
+                }
 
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(msg.senderName)
-                                                .font(.subheadline.bold())
-                                                .foregroundColor(MSColors.ink)
-                                            Text(formattedTimestamp(msg.createdAt))
-                                                .font(.caption2)
-                                                .foregroundColor(MSColors.grey)
-                                        }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(msg.senderName)
+                        .font(.subheadline.bold())
+                        .foregroundColor(MSColors.ink)
+                    Text(formattedTimestamp(msg.createdAt))
+                        .font(.caption2)
+                        .foregroundColor(MSColors.grey)
+                }
 
-                                        Spacer()
+                Spacer()
 
-                                        Text("Tem kỷ niệm 📮")
-                                            .font(.caption2.bold())
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 4)
-                                            .background(MSColors.stamp.opacity(0.12))
-                                            .foregroundColor(MSColors.stamp)
-                                            .cornerRadius(8)
-                                    }
+                Text("Tem kỷ niệm 📮")
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(MSColors.stamp.opacity(0.12))
+                    .foregroundColor(MSColors.stamp)
+                    .cornerRadius(8)
+            }
 
-                                    // Card Body: Stamp Preview & Metadata
-                                    HStack(spacing: 12) {
-                                        if let stamp = msg.stamp, isValidRemoteStampUrl(stamp.stampImagePath) {
-                                            AsyncImage(url: URL(string: stamp.stampImagePath)) { phase in
-                                                if let img = phase.image {
-                                                    img.resizable().aspectRatio(contentMode: .fill)
-                                                } else {
-                                                    ZStack {
-                                                        Color.gray.opacity(0.1)
-                                                        Text("📮").font(.title2)
-                                                    }
-                                                }
-                                            }
-                                            .frame(width: 64, height: 64)
-                                            .cornerRadius(8)
-                                        } else {
-                                            ZStack {
-                                                MSColors.stamp.opacity(0.1)
-                                                Text("📮")
-                                                    .font(.title2)
-                                            }
-                                            .frame(width: 64, height: 64)
-                                            .cornerRadius(8)
-                                        }
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(msg.stamp?.title.isEmpty == false ? (msg.stamp?.title ?? "") : "Tem thư kỷ niệm")
-                                                .font(.subheadline.bold())
-                                                .foregroundColor(MSColors.ink)
-                                            Text("📍 \(msg.stamp?.location ?? "Việt Nam")")
-                                                .font(.caption.bold())
-                                                .foregroundColor(Color.blue)
-                                            if !msg.text.isEmpty && !msg.text.hasPrefix("📮 Đã gửi con tem") {
-                                                Text("“\(msg.text)”")
-                                                    .font(.caption)
-                                                    .foregroundColor(MSColors.grey)
-                                                    .lineLimit(2)
-                                            }
-                                        }
-                                    }
-                                    .padding(10)
-                                    .background(MSColors.paper)
-                                    .cornerRadius(12)
-
-                                    // Actions: Từ chối, Nhắn tin, Lưu vào Kho
-                                    HStack(spacing: 8) {
-                                        Spacer()
-
-                                        Button(action: {
-                                            markInboxItemProcessed(for: currentUid, messageId: msg.id)
-                                            triggerToast("Đã từ chối con tem này ❌")
-                                        }) {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "xmark")
-                                                    .font(.system(size: 11, weight: .bold))
-                                                Text("Từ chối")
-                                                    .font(.caption.bold())
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .background(Color.gray.opacity(0.12))
-                                            .foregroundColor(MSColors.grey)
-                                            .cornerRadius(10)
-                                        }
-
-                                        Button(action: {
-                                            let friend = friends.first(where: { $0.id == msg.senderId }) ?? FriendItem(id: msg.senderId, username: msg.senderName, displayName: msg.senderName, avatarUrl: msg.senderAvatar, isOnline: false, tradeCount: 0)
-                                            selectedFriendForChat = friend
-                                            showChatModal = true
-                                        }) {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "bubble.left.and.bubble.right.fill")
-                                                    .font(.system(size: 11))
-                                                Text("Nhắn tin")
-                                                    .font(.caption.bold())
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .background(MSColors.stamp.opacity(0.12))
-                                            .foregroundColor(MSColors.stamp)
-                                            .cornerRadius(10)
-                                        }
-
-                                        Button(action: {
-                                            if let stamp = msg.stamp {
-                                                let validRemoteUrl = isValidRemoteStampUrl(stamp.stampImagePath) ? stamp.stampImagePath : ""
-                                                _ = repository.addStamp(
-                                                    title: stamp.title.isEmpty ? "Tem từ \(msg.senderName)" : stamp.title,
-                                                    note: msg.text,
-                                                    location: stamp.location?.isEmpty == false ? stamp.location : "Việt Nam",
-                                                    imageUrl: validRemoteUrl,
-                                                    originalImageUrl: validRemoteUrl,
-                                                    shape: "classic",
-                                                    collectionId: nil,
-                                                    audience: AudienceType.friends,
-                                                    mood: "😊 Happy",
-                                                    memoryDate: msg.createdAt
-                                                )
-                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                            }
-                                            markInboxItemProcessed(for: currentUid, messageId: msg.id)
-                                            triggerToast("Đã lưu con tem vào Kho của bạn thành công! 📮")
-                                        }) {
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "square.and.arrow.down.fill")
-                                                    .font(.system(size: 11))
-                                                Text("Lưu vào Kho")
-                                                    .font(.caption.bold())
-                                            }
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.green)
-                                            .foregroundColor(.white)
-                                            .cornerRadius(10)
-                                        }
-                                    }
-                                }
-                                .padding(14)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
-                                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+            // Card Body: Stamp Preview & Metadata
+            HStack(spacing: 12) {
+                if let stamp = msg.stamp, isValidRemoteStampUrl(stamp.stampImagePath) {
+                    AsyncImage(url: URL(string: stamp.stampImagePath)) { phase in
+                        if let img = phase.image {
+                            img.resizable().aspectRatio(contentMode: .fill)
+                        } else {
+                            ZStack {
+                                Color.gray.opacity(0.1)
+                                Text("📮").font(.title2)
                             }
+                        }
+                    }
+                    .frame(width: 64, height: 64)
+                    .cornerRadius(8)
+                } else {
+                    ZStack {
+                        MSColors.stamp.opacity(0.1)
+                        Text("📮")
+                            .font(.title2)
+                    }
+                    .frame(width: 64, height: 64)
+                    .cornerRadius(8)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(msg.stamp?.title.isEmpty == false ? (msg.stamp?.title ?? "") : "Tem thư kỷ niệm")
+                        .font(.subheadline.bold())
+                        .foregroundColor(MSColors.ink)
+                    Text("📍 \(msg.stamp?.location ?? "Việt Nam")")
+                        .font(.caption.bold())
+                        .foregroundColor(Color.blue)
+                    if !msg.text.isEmpty && !msg.text.hasPrefix("📮 Đã gửi con tem") {
+                        Text("“\(msg.text)”")
+                            .font(.caption)
+                            .foregroundColor(MSColors.grey)
+                            .lineLimit(2)
+                    }
+                }
+            }
+            .padding(10)
+            .background(MSColors.paper)
+            .cornerRadius(12)
+
+            // Actions: Từ chối, Nhắn tin, Lưu vào Kho
+            HStack(spacing: 8) {
+                Spacer()
+
+                Button(action: {
+                    markInboxItemProcessed(for: currentUid, messageId: msg.id)
+                    triggerToast("Đã từ chối con tem này ❌")
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Từ chối")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.gray.opacity(0.12))
+                    .foregroundColor(MSColors.grey)
+                    .cornerRadius(10)
+                }
+
+                Button(action: {
+                    let friend = friends.first(where: { $0.id == msg.senderId }) ?? FriendItem(id: msg.senderId, username: msg.senderName, displayName: msg.senderName, avatarUrl: msg.senderAvatar, isOnline: false, tradeCount: 0)
+                    selectedFriendForChat = friend
+                    showChatModal = true
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                            .font(.system(size: 11))
+                        Text("Nhắn tin")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(MSColors.stamp.opacity(0.12))
+                    .foregroundColor(MSColors.stamp)
+                    .cornerRadius(10)
+                }
+
+                Button(action: {
+                    if let stamp = msg.stamp {
+                        let validRemoteUrl = isValidRemoteStampUrl(stamp.stampImagePath) ? stamp.stampImagePath : ""
+                        _ = repository.addStamp(
+                            title: stamp.title.isEmpty ? "Tem từ \(msg.senderName)" : stamp.title,
+                            note: msg.text,
+                            location: stamp.location?.isEmpty == false ? stamp.location : "Việt Nam",
+                            imageUrl: validRemoteUrl,
+                            originalImageUrl: validRemoteUrl,
+                            shape: "classic",
+                            collectionId: nil,
+                            audience: AudienceType.friends,
+                            mood: "😊 Happy",
+                            memoryDate: msg.createdAt
+                        )
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                    }
+                    markInboxItemProcessed(for: currentUid, messageId: msg.id)
+                    triggerToast("Đã lưu con tem vào Kho của bạn thành công! 📮")
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.down.fill")
+                            .font(.system(size: 11))
+                        Text("Lưu vào Kho")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
-    }
+
 
     private func triggerToast(_ msg: String) {
         toastMessage = msg
