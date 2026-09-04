@@ -128,26 +128,32 @@ class IOSChatRepository: ObservableObject {
     }
 
     func onUserChanged(newUserId: String) {
-        let cleanUid = newUserId.trimmingCharacters(in: .whitespacesAndNewlines)
-        if cleanUid.isEmpty {
+        let token = SupabaseAuthService.shared.activeSession?.accessToken
+        onSessionChanged(userId: newUserId, accessToken: token)
+    }
+
+    func onSessionChanged(userId: String, accessToken: String?) {
+        let cleanUid = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanToken = accessToken?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if cleanUid.isEmpty || cleanToken.isEmpty {
             onLogout()
             return
         }
-        if cleanUid == activeUserId { return }
 
-        // Disconnect Realtime for user switch isolation
-        SupabaseRealtimeClient.shared.disconnect(clearState: true)
+        if cleanUid != activeUserId {
+            // User switch isolation: clear previous user state & disconnect old realtime
+            SupabaseRealtimeClient.shared.disconnect(clearState: true)
+            self.conversationMessages = [:]
+            self.messageDedupeSet = []
+            self.activeRecipientId = nil
+            self.errorMessage = nil
+            self.activeUserId = cleanUid
 
-        // Clear in-memory state
-        self.conversationMessages = [:]
-        self.messageDedupeSet = []
-        self.activeRecipientId = nil
-        self.errorMessage = nil
-        self.activeUserId = cleanUid
-
-        // Setup Realtime WebSocket for new user
-        if let token = SupabaseAuthService.shared.activeSession?.accessToken, !token.isEmpty {
-            setupRealtimeSubscriptions(token: token, uid: cleanUid)
+            setupRealtimeSubscriptions(token: cleanToken, uid: cleanUid)
+        } else {
+            // Same user token rotation or health check: preserve in-memory chat state & update token/reconnect
+            setupRealtimeSubscriptions(token: cleanToken, uid: cleanUid)
         }
     }
 
@@ -164,7 +170,7 @@ class IOSChatRepository: ObservableObject {
             }
         }
 
-        SupabaseRealtimeClient.shared.connectAndSubscribe(token: token, uid: uid)
+        SupabaseRealtimeClient.shared.updateTokenOrReconnect(token: token, uid: uid)
     }
 
     // MARK: - Local Cache Management
