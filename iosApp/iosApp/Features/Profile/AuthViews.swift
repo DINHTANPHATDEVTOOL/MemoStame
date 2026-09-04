@@ -331,7 +331,7 @@ struct AuthLoginScreenView: View {
                                 case .success(let cloudProfile):
                                     if let cloud = cloudProfile {
                                         let cloudUserId = cloud.userId.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        if cloudUserId == authUid || cloudUserId.isEmpty {
+                                        if cloudUserId == authUid {
                                             let currentProfile = repository.currentUser.value as? UserProfile
                                             let stampsCreated = currentProfile?.stampsCreatedCount ?? Int32(0)
                                             let stampsCollected = currentProfile?.stampsCollectedCount ?? Int32(0)
