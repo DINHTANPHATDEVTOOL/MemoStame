@@ -82,14 +82,35 @@ fun ChatScreen(
 
     var viewingStampMessage by remember { mutableStateOf<DirectMessage?>(null) }
 
+    var loadError by remember(recipient.userId) { mutableStateOf<String?>(null) }
+    var initialLoadFinished by remember(recipient.userId) { mutableStateOf(false) }
+    var isRetryingLoad by remember(recipient.userId) { mutableStateOf(false) }
+
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
+    fun performLoad(isRetry: Boolean = false) {
+        if (isRetry && isRetryingLoad) return
+        if (isRetry) {
+            isRetryingLoad = true
+        }
+        coroutineScope.launch {
+            val res = chatRepo.loadConversation(recipient.userId)
+            initialLoadFinished = true
+            isRetryingLoad = false
+            if (res.isFailure) {
+                loadError = "Không thể tải cuộc trò chuyện. Kiểm tra kết nối và thử lại."
+            } else {
+                loadError = null
+            }
+        }
+    }
+
     DisposableEffect(recipient.userId) {
         chatRepo.activeChattingUserId = recipient.userId
+        performLoad(isRetry = false)
         coroutineScope.launch {
-            chatRepo.loadConversation(recipient.userId)
             chatRepo.markAsReadCloud(recipient.userId)
         }
         onDispose {
@@ -195,7 +216,80 @@ fun ChatScreen(
                 .imePadding()
         ) {
             // Messages List
-            if (conversationMessages.isEmpty()) {
+            if (!initialLoadFinished && conversationMessages.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = AccentRed,
+                        modifier = Modifier.size(36.dp),
+                        strokeWidth = 3.dp
+                    )
+                }
+            } else if (loadError != null && conversationMessages.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Surface(
+                            shape = CircleShape,
+                            color = AccentRedSoft,
+                            modifier = Modifier.size(64.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CloudOff,
+                                    contentDescription = null,
+                                    tint = AccentRed,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            text = "Không thể tải cuộc trò chuyện",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryText,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Kiểm tra kết nối và thử lại.",
+                            fontSize = 12.sp,
+                            color = SecondaryText,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { performLoad(isRetry = true) },
+                            enabled = !isRetryingLoad,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                        ) {
+                            if (isRetryingLoad) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                            } else {
+                                Icon(Icons.Outlined.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+                            Text("Thử lại", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            } else if (conversationMessages.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -246,23 +340,71 @@ fun ChatScreen(
                     }
                 }
             } else {
-                LazyColumn(
-                    state = listState,
+                Column(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(conversationMessages, key = { it.id }) { msg ->
-                        val isMe = msg.senderId == currentUser.userId
-                        ChatMessageBubble(
-                            message = msg,
-                            isMe = isMe,
-                            onStampClick = {
-                                viewingStampMessage = msg
+                    if (loadError != null) {
+                        Surface(
+                            color = AccentRedSoft,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Warning,
+                                    contentDescription = null,
+                                    tint = AccentRed,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Đang hiển thị tin nhắn đã lưu. Chưa thể đồng bộ.",
+                                    fontSize = 11.sp,
+                                    color = PrimaryText,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TextButton(
+                                    onClick = { performLoad(isRetry = true) },
+                                    enabled = !isRetryingLoad,
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    if (isRetryingLoad) {
+                                        CircularProgressIndicator(
+                                            color = AccentRed,
+                                            modifier = Modifier.size(12.dp),
+                                            strokeWidth = 1.5.dp
+                                        )
+                                    } else {
+                                        Text("Thử lại", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                                    }
+                                }
                             }
-                        )
+                        }
+                    }
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(conversationMessages, key = { it.id }) { msg ->
+                            val isMe = msg.senderId == currentUser.userId
+                            ChatMessageBubble(
+                                message = msg,
+                                isMe = isMe,
+                                onStampClick = {
+                                    viewingStampMessage = msg
+                                }
+                            )
+                        }
                     }
                 }
             }

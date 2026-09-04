@@ -60,8 +60,31 @@ struct ChatScreenView: View {
     @State private var toastMessage: String? = nil
     @State private var isSending: Bool = false
 
+    @State private var chatLoadError: String? = nil
+    @State private var hasCompletedInitialLoad: Bool = false
+    @State private var isRetryingLoad: Bool = false
+
     private var messages: [ChatMessage] {
         chatRepo.conversationMessages[recipientUserId] ?? []
+    }
+
+    private func loadConversation(isRetry: Bool = false) {
+        if isRetry && isRetryingLoad { return }
+        if isRetry {
+            isRetryingLoad = true
+        }
+        chatRepo.loadConversation(otherUserId: recipientUserId) { result in
+            DispatchQueue.main.async {
+                hasCompletedInitialLoad = true
+                isRetryingLoad = false
+                switch result {
+                case .success:
+                    chatLoadError = nil
+                case .failure:
+                    chatLoadError = "Không thể đồng bộ cuộc trò chuyện. Hãy thử lại."
+                }
+            }
+        }
     }
 
     private func formatDate(_ timestamp: Int64) -> String {
@@ -139,7 +162,59 @@ struct ChatScreenView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 12) {
-                        if messages.isEmpty && !chatRepo.isLoading {
+                        if !hasCompletedInitialLoad && messages.isEmpty {
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: MSColors.stamp))
+                                    .scaleEffect(1.2)
+                                Text("Đang tải cuộc trò chuyện...")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.grey)
+                            }
+                            .padding(.top, 80)
+                        } else if chatLoadError != nil && messages.isEmpty {
+                            VStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(MSColors.stamp.opacity(0.12))
+                                        .frame(width: 64, height: 64)
+                                    Image(systemName: "wifi.slash")
+                                        .font(.system(size: 26))
+                                        .foregroundColor(MSColors.stamp)
+                                }
+                                Text("Không thể tải cuộc trò chuyện")
+                                    .font(.headline.bold())
+                                    .foregroundColor(MSColors.ink)
+                                    .multilineTextAlignment(.center)
+                                Text("Kiểm tra kết nối và thử lại.")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.grey)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 16)
+                                Button(action: { loadConversation(isRetry: true) }) {
+                                    HStack(spacing: 6) {
+                                        if isRetryingLoad {
+                                            ProgressView()
+                                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        } else {
+                                            Image(systemName: "arrow.clockwise")
+                                                .font(.caption.bold())
+                                        }
+                                        Text("Thử lại")
+                                            .font(.caption.bold())
+                                    }
+                                    .padding(.horizontal, 18)
+                                    .padding(.vertical, 9)
+                                    .background(MSColors.stamp)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(16)
+                                }
+                                .disabled(isRetryingLoad)
+                                .padding(.top, 4)
+                            }
+                            .padding(.top, 50)
+                            .padding(.horizontal, 24)
+                        } else if messages.isEmpty {
                             VStack(spacing: 14) {
                                 ZStack {
                                     Circle()
@@ -179,11 +254,42 @@ struct ChatScreenView: View {
                             }
                             .padding(.top, 50)
                             .padding(.horizontal, 24)
-                        }
+                        } else {
+                            if chatLoadError != nil {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.caption)
+                                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                                    Text("Đang hiển thị tin nhắn đã lưu. Chưa thể đồng bộ.")
+                                        .font(.caption)
+                                        .foregroundColor(MSColors.ink)
+                                    Spacer()
+                                    Button(action: { loadConversation(isRetry: true) }) {
+                                        HStack(spacing: 4) {
+                                            if isRetryingLoad {
+                                                ProgressView()
+                                                    .progressViewStyle(CircularProgressViewStyle(tint: MSColors.stamp))
+                                            } else {
+                                                Image(systemName: "arrow.clockwise")
+                                                    .font(.caption2.bold())
+                                            }
+                                            Text("Thử lại")
+                                                .font(.caption2.bold())
+                                        }
+                                        .foregroundColor(MSColors.stamp)
+                                    }
+                                    .disabled(isRetryingLoad)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.1))
+                                .cornerRadius(8)
+                            }
 
-                        ForEach(messages) { msg in
-                            ChatMessageBubble(message: msg)
-                                .id(msg.id)
+                            ForEach(messages) { msg in
+                                ChatMessageBubble(message: msg)
+                                    .id(msg.id)
+                            }
                         }
                     }
                     .padding(16)
@@ -273,7 +379,7 @@ struct ChatScreenView: View {
         .background(MSColors.paper.ignoresSafeArea())
         .onAppear {
             chatRepo.activeRecipientId = recipientUserId
-            chatRepo.loadConversation(otherUserId: recipientUserId) { _ in }
+            loadConversation(isRetry: false)
             chatRepo.markMessagesAsRead(senderId: recipientUserId)
         }
         .onDisappear {
