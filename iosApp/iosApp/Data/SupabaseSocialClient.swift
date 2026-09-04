@@ -277,6 +277,32 @@ class SupabaseSocialClient {
     }
 
     // MARK: - Profiles & Public Discovery
+    func getPublicProfile(userId: String, completion: @escaping (Result<SupabaseProfile?, Error>) -> Void) {
+        let cleanId = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanId.isEmpty,
+              let encodedId = cleanId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            completion(.failure(SupabaseSocialError.invalidUrl))
+            return
+        }
+
+        let endpoint = "\(supabaseUrl)/rest/v1/public_profiles?user_id=eq.\(encodedId)&select=*&limit=1"
+
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let profiles = try decoder.decode([SupabaseProfile].self, from: data)
+                    completion(.success(profiles.first))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
     func searchPublicProfiles(query: String, completion: @escaping (Result<[SupabaseProfile], Error>) -> Void) {
         let clean = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased().replacingOccurrences(of: "@", with: "")
         guard let encodedClean = clean.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
