@@ -1001,7 +1001,7 @@ struct FriendsAndTradeScreenView: View {
                 }
 
                 Button(action: {
-                    let friend = friends.first(where: { $0.id == msg.senderId }) ?? FriendItem(id: msg.senderId, username: msg.senderName, displayName: msg.senderName, avatarUrl: msg.senderAvatar, isOnline: false, tradeCount: 0)
+                    let friend = friends.first(where: { $0.id == msg.senderId }) ?? FriendItem(id: msg.senderId, displayName: msg.senderName, username: msg.senderName, avatarUrl: msg.senderAvatar, isOnline: false, tradeCount: 0)
                     selectedFriendForChat = friend
                     showChatModal = true
                 }) {
