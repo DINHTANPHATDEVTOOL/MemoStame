@@ -258,6 +258,147 @@ class SupabaseAuthService {
         }.resume()
     }
 
+    private func isValidAuthUid(_ uid: String) -> Bool {
+        let trimmed = uid.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return false }
+        if trimmed == "user_me" { return false }
+        if trimmed == "guest" { return false }
+        if trimmed.hasPrefix("guest") { return false }
+        return true
+    }
+
+    private func reauthenticateForSensitiveAction(
+        email: String,
+        password: String,
+        completion: @escaping (Result<AuthSessionData, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(supabaseUrl)/auth/v1/token?grant_type=password") else {
+            completion(.failure(SupabaseAuthError.invalidUrl))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "email": email,
+            "password": password
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else { return }
+            let result = self.parseAuthSessionData(data: data, response: response, error: error)
+            completion(result)
+        }.resume()
+    }
+
+    private func parseAuthSessionData(
+        data: Data?,
+        response: URLResponse?,
+        error: Error?
+    ) -> Result<AuthSessionData, Error> {
+        if let err = error {
+            return .failure(SupabaseAuthError.networkError(err.localizedDescription))
+        }
+
+        guard let httpRes = response as? HTTPURLResponse else {
+            return .failure(SupabaseAuthError.parseError)
+        }
+
+        guard let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return .failure(SupabaseAuthError.parseError)
+        }
+
+        if !(200...299).contains(httpRes.statusCode) {
+            let msg = (json["msg"] as? String) ?? (json["error_description"] as? String) ?? (json["message"] as? String) ?? "Auth error"
+            return .failure(SupabaseAuthError.serverError(httpRes.statusCode, msg))
+        }
+
+        let accessToken = json["access_token"] as? String
+        let refreshToken = json["refresh_token"] as? String
+        let userDict = json["user"] as? [String: Any]
+        let userId = userDict?["id"] as? String
+
+        guard let validToken = accessToken, !validToken.isEmpty,
+              let validRefresh = refreshToken, !validRefresh.isEmpty,
+              let validUid = userId, !validUid.isEmpty else {
+            return .failure(SupabaseAuthError.parseError)
+        }
+
+        let userEmail = (userDict?["email"] as? String) ?? ""
+        let expiresIn = (json["expires_in"] as? Double) ?? 3600
+        let expiresAt: Int64
+        if let expAt = json["expires_at"] as? Double {
+            expiresAt = Int64(expAt)
+        } else {
+            expiresAt = Int64(Date().timeIntervalSince1970 + expiresIn)
+        }
+
+        let session = AuthSessionData(
+            accessToken: validToken,
+            refreshToken: validRefresh,
+            expiresAt: expiresAt,
+            userId: validUid,
+            email: userEmail
+        )
+        return .success(session)
+    }
+
+    func changePassword(
+        currentPassword: String,
+        newPassword: String,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard let currentSession = activeSession,
+              isValidAuthUid(currentSession.userId) else {
+            completion(.failure(SupabaseAuthError.sessionExpired))
+            return
+        }
+
+        let expectedUid = currentSession.userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let emailToUse = currentSession.email.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if emailToUse.isEmpty {
+            completion(.failure(SupabaseAuthError.serverError(400, "Chưa xác định được email tài khoản.")))
+            return
+        }
+
+        reauthenticateForSensitiveAction(email: emailToUse, password: currentPassword) { [weak self] reauthResult in
+            guard let self = self else { return }
+            switch reauthResult {
+            case .failure(let err):
+                completion(.failure(err))
+            case .success(let reauthSession):
+                let reauthUid = reauthSession.userId.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard self.isValidAuthUid(reauthUid), reauthUid == expectedUid else {
+                    completion(.failure(SupabaseAuthError.serverError(403, "Mã người dùng xác thực không trùng khớp.")))
+                    return
+                }
+
+                let accessToken = reauthSession.accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !accessToken.isEmpty else {
+                    completion(.failure(SupabaseAuthError.sessionExpired))
+                    return
+                }
+
+                self.updateUserPassword(accessToken: accessToken, newPassword: newPassword) { updateResult in
+                    switch updateResult {
+                    case .failure(let updateErr):
+                        completion(.failure(updateErr))
+                    case .success:
+                        self.activeSession = reauthSession
+                        _ = KeychainStore.saveSession(reauthSession)
+                        completion(.success(()))
+                    }
+                }
+            }
+        }
+    }
+
     private func handleAuthResponse(
         data: Data?,
         response: URLResponse?,

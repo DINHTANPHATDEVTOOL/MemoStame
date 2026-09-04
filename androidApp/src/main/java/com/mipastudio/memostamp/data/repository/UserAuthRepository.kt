@@ -992,36 +992,57 @@ class UserAuthRepository internal constructor(
         saveUserProfile(updated, markLoggedIn = true)
     }
 
+    private fun isValidAuthUid(uid: String?): Boolean {
+        if (uid.isNullOrBlank()) return false
+        val trimmed = uid.trim()
+        if (trimmed == "user_me") return false
+        if (trimmed == "guest") return false
+        if (trimmed.startsWith("guest")) return false
+        return true
+    }
+
     suspend fun updatePassword(
         currentPassword: String,
         newPassword: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        val currentProfile = _currentUser.value
-        val sessionEmail = currentProfile.email.ifBlank {
-            sessionStore.load()?.email ?: ""
-        }
-        val identifier = if (sessionEmail.isNotBlank()) sessionEmail else currentProfile.username
-        if (identifier.isBlank()) {
-            return@withContext Result.failure(IllegalStateException("Chưa xác định được tài khoản người dùng"))
+        val expectedUid = (_authUserId.value ?: _currentUser.value.userId).trim()
+        if (!isValidAuthUid(expectedUid)) {
+            return@withContext Result.failure(IllegalStateException("Phiên đăng nhập không hợp lệ"))
         }
 
-        val authResult = supabaseAuthService.signIn(identifier, currentPassword)
+        val sessionEmail = _currentUser.value.email.ifBlank {
+            sessionStore.load()?.email ?: ""
+        }.trim()
+        if (sessionEmail.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Chưa xác định được email tài khoản"))
+        }
+
+        val authResult = supabaseAuthService.signIn(sessionEmail, currentPassword)
         if (authResult.isFailure) {
             val errMsg = authResult.exceptionOrNull()?.message ?: "Mật khẩu hiện tại không chính xác"
             return@withContext Result.failure(IllegalArgumentException(errMsg))
         }
 
-        val newSession = authResult.getOrThrow()
-        sessionStore.save(newSession)
-        _accessToken.value = newSession.accessToken
-        _refreshToken.value = newSession.refreshToken
-        supabaseClient.userAccessToken = newSession.accessToken
+        val reauthSession = authResult.getOrThrow()
+        val reauthUid = reauthSession.userId.trim()
 
-        val updateResult = supabaseAuthService.updateUserPassword(newSession.accessToken, newPassword)
+        if (!isValidAuthUid(reauthUid) || reauthUid != expectedUid) {
+            return@withContext Result.failure(IllegalStateException("Mã người dùng xác thực không trùng khớp"))
+        }
+
+        val updateResult = supabaseAuthService.updateUserPassword(reauthSession.accessToken, newPassword)
         if (updateResult.isFailure) {
             val errMsg = updateResult.exceptionOrNull()?.message ?: "Cập nhật mật khẩu thất bại"
             return@withContext Result.failure(IllegalStateException(errMsg))
         }
+
+        sessionStore.save(reauthSession)
+        _authUserId.value = reauthSession.userId
+        _accessToken.value = reauthSession.accessToken
+        _refreshToken.value = reauthSession.refreshToken
+        _isLoggedIn.value = true
+        _isSessionPersistent.value = true
+        supabaseClient.userAccessToken = reauthSession.accessToken
 
         Result.success(Unit)
     }
