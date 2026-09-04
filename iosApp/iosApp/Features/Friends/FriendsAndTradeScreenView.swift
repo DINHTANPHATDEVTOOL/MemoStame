@@ -985,42 +985,42 @@ struct FriendsAndTradeScreenView: View {
             }
             .transition(.move(edge: .top).combined(with: .opacity))
         }
-    }
-    .sheet(isPresented: $showTradeModal) {
-        if let friend = selectedFriendForTrade {
-            TradeStampModalView(
-                friend: friend,
-                stamps: stamps,
-                onSendTrade: { stampId in
-                    let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
-                    refreshTrigger.toggle()
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                    showTradeModal = false
-                    if success {
-                        triggerToast("Sent trade offer to \(friend.displayName)!")
+        .sheet(isPresented: $showTradeModal) {
+            if let friend = selectedFriendForTrade {
+                TradeStampModalView(
+                    friend: friend,
+                    stamps: stamps,
+                    onSendTrade: { stampId in
+                        let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
+                        refreshTrigger.toggle()
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                        showTradeModal = false
+                        if success {
+                            triggerToast("Sent trade offer to \(friend.displayName)!")
+                        }
                     }
-                }
+                )
+            }
+        }
+        .sheet(item: $selectedFriendForChat) { friend in
+            ChatScreenView(
+                recipientUserId: friend.id,
+                recipientName: friend.displayName,
+                recipientIsOnline: friend.isOnline,
+                currentUserId: currentUid,
+                repository: repository,
+                onDismiss: { selectedFriendForChat = nil }
             )
         }
-    }
-    .sheet(item: $selectedFriendForChat) { friend in
-        ChatScreenView(
-            recipientUserId: friend.id,
-            recipientName: friend.displayName,
-            recipientIsOnline: friend.isOnline,
-            currentUserId: currentUid,
-            repository: repository,
-            onDismiss: { selectedFriendForChat = nil }
-        )
-    }
-    .sheet(isPresented: $showQrCodeModal) {
-        FriendQrCodeSheetView(repository: repository)
-    }
-    .onAppear {
-        friendRepo.loadCloudData()
-        chatRepo.onUserChanged(newUserId: currentUid)
-        for friend in friendRepo.friends {
-            chatRepo.loadConversation(otherUserId: friend.id)
+        .sheet(isPresented: $showQrCodeModal) {
+            FriendQrCodeSheetView(repository: repository)
+        }
+        .onAppear {
+            friendRepo.loadCloudData()
+            chatRepo.onUserChanged(newUserId: currentUid)
+            for friend in friendRepo.friends {
+                chatRepo.loadConversation(otherUserId: friend.id)
+            }
         }
     }
 
