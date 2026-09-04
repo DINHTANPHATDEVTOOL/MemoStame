@@ -13,19 +13,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FakeSharedPreferences : android.content.SharedPreferences {
-    private val map = mutableMapOf<String, Any?>()
+    private val map = java.util.Collections.synchronizedMap(mutableMapOf<String, Any?>())
 
-    override fun getAll(): MutableMap<String, *> = map
-    override fun getString(key: String?, defValue: String?): String? = map[key] as? String ?: defValue
+    override fun getAll(): MutableMap<String, *> = synchronized(map) { map.toMap().toMutableMap() }
+    override fun getString(key: String?, defValue: String?): String? = synchronized(map) { (map[key] as? String) ?: defValue }
     override fun getStringSet(key: String?, defValue: MutableSet<String>?): MutableSet<String>? {
-        @Suppress("UNCHECKED_CAST")
-        return (map[key] as? Set<String>)?.toMutableSet() ?: defValue
+        return synchronized(map) {
+            @Suppress("UNCHECKED_CAST")
+            (map[key] as? Set<String>)?.toMutableSet() ?: defValue?.toMutableSet()
+        }
     }
-    override fun getInt(key: String?, defValue: Int): Int = map[key] as? Int ?: defValue
-    override fun getLong(key: String?, defValue: Long): Long = map[key] as? Long ?: defValue
-    override fun getFloat(key: String?, defValue: Float): Float = map[key] as? Float ?: defValue
-    override fun getBoolean(key: String?, defValue: Boolean): Boolean = map[key] as? Boolean ?: defValue
-    override fun contains(key: String?): Boolean = map.containsKey(key)
+    override fun getInt(key: String?, defValue: Int): Int = synchronized(map) { (map[key] as? Int) ?: defValue }
+    override fun getLong(key: String?, defValue: Long): Long = synchronized(map) { (map[key] as? Long) ?: defValue }
+    override fun getFloat(key: String?, defValue: Float): Float = synchronized(map) { (map[key] as? Float) ?: defValue }
+    override fun getBoolean(key: String?, defValue: Boolean): Boolean = synchronized(map) { (map[key] as? Boolean) ?: defValue }
+    override fun contains(key: String?): Boolean = synchronized(map) { map.containsKey(key) }
     override fun edit(): android.content.SharedPreferences.Editor = EditorImpl()
     override fun registerOnSharedPreferenceChangeListener(listener: android.content.SharedPreferences.OnSharedPreferenceChangeListener?) {}
     override fun unregisterOnSharedPreferenceChangeListener(listener: android.content.SharedPreferences.OnSharedPreferenceChangeListener?) {}
@@ -33,16 +35,16 @@ class FakeSharedPreferences : android.content.SharedPreferences {
     inner class EditorImpl : android.content.SharedPreferences.Editor {
         private val tempMap = mutableMapOf<String, Any?>()
 
-        override fun putString(key: String?, value: String?): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
-        override fun putStringSet(key: String?, values: MutableSet<String>?): android.content.SharedPreferences.Editor { tempMap[key!!] = values?.toSet(); return this }
-        override fun putInt(key: String?, value: Int): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
-        override fun putLong(key: String?, value: Long): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
-        override fun putFloat(key: String?, value: Float): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
-        override fun putBoolean(key: String?, value: Boolean): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
+        override fun putString(key: String?, value: String?): android.content.SharedPreferences.Editor { if (key != null) tempMap[key] = value; return this }
+        override fun putStringSet(key: String?, values: MutableSet<String>?): android.content.SharedPreferences.Editor { if (key != null) tempMap[key] = values?.toSet(); return this }
+        override fun putInt(key: String?, value: Int): android.content.SharedPreferences.Editor { if (key != null) tempMap[key] = value; return this }
+        override fun putLong(key: String?, value: Long): android.content.SharedPreferences.Editor { if (key != null) tempMap[key] = value; return this }
+        override fun putFloat(key: String?, value: Float): android.content.SharedPreferences.Editor { if (key != null) tempMap[key] = value; return this }
+        override fun putBoolean(key: String?, value: Boolean): android.content.SharedPreferences.Editor { if (key != null) tempMap[key] = value; return this }
         override fun remove(key: String?): android.content.SharedPreferences.Editor { tempMap.remove(key); return this }
         override fun clear(): android.content.SharedPreferences.Editor { tempMap.clear(); return this }
-        override fun commit(): Boolean { map.putAll(tempMap); return true }
-        override fun apply() { map.putAll(tempMap) }
+        override fun commit(): Boolean { synchronized(map) { map.putAll(tempMap) }; return true }
+        override fun apply() { synchronized(map) { map.putAll(tempMap) } }
     }
 }
 

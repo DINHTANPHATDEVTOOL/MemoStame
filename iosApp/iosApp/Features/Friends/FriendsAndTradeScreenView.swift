@@ -242,6 +242,80 @@ struct FriendsAndTradeScreenView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         if selectedTab == 0 {
+                            friendsTabContent
+                        } else if selectedTab == 1 {
+                            tradeRequestsTabContent
+                        } else if selectedTab == 2 {
+                            directChatTabContent
+                        } else if selectedTab == 3 {
+                            receivedStampsInboxTabContent
+                        }
+                    }
+                }
+                .padding()
+                .padding(.bottom, 140)
+            }
+        }
+        .background(MSColors.paper.ignoresSafeArea())
+
+        if showToast, let msg = toastMessage {
+            VStack {
+                Text(msg)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.8))
+                    .cornerRadius(20)
+                    .shadow(radius: 4)
+                    .padding(.top, 40)
+                Spacer()
+            }
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+    .sheet(isPresented: $showTradeModal) {
+            if let friend = selectedFriendForTrade {
+                TradeStampModalView(
+                    friend: friend,
+                    stamps: stamps,
+                    onSendTrade: { stampId in
+                        let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
+                        refreshTrigger.toggle()
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                        showTradeModal = false
+                        if success {
+                            triggerToast("Sent trade offer to \(friend.displayName)!")
+                        }
+                    }
+                )
+            }
+        }
+        .sheet(item: $selectedFriendForChat) { friend in
+            ChatScreenView(
+                recipientUserId: friend.id,
+                recipientName: friend.displayName,
+                recipientIsOnline: friend.isOnline,
+                currentUserId: currentUid,
+                repository: repository,
+                onDismiss: { selectedFriendForChat = nil }
+            )
+        }
+        .sheet(isPresented: $showQrCodeModal) {
+            FriendQrCodeSheetView(repository: repository)
+        }
+        .onAppear {
+            friendRepo.loadCloudData()
+            chatRepo.onUserChanged(newUserId: currentUid)
+            for friend in friendRepo.friends {
+                chatRepo.loadConversation(otherUserId: friend.id)
+            }
+        }
+
+    
+    // MARK: - Tab Content Subviews
+    @ViewBuilder
+    private var friendsTabContent: some View {
                             // Incoming Friend Requests Notification Section
                             if !incomingFriendRequests.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
@@ -511,7 +585,10 @@ struct FriendsAndTradeScreenView: View {
                                     .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                                 }
                             }
-                        } else if selectedTab == 1 {
+    }
+
+    @ViewBuilder
+    private var tradeRequestsTabContent: some View {
                             // Trade Requests
                             if incomingTradeRequests.isEmpty && outgoingTradeRequests.isEmpty {
                                 VStack(spacing: 10) {
@@ -681,7 +758,10 @@ struct FriendsAndTradeScreenView: View {
                                     }
                                 }
                             }
-                        } else if selectedTab == 2 {
+    }
+
+    @ViewBuilder
+    private var directChatTabContent: some View {
                             // Tab 2: Direct Chat Conversations
                             if friends.isEmpty {
                                 VStack(spacing: 12) {
@@ -769,8 +849,10 @@ struct FriendsAndTradeScreenView: View {
                                     }
                                 }
                             }
-                        }
-                    } else if selectedTab == 3 {
+    }
+
+    @ViewBuilder
+    private var receivedStampsInboxTabContent: some View {
                         // Tab 3: Received Stamps Inbox
                         if visibleReceivedStamps.isEmpty {
                             VStack(spacing: 12) {
@@ -962,67 +1044,7 @@ struct FriendsAndTradeScreenView: View {
                                 .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                             }
                         }
-                    }
-                }
-                .padding()
-                .padding(.bottom, 140)
-            }
-        }
-        .background(MSColors.paper.ignoresSafeArea())
-
-        if showToast, let msg = toastMessage {
-            VStack {
-                Text(msg)
-                    .font(.subheadline.bold())
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.8))
-                    .cornerRadius(20)
-                    .shadow(radius: 4)
-                    .padding(.top, 40)
-                Spacer()
-            }
-            .transition(.move(edge: .top).combined(with: .opacity))
-        }
     }
-    .sheet(isPresented: $showTradeModal) {
-            if let friend = selectedFriendForTrade {
-                TradeStampModalView(
-                    friend: friend,
-                    stamps: stamps,
-                    onSendTrade: { stampId in
-                        let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
-                        refreshTrigger.toggle()
-                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                        showTradeModal = false
-                        if success {
-                            triggerToast("Sent trade offer to \(friend.displayName)!")
-                        }
-                    }
-                )
-            }
-        }
-        .sheet(item: $selectedFriendForChat) { friend in
-            ChatScreenView(
-                recipientUserId: friend.id,
-                recipientName: friend.displayName,
-                recipientIsOnline: friend.isOnline,
-                currentUserId: currentUid,
-                repository: repository,
-                onDismiss: { selectedFriendForChat = nil }
-            )
-        }
-        .sheet(isPresented: $showQrCodeModal) {
-            FriendQrCodeSheetView(repository: repository)
-        }
-        .onAppear {
-            friendRepo.loadCloudData()
-            chatRepo.onUserChanged(newUserId: currentUid)
-            for friend in friendRepo.friends {
-                chatRepo.loadConversation(otherUserId: friend.id)
-            }
-        }
 
     private func triggerToast(_ msg: String) {
         toastMessage = msg
@@ -1107,6 +1129,7 @@ struct TradeStampModalView: View {
             .padding(.bottom, 20)
         }
     }
+}
 
 // Subview: Personal Friend QR Code Sheet
 struct FriendQrCodeSheetView: View {
