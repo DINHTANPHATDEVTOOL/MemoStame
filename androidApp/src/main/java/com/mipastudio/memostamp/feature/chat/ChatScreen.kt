@@ -114,6 +114,10 @@ fun ChatScreen(
         if (clean.isBlank() && selectedStampToSend == null) return
 
         val stamp = selectedStampToSend
+        if (stamp != null && !com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stamp.stampImagePath)) {
+            Toast.makeText(context, "Ảnh tem chưa được đồng bộ để chia sẻ giữa các thiết bị.", Toast.LENGTH_SHORT).show()
+        }
+
         coroutineScope.launch {
             val res = chatRepo.sendMessageCloud(
                 recipient = recipient,
@@ -493,14 +497,47 @@ fun ChatScreen(
                             .fillMaxWidth(0.85f)
                             .aspectRatio(0.8f)
                     ) {
-                        AsyncImage(
-                            model = MemoImageProcessor.resolveImageModel(msg.stampImageUrl),
-                            contentDescription = msg.stampTitle,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp))
-                        )
+                        if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(msg.stampImageUrl)) {
+                            AsyncImage(
+                                model = msg.stampImageUrl,
+                                contentDescription = msg.stampTitle,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(12.dp))
+                            )
+                        } else {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.LocalPostOffice,
+                                        contentDescription = null,
+                                        tint = AccentRed,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        text = msg.stampTitle ?: "Tem kỷ niệm",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = PrimaryText,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "Ảnh tem chưa được đồng bộ để chia sẻ giữa các thiết bị.",
+                                        fontSize = 11.sp,
+                                        color = SecondaryText,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
@@ -608,7 +645,8 @@ private fun ChatMessageBubble(
             ) {
                 Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                     // Attached Stamp Card inside Chat Bubble
-                    if (!message.stampImageUrl.isNullOrBlank()) {
+                    val hasStamp = !message.stampId.isNullOrBlank() || !message.stampTitle.isNullOrBlank() || !message.stampImageUrl.isNullOrBlank()
+                    if (hasStamp) {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = if (isMe) Color.Black.copy(alpha = 0.2f) else WarmPaperBg,
@@ -623,14 +661,31 @@ private fun ChatMessageBubble(
                                 modifier = Modifier.padding(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                AsyncImage(
-                                    model = MemoImageProcessor.resolveImageModel(message.stampImageUrl),
-                                    contentDescription = message.stampTitle,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(RoundedCornerShape(6.dp))
+                                if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(message.stampImageUrl)) {
+                                    AsyncImage(
+                                        model = message.stampImageUrl,
+                                        contentDescription = message.stampTitle,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(6.dp))
                                     )
+                                } else {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(if (isMe) Color.White.copy(alpha = 0.2f) else AccentRedSoft)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.LocalPostOffice,
+                                            contentDescription = null,
+                                            tint = if (isMe) Color.White else AccentRed,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
@@ -648,7 +703,7 @@ private fun ChatMessageBubble(
                                         maxLines = 1
                                     )
                                     Text(
-                                        "Chạm để xem tem ↗",
+                                        "Chạm để xem chi tiết ↗",
                                         fontSize = 9.sp,
                                         color = if (isMe) AccentRedSoft else AccentRed,
                                         fontWeight = FontWeight.Bold

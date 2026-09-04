@@ -337,6 +337,9 @@ struct ChatScreenView: View {
     }
 
     private func sendStampMessage(stamp: StampItem) {
+        if !isValidRemoteStampUrl(stamp.stampImagePath) {
+            print("Notice: Stamp image is local-only, sending stamp message safely with null stampImageUrl.")
+        }
         let textToSend = "Đã gửi tem kỷ niệm: \(stamp.title)"
         HapticFeedbackManager.shared.playImpact(style: .medium)
 
@@ -359,13 +362,28 @@ struct ChatMessageBubble: View {
             if message.isFromCurrentUser { Spacer() }
 
             VStack(alignment: message.isFromCurrentUser ? .trailing : .leading, spacing: 6) {
-                if let stampUrl = message.stampUrl, !stampUrl.isEmpty {
+                if message.stamp != nil || isValidRemoteStampUrl(message.stampUrl) {
                     VStack(alignment: .leading, spacing: 4) {
-                        MemoStampImageView(urlString: stampUrl) {
-                            MSColors.lightGrey
+                        if let stampUrl = message.stampUrl, isValidRemoteStampUrl(stampUrl) {
+                            MemoStampImageView(urlString: stampUrl) {
+                                MSColors.lightGrey
+                            }
+                            .frame(width: 140, height: 140)
+                            .cornerRadius(8)
+                        } else {
+                            VStack(spacing: 6) {
+                                Image(systemName: "envelope.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(message.isFromCurrentUser ? .white : MSColors.stamp)
+                                Text(message.stampTitle ?? "Tem kỷ niệm")
+                                    .font(.caption.bold())
+                                    .foregroundColor(message.isFromCurrentUser ? .white : MSColors.ink)
+                                    .lineLimit(1)
+                            }
+                            .frame(width: 140, height: 90)
+                            .background(message.isFromCurrentUser ? Color.white.opacity(0.2) : MSColors.lightGrey.opacity(0.3))
+                            .cornerRadius(8)
                         }
-                        .frame(width: 140, height: 140)
-                        .cornerRadius(8)
 
                         if let title = message.stampTitle {
                             Text("✦ \(title)")

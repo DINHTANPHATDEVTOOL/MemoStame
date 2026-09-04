@@ -82,6 +82,7 @@ data class SupabaseDirectMessageRecord(
 ) {
     fun toDomain(): DirectMessage {
         val millis = SupabaseClient.parseIsoStringToMillis(createdAt?.toString() ?: "")
+        val safeImageUrl = if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stampImageUrl)) stampImageUrl?.trim() else null
         return DirectMessage(
             id = id,
             senderId = senderId,
@@ -93,7 +94,7 @@ data class SupabaseDirectMessageRecord(
             text = text,
             stampId = stampId,
             stampTitle = stampTitle,
-            stampImageUrl = stampImageUrl,
+            stampImageUrl = safeImageUrl,
             stampLocation = stampLocation,
             createdAt = millis,
             isRead = isRead
@@ -738,6 +739,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         } catch (_: Throwable) {
             null
         }
+        val safeStampImageUrl = if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(msg.stampImageUrl)) msg.stampImageUrl?.trim() else null
         val record = SupabaseDirectMessageRecord(
             id = validId,
             senderId = msg.senderId,
@@ -749,7 +751,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
             text = msg.text,
             stampId = msg.stampId,
             stampTitle = msg.stampTitle,
-            stampImageUrl = msg.stampImageUrl,
+            stampImageUrl = safeStampImageUrl,
             stampLocation = msg.stampLocation,
             createdAt = isoCreatedAt,
             isRead = msg.isRead
