@@ -24,6 +24,13 @@ struct PersistedChatMessageData: Codable {
     let stampLocation: String?
 }
 
+struct IOSChatConversation: Identifiable {
+    var id: String { otherUser.id }
+    let otherUser: FriendItem
+    let lastMessage: ChatMessage?
+    let unreadCount: Int
+}
+
 class IOSChatRepository: ObservableObject {
     static let shared = IOSChatRepository()
 
@@ -37,6 +44,60 @@ class IOSChatRepository: ObservableObject {
     private let fileManager = FileManager.default
 
     private init() {}
+
+    static func parseIsoStringToMillis(_ dateStr: String?) -> Int64 {
+        guard let dateStr = dateStr?.trimmingCharacters(in: .whitespacesAndNewlines), !dateStr.isEmpty else {
+            return Int64(Date().timeIntervalSince1970 * 1000)
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: dateStr) {
+            return Int64(date.timeIntervalSince1970 * 1000)
+        }
+        formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: dateStr) {
+            return Int64(date.timeIntervalSince1970 * 1000)
+        }
+        if let millis = Int64(dateStr) {
+            return millis
+        }
+        return Int64(Date().timeIntervalSince1970 * 1000)
+    }
+
+    var totalUnreadCount: Int {
+        var count = 0
+        for (_, msgs) in conversationMessages {
+            count += msgs.filter { !$0.isMe && $0.recipientId == activeUserId && !$0.isRead }.count
+        }
+        return count
+    }
+
+    func getConversationList(friends: [FriendItem]) -> [IOSChatConversation] {
+        guard !activeUserId.isEmpty else { return [] }
+        return friends.map { friend in
+            let msgs = conversationMessages[friend.id] ?? []
+            let sortedHistory = msgs.sorted { (m1, m2) -> Bool in
+                if m1.createdAt == m2.createdAt {
+                    return m1.id > m2.id
+                }
+                return m1.createdAt > m2.createdAt
+            }
+            let last = sortedHistory.first
+            let unread = msgs.filter { !$0.isMe && $0.recipientId == activeUserId && !$0.isRead }.count
+            return IOSChatConversation(
+                otherUser: friend,
+                lastMessage: last,
+                unreadCount: unread
+            )
+        }.sorted { (c1, c2) -> Bool in
+            let t1 = c1.lastMessage?.createdAt ?? 0
+            let t2 = c2.lastMessage?.createdAt ?? 0
+            if t1 == t2 {
+                return c1.otherUser.displayName < c2.otherUser.displayName
+            }
+            return t1 > t2
+        }
+    }
 
     private func sanitizeUserId(_ userId: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_-"))
@@ -57,8 +118,21 @@ class IOSChatRepository: ObservableObject {
         return docs.appendingPathComponent("memostamp_chat_v2_\(safeUid)_\(safeRid).json")
     }
 
+    func onLogout() {
+        SupabaseRealtimeClient.shared.disconnect(clearState: true)
+        self.conversationMessages = [:]
+        self.messageDedupeSet = []
+        self.activeRecipientId = nil
+        self.errorMessage = nil
+        self.activeUserId = ""
+    }
+
     func onUserChanged(newUserId: String) {
         let cleanUid = newUserId.trimmingCharacters(in: .whitespacesAndNewlines)
+        if cleanUid.isEmpty {
+            onLogout()
+            return
+        }
         if cleanUid == activeUserId { return }
 
         // Disconnect Realtime for user switch isolation
@@ -70,8 +144,6 @@ class IOSChatRepository: ObservableObject {
         self.activeRecipientId = nil
         self.errorMessage = nil
         self.activeUserId = cleanUid
-
-        guard !cleanUid.isEmpty else { return }
 
         // Setup Realtime WebSocket for new user
         if let token = SupabaseAuthService.shared.activeSession?.accessToken, !token.isEmpty {
@@ -196,22 +268,7 @@ class IOSChatRepository: ObservableObject {
                     let domainMsgs = records.compactMap { r -> ChatMessage? in
                         guard SupabaseSocialClient.shared.isValidUuid(r.id) else { return nil }
                         let isMe = r.senderId == self.activeUserId
-
-                        var timestamp: Int64 = Int64(Date().timeIntervalSince1970 * 1000)
-                        if let dateStr = r.createdAt {
-                            let formatter = ISO8601DateFormatter()
-                            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                            if let date = formatter.date(from: dateStr) {
-                                timestamp = Int64(date.timeIntervalSince1970 * 1000)
-                            } else {
-                                formatter.formatOptions = [.withInternetDateTime]
-                                if let date = formatter.date(from: dateStr) {
-                                    timestamp = Int64(date.timeIntervalSince1970 * 1000)
-                                } else if let millis = Int64(dateStr) {
-                                    timestamp = millis
-                                }
-                            }
-                        }
+                        let timestamp = IOSChatRepository.parseIsoStringToMillis(r.createdAt)
 
                         var stamp: StampItem? = nil
                         if let sid = r.stampId, !sid.isEmpty {
@@ -412,7 +469,7 @@ class IOSChatRepository: ObservableObject {
         messageDedupeSet.insert(record.id)
 
         let isMe = record.senderId == activeUserId
-        let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
+        let timestamp = IOSChatRepository.parseIsoStringToMillis(record.createdAt)
 
         var stamp: StampItem? = nil
         if let sid = record.stampId, !sid.isEmpty {
@@ -448,7 +505,17 @@ class IOSChatRepository: ObservableObject {
         )
 
         var currentList = conversationMessages[otherUserId] ?? []
-        currentList.append(newMsg)
+        if !currentList.contains(where: { $0.id == newMsg.id }) {
+            currentList.append(newMsg)
+        } else if let idx = currentList.firstIndex(where: { $0.id == newMsg.id }) {
+            currentList[idx] = newMsg
+        }
+        currentList.sort { (m1, m2) -> Bool in
+            if m1.createdAt == m2.createdAt {
+                return m1.id < m2.id
+            }
+            return m1.createdAt < m2.createdAt
+        }
         conversationMessages[otherUserId] = currentList
         saveLocalCache(recipientId: otherUserId)
 
