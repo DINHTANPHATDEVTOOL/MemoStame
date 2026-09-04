@@ -985,7 +985,8 @@ struct FriendsAndTradeScreenView: View {
             }
             .transition(.move(edge: .top).combined(with: .opacity))
         }
-        .sheet(isPresented: $showTradeModal) {
+    }
+    .sheet(isPresented: $showTradeModal) {
             if let friend = selectedFriendForTrade {
                 TradeStampModalView(
                     friend: friend,
