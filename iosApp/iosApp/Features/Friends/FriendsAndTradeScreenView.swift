@@ -48,6 +48,14 @@ struct FriendsAndTradeScreenView: View {
         return formatter.string(from: date)
     }
 
+    private func formattedTime(_ timestampMillis: Int64) -> String {
+        guard timestampMillis > 0 else { return "" }
+        let date = Date(timeIntervalSince1970: Double(timestampMillis) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
     var visibleReceivedStamps: [ChatMessage] {
         _ = refreshTrigger
         let processedIds = getProcessedInboxIds(for: currentUid)
