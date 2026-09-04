@@ -255,26 +255,25 @@ struct FriendsAndTradeScreenView: View {
                 .padding()
                 .padding(.bottom, 140)
             }
+
+            if showToast, let msg = toastMessage {
+                VStack {
+                    Text(msg)
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(20)
+                        .shadow(radius: 4)
+                        .padding(.top, 40)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .background(MSColors.paper.ignoresSafeArea())
-
-        if showToast, let msg = toastMessage {
-            VStack {
-                Text(msg)
-                    .font(.subheadline.bold())
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.8))
-                    .cornerRadius(20)
-                    .shadow(radius: 4)
-                    .padding(.top, 40)
-                Spacer()
-            }
-            .transition(.move(edge: .top).combined(with: .opacity))
-        }
-    }
-    .sheet(isPresented: $showTradeModal) {
+        .sheet(isPresented: $showTradeModal) {
             if let friend = selectedFriendForTrade {
                 TradeStampModalView(
                     friend: friend,
