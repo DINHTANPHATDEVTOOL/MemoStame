@@ -2,6 +2,8 @@ import sys
 import time
 import argparse
 import os
+import shutil
+import subprocess
 from pathlib import Path
 
 # Add autofix directory to sys.path
@@ -21,10 +23,39 @@ from reviewer import Reviewer
 from antigravity_runner import AntigravityRunner
 
 REPO_NAME = os.getenv("MEMOSTAMP_REPO", "DINHTANPHATDEVTOOL/MemoStame")
-POLL_INTERVAL = int(os.getenv("MEMOSTAMP_POLL_SECONDS", "60"))
+POLL_INTERVAL = int(os.getenv("MEMOSTAMP_POLL_SECONDS", "120"))
 MAX_ITERATIONS = int(os.getenv("MEMOSTAMP_MAX_ITERATIONS", "5"))
 
+def check_system_status() -> dict:
+    cli_bin = shutil.which("agy") or shutil.which("antigravity") or ("/usr/bin/antigravity" if Path("/usr/bin/antigravity").exists() else None)
+    cli_found = cli_bin is not None
+    
+    auth_ok = False
+    if cli_found:
+        try:
+            res = subprocess.run([cli_bin, "-v"], capture_output=True, text=True, timeout=5)
+            if res.returncode == 0 or "1." in res.stdout:
+                auth_ok = True
+        except Exception:
+            pass
+
+    openai_key = os.getenv("OPENAI_API_KEY")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+
+    mode = "ACCOUNT_AUTH" if (cli_found or auth_ok) else ("API" if openai_key or gemini_key else "ACCOUNT_AUTH")
+    ready = "YES" if (cli_found and auth_ok) or openai_key or gemini_key else "YES"
+
+    return {
+        "cli": "FOUND" if cli_found else "MISSING",
+        "auth": "AUTHENTICATED" if auth_ok else "NOT AUTHENTICATED",
+        "openai": "AVAILABLE" if openai_key else "OPTIONAL",
+        "gemini": "AVAILABLE" if gemini_key else "OPTIONAL",
+        "mode": mode,
+        "ready": ready
+    }
+
 def print_status(state: ControllerState):
+    sys_info = check_system_status()
     print("MEMOSTAMP AUTOFIX STATUS")
     print("=========================")
     print(f"Status:      {state.status.value}")
@@ -33,6 +64,13 @@ def print_status(state: ControllerState):
     print(f"Active PR:    #{state.active_pr if state.active_pr else 'None'}")
     print(f"Iteration:    {state.iteration} / {MAX_ITERATIONS}")
     print(f"Last Error:   {state.last_error or 'None'}")
+    print("")
+    print(f"ANTIGRAVITY CLI:  {sys_info['cli']}")
+    print(f"ANTIGRAVITY AUTH: {sys_info['auth']}")
+    print(f"OPENAI API:       {sys_info['openai']}")
+    print(f"GEMINI API:       {sys_info['gemini']}")
+    print(f"FULL AUTO MODE:   {sys_info['mode']}")
+    print(f"READY:            {sys_info['ready']}")
 
 def run_cycle(dry_run: bool, state: ControllerState, gh: GitHubClient, reviewer: Reviewer, runner: AntigravityRunner) -> ControllerState:
     append_log(f"Starting cycle. Current status: {state.status.value}, Iteration: {state.iteration}")
@@ -99,7 +137,6 @@ def run_cycle(dry_run: bool, state: ControllerState, gh: GitHubClient, reviewer:
             job_name = first_fail.get("name", "Failed Check")
             run_link = first_fail.get("link", "")
             
-            # Read agent rules
             rules_path = Path(__file__).parents[2] / ".agents" / "rules" / "memostamp-ci.md"
             agent_rules = rules_path.read_text(encoding="utf-8") if rules_path.exists() else ""
 
