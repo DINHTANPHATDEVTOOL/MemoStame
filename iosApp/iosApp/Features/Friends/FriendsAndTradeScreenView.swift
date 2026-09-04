@@ -1023,7 +1023,6 @@ struct FriendsAndTradeScreenView: View {
                 chatRepo.loadConversation(otherUserId: friend.id)
             }
         }
-    }
 
     private func triggerToast(_ msg: String) {
         toastMessage = msg
@@ -1108,7 +1107,6 @@ struct TradeStampModalView: View {
             .padding(.bottom, 20)
         }
     }
-}
 
 // Subview: Personal Friend QR Code Sheet
 struct FriendQrCodeSheetView: View {
