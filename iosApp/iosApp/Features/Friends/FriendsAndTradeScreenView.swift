@@ -8,7 +8,7 @@ struct FriendsAndTradeScreenView: View {
     let repository: SharedMemoStampRepository
 
     @State private var friendCode: String = ""
-    @State private var selectedTab: Int = 0 // 0: Friends, 1: Trade Requests
+    @State private var selectedTab: Int = 0 // 0: Friends, 1: Trade Requests, 2: Chat, 3: Inbox
     @State private var selectedFriendForTrade: FriendItem? = nil
     @State private var selectedFriendForChat: FriendItem? = nil
     @State private var showTradeModal: Bool = false
@@ -21,21 +21,47 @@ struct FriendsAndTradeScreenView: View {
     @ObservedObject private var friendRepo = IOSFriendRepository.shared
     @ObservedObject private var chatRepo = IOSChatRepository.shared
 
+    private var authenticatedUid: String? {
+        let uid = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(uid) else {
+            return nil
+        }
+        return uid
+    }
+
     private var currentUid: String {
-        SupabaseAuthService.shared.currentUserId ?? (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+        authenticatedUid ?? ""
+    }
+
+    private func validatedMutationUid() -> String? {
+        guard let uid = authenticatedUid else {
+            triggerToast("Bạn cần đăng nhập để thực hiện thao tác này.")
+            return nil
+        }
+
+        guard let repoUser = repository.currentUser.value as? UserProfile,
+              repoUser.uid == uid else {
+            triggerToast("Không thể xác minh tài khoản. Vui lòng thử lại.")
+            return nil
+        }
+
+        return uid
     }
 
     private func getProcessedInboxIds(for userId: String) -> Set<String> {
-        guard !userId.isEmpty else { return [] }
-        let key = "processed_inbox_\(userId)"
+        guard let uid = authenticatedUid, !userId.isEmpty, userId == uid else { return [] }
+        let key = "processed_inbox_\(uid)"
         let array = UserDefaults.standard.stringArray(forKey: key) ?? []
         return Set(array)
     }
 
     private func markInboxItemProcessed(for userId: String, messageId: String) {
-        guard !userId.isEmpty else { return }
-        let key = "processed_inbox_\(userId)"
-        var current = getProcessedInboxIds(for: userId)
+        guard let uid = authenticatedUid, !userId.isEmpty, userId == uid else {
+            triggerToast("Bạn cần đăng nhập để thực hiện thao tác này.")
+            return
+        }
+        let key = "processed_inbox_\(uid)"
+        var current = getProcessedInboxIds(for: uid)
         current.insert(messageId)
         UserDefaults.standard.set(Array(current), forKey: key)
         refreshTrigger.toggle()
@@ -58,11 +84,12 @@ struct FriendsAndTradeScreenView: View {
 
     var visibleReceivedStamps: [ChatMessage] {
         _ = refreshTrigger
-        let processedIds = getProcessedInboxIds(for: currentUid)
+        guard let uid = authenticatedUid else { return [] }
+        let processedIds = getProcessedInboxIds(for: uid)
         var result: [ChatMessage] = []
         for (_, msgs) in chatRepo.conversationMessages {
             for msg in msgs {
-                if !msg.isMe && msg.recipientId == currentUid && msg.stamp != nil && !processedIds.contains(msg.id) {
+                if !msg.isMe && msg.recipientId == uid && msg.stamp != nil && !processedIds.contains(msg.id) {
                     result.append(msg)
                 }
             }
@@ -92,14 +119,16 @@ struct FriendsAndTradeScreenView: View {
     }
 
     var incomingTradeRequests: [TradeRequest] {
-        allTradeRequests.filter { trade in
-            trade.recipientId == currentUid
+        guard let uid = authenticatedUid else { return [] }
+        return allTradeRequests.filter { trade in
+            trade.recipientId == uid
         }
     }
 
     var outgoingTradeRequests: [TradeRequest] {
-        allTradeRequests.filter { trade in
-            trade.senderId == currentUid && trade.recipientId != currentUid
+        guard let uid = authenticatedUid else { return [] }
+        return allTradeRequests.filter { trade in
+            trade.senderId == uid && trade.recipientId != uid
         }
     }
 
@@ -124,7 +153,13 @@ struct FriendsAndTradeScreenView: View {
                         Spacer()
 
                         // QR Code Profile Button
-                        Button(action: { showQrCodeModal = true }) {
+                        Button(action: {
+                            guard authenticatedUid != nil else {
+                                triggerToast("Bạn cần đăng nhập để xem mã QR.")
+                                return
+                            }
+                            showQrCodeModal = true
+                        }) {
                             HStack(spacing: 4) {
                                 Image(systemName: "qrcode")
                                     .font(.system(size: 16, weight: .bold))
@@ -148,6 +183,10 @@ struct FriendsAndTradeScreenView: View {
                             .font(.subheadline)
                             .foregroundColor(MSColors.ink)
                         Button(action: {
+                            guard authenticatedUid != nil else {
+                                triggerToast("Bạn cần đăng nhập để gửi lời mời kết bạn.")
+                                return
+                            }
                             friendRepo.sendFriendRequestByUsernameOrId(input: friendCode) { result in
                                 switch result {
                                 case .success(let msg):
@@ -288,12 +327,21 @@ struct FriendsAndTradeScreenView: View {
                     friend: friend,
                     stamps: stamps,
                     onSendTrade: { stampId in
+                        guard let uid = validatedMutationUid() else { return }
+                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
                         let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
-                        refreshTrigger.toggle()
-                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                        showTradeModal = false
-                        if success {
+                        if !success {
+                            triggerToast("Không thể gửi yêu cầu trao đổi.")
+                            return
+                        }
+                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
+                        if persisted {
+                            refreshTrigger.toggle()
+                            showTradeModal = false
                             triggerToast("Sent trade offer to \(friend.displayName)!")
+                        } else {
+                            repository.restoreTradeRequests(trades: previousTrades)
+                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
                         }
                     }
                 )
@@ -314,9 +362,13 @@ struct FriendsAndTradeScreenView: View {
         }
         .onAppear {
             friendRepo.loadCloudData()
-            chatRepo.onUserChanged(newUserId: currentUid)
-            for friend in friendRepo.friends {
-                chatRepo.loadConversation(otherUserId: friend.id)
+            if let uid = authenticatedUid {
+                chatRepo.onUserChanged(newUserId: uid)
+                for friend in friendRepo.friends {
+                    chatRepo.loadConversation(otherUserId: friend.id)
+                }
+            } else {
+                chatRepo.onLogout()
             }
         }
     }
@@ -324,448 +376,477 @@ struct FriendsAndTradeScreenView: View {
     // MARK: - Tab Content Subviews
     @ViewBuilder
     private var friendsTabContent: some View {
-                            // Incoming Friend Requests Notification Section
-                            if !incomingFriendRequests.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "envelope.badge.fill")
-                                            .foregroundColor(MSColors.stamp)
-                                        Text("LỜI MỜI KẾT BẠN MỚI (\(incomingFriendRequests.count))")
-                                            .font(.caption2.bold())
-                                            .foregroundColor(MSColors.grey)
-                                    }
-                                    .padding(.horizontal, 4)
+        // Incoming Friend Requests Notification Section
+        if !incomingFriendRequests.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "envelope.badge.fill")
+                        .foregroundColor(MSColors.stamp)
+                    Text("LỜI MỜI KẾT BẠN MỚI (\(incomingFriendRequests.count))")
+                        .font(.caption2.bold())
+                        .foregroundColor(MSColors.grey)
+                }
+                .padding(.horizontal, 4)
 
-                                    ForEach(incomingFriendRequests, id: \.id) { req in
-                                        HStack(spacing: 10) {
-                                            AsyncImage(url: URL(string: req.senderAvatar)) { phase in
-                                                if let img = phase.image {
-                                                    img.resizable().aspectRatio(contentMode: .fill)
-                                                } else {
-                                                    Circle().fill(MSColors.stamp.opacity(0.15))
-                                                }
-                                            }
-                                            .frame(width: 40, height: 40)
-                                            .clipShape(Circle())
-
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(req.senderName)
-                                                    .font(.subheadline.bold())
-                                                    .foregroundColor(MSColors.ink)
-                                                Text("@" + req.senderUsername)
-                                                    .font(.caption)
-                                                    .foregroundColor(MSColors.grey)
-                                            }
-
-                                              Button(action: {
-                                                friendRepo.acceptRequest(requestId: req.id) { result in
-                                                    switch result {
-                                                    case .success:
-                                                        triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
-                                                    case .failure(let err):
-                                                        triggerToast("Lỗi: \(err.localizedDescription)")
-                                                    }
-                                                }
-                                            }) {
-                                                Text("Chấp nhận")
-                                                    .font(.caption.bold())
-                                                    .padding(.horizontal, 10)
-                                                    .padding(.vertical, 6)
-                                                    .background(Color.green)
-                                                    .foregroundColor(.white)
-                                                    .cornerRadius(10)
-                                            }
-
-                                            Button(action: {
-                                                friendRepo.declineRequest(requestId: req.id) { result in
-                                                    switch result {
-                                                    case .success:
-                                                        triggerToast("Đã từ chối lời mời kết bạn.")
-                                                    case .failure(let err):
-                                                        triggerToast("Lỗi: \(err.localizedDescription)")
-                                                    }
-                                                }
-                                            }) {
-                                                Text("Từ chối")
-                                                    .font(.caption.bold())
-                                                    .padding(.horizontal, 10)
-                                                    .padding(.vertical, 6)
-                                                    .background(Color.gray.opacity(0.15))
-                                                    .foregroundColor(MSColors.ink)
-                                                    .cornerRadius(10)
-                                            }
-                                        }
-                                        .padding(10)
-                                        .background(Color.white)
-                                        .cornerRadius(14)
-                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1))
-                                    }
-                                }
-                                .padding(.bottom, 8)
-                            }
-
-                            // Outgoing Friend Requests Section
-                            if !outgoingFriendRequests.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "paperplane.fill")
-                                            .foregroundColor(MSColors.grey)
-                                        Text("LỜI MỜI ĐÃ GỬI (\(outgoingFriendRequests.count))")
-                                            .font(.caption2.bold())
-                                            .foregroundColor(MSColors.grey)
-                                    }
-                                    .padding(.horizontal, 4)
-
-                                    ForEach(outgoingFriendRequests, id: \.id) { req in
-                                        HStack(spacing: 10) {
-                                            Circle().fill(MSColors.stamp.opacity(0.15))
-                                                .frame(width: 40, height: 40)
-                                                .overlay(
-                                                    Text("@")
-                                                        .font(.caption.bold())
-                                                        .foregroundColor(MSColors.stamp)
-                                                )
-
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text("Đã gửi lời mời tới @\(req.recipientUsername.isEmpty ? req.senderUsername : req.recipientUsername)")
-                                                    .font(.subheadline.bold())
-                                                    .foregroundColor(MSColors.ink)
-                                                Text("Đang chờ phản hồi...")
-                                                    .font(.caption)
-                                                    .foregroundColor(MSColors.grey)
-                                            }
-
-                                            Spacer()
-
-                                            Button(action: {
-                                                friendRepo.cancelRequest(requestId: req.id) { result in
-                                                    switch result {
-                                                    case .success:
-                                                        triggerToast("Đã hủy lời mời kết bạn.")
-                                                    case .failure(let err):
-                                                        triggerToast("Lỗi: \(err.localizedDescription)")
-                                                    }
-                                                }
-                                            }) {
-                                                Text("Hủy lời mời")
-                                                    .font(.caption.bold())
-                                                    .padding(.horizontal, 10)
-                                                    .padding(.vertical, 6)
-                                                    .background(Color.red.opacity(0.12))
-                                                    .foregroundColor(.red)
-                                                    .cornerRadius(10)
-                                            }
-                                        }
-                                        .padding(10)
-                                        .background(Color.white)
-                                        .cornerRadius(14)
-                                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.lightGrey, lineWidth: 1))
-                                    }
-                                }
-                                .padding(.bottom, 8)
-                            }
-
-                            // Friends List
-                            if friends.isEmpty {
-                                VStack(spacing: 10) {
-                                    Image(systemName: "person.2.slash")
-                                        .font(.system(size: 38))
-                                        .foregroundColor(MSColors.stamp.opacity(0.6))
-                                    Text("Chưa có bạn bè nào")
-                                        .font(.headline)
-                                        .foregroundColor(MSColors.ink)
-                                    Text("Nhập mã kết bạn ở trên để giao lưu tem.")
-                                        .font(.caption)
-                                        .foregroundColor(MSColors.grey)
-                                }
-                                .padding(.top, 40)
+                ForEach(incomingFriendRequests, id: \.id) { req in
+                    HStack(spacing: 10) {
+                        AsyncImage(url: URL(string: req.senderAvatar)) { phase in
+                            if let img = phase.image {
+                                img.resizable().aspectRatio(contentMode: .fill)
                             } else {
-                                ForEach(friends, id: \.id) { friend in
-                                    HStack(spacing: 12) {
-                                        ZStack(alignment: .bottomTrailing) {
-                                            if !friend.avatarUrl.isEmpty && friend.avatarUrl.contains("http") {
-                                                AsyncImage(url: URL(string: friend.avatarUrl)) { phase in
-                                                    if let img = phase.image {
-                                                        img.resizable().aspectRatio(contentMode: .fill)
-                                                    } else {
-                                                        ZStack {
-                                                            Circle().fill(MSColors.stamp.opacity(0.15))
-                                                            Text(String(friend.displayName.prefix(1)).uppercased())
-                                                                .font(.headline.bold())
-                                                                .foregroundColor(MSColors.stamp)
-                                                        }
-                                                    }
-                                                }
-                                                .frame(width: 48, height: 48)
-                                                .clipShape(Circle())
-                                            } else {
-                                                ZStack {
-                                                    Circle().fill(MSColors.stamp.opacity(0.15))
-                                                    Text(String(friend.displayName.prefix(1)).uppercased())
-                                                        .font(.headline.bold())
-                                                        .foregroundColor(MSColors.stamp)
-                                                }
-                                                .frame(width: 48, height: 48)
-                                            }
+                                Circle().fill(MSColors.stamp.opacity(0.15))
+                            }
+                        }
+                        .frame(width: 40, height: 40)
+                        .clipShape(Circle())
 
-                                            if friend.isOnline {
-                                                Circle()
-                                                    .fill(Color.green)
-                                                    .frame(width: 12, height: 12)
-                                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                            }
-                                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(req.senderName)
+                                .font(.subheadline.bold())
+                                .foregroundColor(MSColors.ink)
+                            Text("@" + req.senderUsername)
+                                .font(.caption)
+                                .foregroundColor(MSColors.grey)
+                        }
 
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            Text(friend.displayName)
-                                                .font(.subheadline.bold())
-                                                .foregroundColor(MSColors.ink)
-                                            Text("@" + friend.username + " • \(friend.tradeCount) trao đổi")
-                                                .font(.caption)
-                                                .foregroundColor(MSColors.grey)
-                                        }
-
-                                        Spacer()
-
-                                        HStack(spacing: 8) {
-                                            // Direct Chat Button
-                                            Button(action: {
-                                                selectedFriendForChat = friend
-                                                showChatModal = true
-                                            }) {
-                                                HStack(spacing: 4) {
-                                                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                                                        .font(.system(size: 11))
-                                                    Text("Chat")
-                                                        .font(.caption.bold())
-                                                        .lineLimit(1)
-                                                }
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 7)
-                                                .background(MSColors.stamp.opacity(0.12))
-                                                .foregroundColor(MSColors.stamp)
-                                                .cornerRadius(14)
-                                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1))
-                                            }
-
-                                            // Trade Button
-                                            Button(action: {
-                                                selectedFriendForTrade = friend
-                                                showTradeModal = true
-                                            }) {
-                                                HStack(spacing: 4) {
-                                                    Image(systemName: "arrow.triangle.2.circlepath")
-                                                        .font(.system(size: 11))
-                                                    Text("Trade")
-                                                        .font(.caption.bold())
-                                                        .lineLimit(1)
-                                                }
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 7)
-                                                .background(MSColors.gold.opacity(0.18))
-                                                .foregroundColor(Color(red: 0.70, green: 0.50, blue: 0.10))
-                                                .cornerRadius(14)
-                                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.gold.opacity(0.4), lineWidth: 1))
-                                            }
-
-                                            Button(action: {
-                                                friendRepo.unfriendUser(friendId: friend.id) { result in
-                                                    switch result {
-                                                    case .success:
-                                                        triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
-                                                    case .failure(let err):
-                                                        triggerToast("Lỗi: \(err.localizedDescription)")
-                                                    }
-                                                }
-                                            }) {
-                                                Image(systemName: "person.badge.minus")
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(.gray.opacity(0.7))
-                                                    .padding(6)
-                                            }
-                                        }
-                                        .fixedSize(horizontal: true, vertical: false)
-                                    }
-                                    .padding(14)
-                                    .background(Color.white)
-                                    .cornerRadius(16)
-                                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
-                                    .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+                        Button(action: {
+                            friendRepo.acceptRequest(requestId: req.id) { result in
+                                switch result {
+                                case .success:
+                                    triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
+                                case .failure(let err):
+                                    triggerToast("Lỗi: \(err.localizedDescription)")
                                 }
                             }
+                        }) {
+                            Text("Chấp nhận")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+
+                        Button(action: {
+                            friendRepo.declineRequest(requestId: req.id) { result in
+                                switch result {
+                                case .success:
+                                    triggerToast("Đã từ chối lời mời kết bạn.")
+                                case .failure(let err):
+                                    triggerToast("Lỗi: \(err.localizedDescription)")
+                                }
+                            }
+                        }) {
+                            Text("Từ chối")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.gray.opacity(0.15))
+                                .foregroundColor(MSColors.ink)
+                                .cornerRadius(10)
+                        }
+                    }
+                    .padding(10)
+                    .background(Color.white)
+                    .cornerRadius(14)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1))
+                }
+            }
+            .padding(.bottom, 8)
+        }
+
+        // Outgoing Friend Requests Section
+        if !outgoingFriendRequests.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "paperplane.fill")
+                        .foregroundColor(MSColors.grey)
+                    Text("LỜI MỜI ĐÃ GỬI (\(outgoingFriendRequests.count))")
+                        .font(.caption2.bold())
+                        .foregroundColor(MSColors.grey)
+                }
+                .padding(.horizontal, 4)
+
+                ForEach(outgoingFriendRequests, id: \.id) { req in
+                    HStack(spacing: 10) {
+                        Circle().fill(MSColors.stamp.opacity(0.15))
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Text("@")
+                                    .font(.caption.bold())
+                                    .foregroundColor(MSColors.stamp)
+                            )
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Đã gửi lời mời tới @\(req.recipientUsername.isEmpty ? req.senderUsername : req.recipientUsername)")
+                                .font(.subheadline.bold())
+                                .foregroundColor(MSColors.ink)
+                            Text("Đang chờ phản hồi...")
+                                .font(.caption)
+                                .foregroundColor(MSColors.grey)
+                        }
+
+                        Spacer()
+
+                        Button(action: {
+                            friendRepo.cancelRequest(requestId: req.id) { result in
+                                switch result {
+                                case .success:
+                                    triggerToast("Đã hủy lời mời kết bạn.")
+                                case .failure(let err):
+                                    triggerToast("Lỗi: \(err.localizedDescription)")
+                                }
+                            }
+                        }) {
+                            Text("Hủy lời mời")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.red.opacity(0.12))
+                                .foregroundColor(.red)
+                                .cornerRadius(10)
+                        }
+                    }
+                    .padding(10)
+                    .background(Color.white)
+                    .cornerRadius(14)
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.lightGrey, lineWidth: 1))
+                }
+            }
+            .padding(.bottom, 8)
+        }
+
+        // Friends List
+        if friends.isEmpty {
+            VStack(spacing: 10) {
+                Image(systemName: "person.2.slash")
+                    .font(.system(size: 38))
+                    .foregroundColor(MSColors.stamp.opacity(0.6))
+                Text("Chưa có bạn bè nào")
+                    .font(.headline)
+                    .foregroundColor(MSColors.ink)
+                Text("Nhập mã kết bạn ở trên để giao lưu tem.")
+                    .font(.caption)
+                    .foregroundColor(MSColors.grey)
+            }
+            .padding(.top, 40)
+        } else {
+            ForEach(friends, id: \.id) { friend in
+                HStack(spacing: 12) {
+                    ZStack(alignment: .bottomTrailing) {
+                        if !friend.avatarUrl.isEmpty && friend.avatarUrl.contains("http") {
+                            AsyncImage(url: URL(string: friend.avatarUrl)) { phase in
+                                if let img = phase.image {
+                                    img.resizable().aspectRatio(contentMode: .fill)
+                                } else {
+                                    ZStack {
+                                        Circle().fill(MSColors.stamp.opacity(0.15))
+                                        Text(String(friend.displayName.prefix(1)).uppercased())
+                                            .font(.headline.bold())
+                                            .foregroundColor(MSColors.stamp)
+                                    }
+                                }
+                            }
+                            .frame(width: 48, height: 48)
+                            .clipShape(Circle())
+                        } else {
+                            ZStack {
+                                Circle().fill(MSColors.stamp.opacity(0.15))
+                                Text(String(friend.displayName.prefix(1)).uppercased())
+                                    .font(.headline.bold())
+                                    .foregroundColor(MSColors.stamp)
+                            }
+                            .frame(width: 48, height: 48)
+                        }
+
+                        if friend.isOnline {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 12, height: 12)
+                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(friend.displayName)
+                            .font(.subheadline.bold())
+                            .foregroundColor(MSColors.ink)
+                        Text("@" + friend.username + " • \(friend.tradeCount) trao đổi")
+                            .font(.caption)
+                            .foregroundColor(MSColors.grey)
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: 8) {
+                        // Direct Chat Button
+                        Button(action: {
+                            guard authenticatedUid != nil else {
+                                triggerToast("Bạn cần đăng nhập để trò chuyện.")
+                                return
+                            }
+                            selectedFriendForChat = friend
+                            showChatModal = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "bubble.left.and.bubble.right.fill")
+                                    .font(.system(size: 11))
+                                Text("Chat")
+                                    .font(.caption.bold())
+                                    .lineLimit(1)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(MSColors.stamp.opacity(0.12))
+                            .foregroundColor(MSColors.stamp)
+                            .cornerRadius(14)
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.stamp.opacity(0.3), lineWidth: 1))
+                        }
+
+                        // Trade Button
+                        Button(action: {
+                            guard authenticatedUid != nil else {
+                                triggerToast("Bạn cần đăng nhập để thực hiện giao dịch.")
+                                return
+                            }
+                            selectedFriendForTrade = friend
+                            showTradeModal = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 11))
+                                Text("Trade")
+                                    .font(.caption.bold())
+                                    .lineLimit(1)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(MSColors.gold.opacity(0.18))
+                            .foregroundColor(Color(red: 0.70, green: 0.50, blue: 0.10))
+                            .cornerRadius(14)
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.gold.opacity(0.4), lineWidth: 1))
+                        }
+
+                        Button(action: {
+                            friendRepo.unfriendUser(friendId: friend.id) { result in
+                                switch result {
+                                case .success:
+                                    triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
+                                case .failure(let err):
+                                    triggerToast("Lỗi: \(err.localizedDescription)")
+                                }
+                            }
+                        }) {
+                            Image(systemName: "person.badge.minus")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray.opacity(0.7))
+                                .padding(6)
+                        }
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+                .padding(14)
+                .background(Color.white)
+                .cornerRadius(16)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
+                .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+            }
+        }
     }
 
     @ViewBuilder
     private var tradeRequestsTabContent: some View {
-                            // Trade Requests
-                            if incomingTradeRequests.isEmpty && outgoingTradeRequests.isEmpty {
-                                VStack(spacing: 10) {
-                                    Image(systemName: "arrow.triangle.2.circlepath")
-                                        .font(.system(size: 38))
-                                        .foregroundColor(MSColors.gold.opacity(0.6))
-                                    Text("No active trade requests")
-                                        .font(.headline)
-                                        .foregroundColor(.secondary)
+        // Trade Requests
+        if incomingTradeRequests.isEmpty && outgoingTradeRequests.isEmpty {
+            VStack(spacing: 10) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 38))
+                    .foregroundColor(MSColors.gold.opacity(0.6))
+                Text("No active trade requests")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.top, 40)
+        } else {
+            if !incomingTradeRequests.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("YÊU CẦU TRAO ĐỔI NHẬN ĐƯỢC (\(incomingTradeRequests.count))")
+                        .font(.caption2.bold())
+                        .foregroundColor(MSColors.grey)
+                        .padding(.horizontal, 4)
+
+                    ForEach(incomingTradeRequests, id: \.id) { trade in
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text(trade.senderName)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(MSColors.ink)
+                                Text("gửi lời đề nghị trao đổi tem!")
+                                    .font(.subheadline)
+                                    .foregroundColor(MSColors.grey)
+                                Spacer()
+                                Text(trade.status)
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
+                                    .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
+                                    .cornerRadius(8)
+                            }
+
+                            HStack(spacing: 12) {
+                                MemoStampImageView(urlString: trade.stampUrl) {
+                                    MSColors.lightGrey
                                 }
-                                .padding(.top, 40)
-                            } else {
-                                if !incomingTradeRequests.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("YÊU CẦU TRAO ĐỔI NHẬN ĐƯỢC (\(incomingTradeRequests.count))")
-                                            .font(.caption2.bold())
-                                            .foregroundColor(MSColors.grey)
-                                            .padding(.horizontal, 4)
+                                .frame(width: 60, height: 60)
+                                .cornerRadius(8)
 
-                                        ForEach(incomingTradeRequests, id: \.id) { trade in
-                                            VStack(alignment: .leading, spacing: 10) {
-                                                HStack {
-                                                    Text(trade.senderName)
-                                                        .font(.subheadline.bold())
-                                                        .foregroundColor(MSColors.ink)
-                                                    Text("gửi lời đề nghị trao đổi tem!")
-                                                        .font(.subheadline)
-                                                        .foregroundColor(MSColors.grey)
-                                                    Spacer()
-                                                    Text(trade.status)
-                                                        .font(.caption2.bold())
-                                                        .padding(.horizontal, 8)
-                                                        .padding(.vertical, 4)
-                                                        .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
-                                                        .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
-                                                        .cornerRadius(8)
-                                                }
-
-                                                HStack(spacing: 12) {
-                                                    MemoStampImageView(urlString: trade.stampUrl) {
-                                                        MSColors.lightGrey
-                                                    }
-                                                    .frame(width: 60, height: 60)
-                                                    .cornerRadius(8)
-
-                                                    VStack(alignment: .leading, spacing: 4) {
-                                                        Text(trade.stampTitle)
-                                                            .font(.subheadline.bold())
-                                                            .foregroundColor(MSColors.ink)
-                                                        Text("Bộ sưu tập độc bản #2026")
-                                                            .font(.caption)
-                                                            .foregroundColor(MSColors.grey)
-                                                        Button(action: {
-                                                            let success = repository.acceptTrade(tradeId: trade.id)
-                                                            refreshTrigger.toggle()
-                                                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                                            if success {
-                                                                triggerToast("Đã chấp nhận đề nghị trao đổi")
-                                                            } else {
-                                                                triggerToast("Không có quyền chấp nhận yêu cầu này.")
-                                                            }
-                                                        }) {
-                                                            Text("Chấp nhận")
-                                                                .font(.caption.bold())
-                                                                .frame(maxWidth: .infinity)
-                                                                .padding(.vertical, 8)
-                                                                .background(MSColors.stamp)
-                                                                .foregroundColor(.white)
-                                                                .cornerRadius(10)
-                                                        }
-
-                                                        Button(action: {
-                                                            let success = repository.rejectTrade(tradeId: trade.id)
-                                                            refreshTrigger.toggle()
-                                                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                                            if success {
-                                                                triggerToast("Đã từ chối đề nghị trao đổi.")
-                                                            } else {
-                                                                triggerToast("Không thể thực hiện thao tác.")
-                                                            }
-                                                        }) {
-                                                            Text("Từ chối")
-                                                                .font(.caption.bold())
-                                                                .padding(.horizontal, 14)
-                                                                .padding(.vertical, 8)
-                                                                .background(Color.gray.opacity(0.15))
-                                                                .foregroundColor(.gray)
-                                                                .cornerRadius(10)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            .padding(14)
-                                            .background(Color.white)
-                                            .cornerRadius(16)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(trade.stampTitle)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(MSColors.ink)
+                                    Text("Bộ sưu tập độc bản #2026")
+                                        .font(.caption)
+                                        .foregroundColor(MSColors.grey)
+                                    Button(action: {
+                                        guard let uid = validatedMutationUid() else { return }
+                                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
+                                        let success = repository.acceptTrade(tradeId: trade.id)
+                                        if !success {
+                                            triggerToast("Không có quyền chấp nhận yêu cầu này.")
+                                            return
                                         }
+                                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
+                                        if persisted {
+                                            refreshTrigger.toggle()
+                                            triggerToast("Đã chấp nhận đề nghị trao đổi")
+                                        } else {
+                                            repository.restoreTradeRequests(trades: previousTrades)
+                                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
+                                        }
+                                    }) {
+                                        Text("Chấp nhận")
+                                            .font(.caption.bold())
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 8)
+                                            .background(MSColors.stamp)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(10)
+                                    }
+
+                                    Button(action: {
+                                        guard let uid = validatedMutationUid() else { return }
+                                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
+                                        let success = repository.rejectTrade(tradeId: trade.id)
+                                        if !success {
+                                            triggerToast("Không thể thực hiện thao tác.")
+                                            return
+                                        }
+                                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
+                                        if persisted {
+                                            refreshTrigger.toggle()
+                                            triggerToast("Đã từ chối đề nghị trao đổi.")
+                                        } else {
+                                            repository.restoreTradeRequests(trades: previousTrades)
+                                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
+                                        }
+                                    }) {
+                                        Text("Từ chối")
+                                            .font(.caption.bold())
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(Color.gray.opacity(0.15))
+                                            .foregroundColor(.gray)
+                                            .cornerRadius(10)
                                     }
                                 }
+                            }
+                        }
+                        .padding(14)
+                        .background(Color.white)
+                        .cornerRadius(16)
+                    }
+                }
+            }
 
-                                if !outgoingTradeRequests.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("YÊU CẦU TRAO ĐỔI ĐÃ GỬI (\(outgoingTradeRequests.count))")
-                                            .font(.caption2.bold())
-                                            .foregroundColor(MSColors.grey)
-                                            .padding(.horizontal, 4)
+            if !outgoingTradeRequests.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("YÊU CẦU TRAO ĐỔI ĐÃ GỬI (\(outgoingTradeRequests.count))")
+                        .font(.caption2.bold())
+                        .foregroundColor(MSColors.grey)
+                        .padding(.horizontal, 4)
 
-                                        ForEach(outgoingTradeRequests, id: \.id) { trade in
-                                            VStack(alignment: .leading, spacing: 10) {
-                                                HStack {
-                                                    Text("Đã gửi tới \(trade.recipientName.isEmpty ? "bạn bè" : trade.recipientName)")
-                                                        .font(.subheadline.bold())
-                                                        .foregroundColor(MSColors.ink)
-                                                    Spacer()
-                                                    Text(trade.status)
-                                                        .font(.caption2.bold())
-                                                        .padding(.horizontal, 8)
-                                                        .padding(.vertical, 4)
-                                                        .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
-                                                        .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
-                                                        .cornerRadius(8)
-                                                }
+                    ForEach(outgoingTradeRequests, id: \.id) { trade in
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text("Đã gửi tới \(trade.recipientName.isEmpty ? "bạn bè" : trade.recipientName)")
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(MSColors.ink)
+                                Spacer()
+                                Text(trade.status)
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
+                                    .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
+                                    .cornerRadius(8)
+                            }
 
-                                                HStack(spacing: 12) {
-                                                    MemoStampImageView(urlString: trade.stampUrl) {
-                                                        MSColors.lightGrey
-                                                    }
-                                                    .frame(width: 60, height: 60)
-                                                    .cornerRadius(8)
+                            HStack(spacing: 12) {
+                                MemoStampImageView(urlString: trade.stampUrl) {
+                                    MSColors.lightGrey
+                                }
+                                .frame(width: 60, height: 60)
+                                .cornerRadius(8)
 
-                                                    VStack(alignment: .leading, spacing: 4) {
-                                                        Text(trade.stampTitle)
-                                                            .font(.subheadline.bold())
-                                                            .foregroundColor(MSColors.ink)
-                                                        Text("Đang chờ bạn bè xác nhận...")
-                                                            .font(.caption)
-                                                            .foregroundColor(MSColors.grey)
-                                                    }
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(trade.stampTitle)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(MSColors.ink)
+                                    Text("Đang chờ bạn bè xác nhận...")
+                                        .font(.caption)
+                                        .foregroundColor(MSColors.grey)
+                                }
 
-                                                    Spacer()
+                                Spacer()
 
-                                                    if trade.status == "PENDING" {
-                                                        Button(action: {
-                                                            let success = repository.cancelOutgoingTrade(tradeId: trade.id)
-                                                            refreshTrigger.toggle()
-                                                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                                            if success {
-                                                                triggerToast("Đã hủy yêu cầu trao đổi.")
-                                                            } else {
-                                                                triggerToast("Không thể hủy yêu cầu.")
-                                                            }
-                                                        }) {
-                                                            Text("Hủy yêu cầu")
-                                                                .font(.caption.bold())
-                                                                .padding(.horizontal, 10)
-                                                                .padding(.vertical, 6)
-                                                                .background(Color.red.opacity(0.12))
-                                                                .foregroundColor(.red)
-                                                                .cornerRadius(10)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            .padding(14)
-                                            .background(Color.white)
-                                            .cornerRadius(16)
+                                if trade.status == "PENDING" {
+                                    Button(action: {
+                                        guard let uid = validatedMutationUid() else { return }
+                                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
+                                        let success = repository.cancelOutgoingTrade(tradeId: trade.id)
+                                        if !success {
+                                            triggerToast("Không thể hủy yêu cầu.")
+                                            return
                                         }
+                                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
+                                        if persisted {
+                                            refreshTrigger.toggle()
+                                            triggerToast("Đã hủy yêu cầu trao đổi.")
+                                        } else {
+                                            repository.restoreTradeRequests(trades: previousTrades)
+                                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
+                                        }
+                                    }) {
+                                        Text("Hủy yêu cầu")
+                                            .font(.caption.bold())
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(Color.red.opacity(0.12))
+                                            .foregroundColor(.red)
+                                            .cornerRadius(10)
                                     }
                                 }
-    }
+                            }
+                        }
+                        .padding(14)
+                        .background(Color.white)
+                        .cornerRadius(16)
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -897,6 +978,10 @@ struct FriendsAndTradeScreenView: View {
                 .background(Color.white)
                 .cornerRadius(16)
                 .onTapGesture {
+                    guard authenticatedUid != nil else {
+                        triggerToast("Bạn cần đăng nhập để trò chuyện.")
+                        return
+                    }
                     selectedFriendForChat = friend
                     showChatModal = true
                 }
@@ -1038,6 +1123,10 @@ struct FriendsAndTradeScreenView: View {
                 Spacer()
 
                 Button(action: {
+                    guard authenticatedUid != nil else {
+                        triggerToast("Bạn cần đăng nhập để thực hiện thao tác này.")
+                        return
+                    }
                     markInboxItemProcessed(for: currentUid, messageId: msg.id)
                     triggerToast("Đã từ chối con tem này ❌")
                 }) {
@@ -1055,6 +1144,10 @@ struct FriendsAndTradeScreenView: View {
                 }
 
                 Button(action: {
+                    guard authenticatedUid != nil else {
+                        triggerToast("Bạn cần đăng nhập để trò chuyện.")
+                        return
+                    }
                     let friend = friends.first(where: { $0.id == msg.senderId }) ?? FriendItem(id: msg.senderId, displayName: msg.senderName, username: msg.senderName, avatarUrl: msg.senderAvatar, isOnline: false, tradeCount: 0)
                     selectedFriendForChat = friend
                     showChatModal = true
@@ -1073,8 +1166,12 @@ struct FriendsAndTradeScreenView: View {
                 }
 
                 Button(action: {
+                    guard let uid = validatedMutationUid() else { return }
                     if let stamp = msg.stamp {
                         let validRemoteUrl = isValidRemoteStampUrl(stamp.stampImagePath) ? stamp.stampImagePath : ""
+                        let previousStamps = (repository.stamps.value as? [StampItem]) ?? []
+                        let previousProfile = repository.currentUser.value as? UserProfile
+
                         _ = repository.addStamp(
                             title: stamp.title.isEmpty ? "Tem từ \(msg.senderName)" : stamp.title,
                             note: msg.text,
@@ -1087,10 +1184,18 @@ struct FriendsAndTradeScreenView: View {
                             mood: "😊 Happy",
                             memoryDate: msg.createdAt
                         )
-                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
+                        if persisted {
+                            markInboxItemProcessed(for: uid, messageId: msg.id)
+                            triggerToast("Đã lưu con tem vào Kho của bạn thành công! 📮")
+                        } else {
+                            repository.restoreStamps(stamps: previousStamps)
+                            if let prev = previousProfile {
+                                repository.setCurrentUser(profile: prev)
+                            }
+                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
+                        }
                     }
-                    markInboxItemProcessed(for: currentUid, messageId: msg.id)
-                    triggerToast("Đã lưu con tem vào Kho của bạn thành công! 📮")
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "square.and.arrow.down.fill")
@@ -1112,7 +1217,6 @@ struct FriendsAndTradeScreenView: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
         .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
     }
-
 
     private func triggerToast(_ msg: String) {
         toastMessage = msg
@@ -1207,11 +1311,24 @@ struct FriendQrCodeSheetView: View {
     @State private var scannedCode: String = ""
     @State private var toastMsg: String? = nil
 
+    private var authenticatedUid: String? {
+        let uid = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(uid) else {
+            return nil
+        }
+        return uid
+    }
+
     var user: UserProfile {
-        (repository.currentUser.value as? UserProfile) ?? UserProfile(
-            uid: "user_me",
-            username: "user_memostamp",
-            displayName: "MemoStamp Collector",
+        if let authUid = authenticatedUid,
+           let repoUser = repository.currentUser.value as? UserProfile,
+           repoUser.uid == authUid {
+            return repoUser
+        }
+        return UserProfile(
+            uid: "",
+            username: "user",
+            displayName: "MemoStamp User",
             avatarUrl: nil,
             bio: "",
             stampsCreatedCount: 0,
@@ -1277,6 +1394,10 @@ struct FriendQrCodeSheetView: View {
                         .font(.subheadline)
                         .foregroundColor(MSColors.ink)
                     Button(action: {
+                        guard authenticatedUid != nil else {
+                            toastMsg = "Bạn cần đăng nhập để gửi lời mời kết bạn."
+                            return
+                        }
                         friendRepo.sendFriendRequestByUsernameOrId(input: scannedCode) { result in
                             switch result {
                             case .success(let msg):
