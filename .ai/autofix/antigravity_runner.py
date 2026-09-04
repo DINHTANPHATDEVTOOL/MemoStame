@@ -17,6 +17,21 @@ class AntigravityRunner:
                 return cmd
         return "agy"
 
+    def create_agent_branch(self, branch_name: str, dry_run: bool = False) -> Tuple[bool, str]:
+        if dry_run:
+            return True, f"[DRY RUN] Would create agent branch {branch_name} from origin/main"
+
+        try:
+            subprocess.run(["git", "fetch", "origin", "main"], cwd=str(self.repo_root), check=True)
+            subprocess.run(["git", "checkout", "main"], cwd=str(self.repo_root), check=True)
+            subprocess.run(["git", "pull", "origin", "main"], cwd=str(self.repo_root), check=True)
+            res = subprocess.run(["git", "checkout", "-b", branch_name], cwd=str(self.repo_root), capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if res.returncode != 0 and "already exists" in res.stderr:
+                subprocess.run(["git", "checkout", branch_name], cwd=str(self.repo_root), check=True)
+            return True, f"Successfully created/checked out branch {branch_name}"
+        except Exception as e:
+            return False, f"Failed creating agent branch {branch_name}: {e}"
+
     def invoke_ai_code_edit(self, fix_plan: FixPlan) -> Tuple[bool, str]:
         """Invokes Antigravity CLI to analyze and edit source code files."""
         prompt = (
@@ -43,7 +58,6 @@ class AntigravityRunner:
         """Runs local Gradle regression gate."""
         env = os.environ.copy()
         
-        # Check Linux java home fallback
         linux_jdk = Path("/home/rd/.gradle/jdks/eclipse_adoptium-21-amd64-linux.2")
         if linux_jdk.exists():
             env["JAVA_HOME"] = str(linux_jdk)
@@ -67,6 +81,62 @@ class AntigravityRunner:
         except Exception as e:
             return False, f"Exception running local regression: {e}"
 
+    def execute_task_bootstrap(
+        self,
+        branch: str,
+        issue_num: int,
+        issue_title: str,
+        issue_body: str,
+        fix_plan: FixPlan,
+        dry_run: bool = False
+    ) -> Tuple[bool, str, Optional[str]]:
+        if dry_run:
+            return True, f"[DRY RUN] Would bootstrap Issue #{issue_num} on branch '{branch}' using Antigravity CLI", None
+
+        # 1. Invoke Antigravity CLI with Issue body task prompt
+        prompt = (
+            f"Implement GitHub Issue #{issue_num}: {issue_title}\n\n"
+            f"Task Description:\n{issue_body}\n\n"
+            f"Instructions:\n"
+            f"- Modify repository files to satisfy the task requirement.\n"
+            f"- Maintain auth, RLS, and security policies.\n"
+            f"- Keep edits scoped strictly to the task."
+        )
+        
+        cmd = [self.cli_binary, "chat", "-m", "agent", prompt]
+        try:
+            res = subprocess.run(cmd, cwd=str(self.repo_root), capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
+            print(f"Antigravity CLI output: {res.stdout[:300]}")
+        except Exception as e:
+            print(f"Antigravity CLI invocation note: {e}")
+
+        # 2. Run local regression gate
+        reg_ok, reg_msg = self.run_local_regression()
+        if not reg_ok:
+            return False, reg_msg, None
+
+        # 3. Stage, commit and push
+        try:
+            status_res = subprocess.run(["git", "status", "--porcelain"], cwd=str(self.repo_root), capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if not status_res.stdout.strip():
+                head_res = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(self.repo_root), capture_output=True, text=True, encoding="utf-8", errors="replace")
+                return True, "No file changes produced during bootstrap, branch clean.", head_res.stdout.strip()
+
+            subprocess.run(["git", "add", "."], cwd=str(self.repo_root), check=True)
+            commit_msg = f"feat(ai-task): #{issue_num} - {issue_title[:50]}"
+            subprocess.run(["git", "commit", "-m", commit_msg], cwd=str(self.repo_root), check=True)
+
+            sha_res = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(self.repo_root), capture_output=True, text=True, encoding="utf-8", errors="replace")
+            new_sha = sha_res.stdout.strip()
+
+            push_res = subprocess.run(["git", "push", "origin", branch], cwd=str(self.repo_root), capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if push_res.returncode != 0:
+                return False, f"Git push failed: {push_res.stderr}", None
+
+            return True, f"Successfully bootstrapped and pushed commit {new_sha}", new_sha
+        except Exception as e:
+            return False, f"Exception during task bootstrap execution: {e}", None
+
     def execute_fix(
         self,
         branch: str,
@@ -81,7 +151,6 @@ class AntigravityRunner:
         # 1. Invoke Antigravity CLI for AI code edit
         ai_ok, ai_msg = self.invoke_ai_code_edit(fix_plan)
         if not ai_ok:
-            # Non-fatal if heuristic edits already staged
             print(f"Warning during AI invocation: {ai_msg}")
 
         # 2. Run local regression gate
