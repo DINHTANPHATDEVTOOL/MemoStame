@@ -206,7 +206,12 @@ fun ChatScreen(
                             modifier = Modifier.size(64.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("✉️", fontSize = 32.sp)
+                                Icon(
+                                    imageVector = Icons.Outlined.MarkEmailUnread,
+                                    contentDescription = null,
+                                    tint = AccentRed,
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                         }
                         Spacer(modifier = Modifier.height(14.dp))

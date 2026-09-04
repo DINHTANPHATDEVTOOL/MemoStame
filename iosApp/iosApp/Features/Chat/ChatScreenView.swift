@@ -139,20 +139,45 @@ struct ChatScreenView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         if messages.isEmpty && !chatRepo.isLoading {
-                            VStack(spacing: 8) {
-                                Image(systemName: "bubble.left.and.bubble.right.fill")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(MSColors.stamp.opacity(0.6))
+                            VStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(MSColors.stamp.opacity(0.12))
+                                        .frame(width: 64, height: 64)
+                                    Image(systemName: "envelope.open.fill")
+                                        .font(.system(size: 26))
+                                        .foregroundColor(MSColors.stamp)
+                                }
                                 Text("Bắt đầu cuộc trò chuyện với \(recipientName)")
-                                    .font(.subheadline.bold())
+                                    .font(.headline.bold())
                                     .foregroundColor(MSColors.ink)
-                                Text("Gửi tin nhắn hoặc đính kèm Tem kỷ niệm để trao đổi!")
+                                    .multilineTextAlignment(.center)
+                                Text("Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm! 📮")
                                     .font(.caption)
                                     .foregroundColor(MSColors.grey)
                                     .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 16)
+                                Button(action: { showStampPicker = true }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "square.stack.3d.up.fill")
+                                            .font(.caption.bold())
+                                        Text("Chọn con tem gửi ngay")
+                                            .font(.caption.bold())
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 9)
+                                    .background(Color.white)
+                                    .foregroundColor(MSColors.stamp)
+                                    .cornerRadius(16)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(MSColors.stamp, lineWidth: 1.5)
+                                    )
+                                }
+                                .padding(.top, 4)
                             }
-                            .padding(.top, 60)
-                            .padding(.horizontal, 32)
+                            .padding(.top, 50)
+                            .padding(.horizontal, 24)
                         }
 
                         ForEach(messages) { msg in

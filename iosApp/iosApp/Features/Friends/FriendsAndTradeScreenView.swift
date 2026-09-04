@@ -630,15 +630,40 @@ struct FriendsAndTradeScreenView: View {
                         } else {
                             // Tab 2: Direct Chat Conversations
                             if friends.isEmpty {
-                                VStack(spacing: 10) {
-                                    Image(systemName: "bubble.left.and.bubble.right")
-                                        .font(.system(size: 38))
-                                        .foregroundColor(MSColors.stamp.opacity(0.6))
-                                    Text("Chưa có cuộc trò chuyện nào.")
-                                        .font(.headline)
-                                        .foregroundColor(.secondary)
+                                VStack(spacing: 12) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(MSColors.stamp.opacity(0.12))
+                                            .frame(width: 64, height: 64)
+                                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                                            .font(.system(size: 28))
+                                            .foregroundColor(MSColors.stamp)
+                                    }
+                                    Text(langManager.string(vi: "Chưa có cuộc trò chuyện nào", en: "No conversations yet"))
+                                        .font(.headline.bold())
+                                        .foregroundColor(MSColors.ink)
+                                    Text(langManager.string(vi: "Kết nối với bạn bè để trò chuyện và chia sẻ tem thư kỷ niệm nhé!", en: "Connect with friends to chat and share memory stamps!"))
+                                        .font(.caption)
+                                        .foregroundColor(MSColors.grey)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal, 24)
+                                    Button(action: { selectedTab = 0 }) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "person.2.fill")
+                                                .font(.caption.bold())
+                                            Text(langManager.string(vi: "Xem danh sách bạn bè", en: "View friends list"))
+                                                .font(.caption.bold())
+                                        }
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
+                                        .background(MSColors.stamp)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(16)
+                                    }
+                                    .padding(.top, 4)
                                 }
                                 .padding(.top, 40)
+                                .padding(.horizontal, 24)
                             } else {
                                 ForEach(friends, id: \.id) { friend in
                                     HStack(spacing: 12) {

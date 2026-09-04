@@ -1039,8 +1039,21 @@ fun FriendsAndTradeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("💬", fontSize = 48.sp)
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    shape = CircleShape,
+                                    color = AccentRedSoft,
+                                    modifier = Modifier.size(64.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Forum,
+                                            contentDescription = null,
+                                            tint = AccentRed,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(14.dp))
                                 Text(
                                     "Chưa có cuộc trò chuyện nào",
                                     fontSize = 15.sp,
