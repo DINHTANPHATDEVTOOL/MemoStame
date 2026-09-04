@@ -757,6 +757,7 @@ struct FriendsAndTradeScreenView: View {
                                     }
                                 }
     }
+    }
 
     @ViewBuilder
     private var directChatTabContent: some View {
@@ -1041,7 +1042,6 @@ struct FriendsAndTradeScreenView: View {
                                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
                                 .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                             }
-                        }
     }
 
     private func triggerToast(_ msg: String) {
@@ -1055,6 +1055,7 @@ struct FriendsAndTradeScreenView: View {
             }
         }
     }
+}
 }
 
 struct TradeStampModalView: View {
