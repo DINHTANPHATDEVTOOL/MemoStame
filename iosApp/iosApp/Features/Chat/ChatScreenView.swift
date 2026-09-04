@@ -58,6 +58,7 @@ struct ChatScreenView: View {
     @State private var messageText: String = ""
     @State private var showStampPicker: Bool = false
     @State private var toastMessage: String? = nil
+    @State private var isSending: Bool = false
 
     private var messages: [ChatMessage] {
         chatRepo.conversationMessages[recipientUserId] ?? []
@@ -198,6 +199,26 @@ struct ChatScreenView: View {
 
             Divider()
 
+            if let toast = toastMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    Text(toast)
+                        .font(.caption)
+                        .foregroundColor(MSColors.ink)
+                    Spacer()
+                    Button(action: { toastMessage = nil }) {
+                        Image(systemName: "xmark")
+                            .font(.caption2)
+                            .foregroundColor(MSColors.grey)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(Color(red: 0.85, green: 0.25, blue: 0.20).opacity(0.1))
+            }
+
             // Bottom Chat Input Bar
             HStack(spacing: 10) {
                 // Attach Stamp Button
@@ -211,6 +232,7 @@ struct ChatScreenView: View {
                             .foregroundColor(MSColors.stamp)
                     }
                 }
+                .disabled(isSending)
 
                 // Text Input Field
                 TextField("Nhập tin nhắn...", text: $messageText)
@@ -224,19 +246,25 @@ struct ChatScreenView: View {
                         RoundedRectangle(cornerRadius: 20)
                             .stroke(MSColors.lightGrey, lineWidth: 1)
                     )
+                    .disabled(isSending)
 
                 // Send Button
                 Button(action: sendMessage) {
                     ZStack {
                         Circle()
-                            .fill(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? MSColors.lightGrey : MSColors.stamp)
+                            .fill(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending ? MSColors.lightGrey : MSColors.stamp)
                             .frame(width: 38, height: 38)
-                        Image(systemName: "paperplane.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
+                        if isSending {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Image(systemName: "paperplane.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white)
+                        }
                     }
                 }
-                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(isSending || messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
@@ -303,10 +331,11 @@ struct ChatScreenView: View {
                                             .font(.caption.bold())
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
-                                            .background(MSColors.stamp)
+                                            .background(isSending ? Color.gray : MSColors.stamp)
                                             .foregroundColor(.white)
                                             .cornerRadius(8)
                                     }
+                                    .disabled(isSending)
                                 }
                             }
                         }
@@ -319,24 +348,37 @@ struct ChatScreenView: View {
     }
 
     private func sendMessage() {
+        guard !isSending else { return }
         let trimmed = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
         let textToSend = trimmed
-        messageText = ""
+        isSending = true
+        toastMessage = nil
         HapticFeedbackManager.shared.playImpact(style: .light)
 
         chatRepo.sendMessageCloud(recipientId: recipientUserId, text: textToSend) { result in
             switch result {
             case .success:
+                isSending = false
+                toastMessage = nil
+                if messageText.trimmingCharacters(in: .whitespacesAndNewlines) == textToSend {
+                    messageText = ""
+                }
                 print("Cloud DM sent successfully to \(recipientUserId)")
             case .failure(let err):
+                isSending = false
+                toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
                 print("Cloud DM send error: \(err.localizedDescription)")
             }
         }
     }
 
     private func sendStampMessage(stamp: StampItem) {
+        guard !isSending else { return }
+        isSending = true
+        toastMessage = nil
+
         if !isValidRemoteStampUrl(stamp.stampImagePath) {
             print("Notice: Stamp image is local-only, sending stamp message safely with null stampImageUrl.")
         }
@@ -346,8 +388,12 @@ struct ChatScreenView: View {
         chatRepo.sendMessageCloud(recipientId: recipientUserId, text: textToSend, stamp: stamp) { result in
             switch result {
             case .success:
+                isSending = false
+                toastMessage = nil
                 print("Cloud Stamp DM sent successfully")
             case .failure(let err):
+                isSending = false
+                toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
                 print("Cloud Stamp DM send error: \(err.localizedDescription)")
             }
         }
