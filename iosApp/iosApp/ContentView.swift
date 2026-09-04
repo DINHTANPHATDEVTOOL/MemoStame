@@ -26,9 +26,9 @@ struct ContentView: View {
 
     init() {
         let repo = SharedMemoStampRepository()
-        let activeUid: String
-        if let session = SupabaseAuthService.shared.activeSession {
-            activeUid = session.userId
+        if let session = SupabaseAuthService.shared.activeSession,
+           IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(session.userId) {
+            let activeUid = session.userId
             let name = UserDefaults.standard.string(forKey: "user_displayName") ?? "Collector"
             let username = UserDefaults.standard.string(forKey: "user_username") ?? "user"
             let avatar = UserDefaults.standard.string(forKey: "user_avatarUrl") ?? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
@@ -44,10 +44,8 @@ struct ContentView: View {
                 placesVisitedCount: Int32(0)
             )
             repo.setCurrentUser(profile: profile)
-        } else {
-            activeUid = (repo.currentUser.value as? UserProfile)?.uid ?? "user_me"
+            IOSLocalPersistenceStore.shared.loadData(into: repo, userId: activeUid)
         }
-        IOSLocalPersistenceStore.shared.loadData(into: repo, userId: activeUid)
         self.repository = repo
         _homeViewModel = StateObject(wrappedValue: HomeObservableViewModel(repository: repo))
     }

@@ -21,7 +21,7 @@ struct StampVaultScreenView: View {
     ]
 
     private var currentUid: String {
-        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+        SupabaseAuthService.shared.currentUserId ?? ""
     }
 
     var stamps: [StampItem] {
@@ -261,9 +261,11 @@ struct StampVaultScreenView: View {
                                                 .font(.system(size: 18))
                                             Spacer()
                                             Button(action: {
+                                                let authUid = SupabaseAuthService.shared.currentUserId ?? ""
+                                                guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else { return }
                                                 repository.toggleCollectionPrivacy(collectionId: col.id)
                                                 refreshTrigger.toggle()
-                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                                             }) {
                                                 HStack(spacing: 3) {
                                                     Image(systemName: col.privacy == "ONLY_ME" ? "lock.fill" : "person.2.fill")
@@ -409,7 +411,7 @@ struct StampDetailModalView: View {
     }
 
     private var currentUid: String {
-        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+        SupabaseAuthService.shared.currentUserId ?? ""
     }
 
     var body: some View {
@@ -425,9 +427,11 @@ struct StampDetailModalView: View {
                 Spacer()
 
                 Button(action: {
+                    let authUid = SupabaseAuthService.shared.currentUserId ?? ""
+                    guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else { return }
                     _ = repository.toggleFavorite(stampId: stamp.id)
                     isFavorite.toggle()
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                     HapticFeedbackManager.shared.playSuccess()
                 }) {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
@@ -584,8 +588,10 @@ struct StampDetailModalView: View {
                 title: Text("Xóa ký ức này?"),
                 message: Text("Hành động này sẽ xóa con tem khỏi Bộ sưu tập của bạn."),
                 primaryButton: .destructive(Text("Xóa")) {
+                    let authUid = SupabaseAuthService.shared.currentUserId ?? ""
+                    guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else { return }
                     _ = repository.deleteStamp(stampId: stamp.id)
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                     onDismiss()
                 },
                 secondaryButton: .cancel()
@@ -606,7 +612,7 @@ struct CreateAlbumSheetView: View {
     let emojis = ["🏞️", "☕", "✈️", "📸", "💖", "🌲", "🎨", "👑", "🌸", "🍔"]
 
     private var currentUid: String {
-        (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+        SupabaseAuthService.shared.currentUserId ?? ""
     }
 
     var body: some View {
@@ -704,9 +710,10 @@ struct CreateAlbumSheetView: View {
 
                     Button(action: {
                         let name = albumName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !name.isEmpty {
+                        let authUid = SupabaseAuthService.shared.currentUserId ?? ""
+                        if !name.isEmpty && IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) {
                             _ = repository.createCollection(name: name, description: albumDesc, iconEmoji: selectedEmoji, privacy: selectedPrivacy)
-                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                             presentationMode.wrappedValue.dismiss()
                         }
                     }) {

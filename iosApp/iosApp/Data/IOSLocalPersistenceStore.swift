@@ -112,9 +112,20 @@ class IOSLocalPersistenceStore {
         return docs.appendingPathComponent("memostamp_local_v1.json")
     }
 
+    func isValidAuthenticatedUserId(_ userId: String?) -> Bool {
+        guard let userId = userId?.trimmingCharacters(in: .whitespacesAndNewlines), !userId.isEmpty else {
+            return false
+        }
+        let lower = userId.lowercased()
+        if lower == "user_me" || lower == "guest" || lower.hasPrefix("guest_") {
+            return false
+        }
+        return true
+    }
+
     @discardableResult
     func loadData(into repository: SharedMemoStampRepository, userId: String) -> Bool {
-        guard !userId.isEmpty else { return false }
+        guard isValidAuthenticatedUserId(userId) else { return false }
         let targetUrl = storageUrl(userId: userId)
 
         // 1. Check account-scoped V2 file
@@ -266,10 +277,11 @@ class IOSLocalPersistenceStore {
         }
     }
 
-    func saveData(repository: SharedMemoStampRepository, userId: String) {
-        guard !userId.isEmpty else { return }
+    @discardableResult
+    func saveData(repository: SharedMemoStampRepository, userId: String) -> Bool {
+        guard isValidAuthenticatedUserId(userId) else { return false }
         let targetUrl = storageUrl(userId: userId)
-
+        
         let userData: PersistedUserData?
         if let currentUser = repository.currentUser.value as? UserProfile {
             userData = PersistedUserData(
@@ -374,7 +386,13 @@ class IOSLocalPersistenceStore {
         )
 
         if let encoded = try? JSONEncoder().encode(payload) {
-            try? encoded.write(to: targetUrl, options: .atomic)
+            do {
+                try encoded.write(to: targetUrl, options: .atomic)
+                return true
+            } catch {
+                return false
+            }
         }
+        return false
     }
 }
