@@ -681,7 +681,7 @@ struct FriendsAndTradeScreenView: View {
                                     }
                                 }
                             }
-                        } else {
+                        } else if selectedTab == 2 {
                             // Tab 2: Direct Chat Conversations
                             if friends.isEmpty {
                                 VStack(spacing: 12) {
