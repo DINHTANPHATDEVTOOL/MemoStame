@@ -851,7 +851,6 @@ struct FriendsAndTradeScreenView: View {
     }
 
     @ViewBuilder
-    @ViewBuilder
     private var receivedStampsInboxTabContent: some View {
         if visibleReceivedStamps.isEmpty {
             receivedStampsEmptyView
