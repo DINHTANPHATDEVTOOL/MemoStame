@@ -19,9 +19,47 @@ struct FriendsAndTradeScreenView: View {
     @State private var refreshTrigger: Bool = false
     @StateObject private var langManager = AppLanguageManager.shared
     @ObservedObject private var friendRepo = IOSFriendRepository.shared
+    @ObservedObject private var chatRepo = IOSChatRepository.shared
 
     private var currentUid: String {
         SupabaseAuthService.shared.currentUserId ?? (repository.currentUser.value as? UserProfile)?.uid ?? "user_me"
+    }
+
+    private func getProcessedInboxIds(for userId: String) -> Set<String> {
+        guard !userId.isEmpty else { return [] }
+        let key = "processed_inbox_\(userId)"
+        let array = UserDefaults.standard.stringArray(forKey: key) ?? []
+        return Set(array)
+    }
+
+    private func markInboxItemProcessed(for userId: String, messageId: String) {
+        guard !userId.isEmpty else { return }
+        let key = "processed_inbox_\(userId)"
+        var current = getProcessedInboxIds(for: userId)
+        current.insert(messageId)
+        UserDefaults.standard.set(Array(current), forKey: key)
+        refreshTrigger.toggle()
+    }
+
+    private func formattedTimestamp(_ timestampMillis: Int64) -> String {
+        let date = Date(timeIntervalSince1970: Double(timestampMillis) / 1000.0)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy HH:mm"
+        return formatter.string(from: date)
+    }
+
+    var visibleReceivedStamps: [ChatMessage] {
+        _ = refreshTrigger
+        let processedIds = getProcessedInboxIds(for: currentUid)
+        var result: [ChatMessage] = []
+        for (_, msgs) in chatRepo.conversationMessages {
+            for msg in msgs {
+                if !msg.isMe && msg.recipientId == currentUid && msg.stamp != nil && !processedIds.contains(msg.id) {
+                    result.append(msg)
+                }
+            }
+        }
+        return result.sorted(by: { $0.createdAt > $1.createdAt })
     }
 
     var allFriendRequests: [FriendRequestItem] {
@@ -178,6 +216,22 @@ struct FriendsAndTradeScreenView: View {
                             .overlay(RoundedRectangle(cornerRadius: 18).stroke(selectedTab == 2 ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1))
                             .shadow(color: selectedTab == 2 ? MSColors.stamp.opacity(0.25) : Color.clear, radius: 4, x: 0, y: 2)
                         }
+
+                        Button(action: { selectedTab = 3 }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "envelope.fill")
+                                    .font(.caption.bold())
+                                Text("\(langManager.string(vi: "Hộp thư", en: "Inbox")) (\(visibleReceivedStamps.count))")
+                                    .font(.subheadline.bold())
+                            }
+                            .padding(.vertical, 9)
+                            .frame(maxWidth: .infinity)
+                            .background(selectedTab == 3 ? MSColors.stamp : Color.white)
+                            .foregroundColor(selectedTab == 3 ? .white : MSColors.grey)
+                            .cornerRadius(18)
+                            .overlay(RoundedRectangle(cornerRadius: 18).stroke(selectedTab == 3 ? MSColors.stamp : MSColors.lightGrey, lineWidth: 1))
+                            .shadow(color: selectedTab == 3 ? MSColors.stamp.opacity(0.25) : Color.clear, radius: 4, x: 0, y: 2)
+                        }
                     }
                     .padding(.top, 4)
                 }
@@ -188,6 +242,79 @@ struct FriendsAndTradeScreenView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         if selectedTab == 0 {
+                            friendsTabContent
+                        } else if selectedTab == 1 {
+                            tradeRequestsTabContent
+                        } else if selectedTab == 2 {
+                            directChatTabContent
+                        } else if selectedTab == 3 {
+                            receivedStampsInboxTabContent
+                        }
+                    }
+                }
+                .padding()
+                .padding(.bottom, 140)
+            }
+
+            if showToast, let msg = toastMessage {
+                VStack {
+                    Text(msg)
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(20)
+                        .shadow(radius: 4)
+                        .padding(.top, 40)
+                    Spacer()
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .background(MSColors.paper.ignoresSafeArea())
+        .sheet(isPresented: $showTradeModal) {
+            if let friend = selectedFriendForTrade {
+                TradeStampModalView(
+                    friend: friend,
+                    stamps: stamps,
+                    onSendTrade: { stampId in
+                        let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
+                        refreshTrigger.toggle()
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                        showTradeModal = false
+                        if success {
+                            triggerToast("Sent trade offer to \(friend.displayName)!")
+                        }
+                    }
+                )
+            }
+        }
+        .sheet(item: $selectedFriendForChat) { friend in
+            ChatScreenView(
+                recipientUserId: friend.id,
+                recipientName: friend.displayName,
+                recipientIsOnline: friend.isOnline,
+                currentUserId: currentUid,
+                repository: repository,
+                onDismiss: { selectedFriendForChat = nil }
+            )
+        }
+        .sheet(isPresented: $showQrCodeModal) {
+            FriendQrCodeSheetView(repository: repository)
+        }
+        .onAppear {
+            friendRepo.loadCloudData()
+            chatRepo.onUserChanged(newUserId: currentUid)
+            for friend in friendRepo.friends {
+                chatRepo.loadConversation(otherUserId: friend.id)
+            }
+        }
+    }
+
+    // MARK: - Tab Content Subviews
+    @ViewBuilder
+    private var friendsTabContent: some View {
                             // Incoming Friend Requests Notification Section
                             if !incomingFriendRequests.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
@@ -457,7 +584,10 @@ struct FriendsAndTradeScreenView: View {
                                     .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
                                 }
                             }
-                        } else if selectedTab == 1 {
+    }
+
+    @ViewBuilder
+    private var tradeRequestsTabContent: some View {
                             // Trade Requests
                             if incomingTradeRequests.isEmpty && outgoingTradeRequests.isEmpty {
                                 VStack(spacing: 10) {
@@ -626,8 +756,11 @@ struct FriendsAndTradeScreenView: View {
                                         }
                                     }
                                 }
-                            }
-                        } else {
+    }
+    }
+
+    @ViewBuilder
+    private var directChatTabContent: some View {
                             // Tab 2: Direct Chat Conversations
                             if friends.isEmpty {
                                 VStack(spacing: 12) {
@@ -715,64 +848,217 @@ struct FriendsAndTradeScreenView: View {
                                     }
                                 }
                             }
-                        }
-                    }
-                    .padding()
-                    .padding(.bottom, 140)
-                }
-            }
-            .background(MSColors.paper.ignoresSafeArea())
+    }
 
-            if showToast, let msg = toastMessage {
-                VStack {
-                    Text(msg)
-                        .font(.subheadline.bold())
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Color.black.opacity(0.8))
-                        .cornerRadius(20)
-                        .shadow(radius: 4)
-                        .padding(.top, 40)
-                    Spacer()
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .sheet(isPresented: $showTradeModal) {
-            if let friend = selectedFriendForTrade {
-                TradeStampModalView(
-                    friend: friend,
-                    stamps: stamps,
-                    onSendTrade: { stampId in
-                        let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
-                        refreshTrigger.toggle()
-                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                        showTradeModal = false
-                        if success {
-                            triggerToast("Sent trade offer to \(friend.displayName)!")
-                        }
-                    }
-                )
-            }
-        }
-        .sheet(item: $selectedFriendForChat) { friend in
-            ChatScreenView(
-                recipientUserId: friend.id,
-                recipientName: friend.displayName,
-                recipientIsOnline: friend.isOnline,
-                currentUserId: currentUid,
-                repository: repository,
-                onDismiss: { selectedFriendForChat = nil }
-            )
-        }
-        .sheet(isPresented: $showQrCodeModal) {
-            FriendQrCodeSheetView(repository: repository)
-        }
-        .onAppear {
-            friendRepo.loadCloudData()
+    @ViewBuilder
+    private var receivedStampsInboxTabContent: some View {
+        if visibleReceivedStamps.isEmpty {
+            receivedStampsEmptyView
+        } else {
+            receivedStampsListView
         }
     }
+
+    @ViewBuilder
+    private var receivedStampsEmptyView: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(MSColors.stamp.opacity(0.12))
+                    .frame(width: 64, height: 64)
+                Image(systemName: "envelope.open.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(MSColors.stamp)
+            }
+            Text(langManager.string(vi: "Hộp thư kỷ niệm trống", en: "Inbox is empty"))
+                .font(.headline.bold())
+                .foregroundColor(MSColors.ink)
+            Text(langManager.string(vi: "Bạn chưa có con tem thư kỷ niệm nào mới trong hộp thư.", en: "No new memory stamps received in your inbox."))
+                .font(.caption)
+                .foregroundColor(MSColors.grey)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+        }
+        .padding(.top, 40)
+        .padding(.horizontal, 24)
+    }
+
+    @ViewBuilder
+    private var receivedStampsListView: some View {
+        ForEach(visibleReceivedStamps, id: \.id) { msg in
+            inboxStampRow(msg)
+        }
+    }
+
+    @ViewBuilder
+    private func inboxStampRow(_ msg: ChatMessage) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header: Sender info
+            HStack(spacing: 10) {
+                if isValidRemoteStampUrl(msg.senderAvatar) {
+                    AsyncImage(url: URL(string: msg.senderAvatar)) { phase in
+                        if let img = phase.image {
+                            img.resizable().aspectRatio(contentMode: .fill)
+                        } else {
+                            Circle().fill(MSColors.stamp.opacity(0.15))
+                        }
+                    }
+                    .frame(width: 36, height: 36)
+                    .clipShape(Circle())
+                } else {
+                    Circle().fill(MSColors.stamp.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                        .overlay(
+                            Text(String(msg.senderName.prefix(1)).uppercased())
+                                .font(.caption.bold())
+                                .foregroundColor(MSColors.stamp)
+                        )
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(msg.senderName)
+                        .font(.subheadline.bold())
+                        .foregroundColor(MSColors.ink)
+                    Text(formattedTimestamp(msg.createdAt))
+                        .font(.caption2)
+                        .foregroundColor(MSColors.grey)
+                }
+
+                Spacer()
+
+                Text("Tem kỷ niệm 📮")
+                    .font(.caption2.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(MSColors.stamp.opacity(0.12))
+                    .foregroundColor(MSColors.stamp)
+                    .cornerRadius(8)
+            }
+
+            // Card Body: Stamp Preview & Metadata
+            HStack(spacing: 12) {
+                if let stamp = msg.stamp, isValidRemoteStampUrl(stamp.stampImagePath) {
+                    AsyncImage(url: URL(string: stamp.stampImagePath)) { phase in
+                        if let img = phase.image {
+                            img.resizable().aspectRatio(contentMode: .fill)
+                        } else {
+                            ZStack {
+                                Color.gray.opacity(0.1)
+                                Text("📮").font(.title2)
+                            }
+                        }
+                    }
+                    .frame(width: 64, height: 64)
+                    .cornerRadius(8)
+                } else {
+                    ZStack {
+                        MSColors.stamp.opacity(0.1)
+                        Text("📮")
+                            .font(.title2)
+                    }
+                    .frame(width: 64, height: 64)
+                    .cornerRadius(8)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(msg.stamp?.title.isEmpty == false ? (msg.stamp?.title ?? "") : "Tem thư kỷ niệm")
+                        .font(.subheadline.bold())
+                        .foregroundColor(MSColors.ink)
+                    Text("📍 \(msg.stamp?.location ?? "Việt Nam")")
+                        .font(.caption.bold())
+                        .foregroundColor(Color.blue)
+                    if !msg.text.isEmpty && !msg.text.hasPrefix("📮 Đã gửi con tem") {
+                        Text("“\(msg.text)”")
+                            .font(.caption)
+                            .foregroundColor(MSColors.grey)
+                            .lineLimit(2)
+                    }
+                }
+            }
+            .padding(10)
+            .background(MSColors.paper)
+            .cornerRadius(12)
+
+            // Actions: Từ chối, Nhắn tin, Lưu vào Kho
+            HStack(spacing: 8) {
+                Spacer()
+
+                Button(action: {
+                    markInboxItemProcessed(for: currentUid, messageId: msg.id)
+                    triggerToast("Đã từ chối con tem này ❌")
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                        Text("Từ chối")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.gray.opacity(0.12))
+                    .foregroundColor(MSColors.grey)
+                    .cornerRadius(10)
+                }
+
+                Button(action: {
+                    let friend = friends.first(where: { $0.id == msg.senderId }) ?? FriendItem(id: msg.senderId, displayName: msg.senderName, username: msg.senderName, avatarUrl: msg.senderAvatar, isOnline: false, tradeCount: 0)
+                    selectedFriendForChat = friend
+                    showChatModal = true
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                            .font(.system(size: 11))
+                        Text("Nhắn tin")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(MSColors.stamp.opacity(0.12))
+                    .foregroundColor(MSColors.stamp)
+                    .cornerRadius(10)
+                }
+
+                Button(action: {
+                    if let stamp = msg.stamp {
+                        let validRemoteUrl = isValidRemoteStampUrl(stamp.stampImagePath) ? stamp.stampImagePath : ""
+                        _ = repository.addStamp(
+                            title: stamp.title.isEmpty ? "Tem từ \(msg.senderName)" : stamp.title,
+                            note: msg.text,
+                            location: stamp.location?.isEmpty == false ? stamp.location : "Việt Nam",
+                            imageUrl: validRemoteUrl,
+                            originalImageUrl: validRemoteUrl,
+                            shape: "classic",
+                            collectionId: nil,
+                            audience: AudienceType.friends,
+                            mood: "😊 Happy",
+                            memoryDate: msg.createdAt
+                        )
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                    }
+                    markInboxItemProcessed(for: currentUid, messageId: msg.id)
+                    triggerToast("Đã lưu con tem vào Kho của bạn thành công! 📮")
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.down.fill")
+                            .font(.system(size: 11))
+                        Text("Lưu vào Kho")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                }
+            }
+        }
+        .padding(14)
+        .background(Color.white)
+        .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(MSColors.lightGrey, lineWidth: 1))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+    }
+
 
     private func triggerToast(_ msg: String) {
         toastMessage = msg
