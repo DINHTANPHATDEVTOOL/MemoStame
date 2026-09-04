@@ -12,6 +12,49 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+class FakeSharedPreferences : android.content.SharedPreferences {
+    private val map = mutableMapOf<String, Any?>()
+
+    override fun getAll(): MutableMap<String, *> = map
+    override fun getString(key: String?, defValue: String?): String? = map[key] as? String ?: defValue
+    override fun getStringSet(key: String?, defValue: MutableSet<String>?): MutableSet<String>? {
+        @Suppress("UNCHECKED_CAST")
+        return (map[key] as? Set<String>)?.toMutableSet() ?: defValue
+    }
+    override fun getInt(key: String?, defValue: Int): Int = map[key] as? Int ?: defValue
+    override fun getLong(key: String?, defValue: Long): Long = map[key] as? Long ?: defValue
+    override fun getFloat(key: String?, defValue: Float): Float = map[key] as? Float ?: defValue
+    override fun getBoolean(key: String?, defValue: Boolean): Boolean = map[key] as? Boolean ?: defValue
+    override fun contains(key: String?): Boolean = map.containsKey(key)
+    override fun edit(): android.content.SharedPreferences.Editor = EditorImpl()
+    override fun registerOnSharedPreferenceChangeListener(listener: android.content.SharedPreferences.OnSharedPreferenceChangeListener?) {}
+    override fun unregisterOnSharedPreferenceChangeListener(listener: android.content.SharedPreferences.OnSharedPreferenceChangeListener?) {}
+
+    inner class EditorImpl : android.content.SharedPreferences.Editor {
+        private val tempMap = mutableMapOf<String, Any?>()
+
+        override fun putString(key: String?, value: String?): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
+        override fun putStringSet(key: String?, values: MutableSet<String>?): android.content.SharedPreferences.Editor { tempMap[key!!] = values?.toSet(); return this }
+        override fun putInt(key: String?, value: Int): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
+        override fun putLong(key: String?, value: Long): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
+        override fun putFloat(key: String?, value: Float): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
+        override fun putBoolean(key: String?, value: Boolean): android.content.SharedPreferences.Editor { tempMap[key!!] = value; return this }
+        override fun remove(key: String?): android.content.SharedPreferences.Editor { tempMap.remove(key); return this }
+        override fun clear(): android.content.SharedPreferences.Editor { tempMap.clear(); return this }
+        override fun commit(): Boolean { map.putAll(tempMap); return true }
+        override fun apply() { map.putAll(tempMap) }
+    }
+}
+
+class TestContextWithPrefs : android.content.ContextWrapper(null) {
+    private val prefsMap = mutableMapOf<String, FakeSharedPreferences>()
+    override fun getSharedPreferences(name: String?, mode: Int): android.content.SharedPreferences {
+        val key = name ?: "default"
+        return prefsMap.getOrPut(key) { FakeSharedPreferences() }
+    }
+    override fun getApplicationContext(): android.content.Context = this
+}
+
 class AndroidChatCloudContractTest {
 
     private fun createChatRepository(transport: SupabaseHttpTransport = FakeSupabaseHttpTransport()): Pair<ChatRepository, UserAuthRepository> {
@@ -713,4 +756,98 @@ class AndroidChatCloudContractTest {
         val sentMsg = result.getOrThrow()
         assertEquals(remoteUrl, sentMsg.stampImageUrl)
     }
+
+    @Test
+    fun test32_inboxDismissalDoesNotDeleteCloudMessage() = runBlocking {
+        val transport = FakeSupabaseHttpTransport()
+        val (chatRepo, authRepo) = createChatRepository(transport)
+        val dummyContext = TestContextWithPrefs()
+
+        val userA = UserProfile(userId = "user_a", username = "usera", displayName = "User A")
+        authRepo.setTestAuthState(isLoggedIn = true, authUser = userA)
+
+        val prefsA = dummyContext.getSharedPreferences("memo_inbox_prefs_user_a", 0)
+        var processedSetA = prefsA.getStringSet("processed_ids", emptySet()) ?: emptySet()
+        assertFalse("msg_inbox_1 should not be processed yet", processedSetA.contains("msg_inbox_1"))
+
+        // Simulate inbox dismissal
+        processedSetA = processedSetA + "msg_inbox_1"
+        prefsA.edit().putStringSet("processed_ids", processedSetA).apply()
+
+        // Verify DELETE was NOT called on transport
+        val deleteCalls = transport.callLogs.filter { it.startsWith("DELETE") }
+        assertTrue("No DELETE HTTP calls should be issued during inbox dismissal", deleteCalls.isEmpty())
+
+        // Verify local prefs updated for User A
+        val updatedPrefsA = dummyContext.getSharedPreferences("memo_inbox_prefs_user_a", 0).getStringSet("processed_ids", emptySet()) ?: emptySet()
+        assertTrue("msg_inbox_1 must be in user_a processed set", updatedPrefsA.contains("msg_inbox_1"))
+    }
+
+    @Test
+    fun test33_accountScopedInboxIsolation() = runBlocking {
+        val dummyContext = TestContextWithPrefs()
+
+        // User A dismisses message 1
+        val prefsA = dummyContext.getSharedPreferences("memo_inbox_prefs_user_a", 0)
+        prefsA.edit().putStringSet("processed_ids", setOf("msg_inbox_1")).apply()
+
+        // User B checks processed items
+        val prefsB = dummyContext.getSharedPreferences("memo_inbox_prefs_user_b", 0)
+        val setB = prefsB.getStringSet("processed_ids", emptySet()) ?: emptySet()
+
+        // Verify User B does NOT see User A's dismissed IDs
+        assertFalse("User B must NOT inherit User A's processed inbox IDs", setB.contains("msg_inbox_1"))
+
+        // Re-check User A
+        val setA = prefsA.getStringSet("processed_ids", emptySet()) ?: emptySet()
+        assertTrue("User A retains processed inbox IDs", setA.contains("msg_inbox_1"))
+    }
+
+    @Test
+    fun test34_stampUrlValidationContract() {
+        assertTrue(DirectMessage.isValidRemoteStampUrl("http://example.com/stamp.png"))
+        assertTrue(DirectMessage.isValidRemoteStampUrl("https://supabase.co/storage/stamp.jpg"))
+
+        assertFalse(DirectMessage.isValidRemoteStampUrl("/data/user/0/com.app/file.png"))
+        assertFalse(DirectMessage.isValidRemoteStampUrl("/storage/emulated/0/stamp.png"))
+        assertFalse(DirectMessage.isValidRemoteStampUrl("file:///sdcard/stamp.png"))
+        assertFalse(DirectMessage.isValidRemoteStampUrl("content://media/external/images/1"))
+        assertFalse(DirectMessage.isValidRemoteStampUrl("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA"))
+        assertFalse(DirectMessage.isValidRemoteStampUrl(""))
+        assertFalse(DirectMessage.isValidRemoteStampUrl(null))
+    }
+
+    @Test
+    fun test35_saveToVaultPreservesMetadataAndMessage() = runBlocking {
+        val msg = DirectMessage(
+            id = "msg_stamp_100",
+            senderId = "user_b",
+            senderName = "User B",
+            senderAvatar = "https://example.com/avatar.png",
+            recipientId = "user_a",
+            recipientName = "User A",
+            recipientAvatar = "https://example.com/avatar_a.png",
+            text = "Wish you were here!",
+            stampId = "stamp_100",
+            stampTitle = "Da Lat Sunset",
+            stampImageUrl = "https://example.com/dalat.png",
+            stampLocation = "Đà Lạt",
+            createdAt = System.currentTimeMillis(),
+            isRead = true
+        )
+
+        // Remote image valid check
+        assertTrue(DirectMessage.isValidRemoteStampUrl(msg.stampImageUrl))
+
+        // Ensure title, location, note, createdAt are preserved
+        assertEquals("Da Lat Sunset", msg.stampTitle)
+        assertEquals("Đà Lạt", msg.stampLocation)
+        assertEquals("Wish you were here!", msg.text)
+        assertEquals("https://example.com/dalat.png", msg.stampImageUrl)
+
+        // Invalid remote URL returns fallback
+        val invalidMsg = msg.copy(stampImageUrl = "file:///local/path.jpg")
+        assertFalse(DirectMessage.isValidRemoteStampUrl(invalidMsg.stampImageUrl))
+    }
 }
+

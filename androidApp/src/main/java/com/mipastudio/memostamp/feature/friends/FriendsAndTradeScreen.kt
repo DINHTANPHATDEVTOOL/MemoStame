@@ -89,22 +89,17 @@ fun FriendsAndTradeScreen(
     var profilePreviewUser by remember { mutableStateOf<UserProfile?>(null) }
     var showThemeSelector by remember { mutableStateOf(false) }
 
-    val prefs = remember { context.getSharedPreferences("memo_inbox_prefs", Context.MODE_PRIVATE) }
-    var dismissedInboxIds by remember {
-        mutableStateOf(prefs.getStringSet("dismissed_ids", emptySet()) ?: emptySet())
+    val currentUserId = currentUser.userId
+    val prefs = remember(context, currentUserId) { context.getSharedPreferences("memo_inbox_prefs_$currentUserId", Context.MODE_PRIVATE) }
+    var dismissedInboxIds by remember(currentUserId) {
+        mutableStateOf(prefs.getStringSet("processed_ids", emptySet()) ?: emptySet())
     }
 
     fun dismissInboxItem(id: String) {
         val updated = dismissedInboxIds + id
         dismissedInboxIds = updated
-        prefs.edit().putStringSet("dismissed_ids", updated).apply()
-        coroutineScope.launch {
-            try {
-                chatRepo.deleteMessage(id)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        prefs.edit().putStringSet("processed_ids", updated).apply()
+        // Non-destructive: DO NOT delete chatRepo message. Chat history remains intact.
     }
 
     var myStamps by remember { mutableStateOf<List<StampEntity>>(emptyList()) }
@@ -844,14 +839,29 @@ fun FriendsAndTradeScreen(
                                                 modifier = Modifier.padding(10.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                AsyncImage(
-                                                    model = msg.stampImageUrl,
-                                                    contentDescription = msg.stampTitle,
-                                                    contentScale = ContentScale.Crop,
-                                                    modifier = Modifier
-                                                        .size(72.dp)
-                                                        .clip(RoundedCornerShape(8.dp))
-                                                )
+                                                val isValidStampUrl = remember(msg.stampImageUrl) {
+                                                    com.mipastudio.memostamp.domain.model.DirectMessage.isValidRemoteStampUrl(msg.stampImageUrl)
+                                                }
+                                                if (isValidStampUrl && !msg.stampImageUrl.isNullOrBlank()) {
+                                                    AsyncImage(
+                                                        model = msg.stampImageUrl,
+                                                        contentDescription = msg.stampTitle,
+                                                        contentScale = ContentScale.Crop,
+                                                        modifier = Modifier
+                                                            .size(72.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                    )
+                                                } else {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(72.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                            .background(WarmPaperBg),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text("📮", fontSize = 28.sp)
+                                                    }
+                                                }
                                                 Spacer(modifier = Modifier.width(12.dp))
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
@@ -918,11 +928,12 @@ fun FriendsAndTradeScreen(
                                             Button(
                                                 onClick = {
                                                     coroutineScope.launch {
+                                                        val validRemoteUrl = if (com.mipastudio.memostamp.domain.model.DirectMessage.isValidRemoteStampUrl(msg.stampImageUrl)) msg.stampImageUrl ?: "" else ""
                                                         val draft = StampDraft(
-                                                            originalImagePath = msg.stampImageUrl ?: "",
-                                                            renderedImagePath = msg.stampImageUrl ?: "",
-                                                            title = msg.stampTitle ?: "Tem từ ${msg.senderName}",
-                                                            location = msg.stampLocation ?: "Việt Nam",
+                                                            originalImagePath = validRemoteUrl,
+                                                            renderedImagePath = validRemoteUrl,
+                                                            title = msg.stampTitle?.takeIf { it.isNotBlank() } ?: "Tem từ ${msg.senderName}",
+                                                            location = msg.stampLocation?.takeIf { it.isNotBlank() } ?: "Việt Nam",
                                                             memoryDate = msg.createdAt,
                                                             note = msg.text
                                                         )
