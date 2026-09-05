@@ -17,6 +17,10 @@ local.properties
 .artifacts/
 .env
 *.jks
+*.keystore
+*.p12
+*.p8
+*.mobileprovision
 ipa/
 *.ipa
 

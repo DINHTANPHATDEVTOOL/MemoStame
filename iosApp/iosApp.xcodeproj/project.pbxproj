@@ -50,6 +50,7 @@
 		1D3624992D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624982D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift */; };
 		1D36249B2D00000100000001 /* SupabaseMediaUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36249A2D00000100000001 /* SupabaseMediaUploader.swift */; };
 		1D36249D2D00000100000001 /* IOSFeedRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36249C2D00000100000001 /* IOSFeedRepository.swift */; };
+		1D36249F2D00000100000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */; };
 		1D36234B2D00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D36234A2D00000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -98,6 +99,7 @@
 		1D3624982D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSAuthenticatedSessionCoordinator.swift; sourceTree = "<group>"; };
 		1D36249A2D00000100000001 /* SupabaseMediaUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/SupabaseMediaUploader.swift; sourceTree = "<group>"; };
 		1D36249C2D00000100000001 /* IOSFeedRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSFeedRepository.swift; sourceTree = "<group>"; };
+		1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1D36234A2D00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -134,6 +136,7 @@
 				1D3623252D00000100000001 /* iosAppApp.swift */,
 				1D3623272D00000100000001 /* ContentView.swift */,
 				1D36234A2D00000100000001 /* Assets.xcassets */,
+				1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */,
 				1D3623482D00000100000001 /* ModelExtensions.swift */,
 				1D36248A2D00000100000001 /* IOSLocalPersistenceStore.swift */,
 				1D36248C2D00000100000001 /* KeychainStore.swift */,
@@ -358,6 +361,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1D36234B2D00000100000001 /* Assets.xcassets in Resources */,
+				1D36249F2D00000100000001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -590,7 +594,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_TESTABILITY = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(PLATFORM_NAME)",

@@ -27,6 +27,10 @@ import kotlinx.coroutines.launch
 fun SupabaseConfigDialog(
     onDismiss: () -> Unit
 ) {
+    if (!com.mipastudio.memostamp.BuildConfig.DEBUG) {
+        onDismiss()
+        return
+    }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val supabaseClient = remember(context) { SupabaseClient.getInstance(context) }
@@ -145,8 +149,10 @@ fun SupabaseConfigDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    SupabaseConfig.saveConfig(context, url, anonKey)
-                    Toast.makeText(context, "Đã cập nhật cấu hình đám mây thành công! ✨", Toast.LENGTH_SHORT).show()
+                    val saved = SupabaseConfig.saveConfig(context, url, anonKey)
+                    if (saved) {
+                        Toast.makeText(context, "Đã cập nhật cấu hình đám mây thành công! ✨", Toast.LENGTH_SHORT).show()
+                    }
                     onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
