@@ -108,9 +108,12 @@ final class IOSAuthenticatedSessionCoordinator {
                             finalAvatarUrl = currentProfile?.avatarUrl ?? fallbackProfile.avatarUrl
                         }
 
-                        let finalBio = !cloud.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? cloud.bio
-                            : (currentProfile?.bio ?? fallbackProfile.bio)
+                        let finalBio: String
+                        if let cb = cloud.bio?.trimmingCharacters(in: .whitespacesAndNewlines), !cb.isEmpty {
+                            finalBio = cb
+                        } else {
+                            finalBio = currentProfile?.bio ?? fallbackProfile.bio
+                        }
 
                         let hydratedProfile = UserProfile(
                             uid: uid,
