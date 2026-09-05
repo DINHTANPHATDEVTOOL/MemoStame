@@ -87,6 +87,10 @@ fun PassportScreen(
     var showEditProfileModal by remember { mutableStateOf(false) }
     var showCoverOptionsModal by remember { mutableStateOf(false) }
     var showAvatarOptionsModal by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var deletePassword by remember { mutableStateOf("") }
+    var isDeletingAccount by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
 
     val coverGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -989,10 +993,133 @@ fun PassportScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Đăng xuất tài khoản", color = AccentRed, fontWeight = FontWeight.Bold)
                         }
+
+                        HorizontalDivider(color = UIBorder)
+
+                        // 5. Delete Account Action
+                        OutlinedButton(
+                            onClick = {
+                                showDeleteAccountDialog = true
+                                deletePassword = ""
+                                deleteError = null
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentRed),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AccentRed.copy(alpha = 0.5f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.Delete, contentDescription = null, tint = AccentRed, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Xóa tài khoản vĩnh viễn", color = AccentRed, fontWeight = FontWeight.Bold)
+                        }
                     }
                 },
                 confirmButton = {
                     TextButton(onClick = { showSettingsModal = false }) { Text("Đóng") }
+                },
+                containerColor = SurfaceWhite
+            )
+        }
+
+        if (showDeleteAccountDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    if (!isDeletingAccount) {
+                        showDeleteAccountDialog = false
+                        deletePassword = ""
+                        deleteError = null
+                    }
+                },
+                title = {
+                    Text(
+                        "Xóa tài khoản vĩnh viễn",
+                        fontWeight = FontWeight.Bold,
+                        color = AccentRed
+                    )
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            "Hành động này không thể hoàn tác! Toàn bộ tem, bộ sưu tập, tin nhắn và dữ liệu cá nhân của bạn sẽ bị xóa vĩnh viễn trên máy chủ và thiết bị.",
+                            fontSize = 13.sp,
+                            color = PrimaryText
+                        )
+                        Text(
+                            "Vui lòng nhập mật khẩu hiện tại để xác nhận quyền sở hữu:",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SecondaryText
+                        )
+                        OutlinedTextField(
+                            value = deletePassword,
+                            onValueChange = {
+                                deletePassword = it
+                                deleteError = null
+                            },
+                            label = { Text("Mật khẩu hiện tại", fontSize = 11.sp) },
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            singleLine = true,
+                            enabled = !isDeletingAccount,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        if (deleteError != null) {
+                            Text(
+                                deleteError!!,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentRed
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        enabled = !isDeletingAccount && deletePassword.isNotBlank(),
+                        onClick = {
+                            if (isDeletingAccount) return@Button
+                            if (deletePassword.isBlank()) {
+                                deleteError = "⚠️ Vui lòng nhập mật khẩu hiện tại"
+                                return@Button
+                            }
+                            isDeletingAccount = true
+                            deleteError = null
+                            coroutineScope.launch {
+                                val result = authRepo.deleteAccount(deletePassword)
+                                isDeletingAccount = false
+                                if (result.isSuccess) {
+                                    showDeleteAccountDialog = false
+                                    showSettingsModal = false
+                                    Toast.makeText(context, "Tài khoản của bạn đã được xóa vĩnh viễn", Toast.LENGTH_LONG).show()
+                                    onLogout()
+                                } else {
+                                    val err = result.exceptionOrNull()?.message ?: "Xóa tài khoản thất bại"
+                                    deleteError = "⚠️ $err"
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
+                    ) {
+                        if (isDeletingAccount) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+                        Text("Xác nhận xóa tài khoản", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        enabled = !isDeletingAccount,
+                        onClick = {
+                            showDeleteAccountDialog = false
+                            deletePassword = ""
+                            deleteError = null
+                        }
+                    ) {
+                        Text("Hủy")
+                    }
                 },
                 containerColor = SurfaceWhite
             )

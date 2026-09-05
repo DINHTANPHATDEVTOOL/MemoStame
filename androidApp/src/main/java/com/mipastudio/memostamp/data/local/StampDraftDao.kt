@@ -25,4 +25,7 @@ interface StampDraftDao {
 
     @Query("DELETE FROM drafts WHERE ownerId = :ownerId")
     fun deleteAllDraftsByOwner(ownerId: String): Int
+
+    @Query("SELECT * FROM drafts WHERE ownerId = :ownerId")
+    fun getAllDraftsByOwner(ownerId: String): List<StampDraftEntity>
 }

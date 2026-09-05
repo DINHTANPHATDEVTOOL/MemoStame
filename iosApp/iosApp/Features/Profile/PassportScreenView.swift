@@ -7,6 +7,7 @@ import shared
 struct PassportScreenView: View {
     let repository: SharedMemoStampRepository
     var onLogout: (() -> Void)? = nil
+    var onAccountDeleted: (() -> Void)? = nil
     @Environment(\.presentationMode) var presentationMode
 
     @StateObject private var langManager = AppLanguageManager.shared
@@ -224,7 +225,7 @@ struct PassportScreenView: View {
             EditProfileSheetView(repository: repository)
         }
         .sheet(isPresented: $showSettingsModal) {
-            ProfileSettingsSheetView(repository: repository, onLogout: onLogout)
+            ProfileSettingsSheetView(repository: repository, onLogout: onLogout, onAccountDeleted: onAccountDeleted)
         }
     }
 }
@@ -400,6 +401,7 @@ struct StatBox: View {
 struct ProfileSettingsSheetView: View {
     let repository: SharedMemoStampRepository
     var onLogout: (() -> Void)? = nil
+    var onAccountDeleted: (() -> Void)? = nil
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var langManager = AppLanguageManager.shared
 
@@ -415,6 +417,11 @@ struct ProfileSettingsSheetView: View {
     @State private var selectedAvatarImage: UIImage? = nil
     @State private var isSavingProfile: Bool = false
     @State private var profileSaveMessage: String? = nil
+
+    @State private var showDeleteAccountSheet: Bool = false
+    @State private var deletePassword: String = ""
+    @State private var isDeletingAccount: Bool = false
+    @State private var deleteAccountError: String? = nil
 
     var body: some View {
         NavigationView {
@@ -828,6 +835,23 @@ struct ProfileSettingsSheetView: View {
                             .background(Color.red.opacity(0.08))
                             .cornerRadius(14)
                         }
+
+                        Button(action: {
+                            deletePassword = ""
+                            deleteAccountError = nil
+                            showDeleteAccountSheet = true
+                        }) {
+                            HStack {
+                                Image(systemName: "trash.fill")
+                                Text(langManager.string(vi: "Xóa Tài Khoản Vĩnh Viễn", en: "Delete Account Permanently"))
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Color.red)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.red.opacity(0.12))
+                            .cornerRadius(14)
+                        }
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 30)
@@ -842,6 +866,110 @@ struct ProfileSettingsSheetView: View {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .foregroundColor(MSColors.stamp)
+                }
+            }
+        }
+        .sheet(isPresented: $showDeleteAccountSheet) {
+            NavigationView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(langManager.string(
+                        vi: "Hành động này không thể hoàn tác! Toàn bộ tem, bộ sưu tập, tin nhắn và dữ liệu cá nhân của bạn sẽ bị xóa vĩnh viễn trên máy chủ và thiết bị.",
+                        en: "This action cannot be undone! All your stamps, collections, messages, and personal data will be permanently deleted from the server and device."
+                    ))
+                    .font(.subheadline)
+                    .foregroundColor(MSColors.ink)
+
+                    Text(langManager.string(
+                        vi: "Vui lòng nhập mật khẩu hiện tại để xác nhận quyền sở hữu:",
+                        en: "Please enter your current password to confirm ownership:"
+                    ))
+                    .font(.caption.bold())
+                    .foregroundColor(MSColors.grey)
+
+                    SecureField(langManager.string(vi: "Mật khẩu hiện tại", en: "Current password"), text: $deletePassword)
+                        .font(.subheadline)
+                        .foregroundColor(MSColors.ink)
+                        .padding(12)
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                        .disabled(isDeletingAccount)
+
+                    if let err = deleteAccountError {
+                        Text(err)
+                            .font(.caption.bold())
+                            .foregroundColor(Color.red)
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        if isDeletingAccount { return }
+                        let pass = deletePassword.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if pass.isEmpty {
+                            deleteAccountError = langManager.string(
+                                vi: "⚠️ Vui lòng nhập mật khẩu hiện tại",
+                                en: "⚠️ Please enter your current password"
+                            )
+                            return
+                        }
+
+                        isDeletingAccount = true
+                        deleteAccountError = nil
+
+                        SupabaseAuthService.shared.deleteCurrentAccount(currentPassword: pass) { result in
+                            DispatchQueue.main.async {
+                                self.isDeletingAccount = false
+                                switch result {
+                                case .failure(let error):
+                                    self.deleteAccountError = "⚠️ \(error.localizedDescription)"
+                                case .success:
+                                    self.showDeleteAccountSheet = false
+                                    self.presentationMode.wrappedValue.dismiss()
+                                    if let onAccountDeleted = self.onAccountDeleted {
+                                        onAccountDeleted()
+                                    } else if let onLogout = self.onLogout {
+                                        onLogout()
+                                    } else {
+                                        self.repository.resetUserScopedState()
+                                    }
+                                }
+                            }
+                        }
+                    }) {
+                        HStack {
+                            if isDeletingAccount {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .padding(.trailing, 4)
+                            }
+                            Text(isDeletingAccount ? langManager.string(vi: "Đang xóa tài khoản...", en: "Deleting account...") : langManager.string(vi: "Xác Nhận Xóa Tài Khoản", en: "Confirm Account Deletion"))
+                                .font(.body.bold())
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isDeletingAccount || deletePassword.isEmpty ? Color.red.opacity(0.6) : Color.red)
+                        .cornerRadius(14)
+                    }
+                    .disabled(isDeletingAccount || deletePassword.isEmpty)
+                }
+                .padding()
+                .background(MSColors.paper.ignoresSafeArea())
+                .navigationTitle(langManager.string(vi: "Xóa Tài Khoản", en: "Delete Account"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(langManager.string(vi: "Hủy", en: "Cancel")) {
+                            if !isDeletingAccount {
+                                showDeleteAccountSheet = false
+                                deletePassword = ""
+                                deleteAccountError = nil
+                            }
+                        }
+                        .disabled(isDeletingAccount)
+                        .foregroundColor(MSColors.stamp)
+                    }
                 }
             }
         }

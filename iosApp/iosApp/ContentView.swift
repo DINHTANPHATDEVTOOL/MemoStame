@@ -116,6 +116,9 @@ struct ContentView: View {
                                     repository: repository,
                                     onLogout: {
                                         performLogout()
+                                    },
+                                    onAccountDeleted: {
+                                        handleAccountDeleted()
                                     }
                                 )
                             default:
@@ -275,10 +278,20 @@ struct ContentView: View {
 
     private func performLogout() {
         let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
-        if IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(currentUid) {
+        if SupabaseAuthService.shared.activeSession != nil && IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(currentUid) {
             IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+            SupabaseAuthService.shared.signOut { _ in }
         }
-        SupabaseAuthService.shared.signOut { _ in }
+        repository.resetUserScopedState()
+        withAnimation {
+            selectedTab = .home
+            showCameraModal = false
+            replyToPostId = nil
+            authGateState = .unauthenticated
+        }
+    }
+
+    private func handleAccountDeleted() {
         repository.resetUserScopedState()
         withAnimation {
             selectedTab = .home

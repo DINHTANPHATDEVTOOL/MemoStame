@@ -87,6 +87,45 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
         return@withContext putAuthRequest(endpoint, accessToken, gson.toJson(bodyMap))
     }
 
+    suspend fun deleteAccount(
+        accessToken: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        if (accessToken.isBlank()) {
+            return@withContext Result.failure(IllegalArgumentException("Access token cannot be blank"))
+        }
+        val endpoint = "${getBaseUrl()}/functions/v1/delete-account"
+        return@withContext try {
+            val url = URL(endpoint)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("apikey", getApiKey())
+                setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty("Content-Type", "application/json")
+                connectTimeout = 15000
+                readTimeout = 15000
+                doOutput = true
+                OutputStreamWriter(outputStream).use { writer ->
+                    writer.write("{}")
+                    writer.flush()
+                }
+            }
+
+            val code = conn.responseCode
+            val isSuccess = code in 200..299
+            val stream = if (isSuccess) conn.inputStream else conn.errorStream
+            val responseText = stream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+
+            if (!isSuccess) {
+                val errorMsg = parseErrorMessage(responseText) ?: "Account deletion failed [$code]"
+                return@withContext Result.failure(IllegalStateException(errorMsg))
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun putAuthRequest(endpoint: String, accessToken: String, jsonBody: String): Result<Unit> {
         return try {
             val url = URL(endpoint)

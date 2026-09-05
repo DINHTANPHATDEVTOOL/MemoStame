@@ -223,6 +223,15 @@ class ChatRepository internal constructor(
         prefs?.edit()?.putString(getMessagesPrefKey(userId), gson.toJson(list))?.apply()
     }
 
+    fun clearAccountLocalData(userId: String) {
+        if (userId.isBlank()) return
+        prefs?.edit()?.remove(getMessagesPrefKey(userId))?.apply()
+        if (activeUserId == userId) {
+            _messages.value = emptyList()
+            activeUserId = null
+        }
+    }
+
     suspend fun loadConversation(otherUserId: String): Result<List<DirectMessage>> = withContext(Dispatchers.IO) {
         val currentUid = authRepo.currentUser.value.userId
         val token = authRepo.accessToken.value ?: supabaseClient.userAccessToken
