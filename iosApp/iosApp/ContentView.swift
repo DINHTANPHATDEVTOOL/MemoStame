@@ -10,6 +10,18 @@ enum IOSAuthGateState {
     case unauthenticated
 }
 
+enum RecoveryAlertItem: Identifiable {
+    case error(String)
+    case success
+
+    var id: String {
+        switch self {
+        case .error(let msg): return "err_\(msg)"
+        case .success: return "success"
+        }
+    }
+}
+
 enum ActiveTab {
     case home
     case vault
@@ -29,6 +41,10 @@ struct ContentView: View {
     @State private var replyToPostId: String? = nil
     @State private var showOfflineToast: Bool = false
     @Environment(\.scenePhase) private var scenePhase
+
+    @ObservedObject private var recoveryCoordinator = IOSPasswordRecoveryCoordinator.shared
+    @State private var showResetPasswordSheet: Bool = false
+    @State private var recoveryAlertItem: RecoveryAlertItem? = nil
 
     let platform = Platform_iosKt.getPlatform()
 
@@ -234,6 +250,57 @@ struct ContentView: View {
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 IOSChatRepository.shared.onAppBecameActive()
+            }
+        }
+        .onOpenURL { url in
+            recoveryCoordinator.handleDeepLink(url)
+        }
+        .onChange(of: recoveryCoordinator.recoveryState) { state in
+            switch state {
+            case .ready:
+                showResetPasswordSheet = true
+            case .invalid(let msg):
+                showResetPasswordSheet = false
+                recoveryAlertItem = .error(msg)
+            case .success:
+                showResetPasswordSheet = false
+                recoveryAlertItem = .success
+            default:
+                break
+            }
+        }
+        .sheet(isPresented: $showResetPasswordSheet) {
+            if case .ready(_, let email) = recoveryCoordinator.recoveryState {
+                ResetPasswordSheetView(email: email) {
+                    showResetPasswordSheet = false
+                    recoveryAlertItem = .success
+                }
+            }
+        }
+        .alert(item: $recoveryAlertItem) { item in
+            switch item {
+            case .error(let msg):
+                return Alert(
+                    title: Text("Khôi phục mật khẩu"),
+                    message: Text(msg),
+                    dismissButton: .default(Text("Đóng")) {
+                        recoveryCoordinator.resetState()
+                    }
+                )
+            case .success:
+                return Alert(
+                    title: Text("Đặt lại mật khẩu thành công"),
+                    message: Text("Mật khẩu tài khoản của bạn đã được cập nhật thành công. Vui lòng đăng nhập lại bằng mật khẩu mới."),
+                    dismissButton: .default(Text("Đăng nhập")) {
+                        recoveryCoordinator.resetState()
+                        if authGateState == .authenticated {
+                            repository.resetUserScopedState()
+                            withAnimation {
+                                authGateState = .unauthenticated
+                            }
+                        }
+                    }
+                )
             }
         }
     }

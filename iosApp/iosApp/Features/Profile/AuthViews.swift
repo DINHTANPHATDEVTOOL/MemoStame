@@ -17,6 +17,7 @@ struct AuthLoginScreenView: View {
     @State private var isSignUpMode: Bool = false
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
+    @State private var showForgotPasswordSheet: Bool = false
 
     var body: some View {
         ZStack {
@@ -122,6 +123,18 @@ struct AuthLoginScreenView: View {
                             .padding(.vertical, 2)
                     }
 
+                    if !isSignUpMode {
+                        HStack {
+                            Spacer()
+                            Button(action: { showForgotPasswordSheet = true }) {
+                                Text("Quên mật khẩu?")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.stamp)
+                            }
+                        }
+                        .padding(.top, -6)
+                    }
+
                     Button(action: performAuth) {
                         HStack {
                             if isLoading {
@@ -200,6 +213,9 @@ struct AuthLoginScreenView: View {
 
                 Spacer()
             }
+        }
+        .sheet(isPresented: $showForgotPasswordSheet) {
+            ForgotPasswordSheetView(initialEmail: emailText)
         }
         .alert(isPresented: $showSocialNotice) {
             Alert(
@@ -531,6 +547,279 @@ struct ProfileSetupScreenView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             isCheckingUsername = false
             usernameStatus = "✓ Available"
+        }
+    }
+}
+
+// MARK: - Password Recovery Request Sheet
+struct ForgotPasswordSheetView: View {
+    @Environment(\.presentationMode) private var presentationMode
+    @State private var emailText: String
+    @State private var isSending: Bool = false
+    @State private var statusMessage: String? = nil
+    @State private var errorMessage: String? = nil
+    @State private var cooldownSeconds: Int = 0
+    @State private var timer: Timer? = nil
+
+    init(initialEmail: String = "") {
+        _emailText = State(initialValue: initialEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+    }
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                MSColors.paper.ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Khôi phục mật khẩu")
+                            .font(.title2.bold())
+                            .foregroundColor(MSColors.ink)
+
+                        Text("Nhập địa chỉ email tài khoản của bạn. Nếu tài khoản tồn tại, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu.")
+                            .font(.subheadline)
+                            .foregroundColor(MSColors.grey)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 16)
+
+                    // Email input field
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                            .foregroundColor(MSColors.stamp)
+                            .frame(width: 24)
+                        TextField("Email của bạn", text: $emailText)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+                    .padding(14)
+                    .background(MSColors.white)
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+
+                    if let error = errorMessage {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                                .font(.caption)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    if let status = statusMessage {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                            Text(status)
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Button(action: sendRecoveryEmail) {
+                        HStack {
+                            if isSending {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text(cooldownSeconds > 0 ? "Thử lại sau (\(cooldownSeconds)s)" : "Gửi email đặt lại mật khẩu")
+                                    .font(.headline)
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background((emailText.isEmpty || isSending || cooldownSeconds > 0) ? Color.gray : MSColors.stamp)
+                        .cornerRadius(12)
+                    }
+                    .disabled(emailText.isEmpty || isSending || cooldownSeconds > 0)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+            }
+            .navigationBarItems(
+                trailing: Button("Đóng") {
+                    presentationMode.wrappedValue.dismiss()
+                }
+                .foregroundColor(MSColors.stamp)
+            )
+        }
+    }
+
+    private func sendRecoveryEmail() {
+        let trimmed = emailText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard trimmed.contains("@") && trimmed.contains(".") else {
+            errorMessage = "Vui lòng nhập định dạng Email hợp lệ!"
+            return
+        }
+
+        isSending = true
+        errorMessage = nil
+        statusMessage = nil
+
+        SupabaseAuthService.shared.requestPasswordRecovery(email: trimmed, redirectTo: IOSPasswordRecoveryParser.canonicalRedirectUrl) { result in
+            DispatchQueue.main.async {
+                self.isSending = false
+                switch result {
+                case .success:
+                    // Anti-enumeration: Generic response regardless of whether email exists or not
+                    self.statusMessage = "Nếu tài khoản tồn tại với email này, hướng dẫn đặt lại mật khẩu đã được gửi."
+                    self.startCooldown()
+                case .failure(let error):
+                    // Real network or server failure
+                    self.errorMessage = "Không thể gửi yêu cầu: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func startCooldown() {
+        cooldownSeconds = 30
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [self] t in
+            if self.cooldownSeconds > 1 {
+                self.cooldownSeconds -= 1
+            } else {
+                self.cooldownSeconds = 0
+                t.invalidate()
+            }
+        }
+    }
+}
+
+// MARK: - Reset Password Sheet
+struct ResetPasswordSheetView: View {
+    @Environment(\.presentationMode) private var presentationMode
+    @ObservedObject var coordinator = IOSPasswordRecoveryCoordinator.shared
+    let email: String
+    let onSuccess: () -> Void
+
+    @State private var newPasswordText: String = ""
+    @State private var confirmPasswordText: String = ""
+    @State private var errorMessage: String? = nil
+    @State private var isSubmitting: Bool = false
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                MSColors.paper.ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Đặt lại mật khẩu mới")
+                            .font(.title2.bold())
+                            .foregroundColor(MSColors.ink)
+
+                        Text("Tài khoản: \(email)")
+                            .font(.subheadline.bold())
+                            .foregroundColor(MSColors.stamp)
+
+                        Text("Vui lòng nhập mật khẩu mới (tối thiểu 6 ký tự).")
+                            .font(.caption)
+                            .foregroundColor(MSColors.grey)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 16)
+
+                    // New Password Field
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .foregroundColor(MSColors.stamp)
+                            .frame(width: 24)
+                        SecureField("Mật khẩu mới (tối thiểu 6 ký tự)", text: $newPasswordText)
+                    }
+                    .padding(14)
+                    .background(MSColors.white)
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+
+                    // Confirm Password Field
+                    HStack {
+                        Image(systemName: "lock.rotation")
+                            .foregroundColor(MSColors.stamp)
+                            .frame(width: 24)
+                        SecureField("Xác nhận mật khẩu mới", text: $confirmPasswordText)
+                    }
+                    .padding(14)
+                    .background(MSColors.white)
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+
+                    if let error = errorMessage {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                                .font(.caption)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Button(action: submitNewPassword) {
+                        HStack {
+                            if isSubmitting {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Lưu mật khẩu mới")
+                                    .font(.headline)
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background((newPasswordText.isEmpty || confirmPasswordText.isEmpty || isSubmitting) ? Color.gray : MSColors.stamp)
+                        .cornerRadius(12)
+                    }
+                    .disabled(newPasswordText.isEmpty || confirmPasswordText.isEmpty || isSubmitting)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+            }
+            .navigationBarItems(
+                leading: Button("Hủy") {
+                    presentationMode.wrappedValue.dismiss()
+                    coordinator.resetState()
+                }
+                .foregroundColor(MSColors.grey)
+            )
+        }
+    }
+
+    private func submitNewPassword() {
+        if newPasswordText.count < 6 {
+            errorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự!"
+            return
+        }
+        if newPasswordText != confirmPasswordText {
+            errorMessage = "Mật khẩu xác nhận không khớp!"
+            return
+        }
+
+        isSubmitting = true
+        errorMessage = nil
+
+        coordinator.updatePassword(newPassword: newPasswordText, confirmPassword: confirmPasswordText) { result in
+            DispatchQueue.main.async {
+                self.isSubmitting = false
+                switch result {
+                case .success:
+                    self.presentationMode.wrappedValue.dismiss()
+                    self.onSuccess()
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+            }
         }
     }
 }

@@ -146,14 +146,123 @@ class SupabaseAuthService {
         }.resume()
     }
 
-    func signOut(completion: @escaping (Bool) -> Void) {
-        let token = activeSession?.accessToken
+    func clearSessionLocally() {
         activeSession = nil
         KeychainStore.deleteSession()
         SupabaseRealtimeClient.shared.disconnect(clearState: true)
         IOSFriendRepository.shared.onUserChanged(newUserId: "")
         IOSChatRepository.shared.onSessionChanged(userId: "", accessToken: nil)
         IOSFeedRepository.shared.clear()
+    }
+
+    func requestPasswordRecovery(email: String, redirectTo: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalizedEmail.isEmpty, normalizedEmail.contains("@") else {
+            completion(.failure(NSError(domain: "SupabaseAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Địa chỉ email không hợp lệ."])))
+            return
+        }
+
+        let encodedRedirect = redirectTo.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? redirectTo
+        guard let url = URL(string: "\(supabaseUrl)/auth/v1/recover?redirect_to=\(encodedRedirect)") else {
+            completion(.failure(SupabaseAuthError.invalidUrl))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue(redirectTo, forHTTPHeaderField: "redirect_to")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "email": normalizedEmail,
+            "redirect_to": redirectTo
+        ]
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let err = error {
+                completion(.failure(SupabaseAuthError.networkError(err.localizedDescription)))
+                return
+            }
+
+            guard let httpRes = response as? HTTPURLResponse else {
+                completion(.failure(SupabaseAuthError.parseError))
+                return
+            }
+
+            guard (200...299).contains(httpRes.statusCode) else {
+                var msg = "Yêu cầu đặt lại mật khẩu thất bại"
+                if let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    msg = (json["msg"] as? String) ?? (json["message"] as? String) ?? (json["error_description"] as? String) ?? msg
+                }
+                completion(.failure(SupabaseAuthError.serverError(httpRes.statusCode, msg)))
+                return
+            }
+
+            completion(.success(()))
+        }.resume()
+    }
+
+    struct RecoveryUserInfo {
+        let userId: String
+        let email: String
+    }
+
+    func validateRecoveryUser(accessToken: String, completion: @escaping (Result<RecoveryUserInfo, Error>) -> Void) {
+        let token = accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty else {
+            completion(.failure(NSError(domain: "SupabaseAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Token không được để trống."])))
+            return
+        }
+
+        guard let url = URL(string: "\(supabaseUrl)/auth/v1/user") else {
+            completion(.failure(SupabaseAuthError.invalidUrl))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let err = error {
+                completion(.failure(SupabaseAuthError.networkError(err.localizedDescription)))
+                return
+            }
+
+            guard let httpRes = response as? HTTPURLResponse else {
+                completion(.failure(SupabaseAuthError.parseError))
+                return
+            }
+
+            guard (200...299).contains(httpRes.statusCode) else {
+                var msg = "Xác thực phiên khôi phục thất bại"
+                if let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    msg = (json["msg"] as? String) ?? (json["message"] as? String) ?? (json["error_description"] as? String) ?? msg
+                }
+                completion(.failure(SupabaseAuthError.serverError(httpRes.statusCode, msg)))
+                return
+            }
+
+            guard let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let uid = json["id"] as? String,
+                  IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(uid) else {
+                completion(.failure(NSError(domain: "SupabaseAuth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Thông tin người dùng trong liên kết không hợp lệ."])))
+                return
+            }
+
+            let email = (json["email"] as? String) ?? ""
+            completion(.success(RecoveryUserInfo(userId: uid, email: email)))
+        }.resume()
+    }
+
+    func signOut(completion: @escaping (Bool) -> Void) {
+        let token = activeSession?.accessToken
+        clearSessionLocally()
 
         guard let accessToken = token, let url = URL(string: "\(supabaseUrl)/auth/v1/logout") else {
             completion(true)

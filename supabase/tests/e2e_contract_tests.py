@@ -85,6 +85,162 @@ def get_local_config():
     return supabase_url.rstrip("/"), anon_key
 
 
+def discover_mail_catcher_url() -> str:
+    """Safely determine local Supabase mail catcher URL (Inbucket or Mailpit)."""
+    env_url = os.environ.get("MAIL_CATCHER_URL") or os.environ.get("INBUCKET_URL") or os.environ.get("MAILPIT_URL")
+    if env_url:
+        return env_url.rstrip("/")
+
+    try:
+        proc = subprocess.run(
+            ["supabase", "status", "-o", "json"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if proc.returncode == 0 and proc.stdout:
+            data = json.loads(proc.stdout)
+            for k in ("INBUCKET_URL", "inbucket_url", "MAILPIT_URL", "mailpit_url", "MAIL_URL", "mail_url"):
+                if data.get(k):
+                    return data[k].rstrip("/")
+    except Exception:
+        pass
+
+    return "http://127.0.0.1:54324"
+
+
+def _extract_verify_url(body: str) -> str:
+    if not body:
+        return None
+    clean_body = body.replace("&amp;", "&")
+    match = re.search(r'https?://[^\s"\'<>]+/auth/v1/verify[^\s"\'<>]+', clean_body)
+    if match:
+        return match.group(0)
+    return None
+
+
+def fetch_recovery_email_link(mail_base_url: str, target_email: str, timeout_sec: int = 20) -> str:
+    """Retrieve recovery email from local Inbucket or Mailpit and extract the verification link."""
+    parsed_email = target_email.strip().lower()
+    mailbox_name = parsed_email.split("@")[0]
+    deadline = time.time() + timeout_sec
+    candidates = [mail_base_url, "http://127.0.0.1:54324", "http://127.0.0.1:8025", "http://127.0.0.1:9000"]
+    seen = set()
+    candidate_urls = [u for u in candidates if u not in seen and not seen.add(u)]
+
+    while time.time() < deadline:
+        for base in candidate_urls:
+            # 1. Try Inbucket endpoint: GET /api/v1/mailbox/{mailbox}
+            try:
+                req = urllib.request.Request(f"{base}/api/v1/mailbox/{mailbox_name}")
+                with urllib.request.urlopen(req, timeout=3) as resp:
+                    if resp.status == 200:
+                        messages = json.loads(resp.read().decode("utf-8"))
+                        if messages and isinstance(messages, list):
+                            msg_id = messages[-1].get("id") or messages[0].get("id")
+                            detail_req = urllib.request.Request(f"{base}/api/v1/mailbox/{mailbox_name}/{msg_id}")
+                            with urllib.request.urlopen(detail_req, timeout=3) as dresp:
+                                msg_data = json.loads(dresp.read().decode("utf-8"))
+                                body_text = ""
+                                if isinstance(msg_data.get("body"), dict):
+                                    body_text = (msg_data["body"].get("text") or "") + " " + (msg_data["body"].get("html") or "")
+                                elif isinstance(msg_data.get("body"), str):
+                                    body_text = msg_data.get("body")
+                                link = _extract_verify_url(body_text)
+                                if link:
+                                    return link
+            except Exception:
+                pass
+
+            # 2. Try Mailpit endpoint: GET /api/v1/messages
+            try:
+                req = urllib.request.Request(f"{base}/api/v1/messages")
+                with urllib.request.urlopen(req, timeout=3) as resp:
+                    if resp.status == 200:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        messages = data.get("messages") or []
+                        for m in messages:
+                            to_list = m.get("To") or []
+                            matches_user = any(
+                                target_email in (t.get("Address") or "").lower()
+                                for t in to_list if isinstance(t, dict)
+                            )
+                            if matches_user:
+                                msg_id = m.get("ID")
+                                detail_req = urllib.request.Request(f"{base}/api/v1/message/{msg_id}")
+                                with urllib.request.urlopen(detail_req, timeout=3) as dresp:
+                                    msg_data = json.loads(dresp.read().decode("utf-8"))
+                                    body_text = (msg_data.get("Text") or "") + " " + (msg_data.get("HTML") or "")
+                                    link = _extract_verify_url(body_text)
+                                    if link:
+                                        return link
+            except Exception:
+                pass
+
+        time.sleep(1)
+
+    raise TimeoutError(f"Timed out waiting for recovery email for user in local mail catcher ({mail_base_url})")
+
+
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def follow_recovery_verification(verify_url: str) -> str:
+    """Follow verification link without following custom app deep link scheme."""
+    opener = urllib.request.build_opener(NoRedirectHandler())
+    req = urllib.request.Request(verify_url, headers={"User-Agent": "MemoStamp-E2E/1.0"})
+    status = None
+    loc = None
+    try:
+        resp = opener.open(req)
+        status = resp.status
+        loc = resp.headers.get("Location") or resp.headers.get("location")
+    except urllib.error.HTTPError as e:
+        status = e.code
+        loc = e.headers.get("Location") or e.headers.get("location")
+
+    if status not in (301, 302, 303, 307, 308) or not loc:
+        raise ValueError(f"Expected HTTP redirect from recovery verification link, got status {status}")
+
+    return loc
+
+
+def parse_recovery_redirect(location_url: str) -> dict:
+    """Validate canonical recovery redirect URL and extract credentials."""
+    parsed = urllib.parse.urlparse(location_url)
+    if parsed.scheme.lower() != "memostamp":
+        raise ValueError(f"Invalid redirect scheme: {parsed.scheme} (expected memostamp)")
+    if (parsed.netloc or "").lower() != "auth":
+        raise ValueError(f"Invalid redirect host: {parsed.netloc} (expected auth)")
+    if parsed.path.rstrip("/") != "/recovery":
+        raise ValueError(f"Invalid redirect path: {parsed.path} (expected /recovery)")
+
+    params = {}
+    if parsed.fragment:
+        for k, v in urllib.parse.parse_qsl(parsed.fragment):
+            params[k] = v
+    if parsed.query:
+        for k, v in urllib.parse.parse_qsl(parsed.query):
+            if k not in params:
+                params[k] = v
+
+    type_val = params.get("type", "")
+    if type_val and type_val.lower() != "recovery":
+        raise ValueError(f"Invalid recovery type: {type_val}")
+
+    token = params.get("access_token") or params.get("token")
+    if not token or not token.strip():
+        raise ValueError("Missing access token in recovery redirect")
+
+    return {
+        "access_token": token.strip(),
+        "refresh_token": params.get("refresh_token", "").strip(),
+        "type": type_val or "recovery"
+    }
+
+
 class SupabaseHttpClient:
     def __init__(self, base_url: str, anon_key: str):
         self.base_url = base_url
@@ -1207,6 +1363,188 @@ class E2EContractRunner:
 
         self.log("PHASE 8", "All account deletion & purge contracts successfully verified!")
 
+    # ----------------------------------------------------
+    # PHASE 9: PASSWORD RECOVERY & AUTH DEEP LINK E2E
+    # ----------------------------------------------------
+    def phase9_password_recovery(self):
+        self.log("PHASE 9", "Starting password recovery & deep-link contract tests...")
+
+        # E2E TEST 8: Pure redirect URL & deep link parser validation
+        self.log("PHASE 9", "Running E2E Test 8: Deep link parser validations...")
+        # Valid fragment
+        p1 = parse_recovery_redirect("memostamp://auth/recovery#access_token=test_token_123&type=recovery")
+        assert p1["access_token"] == "test_token_123"
+        assert p1["type"] == "recovery"
+
+        # Valid query
+        p2 = parse_recovery_redirect("memostamp://auth/recovery?access_token=test_token_456&type=recovery")
+        assert p2["access_token"] == "test_token_456"
+
+        # Wrong scheme rejected
+        try:
+            parse_recovery_redirect("https://auth/recovery#access_token=abc")
+            assert False, "Should reject non-memostamp scheme"
+        except ValueError:
+            pass
+
+        # Wrong host rejected
+        try:
+            parse_recovery_redirect("memostamp://profile/recovery#access_token=abc")
+            assert False, "Should reject non-auth host"
+        except ValueError:
+            pass
+
+        # Wrong path rejected
+        try:
+            parse_recovery_redirect("memostamp://auth/login#access_token=abc")
+            assert False, "Should reject non-recovery path"
+        except ValueError:
+            pass
+
+        # Wrong type rejected
+        try:
+            parse_recovery_redirect("memostamp://auth/recovery#access_token=abc&type=signup")
+            assert False, "Should reject non-recovery type"
+        except ValueError:
+            pass
+
+        # Missing token rejected
+        try:
+            parse_recovery_redirect("memostamp://auth/recovery#type=recovery")
+            assert False, "Should reject missing token"
+        except ValueError:
+            pass
+
+        self.log("PHASE 9", "E2E Test 8 PASSED: Parser strict rejection verified")
+
+        # Create isolated Recovery User E
+        email_e = f"e2e-recovery-e-{self.run_id}-{secrets.token_hex(4)}@memostamp.test"
+        initial_password_e = f"InitialPass123!{secrets.token_hex(6)}"
+        new_password_e = f"RecoveredPass456!{secrets.token_hex(6)}"
+
+        status, data, text, _ = self.client.request(
+            "POST",
+            "/auth/v1/signup",
+            json_data={"email": email_e, "password": initial_password_e}
+        )
+        self.assert_status(status, [200, 201], "Signup Recovery User E", "POST", "/auth/v1/signup", text)
+        uid_e = (data.get("user") or {}).get("id") or data.get("id")
+        assert uid_e and isinstance(uid_e, str), "Missing UID for Recovery User E"
+        uuid.UUID(uid_e)
+        self.log("PHASE 9", "Recovery User E created successfully")
+
+        # E2E TEST 6: Unknown email recovery request (Anti-enumeration)
+        self.log("PHASE 9", "Running E2E Test 6: Unknown email anti-enumeration check...")
+        canonical_redirect = "memostamp://auth/recovery"
+        unknown_email = f"unknown-e-{self.run_id}-{secrets.token_hex(6)}@memostamp.test"
+        status, _, text, _ = self.client.request(
+            "POST",
+            f"/auth/v1/recover?redirect_to={urllib.parse.quote(canonical_redirect)}",
+            headers={"redirect_to": canonical_redirect},
+            json_data={
+                "email": unknown_email,
+                "redirect_to": canonical_redirect
+            }
+        )
+        self.assert_status(status, 200, "Unknown email recovery request", "POST", "/auth/v1/recover", text)
+        self.log("PHASE 9", "E2E Test 6 PASSED: Anti-enumeration preserved on unknown email")
+
+        # E2E TEST 1: Known account recovery request & mail delivery
+        self.log("PHASE 9", "Running E2E Test 1: Requesting password recovery for User E...")
+        status, _, text, _ = self.client.request(
+            "POST",
+            f"/auth/v1/recover?redirect_to={urllib.parse.quote(canonical_redirect)}",
+            headers={"redirect_to": canonical_redirect},
+            json_data={
+                "email": email_e,
+                "redirect_to": canonical_redirect
+            }
+        )
+        self.assert_status(status, 200, "Password recovery request for User E", "POST", "/auth/v1/recover", text)
+
+        # Retrieve actual recovery email from local mail catcher
+        mail_catcher_url = discover_mail_catcher_url()
+        self.log("PHASE 9", "Retrieving recovery email from local mail catcher...")
+        verify_url = fetch_recovery_email_link(mail_catcher_url, email_e, timeout_sec=20)
+        assert verify_url and "/auth/v1/verify" in verify_url, "Verification URL not found in email"
+
+        # Follow verification URL without following custom app scheme
+        location_header = follow_recovery_verification(verify_url)
+        assert location_header.startswith("memostamp://auth/recovery"), f"Redirect Location mismatch: {sanitize_text(location_header)}"
+
+        recovery_redirect = parse_recovery_redirect(location_header)
+        recovery_token = recovery_redirect["access_token"]
+        assert recovery_token and len(recovery_token) > 20, "Invalid recovery token format"
+        self.log("PHASE 9", "E2E Test 1 PASSED: Real recovery email delivered and valid redirect captured")
+
+        # E2E TEST 2: Validate recovery credential via /auth/v1/user
+        self.log("PHASE 9", "Running E2E Test 2: Validating recovery token through /auth/v1/user...")
+        status, user_data, text, _ = self.client.request(
+            "GET",
+            "/auth/v1/user",
+            token=recovery_token
+        )
+        self.assert_status(status, 200, "Validate recovery token", "GET", "/auth/v1/user", text)
+        validated_uid = (user_data or {}).get("id")
+        validated_email = (user_data or {}).get("email") or ""
+        assert validated_uid == uid_e, f"Recovery UID mismatch: {validated_uid} != {uid_e}"
+        assert validated_email.lower() == email_e.lower(), f"Recovery email mismatch: {validated_email} != {email_e}"
+        self.log("PHASE 9", "E2E Test 2 PASSED: Recovery token validated with matching User E UID")
+
+        # E2E TEST 7: Invalid/tampered recovery credential rejected
+        self.log("PHASE 9", "Running E2E Test 7: Tampered recovery token rejection check...")
+        status, _, text, _ = self.client.request(
+            "GET",
+            "/auth/v1/user",
+            token="tampered.recovery.token.memostamp"
+        )
+        self.assert_status(status, [400, 401, 403], "Tampered recovery token rejected", "GET", "/auth/v1/user", text)
+        self.log("PHASE 9", "E2E Test 7 PASSED: Tampered token safely rejected")
+
+        # E2E TEST 3: Update password through recovery credential
+        self.log("PHASE 9", "Running E2E Test 3: Updating password via recovery bearer...")
+        status, update_data, text, _ = self.client.request(
+            "PUT",
+            "/auth/v1/user",
+            token=recovery_token,
+            json_data={"password": new_password_e}
+        )
+        self.assert_status(status, 200, "Update password with recovery token", "PUT", "/auth/v1/user", text)
+        updated_uid = (update_data or {}).get("id") or (update_data.get("user") or {}).get("id")
+        if updated_uid:
+            assert updated_uid == uid_e, "Updated UID does not match User E"
+        self.log("PHASE 9", "E2E Test 3 PASSED: Server password update succeeded")
+
+        # E2E TEST 4: Old password login must FAIL
+        self.log("PHASE 9", "Running E2E Test 4: Verifying old password login fails...")
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/auth/v1/token?grant_type=password",
+            json_data={"email": email_e, "password": initial_password_e}
+        )
+        self.assert_status(status, [400, 401], "Old password login rejected", "POST", "/auth/v1/token", text)
+        self.log("PHASE 9", "E2E Test 4 PASSED: Old password successfully invalidated")
+
+        # E2E TEST 5: New password login must SUCCEED
+        self.log("PHASE 9", "Running E2E Test 5: Verifying new password login succeeds...")
+        status, login_data, text, _ = self.client.request(
+            "POST",
+            "/auth/v1/token?grant_type=password",
+            json_data={"email": email_e, "password": new_password_e}
+        )
+        self.assert_status(status, 200, "New password login succeeds", "POST", "/auth/v1/token", text)
+        new_uid = (login_data.get("user") or {}).get("id")
+        assert new_uid == uid_e, f"New login UID mismatch: {new_uid} != {uid_e}"
+        self.log("PHASE 9", "E2E Test 5 PASSED: New password login verified with matching User E UID")
+
+        # Regression: Verify users A, B, C remain intact
+        for role, u in (("A", self.users["A"]), ("B", self.users["B"]), ("C", self.users["C"])):
+            status, data, text, _ = self.client.request("GET", f"/rest/v1/profiles?id=eq.{u['uid']}", token=u["token"])
+            self.assert_status(status, 200, f"Verify User {role} profile intact after recovery", "GET", "/rest/v1/profiles", text)
+            assert isinstance(data, list) and len(data) == 1, f"User {role} profile unexpectedly modified"
+
+        self.log("PHASE 9", "All password recovery & deep-link E2E contracts verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
@@ -1219,6 +1557,7 @@ class E2EContractRunner:
         self.phase6_direct_messages()
         self.phase7_account_isolation()
         self.phase8_self_service_account_deletion()
+        self.phase9_password_recovery()
         print("=" * 60)
         print("ALL BLACK-BOX E2E CONTRACT TESTS PASSED")
         print("=" * 60)
