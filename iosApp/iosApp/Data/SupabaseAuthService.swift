@@ -217,6 +217,129 @@ class SupabaseAuthService {
         }.resume()
     }
 
+    static func isSafeRemoteAvatarUrl(_ urlString: String?) -> Bool {
+        guard let trimmed = urlString?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return true
+        }
+        let lower = trimmed.lowercased()
+        if lower.hasPrefix("file:") ||
+           lower.hasPrefix("/") ||
+           lower.hasPrefix("content:") ||
+           lower.hasPrefix("data:") ||
+           lower.hasPrefix("blob:") {
+            return false
+        }
+        guard let url = URL(string: trimmed),
+              let scheme = url.scheme?.lowercased(),
+              (scheme == "https" || scheme == "http"),
+              let host = url.host,
+              !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        return true
+    }
+
+    func updateAuthenticatedProfile(
+        userId: String,
+        displayName: String,
+        bio: String,
+        avatarUrl: String?,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard let session = activeSession else {
+            completion(.failure(SupabaseAuthError.sessionExpired))
+            return
+        }
+
+        let sessionUid = session.userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(sessionUid) else {
+            completion(.failure(SupabaseAuthError.serverError(403, "Phiên đăng nhập không có danh tính hợp lệ.")))
+            return
+        }
+
+        let requestedUid = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard sessionUid == requestedUid else {
+            completion(.failure(SupabaseAuthError.serverError(403, "Mã người dùng không khớp với phiên xác thực.")))
+            return
+        }
+
+        let accessToken = session.accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !accessToken.isEmpty else {
+            completion(.failure(SupabaseAuthError.sessionExpired))
+            return
+        }
+
+        guard let encodedUid = sessionUid.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(supabaseUrl)/rest/v1/profiles?user_id=eq.\(encodedUid)") else {
+            completion(.failure(SupabaseAuthError.invalidUrl))
+            return
+        }
+
+        var body: [String: Any] = [
+            "display_name": displayName,
+            "bio": bio
+        ]
+
+        if let avatar = avatarUrl?.trimmingCharacters(in: .whitespacesAndNewlines), !avatar.isEmpty {
+            guard Self.isSafeRemoteAvatarUrl(avatar) else {
+                completion(.failure(SupabaseAuthError.serverError(400, "URL ảnh đại diện không an toàn hoặc không hợp lệ.")))
+                return
+            }
+            body["avatar_url"] = avatar
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("return=representation", forHTTPHeaderField: "Prefer")
+
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let err = error {
+                completion(.failure(SupabaseAuthError.networkError(err.localizedDescription)))
+                return
+            }
+
+            guard let httpRes = response as? HTTPURLResponse else {
+                completion(.failure(SupabaseAuthError.parseError))
+                return
+            }
+
+            guard (200...299).contains(httpRes.statusCode) else {
+                var msg = "Profile update failed"
+                if let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    msg = (json["message"] as? String) ?? (json["msg"] as? String) ?? (json["error_description"] as? String) ?? (json["error"] as? String) ?? msg
+                }
+                completion(.failure(SupabaseAuthError.serverError(httpRes.statusCode, msg)))
+                return
+            }
+
+            guard let data = data else {
+                completion(.failure(SupabaseAuthError.parseError))
+                return
+            }
+
+            var returnedUid: String? = nil
+            if let jsonArray = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]],
+               let first = jsonArray.first {
+                returnedUid = (first["user_id"] as? String) ?? (first["id"] as? String)
+            } else if let jsonDict = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
+                returnedUid = (jsonDict["user_id"] as? String) ?? (jsonDict["id"] as? String)
+            }
+
+            guard let matchedUid = returnedUid?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  matchedUid == sessionUid else {
+                completion(.failure(SupabaseAuthError.serverError(httpRes.statusCode, "Hồ sơ cập nhật không trả về người dùng hợp lệ.")))
+                return
+            }
+
+            completion(.success(()))
+        }.resume()
+    }
+
     func updateUserPassword(accessToken: String, newPassword: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let url = URL(string: "\(supabaseUrl)/auth/v1/user") else {
             completion(.failure(SupabaseAuthError.invalidUrl))
