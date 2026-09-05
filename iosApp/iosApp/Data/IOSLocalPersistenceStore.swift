@@ -168,12 +168,28 @@ class IOSLocalPersistenceStore {
     private func restorePayload(_ payload: PersistedPayload, into repository: SharedMemoStampRepository, userId: String) {
         if let user = payload.user {
             let current = (repository.currentUser.value as? UserProfile)
+            let finalUsername = !user.username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? user.username
+                : (current?.username ?? "")
+            let finalDisplayName = !user.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? user.displayName
+                : (current?.displayName ?? "")
+            let finalAvatarUrl: String?
+            if let av = user.avatarUrl?.trimmingCharacters(in: .whitespacesAndNewlines), !av.isEmpty {
+                finalAvatarUrl = av
+            } else {
+                finalAvatarUrl = current?.avatarUrl
+            }
+            let finalBio = !user.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? user.bio
+                : (current?.bio ?? "")
+
             let profile = UserProfile(
                 uid: userId,
-                username: current?.username ?? user.username,
-                displayName: current?.displayName ?? user.displayName,
-                avatarUrl: current?.avatarUrl ?? user.avatarUrl,
-                bio: current?.bio ?? user.bio,
+                username: finalUsername,
+                displayName: finalDisplayName,
+                avatarUrl: finalAvatarUrl,
+                bio: finalBio,
                 stampsCreatedCount: max(current?.stampsCreatedCount ?? 0, user.stampsCreatedCount),
                 stampsCollectedCount: max(current?.stampsCollectedCount ?? 0, user.stampsCollectedCount),
                 placesVisitedCount: max(current?.placesVisitedCount ?? 0, user.placesVisitedCount)

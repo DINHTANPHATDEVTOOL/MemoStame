@@ -47,6 +47,7 @@
 		1D3624932D00000100000001 /* SupabaseRealtimeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624922D00000100000001 /* SupabaseRealtimeClient.swift */; };
 		1D3624952D00000100000001 /* IOSFriendRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624942D00000100000001 /* IOSFriendRepository.swift */; };
 		1D3624972D00000100000001 /* IOSChatRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624962D00000100000001 /* IOSChatRepository.swift */; };
+		1D3624992D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624982D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift */; };
 		1D36234B2D00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D36234A2D00000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -92,6 +93,7 @@
 		1D3624922D00000100000001 /* SupabaseRealtimeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/SupabaseRealtimeClient.swift; sourceTree = "<group>"; };
 		1D3624942D00000100000001 /* IOSFriendRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSFriendRepository.swift; sourceTree = "<group>"; };
 		1D3624962D00000100000001 /* IOSChatRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSChatRepository.swift; sourceTree = "<group>"; };
+		1D3624982D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSAuthenticatedSessionCoordinator.swift; sourceTree = "<group>"; };
 		1D36234A2D00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -136,6 +138,7 @@
 				1D3624922D00000100000001 /* SupabaseRealtimeClient.swift */,
 				1D3624942D00000100000001 /* IOSFriendRepository.swift */,
 				1D3624962D00000100000001 /* IOSChatRepository.swift */,
+				1D3624982D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift */,
 				1D3623502D00000100000001 /* UI */,
 				1D3623512D00000100000001 /* Features */,
 				1D3623602D00000100000001 /* ViewModels */,
@@ -421,6 +424,7 @@
 				1D3624932D00000100000001 /* SupabaseRealtimeClient.swift in Sources */,
 				1D3624952D00000100000001 /* IOSFriendRepository.swift in Sources */,
 				1D3624972D00000100000001 /* IOSChatRepository.swift in Sources */,
+				1D3624992D00000100000001 /* IOSAuthenticatedSessionCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -258,12 +258,6 @@ struct AuthLoginScreenView: View {
                             bio: bio
                         ) { _ in }
 
-                        UserDefaults.standard.set(finalDisplayName, forKey: "user_displayName")
-                        UserDefaults.standard.set(cleanUsername, forKey: "user_username")
-                        UserDefaults.standard.set(trimmedEmail, forKey: "user_email")
-                        UserDefaults.standard.set(avatarUrl, forKey: "user_avatarUrl")
-                        UserDefaults.standard.set(bio, forKey: "user_bio")
-
                         let newProfile = UserProfile(
                             uid: authUid,
                             username: cleanUsername,
@@ -276,7 +270,7 @@ struct AuthLoginScreenView: View {
                         )
                         repository.resetUserScopedState()
                         repository.setCurrentUser(profile: newProfile)
-                        IOSLocalPersistenceStore.shared.loadData(into: repository, userId: authUid)
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
 
                         isLoading = false
                         onLoginSuccess()
@@ -292,88 +286,19 @@ struct AuthLoginScreenView: View {
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let session):
-                        let authUid = session.userId.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
-                            isLoading = false
-                            errorMessage = "Tài khoản không hợp lệ."
-                            return
-                        }
-
-                        // 1. Reset user-scoped repository state
-                        repository.resetUserScopedState()
-
-                        // 2. Create minimal PRESENTATION fallback with REAL auth UID
-                        let fallbackDisplayName = usernameFromEmail.capitalized
-                            .replacingOccurrences(of: "_", with: " ")
-                            .replacingOccurrences(of: ".", with: " ")
-                        let fallbackAvatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
-                        let fallbackBio = "Sưu tầm ký ức qua từng con tem bưu chính 📮"
-
-                        let fallbackProfile = UserProfile(
-                            uid: authUid,
-                            username: cleanUsername,
-                            displayName: fallbackDisplayName,
-                            avatarUrl: fallbackAvatarUrl,
-                            bio: fallbackBio,
-                            stampsCreatedCount: Int32(0),
-                            stampsCollectedCount: Int32(0),
-                            placesVisitedCount: Int32(0)
-                        )
-                        repository.setCurrentUser(profile: fallbackProfile)
-
-                        // 3. Load account-scoped local persistence
-                        IOSLocalPersistenceStore.shared.loadData(into: repository, userId: authUid)
-
-                        // 4. Fetch exact cloud profile without destructive upsert
-                        SupabaseSocialClient.shared.getPublicProfile(userId: authUid) { profileResult in
+                        IOSAuthenticatedSessionCoordinator.shared.hydrate(
+                            session: session,
+                            repository: repository
+                        ) { hydrateResult in
                             DispatchQueue.main.async {
-                                switch profileResult {
-                                case .success(let cloudProfile):
-                                    if let cloud = cloudProfile {
-                                        let cloudUserId = cloud.userId.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        if cloudUserId == authUid {
-                                            let currentProfile = repository.currentUser.value as? UserProfile
-                                            let stampsCreated = currentProfile?.stampsCreatedCount ?? Int32(0)
-                                            let stampsCollected = currentProfile?.stampsCollectedCount ?? Int32(0)
-                                            let placesVisited = currentProfile?.placesVisitedCount ?? Int32(0)
-
-                                            let finalUsername = cloud.username.isEmpty ? cleanUsername : cloud.username
-                                            let finalDisplayName = cloud.displayName.isEmpty ? fallbackDisplayName : cloud.displayName
-
-                                            let finalAvatarUrl: String
-                                            if let ca = cloud.avatarUrl, !ca.isEmpty {
-                                                finalAvatarUrl = ca
-                                            } else {
-                                                finalAvatarUrl = fallbackAvatarUrl
-                                            }
-
-                                            let finalBio: String
-                                            if let cb = cloud.bio, !cb.isEmpty {
-                                                finalBio = cb
-                                            } else {
-                                                finalBio = fallbackBio
-                                            }
-
-                                            let hydratedProfile = UserProfile(
-                                                uid: authUid,
-                                                username: finalUsername,
-                                                displayName: finalDisplayName,
-                                                avatarUrl: finalAvatarUrl,
-                                                bio: finalBio,
-                                                stampsCreatedCount: stampsCreated,
-                                                stampsCollectedCount: stampsCollected,
-                                                placesVisitedCount: placesVisited
-                                            )
-                                            repository.setCurrentUser(profile: hydratedProfile)
-                                            IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
-                                        }
-                                    }
-                                    isLoading = false
+                                isLoading = false
+                                switch hydrateResult {
+                                case .success:
                                     onLoginSuccess()
-
-                                case .failure:
-                                    isLoading = false
-                                    onLoginSuccess()
+                                case .failure(let error):
+                                    SupabaseAuthService.shared.signOut { _ in }
+                                    repository.resetUserScopedState()
+                                    errorMessage = error.localizedDescription
                                 }
                             }
                         }
