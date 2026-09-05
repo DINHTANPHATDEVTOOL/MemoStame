@@ -24,8 +24,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- 2. STORAGE ROW LEVEL SECURITY POLICIES
 -- ===================================================
 
--- Ensure RLS is enabled on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Storage RLS policies for 'stamp-media' (storage.objects already has RLS enabled)
 
 -- 2.1 Public read for rendered stamp media in 'stamp-media' bucket
 DROP POLICY IF EXISTS "Public select stamp media" ON storage.objects;

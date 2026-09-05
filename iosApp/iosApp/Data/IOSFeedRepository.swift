@@ -66,9 +66,8 @@ class IOSFeedRepository: ObservableObject {
     private func parseFeedPostType(_ raw: String?) -> FeedPostType {
         switch (raw ?? "").uppercased() {
         case "MEMORY": return .memory
-        case "SHARED_MEMORY": return .sharedMemory
-        case "RECEIVED_MEMORY": return .receivedMemory
-        case "MEMORY_CHAIN": return .memoryChain
+        case "STAMP_REPLY": return .stampReply
+        case "COLLECTION_MILESTONE": return .collectionMilestone
         default: return .memory
         }
     }
