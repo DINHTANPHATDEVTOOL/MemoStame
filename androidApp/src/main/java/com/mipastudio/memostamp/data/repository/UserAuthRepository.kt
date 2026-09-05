@@ -123,6 +123,7 @@ class UserAuthRepository internal constructor(
             supabaseClient.userAccessToken = session.accessToken
             _isLoggedIn.value = true
             _currentUser.value = loadInitialUser(session.userId)
+            com.mipastudio.memostamp.core.notification.PushTokenManager.registerCurrentDeviceToken(context, session.accessToken, session.userId)
         } else if (session != null && session.refreshToken.isNotBlank()) {
             coroutineScope.launch {
                 val refreshRes = supabaseAuthService.refreshSession(session.refreshToken)
@@ -136,6 +137,7 @@ class UserAuthRepository internal constructor(
                     supabaseClient.userAccessToken = refreshedSession.accessToken
                     _isLoggedIn.value = true
                     _currentUser.value = loadInitialUser(refreshedSession.userId)
+                    com.mipastudio.memostamp.core.notification.PushTokenManager.registerCurrentDeviceToken(context, refreshedSession.accessToken, refreshedSession.userId)
                 } else {
                     sessionStore.clear()
                     _authUserId.value = null
@@ -765,6 +767,7 @@ class UserAuthRepository internal constructor(
         _refreshToken.value = session.refreshToken
         supabaseClient.userAccessToken = session.accessToken
         _isLoggedIn.value = true
+        com.mipastudio.memostamp.core.notification.PushTokenManager.registerCurrentDeviceToken(context, session.accessToken, realUid)
 
         val finalAvatar = avatarUrl ?: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300"
         val finalCover = coverUrl ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200"
@@ -849,6 +852,7 @@ class UserAuthRepository internal constructor(
         _refreshToken.value = session.refreshToken
         supabaseClient.userAccessToken = session.accessToken
         _isLoggedIn.value = true
+        com.mipastudio.memostamp.core.notification.PushTokenManager.registerCurrentDeviceToken(context, session.accessToken, realUid)
 
         var cloudProfileRecord = supabaseClient.getProfileById(realUid)
         if (cloudProfileRecord == null && !cleanIdentifier.contains("@")) {
@@ -1147,6 +1151,9 @@ class UserAuthRepository internal constructor(
 
             // 10. Disconnect Realtime socket
             SupabaseRealtimeClient.getInstance(context).disconnect()
+
+            // 10b. Clear push notification registration state
+            com.mipastudio.memostamp.core.notification.PushTokenManager.onAccountDeleted(context)
         } catch (_: Throwable) {
             // Non-fatal error during local file purge should not prevent session clearing
         }
@@ -1173,10 +1180,12 @@ class UserAuthRepository internal constructor(
     fun logout() {
         val currentToken = _accessToken.value
         if (!currentToken.isNullOrBlank()) {
+            com.mipastudio.memostamp.core.notification.PushTokenManager.unregisterDeviceToken(context, currentToken)
             coroutineScope.launch {
                 supabaseAuthService.signOut(currentToken)
             }
         }
+        com.mipastudio.memostamp.core.notification.PushEventDeduper.clear()
 
         sessionStore.clear()
         prefs?.edit()?.putBoolean("is_logged_in", false)?.remove("user_profile_json")?.apply()

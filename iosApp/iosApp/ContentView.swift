@@ -79,6 +79,9 @@ struct ContentView: View {
                         withAnimation {
                             authGateState = .authenticated
                         }
+                        if let session = SupabaseAuthService.shared.activeSession {
+                            IOSPushNotificationManager.shared.registerCurrentDeviceToken(session: session)
+                        }
                     }
                 )
 
@@ -269,6 +272,18 @@ struct ContentView: View {
                 break
             }
         }
+        .onReceive(IOSPushNotificationManager.shared.$pendingRoute) { route in
+            guard let r = route, !r.isEmpty else { return }
+            if authGateState == .authenticated {
+                if r == "CHAT" || r == "FRIENDS" {
+                    withAnimation {
+                        selectedTab = .friends
+                    }
+                }
+                IOSPushNotificationManager.shared.pendingRoute = nil
+                IOSPushNotificationManager.shared.pendingTargetUserId = nil
+            }
+        }
         .sheet(isPresented: $showResetPasswordSheet) {
             if case .ready(_, let email) = recoveryCoordinator.recoveryState {
                 ResetPasswordSheetView(email: email) {
@@ -331,6 +346,9 @@ struct ContentView: View {
                             withAnimation {
                                 self.authGateState = .authenticated
                             }
+                            if let session = SupabaseAuthService.shared.activeSession {
+                                IOSPushNotificationManager.shared.registerCurrentDeviceToken(session: session)
+                            }
                         case .failure:
                             self.repository.resetUserScopedState()
                             withAnimation {
@@ -344,6 +362,7 @@ struct ContentView: View {
     }
 
     private func performLogout() {
+        IOSPushNotificationManager.shared.unregisterDeviceToken()
         let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
         if SupabaseAuthService.shared.activeSession != nil && IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(currentUid) {
             IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
@@ -359,6 +378,7 @@ struct ContentView: View {
     }
 
     private func handleAccountDeleted() {
+        IOSPushNotificationManager.shared.onAccountDeleted()
         repository.resetUserScopedState()
         withAnimation {
             selectedTab = .home

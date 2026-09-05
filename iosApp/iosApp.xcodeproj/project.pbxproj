@@ -29,6 +29,8 @@
 		1D3624052D00000100000001 /* StampVaultViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624042D00000100000001 /* StampVaultViewModel.swift */; };
 		1D3624112D00000100000001 /* HapticFeedbackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624102D00000100000001 /* HapticFeedbackManager.swift */; };
 		1D3624132D00000100000001 /* MemoStampNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624122D00000100000001 /* MemoStampNotificationManager.swift */; };
+		1D3624B12D00000100000001 /* IOSPushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624B02D00000100000001 /* IOSPushNotificationManager.swift */; };
+		1D3624B32D00000100000001 /* IOSPushEventDeduper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624B22D00000100000001 /* IOSPushEventDeduper.swift */; };
 		1D3624152D00000100000001 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624142D00000100000001 /* LocationManager.swift */; };
 		1D3624172D00000100000001 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624162D00000100000001 /* ImageCacheManager.swift */; };
 		1D3624192D00000100000001 /* SoundEffectsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624182D00000100000001 /* SoundEffectsManager.swift */; };
@@ -79,6 +81,8 @@
 		1D3624042D00000100000001 /* StampVaultViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StampVaultViewModel.swift; sourceTree = "<group>"; };
 		1D3624102D00000100000001 /* HapticFeedbackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackManager.swift; sourceTree = "<group>"; };
 		1D3624122D00000100000001 /* MemoStampNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoStampNotificationManager.swift; sourceTree = "<group>"; };
+		1D3624B02D00000100000001 /* IOSPushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSPushNotificationManager.swift; sourceTree = "<group>"; };
+		1D3624B22D00000100000001 /* IOSPushEventDeduper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSPushEventDeduper.swift; sourceTree = "<group>"; };
 		1D3624142D00000100000001 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		1D3624162D00000100000001 /* ImageCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheManager.swift; sourceTree = "<group>"; };
 		1D3624182D00000100000001 /* SoundEffectsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEffectsManager.swift; sourceTree = "<group>"; };
@@ -285,6 +289,8 @@
 			children = (
 				1D3624102D00000100000001 /* HapticFeedbackManager.swift */,
 				1D3624122D00000100000001 /* MemoStampNotificationManager.swift */,
+				1D3624B02D00000100000001 /* IOSPushNotificationManager.swift */,
+				1D3624B22D00000100000001 /* IOSPushEventDeduper.swift */,
 				1D3624142D00000100000001 /* LocationManager.swift */,
 				1D3624162D00000100000001 /* ImageCacheManager.swift */,
 				1D3624182D00000100000001 /* SoundEffectsManager.swift */,
@@ -443,6 +449,8 @@
 				1D36249B2D00000100000001 /* SupabaseMediaUploader.swift in Sources */,
 				1D36249D2D00000100000001 /* IOSFeedRepository.swift in Sources */,
 				1D3624A22D00000100000001 /* IOSPasswordRecoveryCoordinator.swift in Sources */,
+				1D3624B12D00000100000001 /* IOSPushNotificationManager.swift in Sources */,
+				1D3624B32D00000100000001 /* IOSPushEventDeduper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

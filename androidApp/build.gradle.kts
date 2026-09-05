@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.text.googlefonts)
     implementation(libs.gson)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.google.firebase:firebase-messaging:24.1.0")
     implementation(libs.coil.compose)
     implementation(libs.google.places)
     implementation(libs.guava)

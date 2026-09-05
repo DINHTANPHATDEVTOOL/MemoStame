@@ -14,12 +14,14 @@ Safety Rules:
   - Production contracts: Profiles, Friends, Feeds, Storage, DMs, Isolation.
 """
 
+import http.server
 import json
 import os
 import re
 import secrets
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -32,6 +34,57 @@ PNG_1X1_FIXTURE = (
     b'\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\rIDATx\x9cc\xf8\xff\xff?'
     b'\x00\x05\xfe\x02\xfe\xa76\x814\x00\x00\x00\x00IEND\xaeB`\x82'
 )
+
+
+class MockPushHandler(http.server.BaseHTTPRequestHandler):
+    """Local mock push notification receiver for CI test transport."""
+    recorded_deliveries = []
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.end_headers()
+
+    def do_POST(self):
+        content_len = int(self.headers.get("Content-Length", 0))
+        post_body = self.rfile.read(content_len)
+        try:
+            payload = json.loads(post_body.decode("utf-8"))
+        except Exception:
+            payload = {}
+
+        token = str(payload.get("token", ""))
+
+        # Simulated negative responses:
+        if "dead_token" in token:
+            # 410 for APNs, 404 for FCM permanent unregistration
+            status = 410 if payload.get("provider") == "apns" else 404
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error": "UNREGISTERED", "reason": "device unregistered"}')
+            return
+
+        if "transient_error_token" in token:
+            # 500 transient provider error
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error": "SERVICE_UNAVAILABLE", "reason": "transient error"}')
+            return
+
+        MockPushHandler.recorded_deliveries.append(payload)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"success": true, "message_id": "mock_delivery_ok"}')
+
+    def log_message(self, format, *args):
+        # Mute stdlib access logging to keep test console clean and secret-safe
+        pass
+
 
 
 def sanitize_text(text: str) -> str:
@@ -1545,19 +1598,450 @@ class E2EContractRunner:
 
         self.log("PHASE 9", "All password recovery & deep-link E2E contracts verified!")
 
+    def start_mock_push_server(self):
+        try:
+            self.mock_server = http.server.HTTPServer(("127.0.0.1", 54325), MockPushHandler)
+            self.mock_thread = threading.Thread(target=self.mock_server.serve_forever, daemon=True)
+            self.mock_thread.start()
+            self.log("SETUP", "Local mock push provider listening on http://127.0.0.1:54325")
+        except Exception as e:
+            self.log("SETUP", f"Note: Mock push server bind: {e}")
+
+    def stop_mock_push_server(self):
+        if getattr(self, "mock_server", None):
+            try:
+                self.mock_server.shutdown()
+                self.mock_server.server_close()
+            except Exception:
+                pass
+
+    # ----------------------------------------------------
+    # PHASE 10: PRODUCTION PUSH NOTIFICATIONS E2E
+    # ----------------------------------------------------
+    def phase10_push_notifications(self):
+        self.log("PHASE 10", "Starting Production Push Notifications & Delivery contract tests...")
+        u_a = self.users["A"]
+        u_b = self.users["B"]
+        u_c = self.users["C"]
+
+        # Step 1: Token Registration RPC for User A and User B
+        self.log("PHASE 10", "Step 1: Register push tokens via register_push_device_token RPC...")
+        token_a_fcm = f"fcm_token_a_{self.run_id}"
+        install_a = f"install_id_a_{self.run_id}"
+
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_a["token"],
+            json_data={
+                "p_platform": "android",
+                "p_provider": "fcm",
+                "p_token": token_a_fcm,
+                "p_installation_id": install_a,
+                "p_environment": "production"
+            }
+        )
+        self.assert_status(status, [200, 204], "User A register FCM push token", "POST", "/rest/v1/rpc/register_push_device_token", text)
+
+        # Verify User A can SELECT own token
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/push_device_tokens?token=eq.{token_a_fcm}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "User A select own push token", "GET", "/rest/v1/push_device_tokens", text)
+        assert isinstance(data, list) and len(data) == 1, f"Expected 1 token for User A, got: {data}"
+        assert data[0]["is_active"] is True
+        assert data[0]["platform"] == "android"
+        assert data[0]["provider"] == "fcm"
+
+        # User B registers FCM token
+        token_b_fcm = f"fcm_token_b_{self.run_id}"
+        install_b = f"install_id_b_{self.run_id}"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_b["token"],
+            json_data={
+                "p_platform": "android",
+                "p_provider": "fcm",
+                "p_token": token_b_fcm,
+                "p_installation_id": install_b,
+                "p_environment": "production"
+            }
+        )
+        self.assert_status(status, [200, 204], "User B register FCM push token", "POST", "/rest/v1/rpc/register_push_device_token", text)
+
+        # Step 2: Token Security & RLS Negative Assertions
+        self.log("PHASE 10", "Step 2: Testing Push Token Security & RLS Isolation...")
+        # User A cannot read User B's token
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/push_device_tokens?token=eq.{token_b_fcm}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "User A queries User B token", "GET", "/rest/v1/push_device_tokens", text)
+        assert isinstance(data, list) and len(data) == 0, f"RLS Leak: User A saw User B's token: {data}"
+
+        # Anon cannot read tokens
+        status, data, text, _ = self.client.request(
+            "GET",
+            "/rest/v1/push_device_tokens",
+            token=None
+        )
+        assert status in [401, 200], f"Expected 401 or 200 for anon token query, got {status}"
+        if status == 200:
+            assert isinstance(data, list) and len(data) == 0, f"RLS Leak: Anon saw tokens: {data}"
+
+        # Anon cannot register token
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=None,
+            json_data={
+                "p_platform": "android",
+                "p_provider": "fcm",
+                "p_token": "anon_token",
+                "p_installation_id": "anon_install"
+            }
+        )
+        assert status in [401, 403, 400], f"Anon register should fail, got {status}: {text}"
+
+        # Invalid platform/provider combination rejected
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_a["token"],
+            json_data={
+                "p_platform": "android",
+                "p_provider": "apns",
+                "p_token": "bad_pair_token",
+                "p_installation_id": "bad_pair_install"
+            }
+        )
+        assert status in [400, 422, 500], f"Invalid platform/provider should fail, got {status}: {text}"
+
+        # Step 3: Account Switch Token Reassignment
+        self.log("PHASE 10", "Step 3: Testing Account Switch Atomic Token Reassignment...")
+        token_switch = f"switch_token_{self.run_id}"
+        install_switch = f"install_switch_{self.run_id}"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_a["token"],
+            json_data={
+                "p_platform": "android",
+                "p_provider": "fcm",
+                "p_token": token_switch,
+                "p_installation_id": install_switch
+            }
+        )
+        self.assert_status(status, [200, 204], "User A registers switch token", "POST", "/rest/v1/rpc/register_push_device_token", text)
+
+        # Now User B logs into same device and registers same token & install ID
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_b["token"],
+            json_data={
+                "p_platform": "android",
+                "p_provider": "fcm",
+                "p_token": token_switch,
+                "p_installation_id": install_switch
+            }
+        )
+        self.assert_status(status, [200, 204], "User B reassigns switch token", "POST", "/rest/v1/rpc/register_push_device_token", text)
+
+        # Verify User B sees 1 token
+        status, data_b, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/push_device_tokens?token=eq.{token_switch}",
+            token=u_b["token"]
+        )
+        self.assert_status(status, 200, "User B select reassigned token", "GET", "/rest/v1/push_device_tokens", text)
+        assert len(data_b) == 1, f"Expected User B to own switch token, got: {data_b}"
+
+        # Verify User A has 0 tokens for this token
+        status, data_a, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/push_device_tokens?token=eq.{token_switch}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "User A select reassigned token", "GET", "/rest/v1/push_device_tokens", text)
+        assert len(data_a) == 0, f"Isolation failure: User A still owns switch token after reassignment: {data_a}"
+
+        # Step 4: Server-Authoritative Direct Message Push Dispatch
+        self.log("PHASE 10", "Step 4: Testing Direct Message Push Dispatch...")
+        MockPushHandler.recorded_deliveries.clear()
+
+        # User A sends a real direct message to User B
+        dm_id = str(uuid.uuid4())
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=u_a["token"],
+            json_data={
+                "id": dm_id,
+                "sender_id": u_a["uid"],
+                "recipient_id": u_b["uid"],
+                "text": "Hello User B from Push Test!"
+            }
+        )
+        self.assert_status(status, [200, 201], "User A sends DM to User B", "POST", "/rest/v1/direct_messages", text)
+
+        # User A calls dispatch-push function specifying ONLY event_type and entity_id
+        status, dispatch_data, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_a["token"],
+            json_data={
+                "event_type": "direct_message",
+                "entity_id": dm_id
+            }
+        )
+        self.assert_status(status, 200, "User A dispatches DM push", "POST", "/functions/v1/dispatch-push", text)
+        assert dispatch_data.get("success") is True, f"Expected success: true, got {dispatch_data}"
+        assert dispatch_data.get("dispatched_count", 0) >= 1, f"Expected at least 1 dispatch, got {dispatch_data}"
+
+        # Verify mock provider received delivery targeting User B's token
+        b_deliveries = [d for d in MockPushHandler.recorded_deliveries if d.get("token") == token_b_fcm]
+        assert len(b_deliveries) >= 1, f"Mock provider did not receive delivery targeting User B token: {MockPushHandler.recorded_deliveries}"
+        b_msg = b_deliveries[0]
+        assert b_msg.get("data", {}).get("route") == "CHAT"
+        assert b_msg.get("data", {}).get("event_id") == dm_id
+        assert b_msg.get("data", {}).get("target_user_id") == u_a["uid"]
+        assert "Tin nhắn mới" in b_msg.get("title", "")
+        self.log("PHASE 10", "Verified DM push received by mock provider with correct target and route")
+
+        # Step 5: Duplicate Dispatch Deduplication
+        self.log("PHASE 10", "Step 5: Testing Server-Side Deduplication...")
+        initial_mock_count = len(MockPushHandler.recorded_deliveries)
+        status, dedupe_data, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_a["token"],
+            json_data={
+                "event_type": "direct_message",
+                "entity_id": dm_id
+            }
+        )
+        self.assert_status(status, 200, "User A dispatches duplicate DM push", "POST", "/functions/v1/dispatch-push", text)
+        assert dedupe_data.get("deduped") is True or dedupe_data.get("delivered_count") == 0
+        assert len(MockPushHandler.recorded_deliveries) == initial_mock_count, "Deduplication failed: mock provider received duplicate delivery"
+        self.log("PHASE 10", "Verified deduplication prevented duplicate notification")
+
+        # Step 6: Spoofing & Unauthorized Caller Protection
+        self.log("PHASE 10", "Step 6: Testing Spoofing Rejection...")
+        # User C attempts to dispatch User A's DM
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_c["token"],
+            json_data={
+                "event_type": "direct_message",
+                "entity_id": dm_id
+            }
+        )
+        assert status == 403, f"Expected 403 Forbidden for User C dispatching User A DM, got {status}: {text}"
+
+        # Client attempts to pass arbitrary recipient
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_a["token"],
+            json_data={
+                "event_type": "direct_message",
+                "entity_id": dm_id,
+                "recipient_user_id": u_c["uid"],
+                "title": "Hacked Title"
+            }
+        )
+        assert status == 400, f"Expected 400 Bad Request when passing forbidden recipient selector, got {status}: {text}"
+
+        # Step 7: Friend Request Server-Authoritative Push Dispatch
+        self.log("PHASE 10", "Step 7: Testing Friend Request Push Dispatch...")
+        # Register token for User C
+        token_c_apns = f"apns_token_c_{self.run_id}"
+        install_c = f"install_id_c_{self.run_id}"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_c["token"],
+            json_data={
+                "p_platform": "ios",
+                "p_provider": "apns",
+                "p_token": token_c_apns,
+                "p_installation_id": install_c
+            }
+        )
+        self.assert_status(status, [200, 204], "User C registers APNs push token", "POST", "/rest/v1/rpc/register_push_device_token", text)
+
+        # User B sends friend request to User C
+        freq_id = str(uuid.uuid4())
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_b["token"],
+            json_data={
+                "id": freq_id,
+                "sender_id": u_b["uid"],
+                "recipient_id": u_c["uid"],
+                "status": "pending"
+            }
+        )
+        self.assert_status(status, [200, 201], "User B sends friend request to User C", "POST", "/rest/v1/friend_requests", text)
+
+        # User B dispatches friend_request push
+        status, f_dispatch, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_b["token"],
+            json_data={
+                "event_type": "friend_request",
+                "entity_id": freq_id
+            }
+        )
+        self.assert_status(status, 200, "User B dispatches friend request push", "POST", "/functions/v1/dispatch-push", text)
+        assert f_dispatch.get("success") is True
+
+        c_deliveries = [d for d in MockPushHandler.recorded_deliveries if d.get("token") == token_c_apns]
+        assert len(c_deliveries) >= 1, f"Mock provider did not receive delivery targeting User C token: {MockPushHandler.recorded_deliveries}"
+        c_msg = c_deliveries[0]
+        assert c_msg.get("data", {}).get("route") == "FRIENDS"
+        assert c_msg.get("data", {}).get("event_id") == freq_id
+        assert "Lời mời kết bạn" in c_msg.get("title", "")
+
+        # Step 8: Token Invalidation upon Permanent Error
+        self.log("PHASE 10", "Step 8: Testing Permanent Token Invalidation (404/410)...")
+        # User C registers a dead token
+        dead_token = f"dead_token_{self.run_id}"
+        dead_install = f"dead_install_{self.run_id}"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_c["token"],
+            json_data={
+                "p_platform": "ios",
+                "p_provider": "apns",
+                "p_token": dead_token,
+                "p_installation_id": dead_install
+            }
+        )
+        self.assert_status(status, [200, 204], "User C registers dead token", "POST", "/rest/v1/rpc/register_push_device_token", text)
+
+        # Create another DM to User C to trigger push
+        dead_dm_id = str(uuid.uuid4())
+        self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=u_a["token"],
+            json_data={
+                "id": dead_dm_id,
+                "sender_id": u_a["uid"],
+                "recipient_id": u_c["uid"],
+                "text": "Testing dead token cleanup"
+            }
+        )
+        self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_a["token"],
+            json_data={"event_type": "direct_message", "entity_id": dead_dm_id}
+        )
+
+        # Verify dead token is marked inactive (is_active = false)
+        status, data_dead, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/push_device_tokens?token=eq.{dead_token}",
+            token=u_c["token"]
+        )
+        assert len(data_dead) == 1
+        assert data_dead[0]["is_active"] is False, f"Dead token was not marked inactive: {data_dead}"
+        self.log("PHASE 10", "Verified permanent provider error marked token inactive")
+
+        # Step 9: Transient Error Preserves Token
+        self.log("PHASE 10", "Step 9: Testing Transient Error (500) Preserves Token...")
+        transient_token = f"transient_error_token_{self.run_id}"
+        transient_install = f"transient_install_{self.run_id}"
+        self.client.request(
+            "POST",
+            "/rest/v1/rpc/register_push_device_token",
+            token=u_c["token"],
+            json_data={
+                "p_platform": "ios",
+                "p_provider": "apns",
+                "p_token": transient_token,
+                "p_installation_id": transient_install
+            }
+        )
+
+        transient_dm_id = str(uuid.uuid4())
+        self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=u_a["token"],
+            json_data={
+                "id": transient_dm_id,
+                "sender_id": u_a["uid"],
+                "recipient_id": u_c["uid"],
+                "text": "Testing transient error token"
+            }
+        )
+        self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_a["token"],
+            json_data={"event_type": "direct_message", "entity_id": transient_dm_id}
+        )
+
+        status, data_transient, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/push_device_tokens?token=eq.{transient_token}",
+            token=u_c["token"]
+        )
+        assert len(data_transient) == 1
+        assert data_transient[0]["is_active"] is True, f"Transient error token was unexpectedly deactivated: {data_transient}"
+        self.log("PHASE 10", "Verified transient error preserved token active status")
+
+        # Step 10: Unregister Token RPC
+        self.log("PHASE 10", "Step 10: Testing unregister_push_device_token RPC...")
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/unregister_push_device_token",
+            token=u_b["token"],
+            json_data={
+                "p_provider": "fcm",
+                "p_installation_id": install_b
+            }
+        )
+        self.assert_status(status, [200, 204], "User B unregisters token", "POST", "/rest/v1/rpc/unregister_push_device_token", text)
+        status, data_unreg, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/push_device_tokens?token=eq.{token_b_fcm}",
+            token=u_b["token"]
+        )
+        assert len(data_unreg) == 1 and data_unreg[0]["is_active"] is False, f"Token not marked inactive on unregister: {data_unreg}"
+
+        self.log("PHASE 10", "All push notification contracts successfully verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
         print("=" * 60)
-        self.phase1_real_auth()
-        self.phase2_profiles()
-        self.phase3_friend_lifecycle()
-        self.phase4_feed()
-        self.phase5_storage()
-        self.phase6_direct_messages()
-        self.phase7_account_isolation()
-        self.phase8_self_service_account_deletion()
-        self.phase9_password_recovery()
+        self.start_mock_push_server()
+        try:
+            self.phase1_real_auth()
+            self.phase2_profiles()
+            self.phase3_friend_lifecycle()
+            self.phase4_feed()
+            self.phase5_storage()
+            self.phase6_direct_messages()
+            self.phase7_account_isolation()
+            self.phase8_self_service_account_deletion()
+            self.phase9_password_recovery()
+            self.phase10_push_notifications()
+        finally:
+            self.stop_mock_push_server()
         print("=" * 60)
         print("ALL BLACK-BOX E2E CONTRACT TESTS PASSED")
         print("=" * 60)
