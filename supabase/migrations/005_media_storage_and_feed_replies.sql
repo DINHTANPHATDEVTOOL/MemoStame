@@ -34,31 +34,31 @@ CREATE POLICY "Public select stamp media" ON storage.objects
 -- 2.2 Authenticated upload: first path segment MUST equal auth.uid()::text
 DROP POLICY IF EXISTS "Owner insert stamp media" ON storage.objects;
 CREATE POLICY "Owner insert stamp media" ON storage.objects
-    FOR INSERT WITH CHECK (
+    FOR INSERT TO authenticated WITH CHECK (
         bucket_id = 'stamp-media'
-        AND auth.role() = 'authenticated'
+        AND auth.uid() IS NOT NULL
         AND split_part(name, '/', 1) = auth.uid()::text
     );
 
 -- 2.3 Authenticated update: owner only
 DROP POLICY IF EXISTS "Owner update stamp media" ON storage.objects;
 CREATE POLICY "Owner update stamp media" ON storage.objects
-    FOR UPDATE USING (
+    FOR UPDATE TO authenticated USING (
         bucket_id = 'stamp-media'
-        AND auth.role() = 'authenticated'
+        AND auth.uid() IS NOT NULL
         AND split_part(name, '/', 1) = auth.uid()::text
     ) WITH CHECK (
         bucket_id = 'stamp-media'
-        AND auth.role() = 'authenticated'
+        AND auth.uid() IS NOT NULL
         AND split_part(name, '/', 1) = auth.uid()::text
     );
 
 -- 2.4 Authenticated delete: owner only
 DROP POLICY IF EXISTS "Owner delete stamp media" ON storage.objects;
 CREATE POLICY "Owner delete stamp media" ON storage.objects
-    FOR DELETE USING (
+    FOR DELETE TO authenticated USING (
         bucket_id = 'stamp-media'
-        AND auth.role() = 'authenticated'
+        AND auth.uid() IS NOT NULL
         AND split_part(name, '/', 1) = auth.uid()::text
     );
 
