@@ -992,6 +992,61 @@ class UserAuthRepository internal constructor(
         saveUserProfile(updated, markLoggedIn = true)
     }
 
+    private fun isValidAuthUid(uid: String?): Boolean {
+        if (uid.isNullOrBlank()) return false
+        val trimmed = uid.trim()
+        if (trimmed == "user_me") return false
+        if (trimmed == "guest") return false
+        if (trimmed.startsWith("guest")) return false
+        return true
+    }
+
+    suspend fun updatePassword(
+        currentPassword: String,
+        newPassword: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val expectedUid = (_authUserId.value ?: _currentUser.value.userId).trim()
+        if (!isValidAuthUid(expectedUid)) {
+            return@withContext Result.failure(IllegalStateException("Phiên đăng nhập không hợp lệ"))
+        }
+
+        val sessionEmail = _currentUser.value.email.ifBlank {
+            sessionStore.load()?.email ?: ""
+        }.trim()
+        if (sessionEmail.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Chưa xác định được email tài khoản"))
+        }
+
+        val authResult = supabaseAuthService.signIn(sessionEmail, currentPassword)
+        if (authResult.isFailure) {
+            val errMsg = authResult.exceptionOrNull()?.message ?: "Mật khẩu hiện tại không chính xác"
+            return@withContext Result.failure(IllegalArgumentException(errMsg))
+        }
+
+        val reauthSession = authResult.getOrThrow()
+        val reauthUid = reauthSession.userId.trim()
+
+        if (!isValidAuthUid(reauthUid) || reauthUid != expectedUid) {
+            return@withContext Result.failure(IllegalStateException("Mã người dùng xác thực không trùng khớp"))
+        }
+
+        val updateResult = supabaseAuthService.updateUserPassword(reauthSession.accessToken, newPassword)
+        if (updateResult.isFailure) {
+            val errMsg = updateResult.exceptionOrNull()?.message ?: "Cập nhật mật khẩu thất bại"
+            return@withContext Result.failure(IllegalStateException(errMsg))
+        }
+
+        sessionStore.save(reauthSession)
+        _authUserId.value = reauthSession.userId
+        _accessToken.value = reauthSession.accessToken
+        _refreshToken.value = reauthSession.refreshToken
+        _isLoggedIn.value = true
+        _isSessionPersistent.value = true
+        supabaseClient.userAccessToken = reauthSession.accessToken
+
+        Result.success(Unit)
+    }
+
     fun logout() {
         val currentToken = _accessToken.value
         if (!currentToken.isNullOrBlank()) {

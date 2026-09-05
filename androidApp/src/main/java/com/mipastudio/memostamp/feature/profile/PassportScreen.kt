@@ -825,6 +825,7 @@ fun PassportScreen(
             var newPassword by remember { mutableStateOf("") }
             var confirmPassword by remember { mutableStateOf("") }
             var passMessage by remember { mutableStateOf<String?>(null) }
+            var isPasswordUpdating by remember { mutableStateOf(false) }
 
             AlertDialog(
                 onDismissRequest = { showSettingsModal = false },
@@ -934,7 +935,9 @@ fun PassportScreen(
                         }
 
                         Button(
+                            enabled = !isPasswordUpdating,
                             onClick = {
+                                if (isPasswordUpdating) return@Button
                                 if (currentPassword.isBlank()) {
                                     passMessage = "⚠️ Vui lòng nhập mật khẩu hiện tại"
                                     return@Button
@@ -947,10 +950,21 @@ fun PassportScreen(
                                     passMessage = "⚠️ Mật khẩu mới không trùng khớp"
                                     return@Button
                                 }
-                                passMessage = "✅ Đã đổi mật khẩu thành công!"
-                                currentPassword = ""
-                                newPassword = ""
-                                confirmPassword = ""
+                                isPasswordUpdating = true
+                                passMessage = "⏳ Đang cập nhật mật khẩu..."
+                                coroutineScope.launch {
+                                    val res = authRepo.updatePassword(currentPassword, newPassword)
+                                    isPasswordUpdating = false
+                                    if (res.isSuccess) {
+                                        passMessage = "✅ Đã đổi mật khẩu thành công!"
+                                        currentPassword = ""
+                                        newPassword = ""
+                                        confirmPassword = ""
+                                    } else {
+                                        val err = res.exceptionOrNull()?.message ?: "Đổi mật khẩu thất bại"
+                                        passMessage = "⚠️ $err"
+                                    }
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                             modifier = Modifier.fillMaxWidth()
