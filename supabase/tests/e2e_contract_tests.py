@@ -1893,7 +1893,9 @@ class E2EContractRunner:
                 "id": freq_id,
                 "sender_id": u_b["uid"],
                 "recipient_id": u_c["uid"],
-                "status": "pending"
+                "status": "PENDING",
+                "sender_username": u_b["username"],
+                "recipient_username": u_c["username"]
             }
         )
         self.assert_status(status, [200, 201], "User B sends friend request to User C", "POST", "/rest/v1/friend_requests", text)
