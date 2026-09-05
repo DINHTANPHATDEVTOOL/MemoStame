@@ -1435,13 +1435,15 @@ class E2EContractRunner:
 
         # E2E TEST 6: Unknown email recovery request (Anti-enumeration)
         self.log("PHASE 9", "Running E2E Test 6: Unknown email anti-enumeration check...")
+        canonical_redirect = "memostamp://auth/recovery"
         unknown_email = f"unknown-e-{self.run_id}-{secrets.token_hex(6)}@memostamp.test"
         status, _, text, _ = self.client.request(
             "POST",
-            "/auth/v1/recover",
+            f"/auth/v1/recover?redirect_to={urllib.parse.quote(canonical_redirect)}",
+            headers={"redirect_to": canonical_redirect},
             json_data={
                 "email": unknown_email,
-                "redirect_to": "memostamp://auth/recovery"
+                "redirect_to": canonical_redirect
             }
         )
         self.assert_status(status, 200, "Unknown email recovery request", "POST", "/auth/v1/recover", text)
@@ -1451,10 +1453,11 @@ class E2EContractRunner:
         self.log("PHASE 9", "Running E2E Test 1: Requesting password recovery for User E...")
         status, _, text, _ = self.client.request(
             "POST",
-            "/auth/v1/recover",
+            f"/auth/v1/recover?redirect_to={urllib.parse.quote(canonical_redirect)}",
+            headers={"redirect_to": canonical_redirect},
             json_data={
                 "email": email_e,
-                "redirect_to": "memostamp://auth/recovery"
+                "redirect_to": canonical_redirect
             }
         )
         self.assert_status(status, 200, "Password recovery request for User E", "POST", "/auth/v1/recover", text)
@@ -1467,7 +1470,7 @@ class E2EContractRunner:
 
         # Follow verification URL without following custom app scheme
         location_header = follow_recovery_verification(verify_url)
-        assert location_header.startswith("memostamp://auth/recovery"), "Redirect Location mismatch"
+        assert location_header.startswith("memostamp://auth/recovery"), f"Redirect Location mismatch: {sanitize_text(location_header)}"
 
         recovery_redirect = parse_recovery_redirect(location_header)
         recovery_token = recovery_redirect["access_token"]

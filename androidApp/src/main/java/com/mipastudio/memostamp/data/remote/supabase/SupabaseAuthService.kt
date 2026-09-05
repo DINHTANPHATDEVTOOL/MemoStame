@@ -91,7 +91,8 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
         if (normalizedEmail.isBlank() || !normalizedEmail.contains("@")) {
             return@withContext Result.failure(IllegalArgumentException("Địa chỉ email không hợp lệ"))
         }
-        val endpoint = "${getBaseUrl()}/auth/v1/recover"
+        val encodedRedirect = java.net.URLEncoder.encode(redirectTo, "UTF-8")
+        val endpoint = "${getBaseUrl()}/auth/v1/recover?redirect_to=$encodedRedirect"
         val bodyMap = mapOf(
             "email" to normalizedEmail,
             "redirect_to" to redirectTo
@@ -101,6 +102,7 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "POST"
                 setRequestProperty("apikey", getApiKey())
+                setRequestProperty("redirect_to", redirectTo)
                 setRequestProperty("Content-Type", "application/json")
                 connectTimeout = 12000
                 readTimeout = 12000

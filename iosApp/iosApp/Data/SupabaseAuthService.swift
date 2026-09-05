@@ -162,7 +162,8 @@ class SupabaseAuthService {
             return
         }
 
-        guard let url = URL(string: "\(supabaseUrl)/auth/v1/recover") else {
+        let encodedRedirect = redirectTo.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? redirectTo
+        guard let url = URL(string: "\(supabaseUrl)/auth/v1/recover?redirect_to=\(encodedRedirect)") else {
             completion(.failure(SupabaseAuthError.invalidUrl))
             return
         }
@@ -170,6 +171,7 @@ class SupabaseAuthService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue(redirectTo, forHTTPHeaderField: "redirect_to")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = [
