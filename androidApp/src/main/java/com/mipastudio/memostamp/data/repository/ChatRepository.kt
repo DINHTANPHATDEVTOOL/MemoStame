@@ -38,8 +38,12 @@ class ChatRepository internal constructor(
     private val prefs: SharedPreferences? = try { context.getSharedPreferences("memostamp_chat_prefs", Context.MODE_PRIVATE) } catch (_: Throwable) { null }
     private val gson = Gson()
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private var syncJob: Job? = null
     private val notifiedMsgIds = mutableSetOf<String>()
+
+    @Volatile
+    private var isReconcileInFlight = false
+    @Volatile
+    private var reconcileRequestedWhileBusy = false
 
     private val _messages = MutableStateFlow<List<DirectMessage>>(emptyList())
     val messages: StateFlow<List<DirectMessage>> = _messages.asStateFlow()
@@ -74,6 +78,11 @@ class ChatRepository internal constructor(
                 }
             }
         }
+        realtimeClient.onSubscriptionReady = { uid ->
+            if (activeUserId == uid) {
+                reconcileMessagesFromCloud(trigger = "REALTIME_ACK")
+            }
+        }
     }
 
     private fun getMessagesPrefKey(userId: String): String = "direct_messages_of_$userId"
@@ -90,86 +99,110 @@ class ChatRepository internal constructor(
             handleRealtimeEvent(msg)
         }
 
-        startSyncLoop()
+        reconcileMessagesFromCloud(trigger = "LOGIN")
     }
 
     fun onLogout() {
         realtimeClient.disconnect()
-        stopSyncLoop()
         activeUserId = null
         activeChattingUserId = null
         _messages.value = emptyList()
         notifiedMsgIds.clear()
     }
 
-    private fun startSyncLoop() {
-        stopSyncLoop()
-        syncJob = coroutineScope.launch {
-            syncMessagesLoop()
+    fun onAppForeground() {
+        val currentUid = activeUserId ?: authRepo.currentUser.value.userId
+        if (currentUid.isBlank() || currentUid.startsWith("guest_") || !authRepo.isUserLoggedIn()) {
+            return
+        }
+        val token = authRepo.accessToken.value ?: supabaseClient.userAccessToken
+        if (!token.isNullOrBlank()) {
+            realtimeClient.updateTokenOrReconnect(currentUid, token)
+            reconcileMessagesFromCloud(trigger = "FOREGROUND")
         }
     }
 
-    private fun stopSyncLoop() {
-        syncJob?.cancel()
-        syncJob = null
-    }
+    fun reconcileMessagesFromCloud(trigger: String = "MANUAL", onComplete: ((Boolean) -> Unit)? = null) {
+        val currentUid = activeUserId ?: authRepo.currentUser.value.userId
+        if (currentUid.isBlank() || currentUid.startsWith("guest_") || !authRepo.isUserLoggedIn()) {
+            onComplete?.invoke(false)
+            return
+        }
 
-    private suspend fun syncMessagesLoop() {
-        while (coroutineScope.isActive) {
+        synchronized(this) {
+            if (isReconcileInFlight) {
+                reconcileRequestedWhileBusy = true
+                return
+            }
+            isReconcileInFlight = true
+        }
+
+        coroutineScope.launch {
             try {
-                val currentUid = authRepo.currentUser.value.userId
-                if (currentUid.isNotBlank() && !currentUid.startsWith("guest_") && authRepo.isUserLoggedIn()) {
-                    val res = supabaseClient.getMessagesForUser(currentUid)
-                    if (res.isSuccess) {
-                        val cloudMessages = res.getOrNull() ?: emptyList()
-                        val localMap = _messages.value.associateBy { it.id }.toMutableMap()
+                val res = supabaseClient.getMessagesForUser(currentUid)
+                if (res.isSuccess) {
+                    val cloudMessages = res.getOrNull() ?: emptyList()
+                    val localMap = _messages.value.associateBy { it.id }.toMutableMap()
 
-                        val newIncomingMessages = cloudMessages.filter { msg ->
-                            msg.recipientId == currentUid &&
-                            msg.senderId != currentUid &&
-                            !msg.isRead &&
-                            !notifiedMsgIds.contains(msg.id)
-                        }
+                    val newIncomingMessages = cloudMessages.filter { msg ->
+                        msg.recipientId == currentUid &&
+                        msg.senderId != currentUid &&
+                        !msg.isRead &&
+                        !notifiedMsgIds.contains(msg.id)
+                    }
 
-                        cloudMessages.forEach { localMap[it.id] = it }
-                        val merged = localMap.values.sortedWith(compareBy<DirectMessage> { it.createdAt }.thenBy { it.id })
-                        if (merged != _messages.value) {
-                            saveMessagesForUser(currentUid, merged)
-                        }
+                    cloudMessages.forEach { localMap[it.id] = it }
+                    val merged = localMap.values.sortedWith(compareBy<DirectMessage> { it.createdAt }.thenBy { it.id })
+                    if (merged != _messages.value) {
+                        saveMessagesForUser(currentUid, merged)
+                    }
 
-                        newIncomingMessages.forEach { msg ->
-                            notifiedMsgIds.add(msg.id)
-                            if (activeChattingUserId != msg.senderId) {
-                                try {
-                                    MemoStampNotificationManager.sendNewMessageNotification(context, msg)
+                    newIncomingMessages.forEach { msg ->
+                        notifiedMsgIds.add(msg.id)
+                        if (activeChattingUserId != msg.senderId) {
+                            try {
+                                MemoStampNotificationManager.sendNewMessageNotification(context, msg)
 
-                                    val bannerText = if (!msg.stampTitle.isNullOrBlank()) {
-                                        if (msg.text.isNotBlank()) "📮 [Tem: ${msg.stampTitle}] ${msg.text}" else "📮 Đã gửi cho bạn một con tem: ${msg.stampTitle}"
-                                    } else {
-                                        msg.text
-                                    }
-                                    InAppNotificationManager.show(
-                                        InAppBanner(
-                                            id = "msg_${msg.id}",
-                                            title = "💬 Tin nhắn từ ${msg.senderName}",
-                                            message = bannerText,
-                                            avatarUrl = msg.senderAvatar,
-                                            iconEmoji = "💬",
-                                            targetRoute = "chat/${msg.senderId}",
-                                            senderName = msg.senderName
-                                        )
-                                    )
-                                } catch (e: Throwable) {
-                                    // Ignore notification failures in test/headless context
+                                val bannerText = if (!msg.stampTitle.isNullOrBlank()) {
+                                    if (msg.text.isNotBlank()) "📮 [Tem: ${msg.stampTitle}] ${msg.text}" else "📮 Đã gửi cho bạn một con tem: ${msg.stampTitle}"
+                                } else {
+                                    msg.text
                                 }
+                                InAppNotificationManager.show(
+                                    InAppBanner(
+                                        id = "msg_${msg.id}",
+                                        title = "💬 Tin nhắn từ ${msg.senderName}",
+                                        message = bannerText,
+                                        avatarUrl = msg.senderAvatar,
+                                        iconEmoji = "💬",
+                                        targetRoute = "chat/${msg.senderId}",
+                                        senderName = msg.senderName
+                                    )
+                                )
+                            } catch (_: Throwable) {
+                                // Ignore notification failures in test/headless context
                             }
                         }
                     }
+                    onComplete?.invoke(true)
+                } else {
+                    onComplete?.invoke(false)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                onComplete?.invoke(false)
+            } finally {
+                var rerun = false
+                synchronized(this@ChatRepository) {
+                    isReconcileInFlight = false
+                    if (reconcileRequestedWhileBusy) {
+                        reconcileRequestedWhileBusy = false
+                        rerun = true
+                    }
+                }
+                if (rerun) {
+                    reconcileMessagesFromCloud(trigger = "COALESCED_PENDING", onComplete = null)
+                }
             }
-            delay(3500)
         }
     }
 
@@ -319,7 +352,8 @@ class ChatRepository internal constructor(
             return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Send direct message failed"))
         }
 
-        val serverMsg = res.getOrNull() ?: msg
+        val serverMsg = res.getOrNull()
+            ?: return@withContext Result.failure(IllegalStateException("Server response representation missing"))
         val map = _messages.value.associateBy { it.id }.toMutableMap()
         map[serverMsg.id] = serverMsg
         val updated = map.values.sortedWith(compareBy<DirectMessage> { it.createdAt }.thenBy { it.id })

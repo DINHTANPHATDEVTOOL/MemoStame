@@ -28,6 +28,7 @@ struct ContentView: View {
     @State private var showCameraModal: Bool = false
     @State private var replyToPostId: String? = nil
     @State private var showOfflineToast: Bool = false
+    @Environment(\.scenePhase) private var scenePhase
 
     let platform = Platform_iosKt.getPlatform()
 
@@ -226,6 +227,11 @@ struct ContentView: View {
         .onAppear {
             LocationManager.shared.requestLocationPermission()
             bootstrapSessionIfNeeded()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                IOSChatRepository.shared.onAppBecameActive()
+            }
         }
     }
 

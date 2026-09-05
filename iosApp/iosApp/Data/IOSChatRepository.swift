@@ -43,11 +43,14 @@ class IOSChatRepository: ObservableObject {
     private var messageDedupeSet: Set<String> = []
     private let fileManager = FileManager.default
 
+    private var isReconcileInFlight: Bool = false
+    private var reconcileRequestedWhileBusy: Bool = false
+
     private init() {}
 
-    static func parseIsoStringToMillis(_ dateStr: String?) -> Int64 {
-        guard let dateStr = dateStr?.trimmingCharacters(in: .whitespacesAndNewlines), !dateStr.isEmpty else {
-            return Int64(Date().timeIntervalSince1970 * 1000)
+    static func parseServerTimestampMillis(_ value: String?) -> Int64? {
+        guard let dateStr = value?.trimmingCharacters(in: .whitespacesAndNewlines), !dateStr.isEmpty else {
+            return nil
         }
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -59,9 +62,13 @@ class IOSChatRepository: ObservableObject {
             return Int64(date.timeIntervalSince1970 * 1000)
         }
         if let millis = Int64(dateStr) {
-            return millis
+            return millis < 10_000_000_000 ? millis * 1000 : millis
         }
-        return Int64(Date().timeIntervalSince1970 * 1000)
+        return nil
+    }
+
+    static func parseIsoStringToMillis(_ dateStr: String?) -> Int64 {
+        return parseServerTimestampMillis(dateStr) ?? Int64(Date().timeIntervalSince1970 * 1000)
     }
 
     var totalUnreadCount: Int {
@@ -170,7 +177,26 @@ class IOSChatRepository: ObservableObject {
             }
         }
 
+        SupabaseRealtimeClient.shared.onSubscriptionReady = { [weak self] uid in
+            DispatchQueue.main.async {
+                guard let self = self, self.activeUserId == uid else { return }
+                self.reconcileMessagesFromCloud()
+            }
+        }
+
         SupabaseRealtimeClient.shared.updateTokenOrReconnect(token: token, uid: uid)
+    }
+
+    func onAppBecameActive() {
+        guard !activeUserId.isEmpty,
+              let session = SupabaseAuthService.shared.activeSession,
+              session.userId == activeUserId,
+              !session.accessToken.isEmpty else { return }
+
+        // 1. Health-check / reconnect realtime
+        SupabaseRealtimeClient.shared.updateTokenOrReconnect(token: session.accessToken, uid: activeUserId)
+        // 2. Trigger one REST reconciliation
+        reconcileMessagesFromCloud()
     }
 
     // MARK: - Local Cache Management
@@ -273,8 +299,8 @@ class IOSChatRepository: ObservableObject {
                 case .success(let records):
                     let domainMsgs = records.compactMap { r -> ChatMessage? in
                         guard SupabaseSocialClient.shared.isValidUuid(r.id) else { return nil }
+                        guard let timestamp = IOSChatRepository.parseServerTimestampMillis(r.createdAt) else { return nil }
                         let isMe = r.senderId == self.activeUserId
-                        let timestamp = IOSChatRepository.parseIsoStringToMillis(r.createdAt)
 
                         var stamp: StampItem? = nil
                         if let sid = r.stampId, !sid.isEmpty {
@@ -377,8 +403,11 @@ class IOSChatRepository: ObservableObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let serverRecord):
+                    guard let timestamp = IOSChatRepository.parseServerTimestampMillis(serverRecord.createdAt) else {
+                        completion(.failure(SupabaseSocialError.invalidData("Phản hồi máy chủ chứa thời gian không hợp lệ.")))
+                        return
+                    }
                     let isMe = serverRecord.senderId == self.activeUserId
-                    let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
 
                     var msgStamp: StampItem? = nil
                     if let sid = serverRecord.stampId, !sid.isEmpty {
@@ -475,7 +504,10 @@ class IOSChatRepository: ObservableObject {
         messageDedupeSet.insert(record.id)
 
         let isMe = record.senderId == activeUserId
-        let timestamp = IOSChatRepository.parseIsoStringToMillis(record.createdAt)
+        guard let timestamp = IOSChatRepository.parseServerTimestampMillis(record.createdAt) else {
+            // Drop malformed event missing authoritative server timestamp
+            return
+        }
 
         var stamp: StampItem? = nil
         if let sid = record.stampId, !sid.isEmpty {
@@ -541,6 +573,113 @@ class IOSChatRepository: ObservableObject {
             currentList[idx].isRead = record.isRead ?? currentList[idx].isRead
             conversationMessages[otherUserId] = currentList
             saveLocalCache(recipientId: otherUserId)
+        }
+    }
+
+    // MARK: - Gap Reconciliation
+    func reconcileMessagesFromCloud(completion: ((Result<Void, Error>) -> Void)? = nil) {
+        guard !activeUserId.isEmpty else {
+            completion?(.failure(SupabaseSocialError.unauthorized))
+            return
+        }
+
+        if isReconcileInFlight {
+            reconcileRequestedWhileBusy = true
+            return
+        }
+        isReconcileInFlight = true
+
+        SupabaseSocialClient.shared.getMessagesForUser(userId: activeUserId) { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                defer {
+                    self.isReconcileInFlight = false
+                    if self.reconcileRequestedWhileBusy {
+                        self.reconcileRequestedWhileBusy = false
+                        self.reconcileMessagesFromCloud()
+                    }
+                }
+
+                switch result {
+                case .success(let records):
+                    self.mergeAuthoritativeCloudMessages(records)
+                    completion?(.success(()))
+                case .failure(let err):
+                    // Network failure retains cached state
+                    print("Gap reconciliation cloud failure (retaining cached state): \(err.localizedDescription)")
+                    completion?(.failure(err))
+                }
+            }
+        }
+    }
+
+    private func mergeAuthoritativeCloudMessages(_ records: [SupabaseDirectMessageRecord]) {
+        guard !activeUserId.isEmpty else { return }
+
+        var conversationMap = [String: [ChatMessage]]()
+
+        for r in records {
+            guard SupabaseSocialClient.shared.isValidUuid(r.id) else { continue }
+            guard r.senderId == activeUserId || r.recipientId == activeUserId else { continue }
+            guard let timestamp = IOSChatRepository.parseServerTimestampMillis(r.createdAt) else { continue }
+
+            let isMe = r.senderId == activeUserId
+            let otherUserId = isMe ? r.recipientId : r.senderId
+
+            var stamp: StampItem? = nil
+            if let sid = r.stampId, !sid.isEmpty {
+                let safeUrl = isValidRemoteStampUrl(r.stampImageUrl) ? r.stampImageUrl : nil
+                stamp = StampItem(
+                    id: sid,
+                    originalImagePath: safeUrl ?? "",
+                    stampImagePath: safeUrl ?? "",
+                    title: r.stampTitle ?? "",
+                    note: "",
+                    createdAt: timestamp,
+                    memoryDate: timestamp,
+                    location: r.stampLocation,
+                    mood: nil,
+                    collectionId: nil,
+                    favorite: false,
+                    filterId: nil,
+                    shape: "classic",
+                    preset: "NATURAL"
+                )
+            }
+
+            let msg = ChatMessage(
+                id: r.id,
+                senderId: r.senderId,
+                senderName: r.senderName.isEmpty ? (isMe ? "Me" : "Bạn bè") : r.senderName,
+                senderAvatar: r.senderAvatar ?? "https://i.pravatar.cc/150?u=\(r.senderId)",
+                recipientId: r.recipientId,
+                text: r.text,
+                createdAt: timestamp,
+                isMe: isMe,
+                isRead: r.isRead ?? false,
+                stamp: stamp
+            )
+
+            var list = conversationMap[otherUserId] ?? []
+            list.append(msg)
+            conversationMap[otherUserId] = list
+        }
+
+        for (otherUserId, cloudMsgs) in conversationMap {
+            let existing = self.conversationMessages[otherUserId] ?? []
+            var msgMap = [String: ChatMessage]()
+            for m in existing { msgMap[m.id] = m }
+            for m in cloudMsgs { msgMap[m.id] = m }
+
+            let merged = msgMap.values.sorted { (m1, m2) -> Bool in
+                if m1.createdAt == m2.createdAt {
+                    return m1.id < m2.id
+                }
+                return m1.createdAt < m2.createdAt
+            }
+            self.conversationMessages[otherUserId] = merged
+            for m in merged { self.messageDedupeSet.insert(m.id) }
+            self.saveLocalCache(recipientId: otherUserId)
         }
     }
 }
