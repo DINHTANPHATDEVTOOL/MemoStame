@@ -33,17 +33,19 @@ if [ -z "${SUPABASE_URL:-}" ]; then
     export SUPABASE_URL="http://127.0.0.1:54321"
 fi
 
-# Check if delete-account function is already responsive
-FUNCTION_URL="${SUPABASE_URL}/functions/v1/delete-account"
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$FUNCTION_URL" 2>/dev/null || true)
+# Check if edge functions are already responsive
+DEL_URL="${SUPABASE_URL}/functions/v1/delete-account"
+PUSH_URL="${SUPABASE_URL}/functions/v1/dispatch-push"
+DEL_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$DEL_URL" 2>/dev/null || true)
+PUSH_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$PUSH_URL" 2>/dev/null || true)
 
 FUNC_PID=""
-if [ "$HTTP_CODE" != "200" ] && command -v supabase >/dev/null 2>&1; then
-    echo "Starting local delete-account function in background..."
+if ([ "$DEL_CODE" != "200" ] || [ "$PUSH_CODE" != "200" ]) && command -v supabase >/dev/null 2>&1; then
+    echo "Starting local Edge Functions in background..."
     if [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
-        printf "SUPABASE_SERVICE_ROLE_KEY=%s\n" "$SUPABASE_SERVICE_ROLE_KEY" > supabase/functions/.env
+        printf "SUPABASE_SERVICE_ROLE_KEY=%s\nPUSH_PROVIDER_MODE=mock\nMOCK_PUSH_URL=http://127.0.0.1:54325/mock-push\n" "$SUPABASE_SERVICE_ROLE_KEY" > supabase/functions/.env
     fi
-    supabase functions serve delete-account --no-verify-jwt > /tmp/supabase_functions_serve.log 2>&1 &
+    supabase functions serve --no-verify-jwt > /tmp/supabase_functions_serve.log 2>&1 &
     FUNC_PID=$!
 
     cleanup_func() {
@@ -58,8 +60,10 @@ if [ "$HTTP_CODE" != "200" ] && command -v supabase >/dev/null 2>&1; then
     # Deterministic HTTP probe (up to 30s)
     READY=0
     for i in $(seq 1 30); do
-        PROBE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$FUNCTION_URL" 2>/dev/null || true)
-        if [ "$PROBE_CODE" = "200" ] || [ "$PROBE_CODE" = "401" ] || [ "$PROBE_CODE" = "405" ]; then
+        PROBE_DEL=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$DEL_URL" 2>/dev/null || true)
+        PROBE_PUSH=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$PUSH_URL" 2>/dev/null || true)
+        if ([ "$PROBE_DEL" = "200" ] || [ "$PROBE_DEL" = "401" ] || [ "$PROBE_DEL" = "405" ]) && \
+           ([ "$PROBE_PUSH" = "200" ] || [ "$PROBE_PUSH" = "401" ] || [ "$PROBE_PUSH" = "405" ]); then
             READY=1
             break
         fi
@@ -67,11 +71,11 @@ if [ "$HTTP_CODE" != "200" ] && command -v supabase >/dev/null 2>&1; then
     done
 
     if [ "$READY" -ne 1 ]; then
-        echo "[ERROR] delete-account function failed to become ready within 30s"
+        echo "[ERROR] Edge functions failed to become ready within 30s"
         cat /tmp/supabase_functions_serve.log || true
         exit 1
     fi
-    echo "delete-account function is ready."
+    echo "Edge functions (delete-account & dispatch-push) are ready."
 fi
 
 # Execute Python black-box E2E contract runner

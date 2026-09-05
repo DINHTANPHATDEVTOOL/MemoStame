@@ -79,12 +79,31 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'stamp-media') THEN
         RAISE EXCEPTION 'Prerequisite Check Failed: storage bucket stamp-media missing';
     END IF;
+
+    -- Verify Migration 006 push tables and RPCs
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'push_device_tokens') THEN
+        RAISE EXCEPTION 'Prerequisite Check Failed: table push_device_tokens missing';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'push_delivery_events') THEN
+        RAISE EXCEPTION 'Prerequisite Check Failed: table push_delivery_events missing';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' AND p.proname = 'register_push_device_token') THEN
+        RAISE EXCEPTION 'Prerequisite Check Failed: function register_push_device_token missing';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' AND p.proname = 'unregister_push_device_token') THEN
+        RAISE EXCEPTION 'Prerequisite Check Failed: function unregister_push_device_token missing';
+    END IF;
 END $$;
 
 
 -- ===================================================
 -- 2. FIXTURE CLEANUP & POPULATION (SUPERUSER ROLE)
 -- ===================================================
+DELETE FROM public.push_delivery_events WHERE recipient_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+DELETE FROM public.push_device_tokens WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.feed_replies WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friends WHERE user_id_1 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR user_id_2 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friend_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
@@ -494,12 +513,155 @@ EXCEPTION WHEN OTHERS THEN
     IF SQLERRM LIKE '%Media URL Constraint Leak%' THEN RAISE; END IF;
 END $$;
 
+-- Assertion 37: Push Tokens - Anon role cannot execute register_push_device_token
+DO $$
+BEGIN
+    SET LOCAL ROLE anon;
+    PERFORM public.register_push_device_token('android', 'fcm', 'token_anon_test', 'install_anon_test');
+    RAISE EXCEPTION 'Push Token RLS Leak: Anon role registered push token';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%Push Token RLS Leak%' THEN RAISE; END IF;
+END $$;
+
+-- Assertion 38: Push Tokens - Authenticated User A registers FCM token; User A can select own token
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    PERFORM public.register_push_device_token('android', 'fcm', 'fcm_token_user_a', 'install_dev_a');
+
+    SELECT COUNT(*) INTO v_c FROM public.push_device_tokens WHERE user_id = '11111111-1111-1111-1111-111111111111' AND token = 'fcm_token_user_a';
+    IF v_c <> 1 THEN RAISE EXCEPTION 'Push Token RLS Failed: User A could not select own registered token'; END IF;
+END $$;
+
+-- Assertion 39: Push Tokens - User B cannot select User A's token
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    SELECT COUNT(*) INTO v_c FROM public.push_device_tokens WHERE token = 'fcm_token_user_a';
+    IF v_c <> 0 THEN RAISE EXCEPTION 'Push Token RLS Leak: User B selected User A push token'; END IF;
+END $$;
+
+-- Assertion 40: Push Tokens - User A cannot directly insert/update/delete push_device_tokens without RPC
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Direct INSERT should fail or be denied by policy
+    BEGIN
+        INSERT INTO public.push_device_tokens (user_id, platform, provider, token, installation_id)
+        VALUES ('11111111-1111-1111-1111-111111111111', 'android', 'fcm', 'direct_token', 'direct_install');
+        RAISE EXCEPTION 'Push Token RLS Leak: User A directly inserted row into push_device_tokens';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Push Token RLS Leak%' THEN RAISE; END IF;
+    END;
+
+    -- Direct UPDATE should affect 0 rows
+    UPDATE public.push_device_tokens SET token = 'hacked_token' WHERE user_id = '11111111-1111-1111-1111-111111111111';
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c <> 0 THEN RAISE EXCEPTION 'Push Token RLS Leak: User A directly updated push_device_tokens'; END IF;
+
+    -- Direct DELETE should affect 0 rows
+    DELETE FROM public.push_device_tokens WHERE user_id = '11111111-1111-1111-1111-111111111111';
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c <> 0 THEN RAISE EXCEPTION 'Push Token RLS Leak: User A directly deleted push_device_tokens'; END IF;
+END $$;
+
+-- Assertion 41: Push Tokens - Invalid platform/provider combination rejected
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Android + APNS must fail
+    BEGIN
+        PERFORM public.register_push_device_token('android', 'apns', 'invalid_pair_token', 'install_bad');
+        RAISE EXCEPTION 'Push Token Check Leak: register accepted android + apns';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Push Token Check Leak%' THEN RAISE; END IF;
+    END;
+
+    -- Unknown platform must fail
+    BEGIN
+        PERFORM public.register_push_device_token('windows', 'fcm', 'invalid_plat_token', 'install_bad');
+        RAISE EXCEPTION 'Push Token Check Leak: register accepted windows platform';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Push Token Check Leak%' THEN RAISE; END IF;
+    END;
+END $$;
+
+-- Assertion 42: Account Switch Atomic Token Reassignment - User B registers same token & install ID
+DO $$
+DECLARE
+    v_cA INT;
+    v_cB INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    -- User B authenticates on same device previously used by User A
+    PERFORM public.register_push_device_token('android', 'fcm', 'fcm_token_user_a', 'install_dev_a');
+
+    -- User B now sees 1 row for this token
+    SELECT COUNT(*) INTO v_cB FROM public.push_device_tokens WHERE token = 'fcm_token_user_a';
+    IF v_cB <> 1 THEN RAISE EXCEPTION 'Push Token Reassignment Failed: User B does not own token'; END IF;
+
+    -- User A should no longer own this token
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    SELECT COUNT(*) INTO v_cA FROM public.push_device_tokens WHERE token = 'fcm_token_user_a';
+    IF v_cA <> 0 THEN RAISE EXCEPTION 'Push Token Isolation Failed: User A still has token after reassignment'; END IF;
+END $$;
+
+-- Assertion 43: Unregister RPC deactivates token
+DO $$
+DECLARE v_active BOOLEAN;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    PERFORM public.unregister_push_device_token('fcm', 'install_dev_a');
+
+    SELECT is_active INTO v_active FROM public.push_device_tokens WHERE token = 'fcm_token_user_a';
+    IF v_active IS NOT FALSE THEN RAISE EXCEPTION 'Push Token Unregister Failed: token is not inactive'; END IF;
+END $$;
+
+-- Assertion 44: Account Deletion Cascade removes push tokens
+DO $$
+DECLARE v_cnt INT;
+BEGIN
+    -- Insert disposable auth user D with push token
+    INSERT INTO auth.users (id, email, role, aud) VALUES
+        ('44444444-4444-4444-4444-444444444444', 'userd@test.local', 'authenticated', 'authenticated')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.profiles (id, username, display_name) VALUES
+        ('44444444-4444-4444-4444-444444444444', 'user_d', 'User D')
+    ON CONFLICT (id) DO NOTHING;
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '44444444-4444-4444-4444-444444444444';
+    PERFORM public.register_push_device_token('ios', 'apns', 'apns_token_user_d', 'install_dev_d');
+
+    SET LOCAL ROLE postgres;
+    DELETE FROM auth.users WHERE id = '44444444-4444-4444-4444-444444444444';
+
+    SELECT COUNT(*) INTO v_cnt FROM public.push_device_tokens WHERE token = 'apns_token_user_d';
+    IF v_cnt <> 0 THEN RAISE EXCEPTION 'Push Token Cascade Failed: token not deleted on user deletion'; END IF;
+END $$;
+
 
 -- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
 
+DELETE FROM public.push_delivery_events WHERE recipient_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
+DELETE FROM public.push_device_tokens WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 DELETE FROM public.feed_replies WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friends WHERE user_id_1 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR user_id_2 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friend_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');

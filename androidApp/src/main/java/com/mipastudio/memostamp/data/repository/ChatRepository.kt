@@ -159,7 +159,8 @@ class ChatRepository internal constructor(
 
                     newIncomingMessages.forEach { msg ->
                         notifiedMsgIds.add(msg.id)
-                        if (activeChattingUserId != msg.senderId) {
+                        val shouldNotify = com.mipastudio.memostamp.core.notification.PushEventDeduper.shouldNotify(msg.id)
+                        if (shouldNotify && activeChattingUserId != msg.senderId) {
                             try {
                                 MemoStampNotificationManager.sendNewMessageNotification(context, msg)
 
@@ -282,7 +283,8 @@ class ChatRepository internal constructor(
 
         if (incoming.recipientId == currentUid && incoming.senderId != currentUid && !incoming.isRead && !notifiedMsgIds.contains(incoming.id)) {
             notifiedMsgIds.add(incoming.id)
-            if (activeChattingUserId != incoming.senderId) {
+            val shouldNotify = com.mipastudio.memostamp.core.notification.PushEventDeduper.shouldNotify(incoming.id)
+            if (shouldNotify && activeChattingUserId != incoming.senderId) {
                 try {
                     MemoStampNotificationManager.sendNewMessageNotification(context, incoming)
                     InAppNotificationManager.show(
