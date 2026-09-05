@@ -65,6 +65,11 @@ class MainActivity : ComponentActivity() {
         if (!openScreen.isNullOrBlank()) {
             targetScreenState.value = Pair(openScreen, targetUserId)
         }
+
+        val dataUri = intent?.dataString
+        if (!dataUri.isNullOrBlank() && dataUri.startsWith("memostamp://", ignoreCase = true)) {
+            com.mipastudio.memostamp.data.local.PasswordRecoveryCoordinator.getInstance().handleDeepLink(dataUri)
+        }
     }
 
     private fun checkNotificationPermission() {

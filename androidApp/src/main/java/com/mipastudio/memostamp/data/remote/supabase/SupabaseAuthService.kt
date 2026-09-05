@@ -23,6 +23,11 @@ data class AndroidAuthSession(
     }
 }
 
+data class RecoveryUserInfo(
+    val userId: String,
+    val email: String
+)
+
 class SupabaseAuthService private constructor(private val context: Context? = null) {
 
     private val gson = Gson()
@@ -75,6 +80,91 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
             Result.success(Unit)
         } catch (e: Exception) {
             Result.success(Unit) // Logout local cleanup proceeds even if offline
+        }
+    }
+
+    suspend fun requestPasswordRecovery(
+        email: String,
+        redirectTo: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val normalizedEmail = email.trim().lowercase()
+        if (normalizedEmail.isBlank() || !normalizedEmail.contains("@")) {
+            return@withContext Result.failure(IllegalArgumentException("Địa chỉ email không hợp lệ"))
+        }
+        val endpoint = "${getBaseUrl()}/auth/v1/recover"
+        val bodyMap = mapOf(
+            "email" to normalizedEmail,
+            "redirect_to" to redirectTo
+        )
+        return@withContext try {
+            val url = URL(endpoint)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("apikey", getApiKey())
+                setRequestProperty("Content-Type", "application/json")
+                connectTimeout = 12000
+                readTimeout = 12000
+                doOutput = true
+                OutputStreamWriter(outputStream).use { writer ->
+                    writer.write(gson.toJson(bodyMap))
+                    writer.flush()
+                }
+            }
+
+            val code = conn.responseCode
+            val isSuccess = code in 200..299
+            val stream = if (isSuccess) conn.inputStream else conn.errorStream
+            val responseText = stream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+
+            if (!isSuccess) {
+                val errorMsg = parseErrorMessage(responseText) ?: "Yêu cầu khôi phục mật khẩu thất bại [$code]"
+                return@withContext Result.failure(IllegalStateException(errorMsg))
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun validateRecoveryUser(
+        accessToken: String
+    ): Result<RecoveryUserInfo> = withContext(Dispatchers.IO) {
+        if (accessToken.isBlank()) {
+            return@withContext Result.failure(IllegalArgumentException("Access token cannot be blank"))
+        }
+        val endpoint = "${getBaseUrl()}/auth/v1/user"
+        return@withContext try {
+            val url = URL(endpoint)
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                setRequestProperty("apikey", getApiKey())
+                setRequestProperty("Authorization", "Bearer $accessToken")
+                connectTimeout = 12000
+                readTimeout = 12000
+            }
+
+            val code = conn.responseCode
+            val isSuccess = code in 200..299
+            val stream = if (isSuccess) conn.inputStream else conn.errorStream
+            val responseText = stream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
+
+            if (!isSuccess) {
+                val errorMsg = parseErrorMessage(responseText) ?: "Xác thực phiên khôi phục thất bại [$code]"
+                return@withContext Result.failure(IllegalStateException(errorMsg))
+            }
+
+            val userObj = gson.fromJson(responseText, JsonObject::class.java)
+            val uid = userObj.get("id")?.asString
+            val email = userObj.get("email")?.asString ?: ""
+
+            if (uid.isNullOrBlank() || !com.mipastudio.memostamp.data.local.PasswordRecoveryParser.isValidCanonicalAuthUid(uid)) {
+                return@withContext Result.failure(IllegalStateException("Thông tin người dùng không hợp lệ"))
+            }
+
+            Result.success(RecoveryUserInfo(userId = uid, email = email))
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

@@ -66,6 +66,21 @@ fun AuthScreen(
     var selectedAvatarIndex by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(false) }
 
+    val recoveryCoordinator = remember { com.mipastudio.memostamp.data.local.PasswordRecoveryCoordinator.getInstance() }
+    val recoveryState by recoveryCoordinator.recoveryState.collectAsState()
+
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    var recoveryEmailInput by remember { mutableStateOf("") }
+    var isSendingRecovery by remember { mutableStateOf(false) }
+    var recoverySentMessage by remember { mutableStateOf<String?>(null) }
+    var lastRecoverySendTime by remember { mutableLongStateOf(0L) }
+
+    // Reset password dialog state
+    var newPasswordInput by remember { mutableStateOf("") }
+    var confirmPasswordInput by remember { mutableStateOf("") }
+    var newPasswordVisible by remember { mutableStateOf(false) }
+    var resetPasswordError by remember { mutableStateOf<String?>(null) }
+
     val presetAvatars = listOf(
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
         "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300",
@@ -376,7 +391,30 @@ fun AuthScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            if (!isRegisterMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            recoveryEmailInput = if (identifier.contains("@") && identifier.contains(".")) identifier else ""
+                            recoverySentMessage = null
+                            showForgotPasswordDialog = true
+                        },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                    ) {
+                        Text(
+                            text = "Quên mật khẩu?",
+                            fontSize = 13.sp,
+                            color = AccentRed,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Primary Action Button
             Button(
@@ -423,6 +461,230 @@ fun AuthScreen(
         if (com.mipastudio.memostamp.BuildConfig.DEBUG && showSupabaseModal) {
             SupabaseConfigDialog(
                 onDismiss = { showSupabaseModal = false }
+            )
+        }
+
+        // Forgot Password Request Dialog
+        if (showForgotPasswordDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    if (!isSendingRecovery) {
+                        showForgotPasswordDialog = false
+                        recoverySentMessage = null
+                    }
+                },
+                title = {
+                    Text("Quên mật khẩu", fontWeight = FontWeight.Bold, color = PrimaryText)
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (recoverySentMessage != null) {
+                            Text(
+                                text = recoverySentMessage!!,
+                                fontSize = 14.sp,
+                                color = PrimaryText
+                            )
+                        } else {
+                            Text(
+                                text = "Nhập email của bạn để nhận liên kết đặt lại mật khẩu an toàn.",
+                                fontSize = 14.sp,
+                                color = SecondaryText
+                            )
+                            OutlinedTextField(
+                                value = recoveryEmailInput,
+                                onValueChange = { recoveryEmailInput = it },
+                                label = { Text("Email đã đăng ký") },
+                                placeholder = { Text("example@domain.com") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = SurfaceWhite,
+                                    unfocusedContainerColor = SurfaceWhite,
+                                    focusedBorderColor = AccentRed
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    if (recoverySentMessage != null) {
+                        TextButton(onClick = {
+                            showForgotPasswordDialog = false
+                            recoverySentMessage = null
+                        }) {
+                            Text("Đã hiểu", color = AccentRed, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                val trimmedEmail = recoveryEmailInput.trim().lowercase()
+                                if (trimmedEmail.isBlank() || !trimmedEmail.contains("@")) {
+                                    Toast.makeText(context, "Vui lòng nhập email hợp lệ", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+                                val now = System.currentTimeMillis()
+                                if (now - lastRecoverySendTime < 30000) {
+                                    val remaining = 30 - ((now - lastRecoverySendTime) / 1000)
+                                    Toast.makeText(context, "Vui lòng chờ $remaining giây trước khi gửi lại", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+
+                                isSendingRecovery = true
+                                coroutineScope.launch {
+                                    val result = com.mipastudio.memostamp.data.remote.supabase.SupabaseAuthService.getInstance().requestPasswordRecovery(
+                                        email = trimmedEmail,
+                                        redirectTo = "memostamp://auth/recovery"
+                                    )
+                                    isSendingRecovery = false
+                                    lastRecoverySendTime = System.currentTimeMillis()
+                                    result.fold(
+                                        onSuccess = {
+                                            recoverySentMessage = "Nếu tài khoản tồn tại với email này, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu đến hòm thư của bạn."
+                                        },
+                                        onFailure = { err ->
+                                            Toast.makeText(context, err.message ?: "Không thể gửi yêu cầu đặt lại", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                }
+                            },
+                            enabled = !isSendingRecovery,
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (isSendingRecovery) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                            } else {
+                                Text("Gửi email", color = Color.White)
+                            }
+                        }
+                    }
+                },
+                dismissButton = {
+                    if (recoverySentMessage == null) {
+                        TextButton(
+                            onClick = { showForgotPasswordDialog = false },
+                            enabled = !isSendingRecovery
+                        ) {
+                            Text("Hủy", color = SecondaryText)
+                        }
+                    }
+                }
+            )
+        }
+
+        // Ephemeral Reset Password Dialog when incoming recovery link arrives
+        val currentRecovery = recoveryState
+        if (currentRecovery is com.mipastudio.memostamp.data.local.PasswordRecoveryState.Ready) {
+            AlertDialog(
+                onDismissRequest = { /* Modal: require explicit action or cancel */ },
+                title = {
+                    Text("Đặt lại mật khẩu", fontWeight = FontWeight.Bold, color = PrimaryText)
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Tài khoản: ${currentRecovery.email}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = PrimaryText
+                        )
+                        OutlinedTextField(
+                            value = newPasswordInput,
+                            onValueChange = { newPasswordInput = it },
+                            label = { Text("Mật khẩu mới (ít nhất 6 ký tự)") },
+                            singleLine = true,
+                            visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            trailingIcon = {
+                                IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                                    Icon(
+                                        imageVector = if (newPasswordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                                        contentDescription = "Toggle password"
+                                    )
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = confirmPasswordInput,
+                            onValueChange = { confirmPasswordInput = it },
+                            label = { Text("Xác nhận mật khẩu mới") },
+                            singleLine = true,
+                            visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        if (resetPasswordError != null) {
+                            Text(
+                                text = resetPasswordError!!,
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            resetPasswordError = null
+                            coroutineScope.launch {
+                                val updateRes = recoveryCoordinator.updatePassword(newPasswordInput, confirmPasswordInput)
+                                updateRes.fold(
+                                    onSuccess = {
+                                        Toast.makeText(context, "Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show()
+                                        identifier = currentRecovery.email
+                                        password = ""
+                                        newPasswordInput = ""
+                                        confirmPasswordInput = ""
+                                        resetPasswordError = null
+                                    },
+                                    onFailure = { err ->
+                                        resetPasswordError = err.message ?: "Cập nhật mật khẩu thất bại"
+                                    }
+                                )
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Cập nhật", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        recoveryCoordinator.resetState()
+                        newPasswordInput = ""
+                        confirmPasswordInput = ""
+                        resetPasswordError = null
+                    }) {
+                        Text("Hủy", color = SecondaryText)
+                    }
+                }
+            )
+        }
+
+        if (currentRecovery is com.mipastudio.memostamp.data.local.PasswordRecoveryState.Invalid) {
+            AlertDialog(
+                onDismissRequest = { recoveryCoordinator.resetState() },
+                title = {
+                    Text("Liên kết không hợp lệ", fontWeight = FontWeight.Bold, color = PrimaryText)
+                },
+                text = {
+                    Text(
+                        text = currentRecovery.message,
+                        fontSize = 14.sp,
+                        color = PrimaryText
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { recoveryCoordinator.resetState() }) {
+                        Text("Đóng", color = AccentRed, fontWeight = FontWeight.Bold)
+                    }
+                }
             )
         }
     }
