@@ -228,6 +228,10 @@ struct PassportScreenView: View {
     }
 
     private func syncSavedProfile() {
+        let current = (repository.currentUser.value as? UserProfile)
+        if let currentUid = current?.uid, IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(currentUid) {
+            return
+        }
         let defaults = UserDefaults.standard
         if let savedName = defaults.string(forKey: "user_displayName"), !savedName.isEmpty {
             let savedUsername = defaults.string(forKey: "user_username") ?? "phat_memostamp"
@@ -362,6 +366,8 @@ struct ProfileSettingsSheetView: View {
     @State private var isUpdatingPassword: Bool = false
     @State private var showPhotoPicker: Bool = false
     @State private var selectedAvatarImage: UIImage? = nil
+    @State private var isSavingProfile: Bool = false
+    @State private var profileSaveMessage: String? = nil
 
     var body: some View {
         NavigationView {
@@ -476,6 +482,19 @@ struct ProfileSettingsSheetView: View {
                                     .background(MSColors.stamp.opacity(0.12))
                                     .foregroundColor(MSColors.stamp)
                                     .cornerRadius(10)
+                                }
+
+                                if selectedAvatarImage != nil {
+                                    Button(action: {
+                                        selectedAvatarImage = nil
+                                        let current = repository.currentUser.value as? UserProfile
+                                        avatarUrl = current?.avatarUrl ?? ""
+                                        profileSaveMessage = nil
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.title3)
+                                    }
                                 }
                             }
 
@@ -598,31 +617,145 @@ struct ProfileSettingsSheetView: View {
 
                     // 4. Save & Logout Action Row
                     VStack(spacing: 10) {
+                        if let msg = profileSaveMessage {
+                            Text(msg)
+                                .font(.caption.bold())
+                                .foregroundColor(msg.contains("thành công") || msg.contains("Success") ? Color.green : Color.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                        }
+
                         Button(action: {
-                            let current = (repository.currentUser.value as? UserProfile)
-                            let name = displayName.isEmpty ? (current?.displayName ?? "") : displayName
-                            let note = bio.isEmpty ? (current?.bio ?? "") : bio
-                            let avatar = avatarUrl.isEmpty ? current?.avatarUrl : avatarUrl
+                            if isSavingProfile { return }
 
-                            repository.updateProfile(displayName: name, bio: note, avatarUrl: avatar)
-
-                            let defaults = UserDefaults.standard
-                            defaults.set(name, forKey: "user_displayName")
-                            defaults.set(note, forKey: "user_bio")
-                            if let av = avatar {
-                                defaults.set(av, forKey: "user_avatarUrl")
+                            // 1. validate authenticated UID
+                            guard let authUid = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines),
+                                  IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
+                                profileSaveMessage = langManager.string(
+                                    vi: "⚠️ Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
+                                    en: "⚠️ Invalid or expired session."
+                                )
+                                return
                             }
 
-                            presentationMode.wrappedValue.dismiss()
+                            // 2. validate repository current user UID == auth UID
+                            guard let previousProfile = repository.currentUser.value as? UserProfile,
+                                  previousProfile.uid == authUid else {
+                                profileSaveMessage = langManager.string(
+                                    vi: "⚠️ Danh tính tài khoản không trùng khớp.",
+                                    en: "⚠️ Account identity mismatch."
+                                )
+                                return
+                            }
+
+                            // 3. capture previous UserProfile snapshot: previousProfile
+
+                            // 4. calculate candidate displayName/bio/avatar
+                            let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let candidateDisplayName = trimmedName.isEmpty ? previousProfile.displayName : trimmedName
+                            if candidateDisplayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                profileSaveMessage = langManager.string(
+                                    vi: "⚠️ Tên hiển thị không được để trống.",
+                                    en: "⚠️ Display name cannot be empty."
+                                )
+                                return
+                            }
+                            let candidateBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                            // 5. validate avatar remote URL contract
+                            if selectedAvatarImage != nil {
+                                let lower = avatarUrl.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                                if lower.hasPrefix("file:") || lower.hasPrefix("/") || !SupabaseAuthService.isSafeRemoteAvatarUrl(avatarUrl) {
+                                    profileSaveMessage = langManager.string(
+                                        vi: "Ảnh đại diện cục bộ chưa thể đồng bộ. Hãy dùng URL https hoặc giữ ảnh hiện tại.",
+                                        en: "Local avatar cannot be synced to cloud. Please use an https URL or keep current avatar."
+                                    )
+                                    return
+                                }
+                            }
+
+                            let trimmedAvatarInput = avatarUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !trimmedAvatarInput.isEmpty && !SupabaseAuthService.isSafeRemoteAvatarUrl(trimmedAvatarInput) {
+                                profileSaveMessage = langManager.string(
+                                    vi: "Ảnh đại diện cục bộ chưa thể đồng bộ. Hãy dùng URL https hoặc giữ ảnh hiện tại.",
+                                    en: "Local avatar cannot be synced to cloud. Please use an https URL or keep current avatar."
+                                )
+                                return
+                            }
+
+                            let candidateAvatarUrl: String? = trimmedAvatarInput.isEmpty ? previousProfile.avatarUrl : trimmedAvatarInput
+                            if let candidate = candidateAvatarUrl, !candidate.isEmpty && !SupabaseAuthService.isSafeRemoteAvatarUrl(candidate) {
+                                profileSaveMessage = langManager.string(
+                                    vi: "Ảnh đại diện cục bộ chưa thể đồng bộ. Hãy dùng URL https hoặc giữ ảnh hiện tại.",
+                                    en: "Local avatar cannot be synced to cloud. Please use an https URL or keep current avatar."
+                                )
+                                return
+                            }
+
+                            // 6. apply candidate to repository
+                            repository.updateProfile(displayName: candidateDisplayName, bio: candidateBio, avatarUrl: candidateAvatarUrl)
+
+                            // 7. persist using account-scoped persistence
+                            let persisted = IOSLocalPersistenceStore.shared.saveData(
+                                repository: repository,
+                                userId: authUid
+                            )
+                            if !persisted {
+                                repository.setCurrentUser(profile: previousProfile)
+                                profileSaveMessage = langManager.string(
+                                    vi: "⚠️ Không thể lưu trữ dữ liệu cục bộ.",
+                                    en: "⚠️ Failed to persist local data."
+                                )
+                                return
+                            }
+
+                            // 8. call SupabaseAuthService.shared.updateAuthenticatedProfile
+                            isSavingProfile = true
+                            profileSaveMessage = nil
+
+                            SupabaseAuthService.shared.updateAuthenticatedProfile(
+                                userId: authUid,
+                                displayName: candidateDisplayName,
+                                bio: candidateBio,
+                                avatarUrl: candidateAvatarUrl
+                            ) { result in
+                                DispatchQueue.main.async {
+                                    self.isSavingProfile = false
+                                    switch result {
+                                    case .success:
+                                        // 9. if CLOUD SUCCESS
+                                        self.profileSaveMessage = nil
+                                        self.presentationMode.wrappedValue.dismiss()
+
+                                    case .failure(let error):
+                                        // 10. if CLOUD FAILURE: rollback & persist
+                                        self.repository.setCurrentUser(profile: previousProfile)
+                                        _ = IOSLocalPersistenceStore.shared.saveData(
+                                            repository: self.repository,
+                                            userId: authUid
+                                        )
+                                        let errMsg = error.localizedDescription
+                                        self.profileSaveMessage = "⚠️ \(errMsg)"
+                                    }
+                                }
+                            }
                         }) {
-                            Text(langManager.string(vi: "Lưu Cài Đặt Hồ Sơ", en: "Save Settings Changes"))
-                                .font(.body.bold())
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(MSColors.stamp)
-                                .cornerRadius(14)
+                            HStack {
+                                if isSavingProfile {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .padding(.trailing, 4)
+                                }
+                                Text(isSavingProfile ? langManager.string(vi: "Đang lưu...", en: "Saving...") : langManager.string(vi: "Lưu Cài Đặt Hồ Sơ", en: "Save Settings Changes"))
+                                    .font(.body.bold())
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(isSavingProfile ? MSColors.stamp.opacity(0.6) : MSColors.stamp)
+                            .cornerRadius(14)
                         }
+                        .disabled(isSavingProfile)
 
                         Button(action: {
                             let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
