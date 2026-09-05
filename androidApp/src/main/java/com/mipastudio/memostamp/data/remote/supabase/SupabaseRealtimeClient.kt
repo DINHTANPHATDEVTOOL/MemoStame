@@ -17,10 +17,11 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Real Supabase Realtime WebSocket client establishing channel subscriptions for direct_messages.
- * Implements Phoenix V1/V2 protocol over WebSocket.
+ * Implements Phoenix V1/V2 protocol over WebSocket with connection epoch and exponential backoff.
  */
 class SupabaseRealtimeClient(private val context: Context? = null) {
 
@@ -35,6 +36,11 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private var heartbeatJob: Job? = null
     private var reconnectJob: Job? = null
+    private var joinWatchdogJob: Job? = null
+
+    // Generation epoch to isolate stale callbacks and socket closures
+    private val connectionGeneration = AtomicLong(0)
+    private var reconnectAttempt = 0
 
     @Volatile
     private var isConnected = false
@@ -49,12 +55,15 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
     private var currentAccessToken: String? = null
 
     private var onMessageCallback: ((DirectMessage) -> Unit)? = null
+    var onSubscriptionReady: ((String) -> Unit)? = null
+
     private val refCounter = AtomicInteger(1)
 
     fun getCurrentUserId(): String? = currentUserId
     fun getCurrentAccessToken(): String? = currentAccessToken
     fun isSubscribedState(): Boolean = isSubscribed
     fun isConnectedState(): Boolean = isConnected
+    fun getConnectionGeneration(): Long = connectionGeneration.get()
 
     companion object {
         private const val TAG = "SupabaseRealtime"
@@ -67,6 +76,13 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             return instance ?: synchronized(this) {
                 instance ?: SupabaseRealtimeClient(safeContext).also { instance = it }
             }
+        }
+
+        fun calculateReconnectDelay(attempt: Int): Long {
+            val baseDelays = longArrayOf(1000L, 2000L, 4000L, 8000L, 16000L, 30000L)
+            val base = if (attempt < baseDelays.size) baseDelays[attempt] else 30000L
+            val jitter = (Math.random() * 0.20 * base).toLong()
+            return (base + jitter).coerceAtMost(30000L)
         }
     }
 
@@ -83,16 +99,8 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             disconnect()
             return
         }
-        if (currentUserId != userId) {
+        if (currentUserId != userId || currentAccessToken != newAccessToken || !isConnected || !isSubscribed) {
             connectAndSubscribe(userId, newAccessToken, onMessageCallback ?: {})
-            return
-        }
-        if (currentAccessToken != newAccessToken) {
-            Log.d(TAG, "Access token refreshed for user: $userId. Reconnecting with new JWT.")
-            disconnectInternal(clearState = false)
-            this.currentUserId = userId
-            this.currentAccessToken = newAccessToken
-            startWebSocket()
         }
     }
 
@@ -116,24 +124,18 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             return
         }
 
-        if (currentUserId == userId && currentAccessToken != accessToken) {
-            Log.d(TAG, "Updating access token for active user: $userId. Reconnecting with new JWT.")
-            disconnectInternal(clearState = false)
-            this.currentUserId = userId
-            this.currentAccessToken = accessToken
-            startWebSocket()
-            return
-        }
-
         disconnectInternal(clearState = false)
 
+        val gen = connectionGeneration.incrementAndGet()
         this.currentUserId = userId
         this.currentAccessToken = accessToken
 
-        startWebSocket()
+        startWebSocket(gen)
     }
 
-    private fun startWebSocket() {
+    private fun startWebSocket(generation: Long) {
+        if (connectionGeneration.get() != generation) return
+
         val url = getWsUrl()
         val request = Request.Builder()
             .url(url)
@@ -141,39 +143,49 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
 
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(ws: WebSocket, response: Response) {
-                Log.i(TAG, "WebSocket connected successfully to Supabase Realtime")
+                if (connectionGeneration.get() != generation) {
+                    ws.close(1000, "Stale generation")
+                    return
+                }
+                Log.i(TAG, "WebSocket connected successfully (generation=$generation)")
                 isConnected = true
-                startHeartbeat()
-                subscribeToDirectMessages()
+                startHeartbeat(generation)
+                subscribeToDirectMessages(generation)
+                startJoinWatchdog(generation)
             }
 
             override fun onMessage(ws: WebSocket, text: String) {
-                handleIncomingMessage(text)
+                if (connectionGeneration.get() != generation) return
+                handleIncomingMessage(text, generation)
             }
 
             override fun onClosing(ws: WebSocket, code: Int, reason: String) {
+                if (connectionGeneration.get() != generation) return
                 Log.w(TAG, "WebSocket closing: $code / $reason")
                 isConnected = false
                 isSubscribed = false
             }
 
             override fun onClosed(ws: WebSocket, code: Int, reason: String) {
+                if (connectionGeneration.get() != generation) return
                 Log.w(TAG, "WebSocket closed: $code / $reason")
                 isConnected = false
                 isSubscribed = false
-                scheduleReconnect()
+                scheduleReconnect(generation)
             }
 
             override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
+                if (connectionGeneration.get() != generation) return
                 Log.e(TAG, "WebSocket failure: ${t.message}", t)
                 isConnected = false
                 isSubscribed = false
-                scheduleReconnect()
+                scheduleReconnect(generation)
             }
         })
     }
 
-    private fun subscribeToDirectMessages() {
+    private fun subscribeToDirectMessages(generation: Long) {
+        if (connectionGeneration.get() != generation) return
         val uid = currentUserId ?: return
         val token = currentAccessToken
         if (token.isNullOrBlank()) {
@@ -203,16 +215,30 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             "ref" to joinRef
         )
 
-        Log.d(TAG, "Subscribing to direct_messages topic=$topic for user=$uid")
-        webSocket?.send(gson.toJson(joinMsg))
+        Log.d(TAG, "Subscribing to direct_messages topic=$topic for user=$uid (gen=$generation)")
+        val sent = webSocket?.send(gson.toJson(joinMsg)) ?: false
+        if (!sent && connectionGeneration.get() == generation) {
+            scheduleReconnect(generation)
+        }
     }
 
-    private fun startHeartbeat() {
+    private fun startJoinWatchdog(generation: Long) {
+        joinWatchdogJob?.cancel()
+        joinWatchdogJob = coroutineScope.launch {
+            delay(10000)
+            if (connectionGeneration.get() == generation && !isSubscribed) {
+                Log.w(TAG, "Join ACK watchdog timed out after 10s for generation $generation")
+                scheduleReconnect(generation)
+            }
+        }
+    }
+
+    private fun startHeartbeat(generation: Long) {
         heartbeatJob?.cancel()
         heartbeatJob = coroutineScope.launch {
-            while (isActive && isConnected) {
+            while (isActive && isConnected && connectionGeneration.get() == generation) {
                 delay(25000)
-                if (isConnected) {
+                if (isConnected && connectionGeneration.get() == generation) {
                     val pingRef = refCounter.getAndIncrement().toString()
                     val ping = mapOf(
                         "topic" to "phoenix",
@@ -220,13 +246,20 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
                         "payload" to emptyMap<String, Any>(),
                         "ref" to pingRef
                     )
-                    webSocket?.send(gson.toJson(ping))
+                    val sent = webSocket?.send(gson.toJson(ping)) ?: false
+                    if (!sent && connectionGeneration.get() == generation) {
+                        Log.w(TAG, "Heartbeat failed to send. Triggering reconnect.")
+                        scheduleReconnect(generation)
+                        break
+                    }
                 }
             }
         }
     }
 
-    private fun handleIncomingMessage(jsonText: String) {
+    private fun handleIncomingMessage(jsonText: String, generation: Long) {
+        if (connectionGeneration.get() != generation) return
+
         try {
             val root = gson.fromJson(jsonText, Map::class.java) as? Map<*, *> ?: return
             val topic = (root["topic"] as? String) ?: ""
@@ -238,12 +271,22 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
                 val status = payload["status"] as? String
                 if (status == "ok") {
                     if (topic == "realtime:public:direct_messages" || topic.contains("direct_messages")) {
+                        joinWatchdogJob?.cancel()
                         isSubscribed = true
+                        reconnectAttempt = 0
                         Log.i(TAG, "Realtime channel direct_messages joined successfully (ACK received)")
+                        val uid = currentUserId
+                        if (uid != null) {
+                            onSubscriptionReady?.invoke(uid)
+                        }
                     }
                 } else if (status == "error") {
-                    isSubscribed = false
-                    Log.e(TAG, "Realtime channel direct_messages join failed: ${payload["response"]}")
+                    if (topic == "realtime:public:direct_messages" || topic.contains("direct_messages")) {
+                        joinWatchdogJob?.cancel()
+                        isSubscribed = false
+                        Log.e(TAG, "Realtime channel direct_messages join failed: ${payload["response"]}")
+                        scheduleReconnect(generation)
+                    }
                 }
                 return
             }
@@ -283,7 +326,7 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
         val id = (map["id"] ?: "").toString()
         val senderId = (map["sender_id"] ?: "").toString()
         val recipientId = (map["recipient_id"] ?: "").toString()
-        if (id.isBlank() || senderId.isBlank() || recipientId.isBlank()) return null
+        if (id.isBlank() || !SupabaseClient.isValidUuid(id) || senderId.isBlank() || recipientId.isBlank()) return null
 
         val senderName = (map["sender_name"] ?: "").toString()
         val senderAvatar = (map["sender_avatar"] ?: "https://i.pravatar.cc/150?u=$senderId").toString()
@@ -292,10 +335,13 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
         val text = (map["text"] ?: "").toString()
         val stampId = map["stamp_id"]?.toString()
         val stampTitle = map["stamp_title"]?.toString()
-        val stampImageUrl = map["stamp_image_url"]?.toString()
+        val rawStampUrl = map["stamp_image_url"]?.toString()
+        val stampImageUrl = if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(rawStampUrl)) rawStampUrl?.trim() else null
         val stampLocation = map["stamp_location"]?.toString()
         val isRead = (map["is_read"] as? Boolean) ?: false
-        val createdAt = SupabaseClient.parseIsoStringToMillis((map["created_at"] ?: map["createdAt"] ?: System.currentTimeMillis()).toString())
+
+        val rawCreatedAt = (map["created_at"] ?: map["createdAt"])?.toString()
+        val createdAt = SupabaseClient.parseServerMessageTimestampOrNull(rawCreatedAt) ?: return null
 
         return DirectMessage(
             id = id,
@@ -315,14 +361,31 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
         )
     }
 
-    private fun scheduleReconnect() {
-        if (currentUserId.isNullOrBlank() || currentUserId?.startsWith("guest_") == true) return
+    private fun scheduleReconnect(generation: Long) {
+        if (connectionGeneration.get() != generation) return
+        val uid = currentUserId
+        val token = currentAccessToken
+        if (uid.isNullOrBlank() || uid.startsWith("guest_") || token.isNullOrBlank()) return
+
+        joinWatchdogJob?.cancel()
+        heartbeatJob?.cancel()
+
+        try {
+            webSocket?.close(1000, "Reconnect")
+        } catch (_: Throwable) {}
+        webSocket = null
+        isConnected = false
+        isSubscribed = false
+
         reconnectJob?.cancel()
+        val delayMs = calculateReconnectDelay(reconnectAttempt)
+        reconnectAttempt++
+
         reconnectJob = coroutineScope.launch {
-            delay(3000)
-            if (!isConnected && !currentUserId.isNullOrBlank()) {
-                Log.i(TAG, "Reconnecting WebSocket for user: $currentUserId")
-                startWebSocket()
+            delay(delayMs)
+            if (connectionGeneration.get() == generation && !isConnected && !currentUserId.isNullOrBlank()) {
+                Log.i(TAG, "Reconnecting WebSocket for user: $currentUserId (gen=$generation, attempt=$reconnectAttempt)")
+                startWebSocket(generation)
             }
         }
     }
@@ -332,10 +395,15 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
     }
 
     private fun disconnectInternal(clearState: Boolean) {
+        connectionGeneration.incrementAndGet()
+
         heartbeatJob?.cancel()
         heartbeatJob = null
         reconnectJob?.cancel()
         reconnectJob = null
+        joinWatchdogJob?.cancel()
+        joinWatchdogJob = null
+        reconnectAttempt = 0
 
         if (isSubscribed && isConnected) {
             try {
@@ -350,7 +418,9 @@ class SupabaseRealtimeClient(private val context: Context? = null) {
             } catch (_: Exception) {}
         }
 
-        webSocket?.close(1000, "Logout")
+        try {
+            webSocket?.close(1000, "Logout")
+        } catch (_: Throwable) {}
         webSocket = null
         isConnected = false
         isSubscribed = false

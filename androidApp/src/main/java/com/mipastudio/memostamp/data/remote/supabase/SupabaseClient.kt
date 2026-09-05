@@ -100,6 +100,29 @@ data class SupabaseDirectMessageRecord(
             isRead = isRead
         )
     }
+
+    fun toDomainStrict(): DirectMessage? {
+        if (id.isBlank() || !SupabaseClient.isValidUuid(id)) return null
+        if (senderId.isBlank() || recipientId.isBlank()) return null
+        val millis = SupabaseClient.parseServerMessageTimestampOrNull(createdAt?.toString()) ?: return null
+        val safeImageUrl = if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stampImageUrl)) stampImageUrl?.trim() else null
+        return DirectMessage(
+            id = id,
+            senderId = senderId,
+            senderName = senderName,
+            senderAvatar = senderAvatar.orEmpty(),
+            recipientId = recipientId,
+            recipientName = recipientName,
+            recipientAvatar = recipientAvatar.orEmpty(),
+            text = text,
+            stampId = stampId,
+            stampTitle = stampTitle,
+            stampImageUrl = safeImageUrl,
+            stampLocation = stampLocation,
+            createdAt = millis,
+            isRead = isRead
+        )
+    }
 }
 
 data class SupabaseFeedPostRecord(
@@ -250,6 +273,33 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
                         sdf.parse(cleanStr)?.time ?: System.currentTimeMillis()
                     } catch (_: Throwable) {
                         System.currentTimeMillis()
+                    }
+                }
+            }
+        }
+
+        fun parseServerMessageTimestampOrNull(str: String?): Long? {
+            val clean = str?.trim() ?: return null
+            if (clean.isBlank()) return null
+            val asLong = clean.toLongOrNull()
+            if (asLong != null) {
+                return if (asLong < 10000000000L) asLong * 1000 else asLong
+            }
+            return try {
+                java.time.OffsetDateTime.parse(clean).toInstant().toEpochMilli()
+            } catch (_: Throwable) {
+                try {
+                    java.time.Instant.parse(clean).toEpochMilli()
+                } catch (_: Throwable) {
+                    try {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                            isLenient = false
+                            timeZone = TimeZone.getTimeZone("UTC")
+                        }
+                        val cleanStr = if (clean.contains(".")) clean.substringBefore(".") else clean.substringBefore("+").substringBefore("Z")
+                        sdf.parse(cleanStr)?.time
+                    } catch (_: Throwable) {
+                        null
                     }
                 }
             }
@@ -795,7 +845,8 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
                 return@withContext Result.failure(IllegalArgumentException("Server returned message with mismatched recipientId: ${serverRecord.recipientId} vs ${msg.recipientId}"))
             }
 
-            val serverMsg = serverRecord.toDomain()
+            val serverMsg = serverRecord.toDomainStrict()
+                ?: return@withContext Result.failure(IllegalStateException("Server returned message with invalid timestamp or ID"))
             Result.success(serverMsg)
         } else {
             Result.failure(res.exceptionOrNull() ?: Exception("Send direct message failed"))
@@ -813,7 +864,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
             try {
                 val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
                 val list: List<SupabaseDirectMessageRecord> = gson.fromJson(json, listType) ?: emptyList()
-                val mapped = list.map { it.toDomain() }
+                val mapped = list.mapNotNull { it.toDomainStrict() }
                 Result.success(mapped)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -833,7 +884,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
             try {
                 val listType = object : TypeToken<List<SupabaseDirectMessageRecord>>() {}.type
                 val list: List<SupabaseDirectMessageRecord> = gson.fromJson(json, listType) ?: emptyList()
-                val mapped = list.map { it.toDomain() }
+                val mapped = list.mapNotNull { it.toDomainStrict() }
                 Result.success(mapped)
             } catch (e: Exception) {
                 Result.failure(e)

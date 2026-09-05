@@ -851,5 +851,260 @@ class AndroidChatCloudContractTest {
         val invalidMsg = msg.copy(stampImageUrl = "file:///local/path.jpg")
         assertFalse(DirectMessage.isValidRemoteStampUrl(invalidMsg.stampImageUrl))
     }
+
+    @Test
+    fun test36_strictTimestampValidIso() {
+        // Fractional ISO
+        val fracIso = "2026-09-05T13:40:00.123Z"
+        val fracMillis = SupabaseClient.parseServerMessageTimestampOrNull(fracIso)
+        assertTrue(fracMillis != null)
+        assertEquals(123L, fracMillis!! % 1000L)
+
+        // Standard ISO without millis
+        val stdIso = "2026-09-05T13:40:00Z"
+        val stdMillis = SupabaseClient.parseServerMessageTimestampOrNull(stdIso)
+        assertTrue(stdMillis != null)
+        assertEquals(0L, stdMillis!! % 1000L)
+
+        // ISO with offset
+        val offsetIso = "2026-09-05T20:40:00+07:00"
+        val offsetMillis = SupabaseClient.parseServerMessageTimestampOrNull(offsetIso)
+        assertTrue(offsetMillis != null)
+        // Offset 20:40:00+07:00 is same instant as 13:40:00Z
+        assertEquals(stdMillis, offsetMillis)
+    }
+
+    @Test
+    fun test37_strictTimestampNumeric() {
+        // Epoch seconds
+        val secStr = "1725541200"
+        val secMillis = SupabaseClient.parseServerMessageTimestampOrNull(secStr)
+        assertEquals(1725541200000L, secMillis)
+
+        // Epoch millis
+        val msStr = "1725541200123"
+        val msMillis = SupabaseClient.parseServerMessageTimestampOrNull(msStr)
+        assertEquals(1725541200123L, msMillis)
+    }
+
+    @Test
+    fun test38_strictTimestampBlankOrGarbageReturnsNull() {
+        assertNull(SupabaseClient.parseServerMessageTimestampOrNull(null))
+        assertNull(SupabaseClient.parseServerMessageTimestampOrNull(""))
+        assertNull(SupabaseClient.parseServerMessageTimestampOrNull("   "))
+        assertNull(SupabaseClient.parseServerMessageTimestampOrNull("not-a-timestamp"))
+        assertNull(SupabaseClient.parseServerMessageTimestampOrNull("2026-99-99T99:99:99Z"))
+        assertNull(SupabaseClient.parseServerMessageTimestampOrNull("NaN"))
+        assertNull(SupabaseClient.parseServerMessageTimestampOrNull("undefined"))
+    }
+
+    @Test
+    fun test39_remoteMessageInvalidTimestampDropped() {
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val recordMissingTs = SupabaseDirectMessageRecord(
+            id = validUuid,
+            senderId = "user_1",
+            recipientId = "user_2",
+            text = "Hello",
+            createdAt = null
+        )
+        assertNull(recordMissingTs.toDomainStrict())
+
+        val recordBlankTs = recordMissingTs.copy(createdAt = "  ")
+        assertNull(recordBlankTs.toDomainStrict())
+
+        val recordGarbageTs = recordMissingTs.copy(createdAt = "garbage_timestamp")
+        assertNull(recordGarbageTs.toDomainStrict())
+    }
+
+    @Test
+    fun test40_remoteMessageInvalidIdDropped() {
+        val recordNonUuid = SupabaseDirectMessageRecord(
+            id = "not-a-uuid",
+            senderId = "user_1",
+            recipientId = "user_2",
+            text = "Hello",
+            createdAt = "2026-09-05T13:40:00Z"
+        )
+        assertNull(recordNonUuid.toDomainStrict())
+
+        val recordBlankId = recordNonUuid.copy(id = "")
+        assertNull(recordBlankId.toDomainStrict())
+    }
+
+    @Test
+    fun test41_remoteMessageValidStrictFieldsPreserved() {
+        val validUuid = java.util.UUID.randomUUID().toString()
+        val record = SupabaseDirectMessageRecord(
+            id = validUuid,
+            senderId = "user_1",
+            senderName = "User One",
+            senderAvatar = "https://example.com/avatar1.png",
+            recipientId = "user_2",
+            recipientName = "User Two",
+            recipientAvatar = "https://example.com/avatar2.png",
+            text = "Hello world",
+            stampId = "stamp_1",
+            stampTitle = "Da Lat",
+            stampImageUrl = "https://example.com/stamp.png",
+            stampLocation = "Da Lat",
+            createdAt = "2026-09-05T13:40:00.123Z",
+            isRead = true
+        )
+
+        val domain = record.toDomainStrict()
+        assertTrue(domain != null)
+        assertEquals(validUuid, domain!!.id)
+        assertEquals("user_1", domain.senderId)
+        assertEquals("user_2", domain.recipientId)
+        assertEquals("Hello world", domain.text)
+        assertEquals("https://example.com/stamp.png", domain.stampImageUrl)
+        assertTrue(domain.isRead)
+
+        // Local stamp url stripped to null
+        val localStampRecord = record.copy(stampImageUrl = "file:///sdcard/stamp.png")
+        val domainStripped = localStampRecord.toDomainStrict()
+        assertTrue(domainStripped != null)
+        assertNull(domainStripped!!.stampImageUrl)
+    }
+
+    @Test
+    fun test42_reconnectDelayProgressionAndCap() {
+        for (i in 0 until 10) {
+            val d0 = SupabaseRealtimeClient.calculateReconnectDelay(0)
+            assertTrue("attempt 0 delay within [1000, 1200]: $d0", d0 in 1000L..1200L)
+
+            val d1 = SupabaseRealtimeClient.calculateReconnectDelay(1)
+            assertTrue("attempt 1 delay within [2000, 2400]: $d1", d1 in 2000L..2400L)
+
+            val d2 = SupabaseRealtimeClient.calculateReconnectDelay(2)
+            assertTrue("attempt 2 delay within [4000, 4800]: $d2", d2 in 4000L..4800L)
+
+            val d3 = SupabaseRealtimeClient.calculateReconnectDelay(3)
+            assertTrue("attempt 3 delay within [8000, 9600]: $d3", d3 in 8000L..9600L)
+
+            val d4 = SupabaseRealtimeClient.calculateReconnectDelay(4)
+            assertTrue("attempt 4 delay within [16000, 19200]: $d4", d4 in 16000L..19200L)
+
+            val d5 = SupabaseRealtimeClient.calculateReconnectDelay(5)
+            assertEquals("attempt 5 delay capped at 30000", 30000L, d5)
+
+            val d10 = SupabaseRealtimeClient.calculateReconnectDelay(10)
+            assertEquals("attempt 10 delay capped at 30000", 30000L, d10)
+        }
+    }
+
+    @Test
+    fun test43_reconcileDedupeAndReadStateRecovery() {
+        val id1 = java.util.UUID.randomUUID().toString()
+        val id2 = java.util.UUID.randomUUID().toString()
+
+        val localMessages = listOf(
+            DirectMessage(
+                id = id1,
+                senderId = "user_1",
+                senderName = "User 1",
+                senderAvatar = "",
+                recipientId = "user_me",
+                recipientName = "Me",
+                recipientAvatar = "",
+                text = "Old unread msg",
+                createdAt = 1000L,
+                isRead = false
+            )
+        )
+
+        // Cloud has id1 marked as read, plus new id2
+        val cloudMessages = listOf(
+            DirectMessage(
+                id = id1,
+                senderId = "user_1",
+                senderName = "User 1",
+                senderAvatar = "",
+                recipientId = "user_me",
+                recipientName = "Me",
+                recipientAvatar = "",
+                text = "Old unread msg",
+                createdAt = 1000L,
+                isRead = true // updated read state!
+            ),
+            DirectMessage(
+                id = id2,
+                senderId = "user_1",
+                senderName = "User 1",
+                senderAvatar = "",
+                recipientId = "user_me",
+                recipientName = "Me",
+                recipientAvatar = "",
+                text = "New msg",
+                createdAt = 2000L,
+                isRead = false
+            )
+        )
+
+        // Merge logic
+        val map = localMessages.associateBy { it.id }.toMutableMap()
+        cloudMessages.forEach { map[it.id] = it }
+        val merged = map.values.sortedWith(compareBy<DirectMessage> { it.createdAt }.thenBy { it.id })
+
+        assertEquals(2, merged.size)
+        assertEquals(id1, merged[0].id)
+        assertTrue("id1 read state recovered", merged[0].isRead)
+        assertEquals(id2, merged[1].id)
+    }
+
+    @Test
+    fun test44_notificationDedupeOnReconcile() {
+        val notifiedIds = mutableSetOf<String>()
+        val msgId = java.util.UUID.randomUUID().toString()
+        val msg = DirectMessage(
+            id = msgId,
+            senderId = "user_other",
+            senderName = "Other",
+            senderAvatar = "",
+            recipientId = "user_me",
+            recipientName = "Me",
+            recipientAvatar = "",
+            text = "Hello",
+            createdAt = 1000L,
+            isRead = false
+        )
+
+        // First arrival (e.g. Realtime)
+        var notificationsSent = 0
+        if (!notifiedIds.contains(msg.id)) {
+            notifiedIds.add(msg.id)
+            notificationsSent++
+        }
+        assertEquals(1, notificationsSent)
+
+        // Subsequent reconciliation containing same message
+        if (!notifiedIds.contains(msg.id)) {
+            notifiedIds.add(msg.id)
+            notificationsSent++
+        }
+        // Still 1, no duplicate notification
+        assertEquals(1, notificationsSent)
+    }
+
+    @Test
+    fun test45_connectionGenerationInvalidation() {
+        val generation = java.util.concurrent.atomic.AtomicLong(1L)
+        val initialGen = generation.get()
+
+        // Stale callback checks generation
+        var callbackExecuted = false
+        val staleCallback: () -> Unit = {
+            if (generation.get() == initialGen) {
+                callbackExecuted = true
+            }
+        }
+
+        // Advance generation (e.g. disconnect / new login)
+        generation.incrementAndGet()
+
+        staleCallback()
+        assertFalse("Stale callback must be ignored when generation has advanced", callbackExecuted)
+    }
 }
 

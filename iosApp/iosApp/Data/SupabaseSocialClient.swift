@@ -523,6 +523,40 @@ class SupabaseSocialClient {
         }
     }
 
+    func getMessagesForUser(userId: String, completion: @escaping (Result<[SupabaseDirectMessageRecord], Error>) -> Void) {
+        guard let session = SupabaseAuthService.shared.activeSession else {
+            completion(.failure(SupabaseSocialError.unauthorized))
+            return
+        }
+        let sessionUid = session.userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reqUid = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(sessionUid), sessionUid == reqUid else {
+            completion(.failure(SupabaseSocialError.unauthorized))
+            return
+        }
+        guard let encoded = reqUid.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            completion(.failure(SupabaseSocialError.invalidUrl))
+            return
+        }
+
+        let endpoint = "\(supabaseUrl)/rest/v1/direct_messages?or=(sender_id.eq.\(encoded),recipient_id.eq.\(encoded))&select=*&order=created_at.asc,id.asc"
+
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let messages = try decoder.decode([SupabaseDirectMessageRecord].self, from: data)
+                    completion(.success(messages))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
     func getConversation(userId1: String, userId2: String, completion: @escaping (Result<[SupabaseDirectMessageRecord], Error>) -> Void) {
         guard let u1 = userId1.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let u2 = userId2.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {

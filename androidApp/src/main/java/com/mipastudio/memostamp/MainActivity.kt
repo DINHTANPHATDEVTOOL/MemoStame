@@ -43,6 +43,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        try {
+            com.mipastudio.memostamp.data.repository.ChatRepository.getInstance(applicationContext).onAppForeground()
+        } catch (_: Throwable) {}
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
