@@ -135,17 +135,38 @@ fun ChatScreen(
         if (clean.isBlank() && selectedStampToSend == null) return
 
         val stamp = selectedStampToSend
-        if (stamp != null && !com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stamp.stampImagePath)) {
-            Toast.makeText(context, "Ảnh tem chưa được đồng bộ để chia sẻ giữa các thiết bị.", Toast.LENGTH_SHORT).show()
-        }
 
         coroutineScope.launch {
+            val resolvedStampImageUrl = if (stamp != null) {
+                if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stamp.stampImagePath)) {
+                    stamp.stampImagePath
+                } else {
+                    val uid = authRepo.authUserId.value?.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
+                        ?: currentUser.userId.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
+                    if (uid == null) {
+                        Toast.makeText(context, "Cần đăng nhập để chia sẻ tem qua tin nhắn.", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+                    val uploadRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseMediaUploader.getInstance(context)
+                        .ensureRemoteRenderedStamp(
+                            ownerUid = uid,
+                            localOrRemotePath = stamp.stampImagePath
+                        )
+                    if (uploadRes.isFailure) {
+                        val err = uploadRes.exceptionOrNull()?.message ?: "Upload stamp failed"
+                        Toast.makeText(context, "Tải ảnh tem thất bại: $err", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+                    uploadRes.getOrNull()
+                }
+            } else null
+
             val res = chatRepo.sendMessageCloud(
                 recipient = recipient,
                 text = clean,
                 stampId = stamp?.id,
                 stampTitle = stamp?.title,
-                stampImageUrl = stamp?.stampImagePath,
+                stampImageUrl = resolvedStampImageUrl,
                 stampLocation = stamp?.location
             )
             if (res.isSuccess) {

@@ -34,50 +34,75 @@ class FeedRepository private constructor(
 
     init {
         coroutineScope.launch {
-            syncFeedLoop()
-        }
-    }
-
-    private suspend fun syncFeedLoop() {
-        while (coroutineScope.isActive) {
             try {
-                syncFeedFromSupabase()
+                reconcileFeedFromCloud()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            delay(5000) // Poll Supabase every 5 seconds for fast feed updates
+        }
+        coroutineScope.launch {
+            authRepo.authUserId.collect { uid ->
+                if (!uid.isNullOrBlank() && !uid.startsWith("guest_")) {
+                    try {
+                        reconcileFeedFromCloud()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
         }
     }
 
-    suspend fun syncFeedFromSupabase() = withContext(Dispatchers.IO) {
-        // 1. DOWNLOAD cloud posts FIRST so user gets new posts immediately
+    fun onAppForeground() {
+        coroutineScope.launch {
+            try {
+                reconcileFeedFromCloud()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    suspend fun reconcileFeedFromCloud() = withContext(Dispatchers.IO) {
+        val hasKey = com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig.getAnonKey(context).isNotBlank()
+        val hasUrl = com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig.getSupabaseUrl(context).isNotBlank()
+        if (!hasKey || !hasUrl) return@withContext
+
+        // 1. Download feed posts from Supabase (server RLS determines visibility)
         try {
             val cloudPosts = supabaseClient.getFeedPosts()
             for (p in cloudPosts) {
                 val pId = p.id ?: continue
+                val rawUrl = p.stampUrl.orEmpty()
+                val safeUrl = if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+                    rawUrl
+                } else {
+                    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600"
+                }
                 val entity = FeedPostEntity(
                     id = pId,
-                        stampId = p.stampId.orEmpty(),
-                        stampUrl = p.stampUrl.orEmpty().ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
-                        stampTitle = p.stampTitle.orEmpty().ifBlank { "Tem kỷ niệm" },
-                        shape = p.shape.orEmpty().ifBlank { "classic" },
-                        authorId = p.authorId.orEmpty().ifBlank { "unknown_author" },
-                        authorName = p.authorName.orEmpty().ifBlank { "Người dùng" },
-                        authorAvatar = p.authorAvatar ?: "https://i.pravatar.cc/150?u=${p.authorId}",
-                        caption = p.caption.orEmpty(),
-                        audienceType = p.audienceType.orEmpty().ifBlank { "EVERYONE" },
-                        circleId = p.circleId,
-                        circleName = p.circleName,
-                        createdAt = p.createdAt ?: System.currentTimeMillis(),
-                        type = p.type.orEmpty().ifBlank { "MEMORY" },
-                        location = p.location
-                    )
-                    feedDao.insertPost(entity)
-                }
+                    stampId = p.stampId.orEmpty(),
+                    stampUrl = safeUrl,
+                    stampTitle = p.stampTitle.orEmpty().ifBlank { "Tem kỷ niệm" },
+                    shape = p.shape.orEmpty().ifBlank { "classic" },
+                    authorId = p.authorId.orEmpty().ifBlank { "unknown_author" },
+                    authorName = p.authorName.orEmpty().ifBlank { "Người dùng" },
+                    authorAvatar = p.authorAvatar ?: "https://i.pravatar.cc/150?u=${p.authorId}",
+                    caption = p.caption.orEmpty(),
+                    audienceType = p.audienceType.orEmpty().ifBlank { "EVERYONE" },
+                    circleId = p.circleId,
+                    circleName = p.circleName,
+                    createdAt = p.createdAt ?: System.currentTimeMillis(),
+                    type = p.type.orEmpty().ifBlank { "MEMORY" },
+                    location = p.location
+                )
+                feedDao.insertPost(entity)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
+        // 2. Download reactions
         try {
             val cloudReactions = supabaseClient.getFeedReactions()
             for (r in cloudReactions) {
@@ -98,6 +123,7 @@ class FeedRepository private constructor(
             e.printStackTrace()
         }
 
+        // 3. Download comments
         try {
             val cloudComments = supabaseClient.getFeedComments()
             for (c in cloudComments) {
@@ -118,85 +144,38 @@ class FeedRepository private constructor(
             e.printStackTrace()
         }
 
-        // 2. UPLOAD local posts to Supabase SECOND (Auth author check & demo filter)
-        val currentUid = authRepo.authUserId.value
-        if (!currentUid.isNullOrBlank() && !currentUid.startsWith("guest_")) {
-            try {
-                val localPosts = feedDao.getAllPostsList()
-                for (p in localPosts) {
-                    if (p.authorId != currentUid || p.id.startsWith("feed_post_") || p.authorId.startsWith("user_")) {
-                        continue // Do NOT upload demo or non-owned posts to Supabase
-                    }
-
-                    val cloudUrl = if (p.stampUrl.startsWith("/") || p.stampUrl.startsWith("file://")) {
-                        MemoImageProcessor.encodeImageToCloudBase64(p.stampUrl) ?: p.stampUrl
-                    } else p.stampUrl
-
-                    val domainPost = FeedPost(
-                        id = p.id,
-                        stampId = if (p.stampId.isNotBlank()) p.stampId else "stamp_${p.id}",
-                        stampUrl = if (cloudUrl.isNotBlank()) cloudUrl else "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
-                        stampTitle = if (p.stampTitle.isNotBlank()) p.stampTitle else "Tem kỷ niệm",
-                        shape = p.shape,
-                        authorId = p.authorId,
-                        authorName = p.authorName,
-                        authorAvatar = p.authorAvatar,
-                        caption = p.caption,
-                        audienceType = AudienceType.fromString(p.audienceType),
-                        circleId = p.circleId,
-                        circleName = p.circleName,
-                        createdAt = p.createdAt,
-                        type = try { FeedPostType.valueOf(p.type) } catch (_: Exception) { FeedPostType.MEMORY },
-                        location = p.location
-                    )
-                    supabaseClient.createFeedPost(domainPost)
+        // 4. Download replies
+        try {
+            val cloudReplies = supabaseClient.getFeedReplies()
+            for (rep in cloudReplies) {
+                val repId = rep.id ?: continue
+                val postId = rep.postId ?: continue
+                val rawUrl = rep.replyStampUrl.orEmpty()
+                val safeUrl = if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+                    rawUrl
+                } else {
+                    continue
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+                val entity = FeedReplyEntity(
+                    id = repId,
+                    postId = postId,
+                    authorId = rep.authorId.orEmpty(),
+                    authorName = rep.authorName.orEmpty().ifBlank { "Bạn bè" },
+                    authorAvatar = rep.authorAvatar ?: "https://i.pravatar.cc/150?u=${rep.authorId}",
+                    replyStampId = rep.replyStampId.orEmpty(),
+                    replyStampUrl = safeUrl,
+                    shape = rep.shape.orEmpty().ifBlank { "classic" },
+                    note = rep.note,
+                    createdAt = rep.createdAt ?: System.currentTimeMillis()
+                )
+                feedDao.insertReply(entity)
             }
-
-            try {
-                val localReactions = feedDao.getAllReactionsList()
-                for (r in localReactions) {
-                    if (r.userId != currentUid || r.userId.startsWith("user_")) {
-                        continue
-                    }
-                    val record = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedReactionRecord(
-                        id = if (r.id.isNotBlank()) r.id else "${r.postId}:${r.userId}",
-                        postId = r.postId,
-                        userId = r.userId,
-                        userName = r.userName,
-                        emoji = if (r.emoji.isNotBlank()) r.emoji else "❤️",
-                        createdAt = r.createdAt
-                    )
-                    supabaseClient.addFeedReaction(record)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            try {
-                val localComments = feedDao.getAllCommentsList()
-                for (c in localComments) {
-                    if (c.authorId != currentUid || c.authorId.startsWith("user_")) {
-                        continue
-                    }
-                    val record = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedCommentRecord(
-                        id = if (c.id.isNotBlank()) c.id else UUID.randomUUID().toString(),
-                        postId = c.postId,
-                        authorId = c.authorId,
-                        authorName = c.authorName,
-                        authorAvatar = c.authorAvatar,
-                        content = c.content,
-                        createdAt = c.createdAt
-                    )
-                    supabaseClient.addFeedComment(record)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
+
+    suspend fun syncFeedFromSupabase() = reconcileFeedFromCloud()
 
     private fun getCurrentUser(): UserProfile {
         return authRepo.currentUser.value
@@ -474,76 +453,128 @@ class FeedRepository private constructor(
             if (!isAuthorizedToViewPost(replyToPostId)) {
                 throw SecurityException("Not authorized to reply to this post")
             }
+            val uid = authRepo.authUserId.value?.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
+                ?: currentUser.userId.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
+                ?: throw IllegalStateException("User must be authenticated to reply")
+
+            // 1. Authenticated media upload
+            val remoteUrlRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseMediaUploader.getInstance(context)
+                .ensureRemoteRenderedStamp(uid, stampEntity.stampImagePath)
+            val remoteUrl = remoteUrlRes.getOrThrow()
+
+            // 2. Cloud mutation
             val replyId = UUID.randomUUID().toString()
-            val reply = FeedReplyEntity(
+            val replyRecord = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedReplyRecord(
                 id = replyId,
                 postId = replyToPostId,
-                authorId = currentUser.userId,
+                authorId = uid,
                 authorName = currentUser.displayName,
                 authorAvatar = currentUser.avatarUrl,
                 replyStampId = stampEntity.id,
-                replyStampUrl = stampEntity.stampImagePath,
+                replyStampUrl = remoteUrl,
+                shape = shape,
+                note = stampEntity.note,
+                createdAt = null
+            )
+            val replyRes = supabaseClient.addFeedReply(replyRecord)
+            replyRes.getOrThrow()
+
+            // 3. Local persistence
+            val replyEntity = FeedReplyEntity(
+                id = replyId,
+                postId = replyToPostId,
+                authorId = uid,
+                authorName = currentUser.displayName,
+                authorAvatar = currentUser.avatarUrl,
+                replyStampId = stampEntity.id,
+                replyStampUrl = remoteUrl,
                 shape = shape,
                 note = stampEntity.note,
                 createdAt = System.currentTimeMillis()
             )
-            feedDao.insertReply(reply)
+            feedDao.insertReply(replyEntity)
             return@withContext replyId
         }
 
         val postId = UUID.randomUUID().toString()
-        val cloudStampUrl = MemoImageProcessor.encodeImageToCloudBase64(stampEntity.stampImagePath) ?: stampEntity.stampImagePath
+        val now = System.currentTimeMillis()
 
+        if (audienceType == AudienceType.ONLY_ME) {
+            // Private only to me: save locally, no cloud upload required
+            val postEntity = FeedPostEntity(
+                id = postId,
+                stampId = stampEntity.id,
+                stampUrl = stampEntity.stampImagePath,
+                stampTitle = stampEntity.title,
+                shape = shape,
+                authorId = currentUser.userId,
+                authorName = currentUser.displayName,
+                authorAvatar = currentUser.avatarUrl,
+                caption = stampEntity.note.ifBlank { stampEntity.title },
+                audienceType = audienceType.name,
+                circleId = circleId,
+                circleName = circleName,
+                createdAt = now,
+                type = FeedPostType.MEMORY.name,
+                location = stampEntity.location
+            )
+            feedDao.insertPost(postEntity)
+            return@withContext postId
+        }
+
+        // Shared post: requires authenticated upload & cloud creation
+        val uid = authRepo.authUserId.value?.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
+            ?: currentUser.userId.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
+            ?: throw IllegalStateException("User must be authenticated to post to feed")
+
+        // 1. Authenticated media upload
+        val remoteUrlRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseMediaUploader.getInstance(context)
+            .ensureRemoteRenderedStamp(uid, stampEntity.stampImagePath)
+        val remoteUrl = remoteUrlRes.getOrThrow()
+
+        // 2. Cloud mutation
+        val domainPost = FeedPost(
+            id = postId,
+            stampId = stampEntity.id,
+            stampUrl = remoteUrl,
+            stampTitle = stampEntity.title,
+            shape = shape,
+            authorId = uid,
+            authorName = currentUser.displayName,
+            authorAvatar = currentUser.avatarUrl,
+            caption = stampEntity.note.ifBlank { stampEntity.title },
+            audienceType = audienceType,
+            circleId = circleId,
+            circleName = circleName,
+            createdAt = now,
+            type = FeedPostType.MEMORY,
+            location = stampEntity.location,
+            reactionCount = 0,
+            commentCount = 0,
+            replyCount = 0
+        )
+        val cloudRes = supabaseClient.createFeedPost(domainPost)
+        cloudRes.getOrThrow()
+
+        // 3. Local persistence
         val postEntity = FeedPostEntity(
             id = postId,
             stampId = stampEntity.id,
-            stampUrl = cloudStampUrl,
+            stampUrl = remoteUrl,
             stampTitle = stampEntity.title,
             shape = shape,
-            authorId = currentUser.userId,
+            authorId = uid,
             authorName = currentUser.displayName,
             authorAvatar = currentUser.avatarUrl,
             caption = stampEntity.note.ifBlank { stampEntity.title },
             audienceType = audienceType.name,
             circleId = circleId,
             circleName = circleName,
-            createdAt = System.currentTimeMillis(),
+            createdAt = now,
             type = FeedPostType.MEMORY.name,
             location = stampEntity.location
         )
         feedDao.insertPost(postEntity)
-
-        coroutineScope.launch {
-            try {
-                val domainPost = FeedPost(
-                    id = postEntity.id,
-                    stampId = postEntity.stampId,
-                    stampUrl = postEntity.stampUrl,
-                    stampTitle = postEntity.stampTitle,
-                    shape = postEntity.shape,
-                    authorId = postEntity.authorId,
-                    authorName = postEntity.authorName,
-                    authorAvatar = postEntity.authorAvatar,
-                    caption = postEntity.caption,
-                    audienceType = AudienceType.fromString(postEntity.audienceType),
-                    circleId = postEntity.circleId,
-                    circleName = postEntity.circleName,
-                    createdAt = postEntity.createdAt,
-                    type = FeedPostType.valueOf(postEntity.type),
-                    location = postEntity.location,
-                    reactionCount = 0,
-                    commentCount = 0,
-                    replyCount = 0
-                )
-                val res = supabaseClient.createFeedPost(domainPost)
-                if (res.isSuccess) {
-                    syncFeedFromSupabase()
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
         postId
     }
 
@@ -554,16 +585,12 @@ class FeedRepository private constructor(
         val existingReactions = feedDao.getReactionsForPost(postId)
         val hasLiked = existingReactions.any { it.userId == currentUser.userId }
         if (hasLiked) {
-            feedDao.deleteReaction(postId, currentUser.userId)
-            coroutineScope.launch {
-                try {
-                    supabaseClient.deleteFeedReaction(postId, currentUser.userId)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            val res = supabaseClient.deleteFeedReaction(postId, currentUser.userId)
+            if (res.isSuccess) {
+                feedDao.deleteReaction(postId, currentUser.userId)
             }
         } else {
-            val entity = FeedReactionEntity(
+            val record = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedReactionRecord(
                 id = reactionId,
                 postId = postId,
                 userId = currentUser.userId,
@@ -571,21 +598,17 @@ class FeedRepository private constructor(
                 emoji = "❤️",
                 createdAt = System.currentTimeMillis()
             )
-            feedDao.insertReaction(entity)
-            coroutineScope.launch {
-                try {
-                    val record = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedReactionRecord(
-                        id = reactionId,
-                        postId = postId,
-                        userId = currentUser.userId,
-                        userName = currentUser.displayName,
-                        emoji = "❤️",
-                        createdAt = System.currentTimeMillis()
-                    )
-                    supabaseClient.addFeedReaction(record)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+            val res = supabaseClient.addFeedReaction(record)
+            if (res.isSuccess) {
+                val entity = FeedReactionEntity(
+                    id = reactionId,
+                    postId = postId,
+                    userId = currentUser.userId,
+                    userName = currentUser.displayName,
+                    emoji = "❤️",
+                    createdAt = record.createdAt ?: System.currentTimeMillis()
+                )
+                feedDao.insertReaction(entity)
             }
         }
     }
@@ -594,7 +617,7 @@ class FeedRepository private constructor(
         if (!isAuthorizedToViewPost(postId)) return@withContext ""
         val currentUser = getCurrentUser()
         val commentId = UUID.randomUUID().toString()
-        val comment = FeedCommentEntity(
+        val record = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedCommentRecord(
             id = commentId,
             postId = postId,
             authorId = currentUser.userId,
@@ -603,24 +626,22 @@ class FeedRepository private constructor(
             content = content,
             createdAt = System.currentTimeMillis()
         )
-        feedDao.insertComment(comment)
-        coroutineScope.launch {
-            try {
-                val record = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedCommentRecord(
-                    id = commentId,
-                    postId = postId,
-                    authorId = currentUser.userId,
-                    authorName = currentUser.displayName,
-                    authorAvatar = currentUser.avatarUrl,
-                    content = content,
-                    createdAt = comment.createdAt
-                )
-                supabaseClient.addFeedComment(record)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+        val res = supabaseClient.addFeedComment(record)
+        if (res.isSuccess) {
+            val comment = FeedCommentEntity(
+                id = commentId,
+                postId = postId,
+                authorId = currentUser.userId,
+                authorName = currentUser.displayName,
+                authorAvatar = currentUser.avatarUrl,
+                content = content,
+                createdAt = record.createdAt ?: System.currentTimeMillis()
+            )
+            feedDao.insertComment(comment)
+            commentId
+        } else {
+            throw res.exceptionOrNull() ?: Exception("Failed to add comment to cloud")
         }
-        commentId
     }
 
     suspend fun like(postId: String) = withContext(Dispatchers.IO) {

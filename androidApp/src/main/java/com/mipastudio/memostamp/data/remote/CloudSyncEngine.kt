@@ -67,14 +67,15 @@ class CloudSyncEngine private constructor(private val context: Context) {
 
             // If Supabase Anon Key is provided, sync directly to live Supabase project
             if (hasKey) {
-                // 1. Sync Profile to Supabase
-                supabaseService.syncProfileToSupabase(user)
-                // 2. Sync Stamps to Supabase
-                val result = supabaseService.syncStampsToSupabase(localStamps, user.userId)
-                result.getOrThrow()
-                // 3. Sync Feed Posts to Supabase
+                // 1. Sync Profile to Supabase (authenticated user session)
                 try {
-                    com.mipastudio.memostamp.data.repository.FeedRepository.getInstance(context).syncFeedFromSupabase()
+                    supabaseService.syncProfileToSupabase(user)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                // 2. Reconcile Feed Posts from Supabase
+                try {
+                    com.mipastudio.memostamp.data.repository.FeedRepository.getInstance(context).reconcileFeedFromCloud()
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -116,13 +117,20 @@ class CloudSyncEngine private constructor(private val context: Context) {
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
             val currentUser = authRepository.currentUser.value
+            val resolvedStampUrl = if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stamp.stampImagePath)) {
+                stamp.stampImagePath
+            } else {
+                val uploadRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseMediaUploader.getInstance(context)
+                    .ensureRemoteRenderedStamp(currentUser.userId, stamp.stampImagePath)
+                uploadRes.getOrDefault(stamp.stampImagePath)
+            }
             val tradePayload = CloudTradePayload(
                 tradeId = "trade_cloud_" + System.currentTimeMillis(),
                 senderUserId = currentUser.userId,
                 senderUsername = currentUser.displayName,
                 recipientUsername = recipientUsername,
                 stampTitle = stamp.title,
-                stampImageUrl = stamp.stampImagePath,
+                stampImageUrl = resolvedStampUrl,
                 location = stamp.location ?: "MemoStamp Memory",
                 note = note
             )

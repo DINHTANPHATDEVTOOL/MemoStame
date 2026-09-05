@@ -35,6 +35,7 @@ class SupabaseAuthService {
             let token = activeSession?.accessToken
             IOSFriendRepository.shared.onUserChanged(newUserId: uid)
             IOSChatRepository.shared.onSessionChanged(userId: uid, accessToken: token)
+            IOSFeedRepository.shared.syncUserSession()
         }
     }
 
@@ -152,6 +153,7 @@ class SupabaseAuthService {
         SupabaseRealtimeClient.shared.disconnect(clearState: true)
         IOSFriendRepository.shared.onUserChanged(newUserId: "")
         IOSChatRepository.shared.onSessionChanged(userId: "", accessToken: nil)
+        IOSFeedRepository.shared.clear()
 
         guard let accessToken = token, let url = URL(string: "\(supabaseUrl)/auth/v1/logout") else {
             completion(true)

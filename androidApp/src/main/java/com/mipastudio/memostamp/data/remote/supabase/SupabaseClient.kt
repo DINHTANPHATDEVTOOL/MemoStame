@@ -162,6 +162,19 @@ data class SupabaseFeedCommentRecord(
     @SerializedName("created_at") val createdAt: Long? = null
 )
 
+data class SupabaseFeedReplyRecord(
+    @SerializedName("id") val id: String? = null,
+    @SerializedName("post_id") val postId: String? = null,
+    @SerializedName("author_id") val authorId: String? = null,
+    @SerializedName("author_name") val authorName: String? = null,
+    @SerializedName("author_avatar") val authorAvatar: String? = null,
+    @SerializedName("reply_stamp_id") val replyStampId: String? = null,
+    @SerializedName("reply_stamp_url") val replyStampUrl: String? = null,
+    @SerializedName("shape") val shape: String? = "classic",
+    @SerializedName("note") val note: String? = null,
+    @SerializedName("created_at") val createdAt: Long? = null
+)
+
 interface SupabaseHttpTransport {
     fun executeHttp(
         client: SupabaseClient,
@@ -1153,6 +1166,43 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete feed comment failed"))
     }
 
+    suspend fun addFeedReply(reply: SupabaseFeedReplyRecord): Result<Boolean> = withContext(Dispatchers.IO) {
+        val jsonMap = mutableMapOf<String, Any?>(
+            "id" to reply.id,
+            "post_id" to reply.postId,
+            "author_id" to reply.authorId,
+            "author_name" to reply.authorName,
+            "author_avatar" to reply.authorAvatar,
+            "reply_stamp_id" to reply.replyStampId,
+            "reply_stamp_url" to reply.replyStampUrl,
+            "shape" to reply.shape,
+            "note" to reply.note,
+            "created_at" to reply.createdAt
+        )
+        val endpoint = "${getBaseUrl()}/rest/v1/feed_replies?on_conflict=id"
+        val res = executeUpsertWithSchemaFallback(endpoint, jsonMap, prefer = "resolution=merge-duplicates")
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Error adding feed reply"))
+    }
+
+    suspend fun getFeedReplies(postId: String? = null): List<SupabaseFeedReplyRecord> = withContext(Dispatchers.IO) {
+        val query = if (!postId.isNullOrBlank()) {
+            val enc = URLEncoder.encode(postId.trim(), "UTF-8")
+            "post_id=eq.$enc&select=*&order=created_at.asc&limit=500"
+        } else {
+            "select=*&order=created_at.asc&limit=500"
+        }
+        val endpoint = "${getBaseUrl()}/rest/v1/feed_replies?$query"
+        val res = executeHttp(endpoint, method = "GET")
+        res.getOrNull()?.let { json ->
+            try {
+                val listType = object : TypeToken<List<SupabaseFeedReplyRecord>>() {}.type
+                gson.fromJson(json, listType) ?: emptyList()
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } ?: emptyList()
+    }
+
     suspend fun deleteFeedReply(replyId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val enc = URLEncoder.encode(replyId.trim(), "UTF-8")
         val endpoint = "${getBaseUrl()}/rest/v1/feed_replies?id=eq.$enc"
@@ -1161,10 +1211,7 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
     }
 
     suspend fun deleteStamp(stampId: String, ownerId: String): Result<Boolean> = withContext(Dispatchers.IO) {
-        val encStamp = URLEncoder.encode(stampId.trim(), "UTF-8")
-        val encOwner = URLEncoder.encode(ownerId.trim(), "UTF-8")
-        val endpoint = "${getBaseUrl()}/rest/v1/stamps?id=eq.$encStamp&user_id=eq.$encOwner"
-        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
-        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: IllegalStateException("Delete stamp failed"))
+        // Vault stamps are client-local; legacy /stamps endpoint is removed from schema
+        Result.success(true)
     }
 }

@@ -209,6 +209,236 @@ func isValidRemoteStampUrl(_ url: String?) -> Bool {
     return true
 }
 
+struct SupabaseFeedPostRecord: Codable, Identifiable {
+    let id: String
+    let stampId: String?
+    let stampUrl: String?
+    let stampTitle: String?
+    let shape: String?
+    let authorId: String
+    let authorName: String?
+    let authorAvatar: String?
+    let caption: String?
+    let audienceType: String?
+    let circleId: String?
+    let circleName: String?
+    let createdAt: String?
+    let type: String?
+    let location: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case stampId = "stamp_id"
+        case stampUrl = "stamp_url"
+        case stampTitle = "stamp_title"
+        case shape
+        case authorId = "author_id"
+        case authorName = "author_name"
+        case authorAvatar = "author_avatar"
+        case caption
+        case audienceType = "audience_type"
+        case circleId = "circle_id"
+        case circleName = "circle_name"
+        case createdAt = "created_at"
+        case type
+        case location
+    }
+
+    init(id: String, stampId: String?, stampUrl: String?, stampTitle: String?, shape: String?, authorId: String, authorName: String?, authorAvatar: String?, caption: String?, audienceType: String?, circleId: String?, circleName: String?, createdAt: String?, type: String?, location: String?) {
+        self.id = id
+        self.stampId = stampId
+        self.stampUrl = stampUrl
+        self.stampTitle = stampTitle
+        self.shape = shape
+        self.authorId = authorId
+        self.authorName = authorName
+        self.authorAvatar = authorAvatar
+        self.caption = caption
+        self.audienceType = audienceType
+        self.circleId = circleId
+        self.circleName = circleName
+        self.createdAt = createdAt
+        self.type = type
+        self.location = location
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(String.self, forKey: .id)) ?? ""
+        self.stampId = try? container.decode(String.self, forKey: .stampId)
+        let rawUrl = try? container.decode(String.self, forKey: .stampUrl)
+        self.stampUrl = isValidRemoteStampUrl(rawUrl) ? rawUrl : nil
+        self.stampTitle = try? container.decode(String.self, forKey: .stampTitle)
+        self.shape = try? container.decode(String.self, forKey: .shape)
+        self.authorId = (try? container.decode(String.self, forKey: .authorId)) ?? ""
+        self.authorName = try? container.decode(String.self, forKey: .authorName)
+        self.authorAvatar = try? container.decode(String.self, forKey: .authorAvatar)
+        self.caption = try? container.decode(String.self, forKey: .caption)
+        self.audienceType = try? container.decode(String.self, forKey: .audienceType)
+        self.circleId = try? container.decode(String.self, forKey: .circleId)
+        self.circleName = try? container.decode(String.self, forKey: .circleName)
+        if let str = try? container.decode(String.self, forKey: .createdAt) {
+            self.createdAt = str
+        } else if let num = try? container.decode(Double.self, forKey: .createdAt) {
+            self.createdAt = String(Int64(num))
+        } else {
+            self.createdAt = nil
+        }
+        self.type = try? container.decode(String.self, forKey: .type)
+        self.location = try? container.decode(String.self, forKey: .location)
+    }
+}
+
+struct SupabaseFeedReactionRecord: Codable, Identifiable {
+    let id: String
+    let postId: String
+    let userId: String
+    let userName: String?
+    let emoji: String?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case postId = "post_id"
+        case userId = "user_id"
+        case userName = "user_name"
+        case emoji
+        case createdAt = "created_at"
+    }
+
+    init(id: String, postId: String, userId: String, userName: String?, emoji: String?, createdAt: String?) {
+        self.id = id
+        self.postId = postId
+        self.userId = userId
+        self.userName = userName
+        self.emoji = emoji
+        self.createdAt = createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(String.self, forKey: .id)) ?? ""
+        self.postId = (try? container.decode(String.self, forKey: .postId)) ?? ""
+        self.userId = (try? container.decode(String.self, forKey: .userId)) ?? ""
+        self.userName = try? container.decode(String.self, forKey: .userName)
+        self.emoji = try? container.decode(String.self, forKey: .emoji)
+        if let str = try? container.decode(String.self, forKey: .createdAt) {
+            self.createdAt = str
+        } else if let num = try? container.decode(Double.self, forKey: .createdAt) {
+            self.createdAt = String(Int64(num))
+        } else {
+            self.createdAt = nil
+        }
+    }
+}
+
+struct SupabaseFeedCommentRecord: Codable, Identifiable {
+    let id: String
+    let postId: String
+    let authorId: String
+    let authorName: String?
+    let authorAvatar: String?
+    let content: String
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case postId = "post_id"
+        case authorId = "author_id"
+        case authorName = "author_name"
+        case authorAvatar = "author_avatar"
+        case content
+        case createdAt = "created_at"
+    }
+
+    init(id: String, postId: String, authorId: String, authorName: String?, authorAvatar: String?, content: String, createdAt: String?) {
+        self.id = id
+        self.postId = postId
+        self.authorId = authorId
+        self.authorName = authorName
+        self.authorAvatar = authorAvatar
+        self.content = content
+        self.createdAt = createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(String.self, forKey: .id)) ?? ""
+        self.postId = (try? container.decode(String.self, forKey: .postId)) ?? ""
+        self.authorId = (try? container.decode(String.self, forKey: .authorId)) ?? ""
+        self.authorName = try? container.decode(String.self, forKey: .authorName)
+        self.authorAvatar = try? container.decode(String.self, forKey: .authorAvatar)
+        self.content = (try? container.decode(String.self, forKey: .content)) ?? ""
+        if let str = try? container.decode(String.self, forKey: .createdAt) {
+            self.createdAt = str
+        } else if let num = try? container.decode(Double.self, forKey: .createdAt) {
+            self.createdAt = String(Int64(num))
+        } else {
+            self.createdAt = nil
+        }
+    }
+}
+
+struct SupabaseFeedReplyRecord: Codable, Identifiable {
+    let id: String
+    let postId: String
+    let authorId: String
+    let authorName: String?
+    let authorAvatar: String?
+    let replyStampId: String?
+    let replyStampUrl: String
+    let shape: String?
+    let note: String?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case postId = "post_id"
+        case authorId = "author_id"
+        case authorName = "author_name"
+        case authorAvatar = "author_avatar"
+        case replyStampId = "reply_stamp_id"
+        case replyStampUrl = "reply_stamp_url"
+        case shape
+        case note
+        case createdAt = "created_at"
+    }
+
+    init(id: String, postId: String, authorId: String, authorName: String?, authorAvatar: String?, replyStampId: String?, replyStampUrl: String, shape: String?, note: String?, createdAt: String?) {
+        self.id = id
+        self.postId = postId
+        self.authorId = authorId
+        self.authorName = authorName
+        self.authorAvatar = authorAvatar
+        self.replyStampId = replyStampId
+        self.replyStampUrl = replyStampUrl
+        self.shape = shape
+        self.note = note
+        self.createdAt = createdAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(String.self, forKey: .id)) ?? ""
+        self.postId = (try? container.decode(String.self, forKey: .postId)) ?? ""
+        self.authorId = (try? container.decode(String.self, forKey: .authorId)) ?? ""
+        self.authorName = try? container.decode(String.self, forKey: .authorName)
+        self.authorAvatar = try? container.decode(String.self, forKey: .authorAvatar)
+        self.replyStampId = try? container.decode(String.self, forKey: .replyStampId)
+        let rawUrl = (try? container.decode(String.self, forKey: .replyStampUrl)) ?? ""
+        self.replyStampUrl = isValidRemoteStampUrl(rawUrl) ? rawUrl : ""
+        self.shape = try? container.decode(String.self, forKey: .shape)
+        self.note = try? container.decode(String.self, forKey: .note)
+        if let str = try? container.decode(String.self, forKey: .createdAt) {
+            self.createdAt = str
+        } else if let num = try? container.decode(Double.self, forKey: .createdAt) {
+            self.createdAt = String(Int64(num))
+        } else {
+            self.createdAt = nil
+        }
+    }
+}
+
 class SupabaseSocialClient {
     static let shared = SupabaseSocialClient()
 
@@ -239,7 +469,11 @@ class SupabaseSocialClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
-        request.setValue("Bearer \(token ?? anonKey)", forHTTPHeaderField: "Authorization")
+        if let userToken = token, !userToken.isEmpty {
+            request.setValue("Bearer \(userToken)", forHTTPHeaderField: "Authorization")
+        } else if !requireUserAuth {
+            request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
+        }
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let p = prefer, !p.isEmpty {
             request.setValue(p, forHTTPHeaderField: "Prefer")
@@ -588,6 +822,252 @@ class SupabaseSocialClient {
         let jsonBody = try? String(data: JSONEncoder().encode(body), encoding: .utf8)
 
         executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    // MARK: - Feed Cloud Authority (Task #41)
+    func getFeedPosts(completion: @escaping (Result<[SupabaseFeedPostRecord], Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_posts?select=*&order=created_at.desc&limit=100"
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let posts = try decoder.decode([SupabaseFeedPostRecord].self, from: data)
+                    completion(.success(posts))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError("Không thể đọc feed_posts: \(error.localizedDescription)")))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func getFeedReactions(completion: @escaping (Result<[SupabaseFeedReactionRecord], Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_reactions?select=*&limit=500"
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let reactions = try decoder.decode([SupabaseFeedReactionRecord].self, from: data)
+                    completion(.success(reactions))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError("Không thể đọc feed_reactions: \(error.localizedDescription)")))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func getFeedComments(completion: @escaping (Result<[SupabaseFeedCommentRecord], Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_comments?select=*&order=created_at.asc&limit=500"
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let comments = try decoder.decode([SupabaseFeedCommentRecord].self, from: data)
+                    completion(.success(comments))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError("Không thể đọc feed_comments: \(error.localizedDescription)")))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func getFeedReplies(completion: @escaping (Result<[SupabaseFeedReplyRecord], Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_replies?select=*&order=created_at.asc&limit=500"
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let replies = try decoder.decode([SupabaseFeedReplyRecord].self, from: data)
+                    completion(.success(replies))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError("Không thể đọc feed_replies: \(error.localizedDescription)")))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func createFeedPost(post: SupabaseFeedPostRecord, completion: @escaping (Result<SupabaseFeedPostRecord, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_posts?on_conflict=id"
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(post)
+            let jsonString = String(data: data, encoding: .utf8)
+            executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonString, prefer: "return=representation", requireUserAuth: true) { result in
+                switch result {
+                case .success(let resData):
+                    do {
+                        let decoder = JSONDecoder()
+                        let resString = String(data: resData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        if resString.hasPrefix("[") {
+                            let list = try decoder.decode([SupabaseFeedPostRecord].self, from: resData)
+                            if let first = list.first {
+                                completion(.success(first))
+                            } else {
+                                completion(.failure(SupabaseSocialError.invalidData("Server phản hồi rỗng")))
+                            }
+                        } else {
+                            let item = try decoder.decode(SupabaseFeedPostRecord.self, from: resData)
+                            completion(.success(item))
+                        }
+                    } catch {
+                        completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                    }
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        } catch {
+            completion(.failure(SupabaseSocialError.invalidData(error.localizedDescription)))
+        }
+    }
+
+    func addFeedReaction(reaction: SupabaseFeedReactionRecord, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_reactions?on_conflict=id"
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(reaction)
+            let jsonString = String(data: data, encoding: .utf8)
+            executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonString, prefer: "resolution=merge-duplicates", requireUserAuth: true) { result in
+                switch result {
+                case .success:
+                    completion(.success(true))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        } catch {
+            completion(.failure(SupabaseSocialError.invalidData(error.localizedDescription)))
+        }
+    }
+
+    func deleteFeedReaction(postId: String, userId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        guard let encPost = postId.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let encUser = userId.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            completion(.failure(SupabaseSocialError.invalidUrl))
+            return
+        }
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_reactions?post_id=eq.\(encPost)&user_id=eq.\(encUser)"
+        executeHttp(endpoint: endpoint, method: "DELETE", requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func addFeedComment(comment: SupabaseFeedCommentRecord, completion: @escaping (Result<SupabaseFeedCommentRecord, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_comments?on_conflict=id"
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(comment)
+            let jsonString = String(data: data, encoding: .utf8)
+            executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonString, prefer: "return=representation", requireUserAuth: true) { result in
+                switch result {
+                case .success(let resData):
+                    do {
+                        let decoder = JSONDecoder()
+                        let resString = String(data: resData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        if resString.hasPrefix("[") {
+                            let list = try decoder.decode([SupabaseFeedCommentRecord].self, from: resData)
+                            if let first = list.first {
+                                completion(.success(first))
+                            } else {
+                                completion(.failure(SupabaseSocialError.invalidData("Server phản hồi rỗng")))
+                            }
+                        } else {
+                            let item = try decoder.decode(SupabaseFeedCommentRecord.self, from: resData)
+                            completion(.success(item))
+                        }
+                    } catch {
+                        completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                    }
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        } catch {
+            completion(.failure(SupabaseSocialError.invalidData(error.localizedDescription)))
+        }
+    }
+
+    func deleteFeedComment(commentId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        guard let encId = commentId.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            completion(.failure(SupabaseSocialError.invalidUrl))
+            return
+        }
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_comments?id=eq.\(encId)"
+        executeHttp(endpoint: endpoint, method: "DELETE", requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func addFeedReply(reply: SupabaseFeedReplyRecord, completion: @escaping (Result<SupabaseFeedReplyRecord, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_replies?on_conflict=id"
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(reply)
+            let jsonString = String(data: data, encoding: .utf8)
+            executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonString, prefer: "return=representation", requireUserAuth: true) { result in
+                switch result {
+                case .success(let resData):
+                    do {
+                        let decoder = JSONDecoder()
+                        let resString = String(data: resData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        if resString.hasPrefix("[") {
+                            let list = try decoder.decode([SupabaseFeedReplyRecord].self, from: resData)
+                            if let first = list.first {
+                                completion(.success(first))
+                            } else {
+                                completion(.failure(SupabaseSocialError.invalidData("Server phản hồi rỗng")))
+                            }
+                        } else {
+                            let item = try decoder.decode(SupabaseFeedReplyRecord.self, from: resData)
+                            completion(.success(item))
+                        }
+                    } catch {
+                        completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                    }
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        } catch {
+            completion(.failure(SupabaseSocialError.invalidData(error.localizedDescription)))
+        }
+    }
+
+    func deleteFeedReply(replyId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        guard let encId = replyId.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            completion(.failure(SupabaseSocialError.invalidUrl))
+            return
+        }
+        let endpoint = "\(supabaseUrl)/rest/v1/feed_replies?id=eq.\(encId)"
+        executeHttp(endpoint: endpoint, method: "DELETE", requireUserAuth: true) { result in
             switch result {
             case .success:
                 completion(.success(true))

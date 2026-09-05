@@ -48,6 +48,9 @@ class MainActivity : ComponentActivity() {
         try {
             com.mipastudio.memostamp.data.repository.ChatRepository.getInstance(applicationContext).onAppForeground()
         } catch (_: Throwable) {}
+        try {
+            com.mipastudio.memostamp.data.repository.FeedRepository.getInstance(applicationContext).onAppForeground()
+        } catch (_: Throwable) {}
     }
 
     override fun onNewIntent(intent: Intent) {

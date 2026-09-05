@@ -61,12 +61,31 @@ BEGIN
 
     SELECT data_type INTO v_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'feed_posts' AND column_name = 'author_id';
     IF v_type <> 'uuid' THEN RAISE EXCEPTION 'Type Check Failed: feed_posts.author_id is %, expected uuid', v_type; END IF;
+
+    -- Verify Migration 005 feed_replies table and types
+    SELECT data_type INTO v_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'feed_replies' AND column_name = 'id';
+    IF v_type <> 'text' THEN RAISE EXCEPTION 'Type Check Failed: feed_replies.id is %, expected text', v_type; END IF;
+
+    SELECT data_type INTO v_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'feed_replies' AND column_name = 'post_id';
+    IF v_type <> 'text' THEN RAISE EXCEPTION 'Type Check Failed: feed_replies.post_id is %, expected text', v_type; END IF;
+
+    SELECT data_type INTO v_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'feed_replies' AND column_name = 'author_id';
+    IF v_type <> 'uuid' THEN RAISE EXCEPTION 'Type Check Failed: feed_replies.author_id is %, expected uuid', v_type; END IF;
+
+    SELECT data_type INTO v_type FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'feed_replies' AND column_name = 'reply_stamp_url';
+    IF v_type <> 'text' THEN RAISE EXCEPTION 'Type Check Failed: feed_replies.reply_stamp_url is %, expected text', v_type; END IF;
+
+    -- Verify stamp-media storage bucket exists
+    IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'stamp-media') THEN
+        RAISE EXCEPTION 'Prerequisite Check Failed: storage bucket stamp-media missing';
+    END IF;
 END $$;
 
 
 -- ===================================================
 -- 2. FIXTURE CLEANUP & POPULATION (SUPERUSER ROLE)
 -- ===================================================
+DELETE FROM public.feed_replies WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friends WHERE user_id_1 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR user_id_2 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friend_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.direct_messages WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
@@ -321,12 +340,167 @@ EXCEPTION WHEN OTHERS THEN
     IF SQLERRM LIKE '%Feed RLS Leak%' THEN RAISE; END IF;
 END $$;
 
+-- Assertion 22: Storage - Verify bucket 'stamp-media' exists and is public
+DO $$
+DECLARE v_public BOOLEAN;
+BEGIN
+    SELECT public INTO v_public FROM storage.buckets WHERE id = 'stamp-media';
+    IF v_public IS NOT TRUE THEN RAISE EXCEPTION 'Storage Assertion Failed: stamp-media bucket is not public'; END IF;
+END $$;
+
+-- Assertion 23: Storage RLS - Anon cannot INSERT into storage.objects
+DO $$
+BEGIN
+    SET LOCAL ROLE anon;
+    INSERT INTO storage.objects (bucket_id, name, owner)
+    VALUES ('stamp-media', 'anon_file.png', '11111111-1111-1111-1111-111111111111');
+    RAISE EXCEPTION 'Storage RLS Leak: Anon inserted object into storage.objects';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%Storage RLS Leak%' THEN RAISE; END IF;
+END $$;
+
+-- Assertion 24: Storage RLS - User A can INSERT storage object with path prefix '11111111-1111-1111-1111-111111111111/'
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    INSERT INTO storage.objects (bucket_id, name, owner)
+    VALUES ('stamp-media', '11111111-1111-1111-1111-111111111111/rendered/stamp_a.png', '11111111-1111-1111-1111-111111111111');
+END $$;
+
+-- Assertion 25: Storage RLS - User B cannot INSERT storage object under User A's path prefix
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    INSERT INTO storage.objects (bucket_id, name, owner)
+    VALUES ('stamp-media', '11111111-1111-1111-1111-111111111111/rendered/stamp_b.png', '22222222-2222-2222-2222-222222222222');
+    RAISE EXCEPTION 'Storage RLS Leak: User B inserted object under User A directory prefix';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%Storage RLS Leak%' THEN RAISE; END IF;
+END $$;
+
+-- Assertion 26: Storage RLS - User B cannot UPDATE User A's storage object
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    UPDATE storage.objects SET metadata = '{"hacked": true}'::jsonb
+    WHERE bucket_id = 'stamp-media' AND name = '11111111-1111-1111-1111-111111111111/rendered/stamp_a.png';
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c <> 0 THEN RAISE EXCEPTION 'Storage RLS Leak: User B updated User A object'; END IF;
+END $$;
+
+-- Assertion 27: Storage RLS - User B cannot DELETE User A's storage object
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    DELETE FROM storage.objects
+    WHERE bucket_id = 'stamp-media' AND name = '11111111-1111-1111-1111-111111111111/rendered/stamp_a.png';
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c <> 0 THEN RAISE EXCEPTION 'Storage RLS Leak: User B deleted User A object'; END IF;
+EXCEPTION WHEN OTHERS THEN
+    -- Direct deletion is blocked by RLS or storage.protect_delete trigger
+    IF SQLERRM LIKE '%Storage RLS Leak%' THEN RAISE; END IF;
+END $$;
+
+-- Assertion 29: Feed Replies - Author A inserts valid reply on accessible post (post_a_friends)
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    INSERT INTO public.feed_replies (id, post_id, author_id, reply_stamp_url)
+    VALUES ('reply_a_1', 'post_a_friends', '11111111-1111-1111-1111-111111111111', 'https://example.com/stamp.png');
+END $$;
+
+-- Assertion 30: Feed Replies - Author Impersonation (User A inserts reply with author_id = B -> denied)
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    INSERT INTO public.feed_replies (id, post_id, author_id, reply_stamp_url)
+    VALUES ('reply_fake', 'post_a_friends', '22222222-2222-2222-2222-222222222222', 'https://example.com/stamp.png');
+    RAISE EXCEPTION 'Feed Replies RLS Leak: User A inserted reply impersonating author B';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%Feed Replies RLS Leak%' THEN RAISE; END IF;
+END $$;
+
+-- Assertion 31: Feed Replies - Unrelated C cannot read reply to friend-only post
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    SELECT COUNT(*) INTO v_c FROM public.feed_replies WHERE id = 'reply_a_1';
+    IF v_c <> 0 THEN RAISE EXCEPTION 'Feed Replies RLS Leak: Unrelated C read reply to friend-only post'; END IF;
+END $$;
+
+-- Assertion 32: Feed Replies - Friend B can read reply to friend-only post
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    SELECT COUNT(*) INTO v_c FROM public.feed_replies WHERE id = 'reply_a_1';
+    IF v_c <> 1 THEN RAISE EXCEPTION 'Feed Replies RLS Failed: Friend B could not read reply to friend-only post'; END IF;
+END $$;
+
+-- Assertion 33: Feed Replies - Non-author B cannot delete Author A's reply
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    DELETE FROM public.feed_replies WHERE id = 'reply_a_1';
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c <> 0 THEN RAISE EXCEPTION 'Feed Replies RLS Leak: Non-author B deleted Author A reply'; END IF;
+END $$;
+
+-- Assertion 34: Feed Replies - Author A can delete own reply
+DO $$
+DECLARE v_c INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM public.feed_replies WHERE id = 'reply_a_1';
+    GET DIAGNOSTICS v_c = ROW_COUNT;
+    IF v_c <> 1 THEN RAISE EXCEPTION 'Feed Replies RLS Failed: Author A could not delete own reply'; END IF;
+END $$;
+
+-- Assertion 35: Media URL Constraint - Invalid local/file/data URL rejected on feed_replies.reply_stamp_url
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    INSERT INTO public.feed_replies (id, post_id, author_id, reply_stamp_url)
+    VALUES ('reply_bad_url', 'post_a_friends', '11111111-1111-1111-1111-111111111111', 'file:///local/path.png');
+    RAISE EXCEPTION 'Media URL Constraint Leak: feed_replies accepted local file:// URL';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%Media URL Constraint Leak%' THEN RAISE; END IF;
+END $$;
+
+-- Assertion 36: Media URL Constraint - Invalid local/file/data URL rejected on direct_messages.stamp_image_url
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    INSERT INTO public.direct_messages (id, sender_id, recipient_id, text, stamp_image_url)
+    VALUES ('66666666-6666-6666-6666-666666666666', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'DM with bad stamp', 'data:image/png;base64,bad');
+    RAISE EXCEPTION 'Media URL Constraint Leak: direct_messages accepted data:image URL';
+EXCEPTION WHEN OTHERS THEN
+    IF SQLERRM LIKE '%Media URL Constraint Leak%' THEN RAISE; END IF;
+END $$;
+
 
 -- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
 
+DELETE FROM public.feed_replies WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friends WHERE user_id_1 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR user_id_2 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friend_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.direct_messages WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');

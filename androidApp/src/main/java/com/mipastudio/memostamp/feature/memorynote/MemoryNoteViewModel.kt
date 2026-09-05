@@ -148,16 +148,23 @@ class MemoryNoteViewModel : ViewModel() {
                     onSuccess = { entity ->
                         // Only create a feed post if explicit reply to post is requested
                         if (!state.replyToPostId.isNullOrBlank()) {
-                            feedRepository.createPostFromStamp(
-                                stampEntity = entity,
-                                audienceType = state.audienceType,
-                                circleId = state.selectedCircleId,
-                                circleName = state.selectedCircleName,
-                                replyToPostId = state.replyToPostId
-                            )
-                            feedRepository.syncFeedFromSupabase()
+                            try {
+                                feedRepository.createPostFromStamp(
+                                    stampEntity = entity,
+                                    audienceType = state.audienceType,
+                                    circleId = state.selectedCircleId,
+                                    circleName = state.selectedCircleName,
+                                    replyToPostId = state.replyToPostId
+                                )
+                                feedRepository.reconcileFeedFromCloud()
+                                onSuccess(entity)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                Toast.makeText(context, "Lưu tem thành công nhưng gửi phản hồi thất bại: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        } else {
+                            onSuccess(entity)
                         }
-                        onSuccess(entity)
                     },
                     onFailure = { error ->
                         Toast.makeText(context, "Failed to save stamp: ${error.message}", Toast.LENGTH_SHORT).show()

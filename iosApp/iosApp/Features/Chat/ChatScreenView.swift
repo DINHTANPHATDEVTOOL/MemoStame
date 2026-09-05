@@ -485,22 +485,64 @@ struct ChatScreenView: View {
         isSending = true
         toastMessage = nil
 
-        if !isValidRemoteStampUrl(stamp.stampImagePath) {
-            print("Notice: Stamp image is local-only, sending stamp message safely with null stampImageUrl.")
+        let authUid = SupabaseAuthService.shared.currentUserId ?? ""
+        guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
+            isSending = false
+            toastMessage = "Cần đăng nhập để chia sẻ tem qua tin nhắn."
+            return
         }
-        let textToSend = "Đã gửi tem kỷ niệm: \(stamp.title)"
-        HapticFeedbackManager.shared.playImpact(style: .medium)
 
-        chatRepo.sendMessageCloud(recipientId: recipientUserId, text: textToSend, stamp: stamp) { result in
-            switch result {
-            case .success:
-                isSending = false
-                toastMessage = nil
-                print("Cloud Stamp DM sent successfully")
-            case .failure(let err):
-                isSending = false
-                toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
-                print("Cloud Stamp DM send error: \(err.localizedDescription)")
+        let sendAction: (StampItem) -> Void = { stampToSend in
+            let textToSend = "Đã gửi tem kỷ niệm: \(stampToSend.title)"
+            HapticFeedbackManager.shared.playImpact(style: .medium)
+
+            self.chatRepo.sendMessageCloud(recipientId: self.recipientUserId, text: textToSend, stamp: stampToSend) { result in
+                DispatchQueue.main.async {
+                    self.isSending = false
+                    switch result {
+                    case .success:
+                        self.toastMessage = nil
+                        print("Cloud Stamp DM sent successfully")
+                    case .failure(let err):
+                        self.toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
+                        print("Cloud Stamp DM send error: \(err.localizedDescription)")
+                    }
+                }
+            }
+        }
+
+        if isValidRemoteStampUrl(stamp.stampImagePath) {
+            sendAction(stamp)
+        } else {
+            SupabaseMediaUploader.shared.ensureRemoteRenderedStamp(
+                ownerUid: authUid,
+                localOrRemotePath: stamp.stampImagePath
+            ) { uploadResult in
+                DispatchQueue.main.async {
+                    switch uploadResult {
+                    case .success(let remoteUrl):
+                        let updatedStamp = StampItem(
+                            id: stamp.id,
+                            originalImagePath: stamp.originalImagePath,
+                            stampImagePath: remoteUrl,
+                            title: stamp.title,
+                            note: stamp.note,
+                            createdAt: stamp.createdAt,
+                            memoryDate: stamp.memoryDate,
+                            location: stamp.location,
+                            mood: stamp.mood,
+                            collectionId: stamp.collectionId,
+                            favorite: stamp.favorite,
+                            filterId: stamp.filterId,
+                            shape: stamp.shape,
+                            preset: stamp.preset
+                        )
+                        sendAction(updatedStamp)
+                    case .failure(let err):
+                        self.isSending = false
+                        self.toastMessage = "Không thể tải ảnh tem lên máy chủ: \(err.localizedDescription)"
+                    }
+                }
             }
         }
     }

@@ -12,8 +12,8 @@ import org.junit.Test
 
 class FakeSupabaseHttpTransport : SupabaseHttpTransport {
     var defaultResponse: Result<String> = Result.success("[]")
-    val endpointResponses = mutableMapOf<String, Result<String>>()
-    val callLogs = mutableListOf<String>()
+    val endpointResponses = java.util.concurrent.ConcurrentHashMap<String, Result<String>>()
+    val callLogs = java.util.concurrent.CopyOnWriteArrayList<String>()
 
     override fun executeHttp(
         client: SupabaseClient,

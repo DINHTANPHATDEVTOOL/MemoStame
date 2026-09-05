@@ -2,6 +2,7 @@ import SwiftUI
 #if canImport(UIKit)
 import UIKit
 #endif
+import Combine
 import shared
 
 struct HomeScreenView: View {
@@ -820,15 +821,19 @@ struct CommentSheetView: View {
     }
 }
 
-// ObservableViewModel Wrapper for Swift state binding
+// ObservableViewModel Wrapper for Swift state binding (Cloud Authoritative)
 class HomeObservableViewModel: ObservableObject {
     let repository: SharedMemoStampRepository
     @Published var posts: [FeedPost] = []
     @Published var currentUser: UserProfile
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String? = nil
+
+    private var cancellables = Set<AnyCancellable>()
 
     init(repository: SharedMemoStampRepository) {
         self.repository = repository
-        self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
+        self.posts = IOSFeedRepository.shared.posts
         self.currentUser = (repository.currentUser.value as? UserProfile) ?? UserProfile(
             uid: "user_me",
             username: "user_memostamp",
@@ -839,34 +844,53 @@ class HomeObservableViewModel: ObservableObject {
             stampsCollectedCount: Int32(0),
             placesVisitedCount: Int32(0)
         )
+
+        IOSFeedRepository.shared.$posts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newPosts in
+                self?.posts = newPosts
+            }
+            .store(in: &cancellables)
+
+        IOSFeedRepository.shared.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] loading in
+                self?.isLoading = loading
+            }
+            .store(in: &cancellables)
+
+        IOSFeedRepository.shared.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] msg in
+                self?.errorMessage = msg
+            }
+            .store(in: &cancellables)
+
+        IOSFeedRepository.shared.syncUserSession()
     }
 
     func refreshFeed() {
-        self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
+        IOSFeedRepository.shared.loadFeed()
     }
 
     func like(postId: String) {
         if let post = posts.first(where: { $0.id == postId }), !post.isLikedByMe {
-            repository.toggleLike(postId: postId)
-            self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
+            IOSFeedRepository.shared.toggleLike(postId: postId)
         }
     }
 
     func toggleLike(postId: String) {
-        repository.toggleLike(postId: postId)
-        self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
+        IOSFeedRepository.shared.toggleLike(postId: postId)
     }
 
     func addComment(postId: String, text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty || trimmed.count > 500 { return }
-        repository.addComment(postId: postId, content: trimmed)
-        self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
+        IOSFeedRepository.shared.addComment(postId: postId, text: trimmed)
     }
 
     func deleteComment(postId: String, commentId: String) {
-        repository.deleteComment(postId: postId, commentId: commentId)
-        self.posts = (repository.feedPosts.value as? [FeedPost]) ?? []
+        IOSFeedRepository.shared.deleteComment(postId: postId, commentId: commentId)
     }
 }
 

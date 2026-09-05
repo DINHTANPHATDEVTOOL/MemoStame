@@ -129,38 +129,44 @@ fun HomeScreen(
                 Button(
                     onClick = {
                         coroutineScope.launch {
-                            val stampToUse = selectedStampEntity ?: myStamps.firstOrNull()
-                            if (stampToUse != null) {
-                                val updatedStamp = stampToUse.copy(
-                                    note = quickPostCaption.ifBlank { stampToUse.note }
-                                )
-                                feedRepo.createPostFromStamp(
-                                    stampEntity = updatedStamp,
-                                    audienceType = quickPostAudience
-                                )
-                                Toast.makeText(context, "Đã đăng bài viết mới lên Bảng tin! 📮", Toast.LENGTH_SHORT).show()
-                            } else {
-                                val newDraft = StampDraft(
-                                    originalImagePath = currentUser.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
-                                    renderedImagePath = currentUser.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
-                                    title = "Khoảnh khắc kỷ niệm",
-                                    location = "Việt Nam",
-                                    memoryDate = System.currentTimeMillis(),
-                                    note = quickPostCaption.ifBlank { "Mới đăng khoảnh khắc hôm nay ✨" }
-                                )
-                                val res = stampRepo.saveStamp(newDraft)
-                                if (res.isSuccess) {
+                            try {
+                                val stampToUse = selectedStampEntity ?: myStamps.firstOrNull()
+                                if (stampToUse != null) {
+                                    val updatedStamp = stampToUse.copy(
+                                        note = quickPostCaption.ifBlank { stampToUse.note }
+                                    )
                                     feedRepo.createPostFromStamp(
-                                        stampEntity = res.getOrThrow(),
+                                        stampEntity = updatedStamp,
                                         audienceType = quickPostAudience
                                     )
                                     Toast.makeText(context, "Đã đăng bài viết mới lên Bảng tin! 📮", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val newDraft = StampDraft(
+                                        originalImagePath = currentUser.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
+                                        renderedImagePath = currentUser.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
+                                        title = "Khoảnh khắc kỷ niệm",
+                                        location = "Việt Nam",
+                                        memoryDate = System.currentTimeMillis(),
+                                        note = quickPostCaption.ifBlank { "Mới đăng khoảnh khắc hôm nay ✨" }
+                                    )
+                                    val res = stampRepo.saveStamp(newDraft)
+                                    if (res.isSuccess) {
+                                        feedRepo.createPostFromStamp(
+                                            stampEntity = res.getOrThrow(),
+                                            audienceType = quickPostAudience
+                                        )
+                                        Toast.makeText(context, "Đã đăng bài viết mới lên Bảng tin! 📮", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        throw res.exceptionOrNull() ?: Exception("Lưu tem thất bại")
+                                    }
                                 }
+                                showQuickPostModal = false
+                                quickPostCaption = ""
+                                selectedStampEntity = null
+                                feedRepo.reconcileFeedFromCloud()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Đăng bài thất bại: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
-                            showQuickPostModal = false
-                            quickPostCaption = ""
-                            selectedStampEntity = null
-                            feedRepo.syncFeedFromSupabase()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
