@@ -21,7 +21,10 @@ struct MemoryNoteScreenView: View {
     @State private var selectedMood: String = "😊 Happy"
     @State private var memoryDate: Date = Date()
     @State private var isGpsLocating: Bool = false
-    @State private var showRenderError: Bool = false
+    @State private var isSaving: Bool = false
+    @State private var localStampAlreadySaved: StampItem? = nil
+    @State private var alertMessage: String? = nil
+    @State private var showAlert: Bool = false
 
     let moodOptions = ["😊 Happy", "❤️ Love", "✈️ Travel", "☕ Chill", "🔥 Excited", "🕰️ Nostalgic", "🌿 Peaceful", "⭐ Special"]
     let audienceTypes = ["Friends", "Only Me"]
@@ -53,9 +56,11 @@ struct MemoryNoteScreenView: View {
                 Spacer()
 
                 Button(action: {
+                    guard !isSaving else { return }
                     let authUid = SupabaseAuthService.shared.currentUserId ?? ""
                     guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
-                        showRenderError = true
+                        alertMessage = "Vui lòng đăng nhập để lưu tem."
+                        showAlert = true
                         return
                     }
 
@@ -81,7 +86,8 @@ struct MemoryNoteScreenView: View {
                         stampColorHex: stampColorHex,
                         shape: shape
                     ) else {
-                        showRenderError = true
+                        alertMessage = "Không thể xuất ảnh tem PNG. Vui lòng thử lại."
+                        showAlert = true
                         return
                     }
                     let finalRenderedUrl = renderedFileUrl.absoluteString
@@ -91,35 +97,73 @@ struct MemoryNoteScreenView: View {
 
                     let stampItemTitle = finalTitle.isEmpty ? "Memory Stamp" : finalTitle
 
-                    if let replyId = replyToPostId, !replyId.isEmpty {
-                        repository.addStampReply(
-                            postId: replyId,
-                            stampTitle: stampItemTitle,
+                    // 1. Save local stamp exactly once
+                    let currentStamp: StampItem
+                    if let existing = localStampAlreadySaved {
+                        currentStamp = existing
+                    } else {
+                        let saved = repository.addStamp(
+                            title: stampItemTitle,
                             note: caption,
+                            location: locationSearch.isEmpty ? nil : locationSearch,
+                            imageUrl: finalRenderedUrl,
+                            originalImageUrl: imageUrl,
                             shape: shape,
-                            imageUrl: finalRenderedUrl
+                            collectionId: selectedCollectionId,
+                            audience: audience,
+                            mood: selectedMood,
+                            memoryDate: Int64(memoryDate.timeIntervalSince1970 * 1000)
                         )
+                        localStampAlreadySaved = saved
+                        currentStamp = saved
+                        IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                     }
 
-                    _ = repository.addStamp(
-                        title: stampItemTitle,
-                        note: caption,
-                        location: locationSearch.isEmpty ? nil : locationSearch,
-                        imageUrl: finalRenderedUrl,
-                        originalImageUrl: imageUrl,
-                        shape: shape,
-                        collectionId: selectedCollectionId,
-                        audience: audience,
-                        mood: selectedMood,
-                        memoryDate: Int64(memoryDate.timeIntervalSince1970 * 1000)
-                    )
-                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
-                    onSavedSuccess()
+                    // 2. Normal Save vs Cross-Device Reply Flow
+                    if let replyId = replyToPostId, !replyId.isEmpty {
+                        isSaving = true
+                        SupabaseMediaUploader.shared.ensureRemoteRenderedStamp(ownerUid: authUid, localOrRemotePath: finalRenderedUrl) { uploadResult in
+                            switch uploadResult {
+                            case .success(let remoteUrl):
+                                IOSFeedRepository.shared.createStampReply(
+                                    postId: replyId,
+                                    stampId: currentStamp.id,
+                                    stampUrl: remoteUrl,
+                                    shape: shape,
+                                    note: caption
+                                ) { replyResult in
+                                    DispatchQueue.main.async {
+                                        isSaving = false
+                                        switch replyResult {
+                                        case .success:
+                                            onSavedSuccess()
+                                        case .failure(let err):
+                                            alertMessage = "Lưu tem thành công nhưng gửi phản hồi thất bại: \(err.localizedDescription)"
+                                            showAlert = true
+                                        }
+                                    }
+                                }
+                            case .failure(let err):
+                                DispatchQueue.main.async {
+                                    isSaving = false
+                                    alertMessage = "Tải ảnh tem lên máy chủ thất bại: \(err.localizedDescription)"
+                                    showAlert = true
+                                }
+                            }
+                        }
+                    } else {
+                        onSavedSuccess()
+                    }
                 }) {
-                    Text("Lưu Tem")
-                        .font(.body.bold())
-                        .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    if isSaving {
+                        ProgressView().scaleEffect(0.8)
+                    } else {
+                        Text("Lưu Tem")
+                            .font(.body.bold())
+                            .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                    }
                 }
+                .disabled(isSaving)
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
@@ -327,10 +371,10 @@ struct MemoryNoteScreenView: View {
             }
         }
         .background(Color(red: 0.98, green: 0.96, blue: 0.92).ignoresSafeArea())
-        .alert(isPresented: $showRenderError) {
+        .alert(isPresented: $showAlert) {
             Alert(
-                title: Text("Lỗi Tạo Tem"),
-                message: Text("Không thể xuất ảnh tem PNG. Vui lòng thử lại."),
+                title: Text("Thông Báo"),
+                message: Text(alertMessage ?? "Có lỗi xảy ra."),
                 dismissButton: .default(Text("Đóng"))
             )
         }
