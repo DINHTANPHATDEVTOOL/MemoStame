@@ -6,6 +6,7 @@ import shared
 
 struct PassportScreenView: View {
     let repository: SharedMemoStampRepository
+    var onLogout: (() -> Void)? = nil
     @Environment(\.presentationMode) var presentationMode
 
     @StateObject private var langManager = AppLanguageManager.shared
@@ -14,8 +15,8 @@ struct PassportScreenView: View {
 
     var user: UserProfile {
         (repository.currentUser.value as? UserProfile) ?? UserProfile(
-            uid: "user_me",
-            username: "user_memostamp",
+            uid: "",
+            username: "memostamp_collector",
             displayName: "MemoStamp Collector",
             avatarUrl: nil,
             bio: "Sưu tầm ký ức qua từng con tem bưu chính",
@@ -187,14 +188,17 @@ struct PassportScreenView: View {
                             }
 
                             Button(action: {
-                                let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
-                                if !currentUid.isEmpty {
-                                    IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                                }
-                                SupabaseAuthService.shared.signOut { _ in }
-                                repository.resetUserScopedState()
-                                UserDefaults.standard.set(false, forKey: "isAuthenticated")
                                 presentationMode.wrappedValue.dismiss()
+                                if let onLogout = onLogout {
+                                    onLogout()
+                                } else {
+                                    let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
+                                    if IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(currentUid) {
+                                        _ = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                                    }
+                                    SupabaseAuthService.shared.signOut { _ in }
+                                    repository.resetUserScopedState()
+                                }
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -216,39 +220,11 @@ struct PassportScreenView: View {
             }
         }
         .background(MSColors.paper.ignoresSafeArea())
-        .onAppear {
-            syncSavedProfile()
-        }
         .sheet(isPresented: $showEditProfile) {
             EditProfileSheetView(repository: repository)
         }
         .sheet(isPresented: $showSettingsModal) {
-            ProfileSettingsSheetView(repository: repository)
-        }
-    }
-
-    private func syncSavedProfile() {
-        let current = (repository.currentUser.value as? UserProfile)
-        if let currentUid = current?.uid, IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(currentUid) {
-            return
-        }
-        let defaults = UserDefaults.standard
-        if let savedName = defaults.string(forKey: "user_displayName"), !savedName.isEmpty {
-            let savedUsername = defaults.string(forKey: "user_username") ?? "phat_memostamp"
-            let savedBio = defaults.string(forKey: "user_bio") ?? "Sưu tầm ký ức qua từng con tem bưu chính 📮"
-            let savedAvatar = defaults.string(forKey: "user_avatarUrl")
-            let current = (repository.currentUser.value as? UserProfile)
-            let updated = UserProfile(
-                uid: current?.uid ?? "user_me",
-                username: savedUsername,
-                displayName: savedName,
-                avatarUrl: savedAvatar ?? current?.avatarUrl,
-                bio: savedBio,
-                stampsCreatedCount: current?.stampsCreatedCount ?? 0,
-                stampsCollectedCount: current?.stampsCollectedCount ?? 0,
-                placesVisitedCount: current?.placesVisitedCount ?? 0
-            )
-            repository.setCurrentUser(profile: updated)
+            ProfileSettingsSheetView(repository: repository, onLogout: onLogout)
         }
     }
 }
@@ -259,6 +235,8 @@ struct EditProfileSheetView: View {
 
     @State private var displayName: String = ""
     @State private var bio: String = ""
+    @State private var isSavingProfile: Bool = false
+    @State private var saveMessage: String? = nil
 
     var body: some View {
         VStack(spacing: 16) {
@@ -295,28 +273,96 @@ struct EditProfileSheetView: View {
             }
             .padding(.horizontal, 20)
 
+            if let msg = saveMessage {
+                Text(msg)
+                    .font(.caption.bold())
+                    .foregroundColor(Color.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+            }
+
             Spacer()
 
             Button(action: {
-                let current = (repository.currentUser.value as? UserProfile)
-                let name = displayName.isEmpty ? (current?.displayName ?? "") : displayName
-                let note = bio.isEmpty ? (current?.bio ?? "") : bio
-                repository.updateProfile(displayName: name, bio: note, avatarUrl: nil)
-                
-                let defaults = UserDefaults.standard
-                defaults.set(name, forKey: "user_displayName")
-                defaults.set(note, forKey: "user_bio")
-                
-                presentationMode.wrappedValue.dismiss()
+                if isSavingProfile { return }
+
+                // 1. get auth UID from Supabase session & 2. validate authenticated UID
+                guard let authUid = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
+                    saveMessage = "⚠️ Phiên đăng nhập không hợp lệ hoặc đã hết hạn."
+                    return
+                }
+
+                // 3. require repository UID == auth UID & 4. capture previous profile
+                guard let previousProfile = repository.currentUser.value as? UserProfile,
+                      previousProfile.uid == authUid else {
+                    saveMessage = "⚠️ Danh tính tài khoản không trùng khớp."
+                    return
+                }
+
+                // 5. calculate displayName/bio candidate
+                let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+                let candidateDisplayName = trimmedName.isEmpty ? previousProfile.displayName : trimmedName
+                if candidateDisplayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    saveMessage = "⚠️ Tên hiển thị không được để trống."
+                    return
+                }
+                let candidateBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                // 6. update repository candidate
+                repository.updateProfile(displayName: candidateDisplayName, bio: candidateBio, avatarUrl: previousProfile.avatarUrl)
+
+                // 7. save account-scoped local data
+                let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
+                if !persisted {
+                    repository.setCurrentUser(profile: previousProfile)
+                    saveMessage = "⚠️ Không thể lưu trữ dữ liệu cục bộ."
+                    return
+                }
+
+                // 8. call existing cloud profile update method
+                isSavingProfile = true
+                saveMessage = nil
+
+                SupabaseAuthService.shared.updateAuthenticatedProfile(
+                    userId: authUid,
+                    displayName: candidateDisplayName,
+                    bio: candidateBio,
+                    avatarUrl: nil
+                ) { result in
+                    DispatchQueue.main.async {
+                        self.isSavingProfile = false
+                        switch result {
+                        case .success:
+                            // 9. cloud success: dismiss
+                            self.saveMessage = nil
+                            self.presentationMode.wrappedValue.dismiss()
+
+                        case .failure(let error):
+                            // 10. cloud failure: restore previous profile & local persistence, show visible failure, KEEP SHEET OPEN
+                            self.repository.setCurrentUser(profile: previousProfile)
+                            _ = IOSLocalPersistenceStore.shared.saveData(repository: self.repository, userId: authUid)
+                            self.saveMessage = "⚠️ \(error.localizedDescription)"
+                        }
+                    }
+                }
             }) {
-                Text("Save Profile Changes")
-                    .font(.body.bold())
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(MSColors.stamp)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                HStack {
+                    if isSavingProfile {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .padding(.trailing, 4)
+                    }
+                    Text(isSavingProfile ? "Đang lưu..." : "Save Profile Changes")
+                        .font(.body.bold())
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(isSavingProfile ? MSColors.stamp.opacity(0.6) : MSColors.stamp)
+                .cornerRadius(12)
             }
+            .disabled(isSavingProfile)
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
@@ -353,6 +399,7 @@ struct StatBox: View {
 
 struct ProfileSettingsSheetView: View {
     let repository: SharedMemoStampRepository
+    var onLogout: (() -> Void)? = nil
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var langManager = AppLanguageManager.shared
 
@@ -758,14 +805,17 @@ struct ProfileSettingsSheetView: View {
                         .disabled(isSavingProfile)
 
                         Button(action: {
-                            let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
-                            if !currentUid.isEmpty {
-                                IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
-                            }
-                            SupabaseAuthService.shared.signOut { _ in }
-                            repository.resetUserScopedState()
-                            UserDefaults.standard.set(false, forKey: "isAuthenticated")
                             presentationMode.wrappedValue.dismiss()
+                            if let onLogout = onLogout {
+                                onLogout()
+                            } else {
+                                let currentUid = (repository.currentUser.value as? UserProfile)?.uid ?? ""
+                                if IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(currentUid) {
+                                    _ = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: currentUid)
+                                }
+                                SupabaseAuthService.shared.signOut { _ in }
+                                repository.resetUserScopedState()
+                            }
                         }) {
                             HStack {
                                 Image(systemName: "rectangle.portrait.and.arrow.right")
