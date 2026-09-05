@@ -1004,7 +1004,7 @@ fun PassportScreen(
             )
         }
 
-        if (showSupabaseModal) {
+        if (com.mipastudio.memostamp.BuildConfig.DEBUG && showSupabaseModal) {
             SupabaseConfigDialog(
                 onDismiss = { showSupabaseModal = false }
             )

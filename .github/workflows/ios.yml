@@ -61,11 +61,12 @@ jobs:
           chmod +x gradlew
           ./gradlew :shared:build
 
-      - name: Verify & Build iOS Swift App via Xcode
+      - name: Verify & Build iOS Swift App via Xcode (Release)
         run: |
           xcodebuild build \
             -project iosApp/iosApp.xcodeproj \
             -scheme iosApp \
+            -configuration Release \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
@@ -95,4 +96,8 @@ jobs:
             :shared:build \
             :androidApp:testDebugUnitTest \
             :androidApp:assembleDebug \
+            :androidApp:testReleaseUnitTest \
+            :androidApp:lintRelease \
+            :androidApp:assembleRelease \
+            :androidApp:bundleRelease \
             --no-daemon

@@ -2,6 +2,7 @@ package com.mipastudio.memostamp.data.remote.supabase
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.mipastudio.memostamp.BuildConfig
 
 object SupabaseConfig {
     const val DEFAULT_PROJECT_ID = "mghmhhbyhmuvherlyrqa"
@@ -14,24 +15,28 @@ object SupabaseConfig {
     private const val KEY_ANON_KEY = "supabase_anon_key"
 
     fun getSupabaseUrl(context: Context?): String {
-        if (context == null) return DEFAULT_SUPABASE_URL
+        if (!BuildConfig.DEBUG || context == null) return DEFAULT_SUPABASE_URL
         val prefs = getPrefs(context) ?: return DEFAULT_SUPABASE_URL
         return prefs.getString(KEY_URL, DEFAULT_SUPABASE_URL) ?: DEFAULT_SUPABASE_URL
     }
 
     fun getAnonKey(context: Context?): String {
-        if (context == null) return DEFAULT_ANON_KEY
+        if (!BuildConfig.DEBUG || context == null) return DEFAULT_ANON_KEY
         val prefs = getPrefs(context) ?: return DEFAULT_ANON_KEY
         val saved = prefs.getString(KEY_ANON_KEY, "")
         return if (!saved.isNullOrBlank() && !saved.startsWith("sb_publishable")) saved else DEFAULT_ANON_KEY
     }
 
-    fun saveConfig(context: Context, url: String, anonKey: String) {
-        val prefs = getPrefs(context) ?: return
+    fun saveConfig(context: Context, url: String, anonKey: String): Boolean {
+        if (!BuildConfig.DEBUG) {
+            return false
+        }
+        val prefs = getPrefs(context) ?: return false
         prefs.edit()
             .putString(KEY_URL, url.trim())
             .putString(KEY_ANON_KEY, anonKey.trim())
             .apply()
+        return true
     }
 
     private fun getPrefs(context: Context): SharedPreferences? {
