@@ -524,6 +524,114 @@ class SupabaseAuthService {
         }
     }
 
+    func deleteCurrentAccount(
+        currentPassword: String,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard let currentSession = activeSession,
+              isValidAuthUid(currentSession.userId) else {
+            completion(.failure(SupabaseAuthError.sessionExpired))
+            return
+        }
+
+        let expectedUid = currentSession.userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let emailToUse = currentSession.email.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if emailToUse.isEmpty {
+            completion(.failure(SupabaseAuthError.serverError(400, "Chưa xác định được email tài khoản.")))
+            return
+        }
+
+        reauthenticateForSensitiveAction(email: emailToUse, password: currentPassword) { [weak self] reauthResult in
+            guard let self = self else { return }
+            switch reauthResult {
+            case .failure(let err):
+                completion(.failure(err))
+            case .success(let reauthSession):
+                let reauthUid = reauthSession.userId.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard self.isValidAuthUid(reauthUid), reauthUid == expectedUid else {
+                    completion(.failure(SupabaseAuthError.serverError(403, "Mã người dùng xác thực không trùng khớp.")))
+                    return
+                }
+
+                let accessToken = reauthSession.accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !accessToken.isEmpty else {
+                    completion(.failure(SupabaseAuthError.sessionExpired))
+                    return
+                }
+
+                self.callDeleteAccountEndpoint(accessToken: accessToken) { deleteResult in
+                    switch deleteResult {
+                    case .failure(let deleteErr):
+                        completion(.failure(deleteErr))
+                    case .success:
+                        // ONLY after verified server success: purge account-local data
+                        self.purgeAccountLocalData(userId: expectedUid)
+                        self.clearLocalSessionAndReset()
+                        completion(.success(()))
+                    }
+                }
+            }
+        }
+    }
+
+    private func callDeleteAccountEndpoint(
+        accessToken: String,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(supabaseUrl)/functions/v1/delete-account") else {
+            completion(.failure(SupabaseAuthError.invalidUrl))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = "{}".data(using: .utf8)
+        request.timeoutInterval = 20
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let err = error {
+                completion(.failure(SupabaseAuthError.networkError(err.localizedDescription)))
+                return
+            }
+
+            guard let httpRes = response as? HTTPURLResponse else {
+                completion(.failure(SupabaseAuthError.parseError))
+                return
+            }
+
+            if (200...299).contains(httpRes.statusCode) {
+                completion(.success(()))
+                return
+            }
+
+            var msg = "Xóa tài khoản thất bại"
+            if let data = data, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                msg = (json["message"] as? String) ?? (json["msg"] as? String) ?? (json["error"] as? String) ?? msg
+            }
+            completion(.failure(SupabaseAuthError.serverError(httpRes.statusCode, msg)))
+        }.resume()
+    }
+
+    private func purgeAccountLocalData(userId: String) {
+        // 1. Purge account-scoped persistent data file
+        IOSLocalPersistenceStore.shared.deleteData(userId: userId)
+
+        // 2. Purge account chat & friend local files
+        IOSChatRepository.shared.deleteAccountLocalData(userId: userId)
+        IOSFriendRepository.shared.deleteAccountLocalData(userId: userId)
+        IOSFeedRepository.shared.clear()
+    }
+
+    private func clearLocalSessionAndReset() {
+        self.activeSession = nil
+        KeychainStore.deleteSession()
+        SupabaseRealtimeClient.shared.disconnect(clearState: true)
+    }
+
     private func handleAuthResponse(
         data: Data?,
         response: URLResponse?,

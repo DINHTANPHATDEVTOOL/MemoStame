@@ -26,4 +26,7 @@ interface StampDao {
 
     @Query("SELECT * FROM stamps WHERE id = :id AND ownerId = :ownerId")
     fun getStampById(id: String, ownerId: String): StampEntity?
+
+    @Query("DELETE FROM stamps WHERE ownerId = :ownerId")
+    fun deleteAllStampsByOwner(ownerId: String): Int
 }

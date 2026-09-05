@@ -83,6 +83,21 @@ interface FeedDao {
 
     @Query("SELECT * FROM feed_seen")
     fun observeSeenPosts(): Flow<List<FeedSeenEntity>>
+
+    @Query("DELETE FROM feed_posts WHERE authorId = :authorId")
+    fun deletePostsByAuthor(authorId: String): Int
+
+    @Query("DELETE FROM feed_reactions WHERE userId = :userId")
+    fun deleteReactionsByUser(userId: String): Int
+
+    @Query("DELETE FROM feed_comments WHERE authorId = :authorId")
+    fun deleteCommentsByAuthor(authorId: String): Int
+
+    @Query("DELETE FROM feed_replies WHERE authorId = :authorId")
+    fun deleteRepliesByAuthor(authorId: String): Int
+
+    @Query("DELETE FROM feed_seen WHERE userId = :userId")
+    fun deleteSeenByUser(userId: String): Int
 }
 
 @Dao
@@ -104,4 +119,7 @@ interface CircleDao {
 
     @Query("SELECT COUNT(*) FROM circles WHERE ownerId = :ownerId")
     fun getCircleCountByOwner(ownerId: String): Int
+
+    @Query("DELETE FROM circles WHERE ownerId = :ownerId")
+    fun deleteAllCirclesByOwner(ownerId: String): Int
 }

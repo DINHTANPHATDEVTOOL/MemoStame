@@ -134,6 +134,21 @@ class IOSChatRepository: ObservableObject {
         self.activeUserId = ""
     }
 
+    func deleteAccountLocalData(userId: String) {
+        guard !userId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let safeUid = sanitizeUserId(userId)
+        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        if let contents = try? fileManager.contentsOfDirectory(at: docs, includingPropertiesForKeys: nil) {
+            let prefix = "memostamp_chat_v2_\(safeUid)_"
+            for file in contents where file.lastPathComponent.hasPrefix(prefix) {
+                try? fileManager.removeItem(at: file)
+            }
+        }
+        if activeUserId == userId {
+            onLogout()
+        }
+    }
+
     func onUserChanged(newUserId: String) {
         let token = SupabaseAuthService.shared.activeSession?.accessToken
         onSessionChanged(userId: newUserId, accessToken: token)

@@ -411,4 +411,80 @@ class IOSLocalPersistenceStore {
         }
         return false
     }
+
+    @discardableResult
+    func deleteData(userId: String) -> Bool {
+        guard isValidAuthenticatedUserId(userId) else { return false }
+        let targetUrl = storageUrl(userId: userId)
+        if fileManager.fileExists(atPath: targetUrl.path) {
+            do {
+                try fileManager.removeItem(at: targetUrl)
+                return true
+            } catch {
+                return false
+            }
+        }
+        return true
+    }
+}
+
+enum IOSPathSafety {
+    static func isAppSandboxPath(_ pathString: String?) -> Bool {
+        guard let path = pathString?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty else {
+            return false
+        }
+        let lower = path.lowercased()
+        if lower.hasPrefix("http://") || lower.hasPrefix("https://") || lower.hasPrefix("content://") {
+            return false
+        }
+
+        let fileUrl: URL
+        if lower.hasPrefix("file://") {
+            guard let parsed = URL(string: path) else { return false }
+            fileUrl = parsed.standardizedFileURL.resolvingSymlinksInPath()
+        } else {
+            fileUrl = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+        }
+
+        let fileManager = FileManager.default
+        let allowedDirs: [URL] = [
+            fileManager.urls(for: .documentDirectory, in: .userDomainMask).first,
+            fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first,
+            fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first,
+            URL(fileURLWithPath: NSTemporaryDirectory()).standardizedFileURL
+        ].compactMap { $0?.standardizedFileURL.resolvingSymlinksInPath() }
+
+        let targetPath = fileUrl.path
+        for dir in allowedDirs {
+            let dirPath = dir.path
+            if targetPath == dirPath || targetPath.hasPrefix(dirPath + "/") {
+                return true
+            }
+        }
+        return false
+    }
+
+    @discardableResult
+    static func safelyDeleteSandboxFile(_ pathString: String?) -> Bool {
+        guard isAppSandboxPath(pathString) else { return false }
+        guard let path = pathString?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+        let fileUrl: URL
+        if path.lowercased().hasPrefix("file://") {
+            guard let parsed = URL(string: path) else { return false }
+            fileUrl = parsed.standardizedFileURL.resolvingSymlinksInPath()
+        } else {
+            fileUrl = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+        }
+
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: fileUrl.path) {
+            do {
+                try fileManager.removeItem(at: fileUrl)
+                return true
+            } catch {
+                return false
+            }
+        }
+        return false
+    }
 }

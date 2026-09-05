@@ -42,6 +42,22 @@ class IOSFriendRepository: ObservableObject {
         return docs.appendingPathComponent("memostamp_friends_v2_\(safeUid).json")
     }
 
+    func deleteAccountLocalData(userId: String) {
+        guard !userId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let url = storageUrl(userId: userId)
+        if fileManager.fileExists(atPath: url.path) {
+            try? fileManager.removeItem(at: url)
+        }
+        if activeUserId == userId {
+            self.friends = []
+            self.incomingRequests = []
+            self.outgoingRequests = []
+            self.searchedProfiles = []
+            self.errorMessage = nil
+            self.activeUserId = ""
+        }
+    }
+
     func onUserChanged(newUserId: String) {
         let cleanUid = newUserId.trimmingCharacters(in: .whitespacesAndNewlines)
         if cleanUid == activeUserId { return }

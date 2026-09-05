@@ -935,6 +935,243 @@ class E2EContractRunner:
 
         self.log("PHASE 7", "Cross-table account isolation invariant verified for all users")
 
+    # ----------------------------------------------------
+    # PHASE 8: SELF-SERVICE ACCOUNT DELETION & PURGE
+    # ----------------------------------------------------
+    def phase8_self_service_account_deletion(self):
+        self.log("PHASE 8", "Starting self-service account deletion & purge tests...")
+        u_a = self.users["A"]
+        u_b = self.users["B"]
+        u_c = self.users["C"]
+
+        # Step 1: Setup disposable User D
+        email_d = f"e2e-d-{self.run_id}-{secrets.token_hex(4)}@memostamp.test"
+        password_d = f"TestPass123!{secrets.token_hex(6)}"
+
+        status, data, text, _ = self.client.request(
+            "POST",
+            "/auth/v1/signup",
+            json_data={"email": email_d, "password": password_d}
+        )
+        self.assert_status(status, [200, 201], "Signup User D", "POST", "/auth/v1/signup", text)
+
+        uid_d = (data.get("user") or {}).get("id") or data.get("id")
+        token_d = data.get("access_token")
+
+        if not token_d:
+            login_status, login_data, login_text, _ = self.client.request(
+                "POST",
+                "/auth/v1/token?grant_type=password",
+                json_data={"email": email_d, "password": password_d}
+            )
+            self.assert_status(login_status, 200, "Login User D", "POST", "/auth/v1/token", login_text)
+            token_d = login_data.get("access_token")
+            uid_d = uid_d or (login_data.get("user") or {}).get("id")
+
+        assert uid_d and isinstance(uid_d, str), "Missing UID for User D"
+        assert token_d and isinstance(token_d, str), "Missing access_token for User D"
+        uuid.UUID(uid_d)  # Validates UUID format
+
+        # Create Profile for User D
+        username_d = f"user_d_{self.run_id}"
+        display_name_d = "Disposable User D"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/profiles",
+            token=token_d,
+            headers={"Prefer": "return=representation"},
+            json_data={
+                "id": uid_d,
+                "username": username_d,
+                "display_name": display_name_d,
+                "bio": "To be deleted"
+            }
+        )
+        self.assert_status(status, [200, 201], "Create User D profile", "POST", "/rest/v1/profiles", text)
+
+        # Upload Storage object for User D under stamp-media/<uid>/rendered/...
+        object_d_name = f"{uid_d}/rendered/stamp_{uuid.uuid4()}.png"
+        status, _, text, _ = self.client.request(
+            "POST",
+            f"/storage/v1/object/stamp-media/{object_d_name}",
+            token=token_d,
+            raw_body=PNG_1X1_FIXTURE,
+            content_type="image/png"
+        )
+        self.assert_status(status, [200, 201], "User D uploads media to stamp-media", "POST", f"/storage/v1/object/stamp-media/{object_d_name}", text)
+
+        # Verify Storage object is publicly readable before deletion
+        status, _, text, resp_bytes = self.client.request(
+            "GET",
+            f"/storage/v1/object/public/stamp-media/{object_d_name}"
+        )
+        self.assert_status(status, 200, "Public read User D media before deletion", "GET", f"/storage/v1/object/public/stamp-media/{object_d_name}", text)
+        assert resp_bytes == PNG_1X1_FIXTURE
+
+        # Create Feed Post by User D
+        post_d_id = f"post_d_{self.run_id}_{secrets.token_hex(4)}"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/feed_posts",
+            token=token_d,
+            headers={"Prefer": "return=representation"},
+            json_data={
+                "id": post_d_id,
+                "author_id": uid_d,
+                "author_name": display_name_d,
+                "caption": "Goodbye World",
+                "audience_type": "EVERYONE",
+                "type": "STAMP"
+            }
+        )
+        self.assert_status(status, [200, 201], "User D creates feed post", "POST", "/rest/v1/feed_posts", text)
+
+        # Create Friend Request involving User D (D -> A)
+        freq_d_id = f"freq_d_{self.run_id}_{secrets.token_hex(4)}"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=token_d,
+            headers={"Prefer": "return=representation"},
+            json_data={
+                "id": freq_d_id,
+                "sender_id": uid_d,
+                "recipient_id": u_a["uid"],
+                "status": "PENDING"
+            }
+        )
+        self.assert_status(status, [200, 201], "User D sends friend request to A", "POST", "/rest/v1/friend_requests", text)
+
+        # Create Direct Message involving User D (D -> A)
+        dm_d_id = f"dm_d_{self.run_id}_{secrets.token_hex(4)}"
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=token_d,
+            headers={"Prefer": "return=representation"},
+            json_data={
+                "id": dm_d_id,
+                "sender_id": uid_d,
+                "recipient_id": u_a["uid"],
+                "text": "Message from D before deletion"
+            }
+        )
+        self.assert_status(status, [200, 201], "User D sends direct message to A", "POST", "/rest/v1/direct_messages", text)
+        self.log("PHASE 8", "User D setup complete: profile, storage, post, friend request, direct message verified")
+
+        # Step 2: Negative Deletion Tests
+        # Negative 1: Call delete endpoint without Authorization header -> 401
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/delete-account",
+            json_data={}
+        )
+        self.assert_status(status, 401, "Delete without token rejected", "POST", "/functions/v1/delete-account", text)
+
+        # Negative 2: Call delete endpoint with invalid Bearer token -> 401
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/delete-account",
+            token="invalid.bearer.token",
+            json_data={}
+        )
+        self.assert_status(status, [401, 403], "Delete with invalid token rejected", "POST", "/functions/v1/delete-account", text)
+
+        # Negative 3: Caller tries to pass user_id = A in body -> 400 (Client cannot select deletion target)
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/delete-account",
+            token=token_d,
+            json_data={"user_id": u_a["uid"]}
+        )
+        self.assert_status(status, 400, "Explicit user selector in delete body rejected", "POST", "/functions/v1/delete-account", text)
+
+        # Verify User A's profile remains intact
+        status, data, text, _ = self.client.request("GET", f"/rest/v1/profiles?id=eq.{u_a['uid']}", token=u_a["token"])
+        self.assert_status(status, 200, "User A profile intact after negative test", "GET", "/rest/v1/profiles", text)
+        assert isinstance(data, list) and len(data) == 1, "User A was impacted by rejected delete attempt"
+
+        # Negative 4: Wrong HTTP method (GET) -> 405
+        status, _, text, _ = self.client.request(
+            "GET",
+            "/functions/v1/delete-account",
+            token=token_d
+        )
+        self.assert_status(status, 405, "GET method rejected on delete endpoint", "GET", "/functions/v1/delete-account", text)
+        self.log("PHASE 8", "Negative deletion tests passed: unauthenticated, invalid token, selector spoofing, wrong method rejected")
+
+        # Step 3: Legitimate Account Deletion for User D
+        status, data, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/delete-account",
+            token=token_d,
+            json_data={}
+        )
+        self.assert_status(status, [200, 204], "Legitimate delete User D", "POST", "/functions/v1/delete-account", text)
+        if status == 200:
+            assert data.get("success") is True, f"Expected success: true in delete response, got {data}"
+        self.log("PHASE 8", "Server returned success for account deletion")
+
+        # Step 4: Verify Auth Deletion
+        # GET /auth/v1/user with old token must fail
+        status, _, text, _ = self.client.request("GET", "/auth/v1/user", token=token_d)
+        self.assert_status(status, [401, 403], "Old token invalid after deletion", "GET", "/auth/v1/user", text)
+
+        # Password login for User D must fail
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/auth/v1/token?grant_type=password",
+            json_data={"email": email_d, "password": password_d}
+        )
+        self.assert_status(status, [400, 401], "Login fails for deleted user", "POST", "/auth/v1/token", text)
+
+        # Profile for User D must be gone
+        status, data, text, _ = self.client.request("GET", f"/rest/v1/profiles?id=eq.{uid_d}", token=u_a["token"])
+        self.assert_status(status, 200, "Query profile for deleted user D", "GET", "/rest/v1/profiles", text)
+        assert isinstance(data, list) and len(data) == 0, f"Profile row for deleted user D still exists: {data}"
+        self.log("PHASE 8", "Auth deletion verified: token rejected, login denied, profile gone")
+
+        # Step 5: Verify Storage Purge
+        status, _, text, _ = self.client.request(
+            "GET",
+            f"/storage/v1/object/public/stamp-media/{object_d_name}"
+        )
+        self.assert_status(status, [400, 404], "Public read purged media fails", "GET", f"/storage/v1/object/public/stamp-media/{object_d_name}", text)
+        self.log("PHASE 8", "Storage media purge verified: object no longer accessible")
+
+        # Step 6: Verify Database Cascade
+        # Feed post by D must be gone
+        status, data, text, _ = self.client.request("GET", f"/rest/v1/feed_posts?author_id=eq.{uid_d}", token=u_a["token"])
+        self.assert_status(status, 200, "Query feed posts by deleted user D", "GET", "/rest/v1/feed_posts", text)
+        assert isinstance(data, list) and len(data) == 0, f"Feed posts for deleted user D still exist: {data}"
+
+        # Friend request involving D must be gone
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friend_requests?or=(sender_id.eq.{uid_d},recipient_id.eq.{uid_d})",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "Query friend requests involving user D", "GET", "/rest/v1/friend_requests", text)
+        assert isinstance(data, list) and len(data) == 0, f"Friend requests for deleted user D still exist: {data}"
+
+        # Direct message involving D must be gone
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/direct_messages?or=(sender_id.eq.{uid_d},recipient_id.eq.{uid_d})",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "Query direct messages involving user D", "GET", "/rest/v1/direct_messages", text)
+        assert isinstance(data, list) and len(data) == 0, f"Direct messages for deleted user D still exist: {data}"
+        self.log("PHASE 8", "Database cascade verified: feed posts, friend requests, direct messages removed")
+
+        # Step 7: Verify Unrelated Users A, B, C State Remains Intact
+        for role, u in (("A", u_a), ("B", u_b), ("C", u_c)):
+            status, data, text, _ = self.client.request("GET", f"/rest/v1/profiles?id=eq.{u['uid']}", token=u["token"])
+            self.assert_status(status, 200, f"Verify User {role} profile intact", "GET", "/rest/v1/profiles", text)
+            assert isinstance(data, list) and len(data) == 1, f"User {role} profile unexpectedly modified: {data}"
+
+        self.log("PHASE 8", "All account deletion & purge contracts successfully verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
@@ -946,6 +1183,7 @@ class E2EContractRunner:
         self.phase5_storage()
         self.phase6_direct_messages()
         self.phase7_account_isolation()
+        self.phase8_self_service_account_deletion()
         print("=" * 60)
         print("ALL BLACK-BOX E2E CONTRACT TESTS PASSED")
         print("=" * 60)

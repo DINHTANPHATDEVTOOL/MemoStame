@@ -23,4 +23,7 @@ interface CollectionDao {
 
     @Query("DELETE FROM collections WHERE id = :id AND ownerId = :ownerId")
     fun deleteCollectionById(id: String, ownerId: String): Int
+
+    @Query("DELETE FROM collections WHERE ownerId = :ownerId")
+    fun deleteAllCollectionsByOwner(ownerId: String): Int
 }

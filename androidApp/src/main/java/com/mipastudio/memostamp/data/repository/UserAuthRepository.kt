@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken
 import com.mipastudio.memostamp.core.notification.InAppBanner
 import com.mipastudio.memostamp.core.notification.InAppNotificationManager
 import com.mipastudio.memostamp.core.notification.MemoStampNotificationManager
+import com.mipastudio.memostamp.data.local.AccountDeletionHelper
 import com.mipastudio.memostamp.data.local.MemoStampDatabase
 import com.mipastudio.memostamp.data.local.UserDao
 import com.mipastudio.memostamp.data.local.UserEntity
@@ -15,6 +16,7 @@ import com.mipastudio.memostamp.data.remote.supabase.AndroidAuthSession
 import com.mipastudio.memostamp.data.remote.supabase.AndroidAuthSessionStore
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseAuthService
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseClient
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseRealtimeClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -1043,6 +1045,127 @@ class UserAuthRepository internal constructor(
         _isLoggedIn.value = true
         _isSessionPersistent.value = true
         supabaseClient.userAccessToken = reauthSession.accessToken
+
+        Result.success(Unit)
+    }
+
+    suspend fun deleteAccount(
+        currentPassword: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val expectedUid = (_authUserId.value ?: _currentUser.value.userId).trim()
+        if (!AccountDeletionHelper.isValidAuthUid(expectedUid)) {
+            return@withContext Result.failure(IllegalStateException("Phiên đăng nhập không hợp lệ để thực hiện xóa tài khoản"))
+        }
+
+        val sessionEmail = _currentUser.value.email.ifBlank {
+            sessionStore.load()?.email ?: ""
+        }.trim()
+        if (sessionEmail.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Chưa xác định được email tài khoản"))
+        }
+
+        // Side-effect-free reauthentication with current password
+        val authResult = supabaseAuthService.signIn(sessionEmail, currentPassword)
+        if (authResult.isFailure) {
+            val errMsg = authResult.exceptionOrNull()?.message ?: "Mật khẩu hiện tại không chính xác"
+            return@withContext Result.failure(IllegalArgumentException(errMsg))
+        }
+
+        val reauthSession = authResult.getOrThrow()
+        val reauthUid = reauthSession.userId.trim()
+
+        // Strict canonical UID match
+        if (!AccountDeletionHelper.isValidAuthUid(reauthUid) || reauthUid != expectedUid) {
+            return@withContext Result.failure(IllegalStateException("Mã người dùng xác thực không trùng khớp"))
+        }
+
+        val reauthToken = reauthSession.accessToken.trim()
+        if (reauthToken.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Token xác thực không hợp lệ"))
+        }
+
+        // Call backend server endpoint
+        val deleteServerResult = supabaseAuthService.deleteAccount(reauthToken)
+        if (deleteServerResult.isFailure) {
+            val errMsg = deleteServerResult.exceptionOrNull()?.message ?: "Xóa tài khoản trên hệ thống thất bại"
+            return@withContext Result.failure(IllegalStateException(errMsg))
+        }
+
+        // ONLY AFTER SERVER SUCCESS: Device-local privacy purge
+        try {
+            // 1. Purge stamps & stamp media files owned by this account
+            db?.stampDao()?.let { sDao ->
+                val userStamps = sDao.getAllStampsByOwner(expectedUid)
+                for (s in userStamps) {
+                    AccountDeletionHelper.safelyDeleteAppPrivateFile(context, s.originalImagePath)
+                    AccountDeletionHelper.safelyDeleteAppPrivateFile(context, s.croppedImagePath)
+                    AccountDeletionHelper.safelyDeleteAppPrivateFile(context, s.stampImagePath)
+                }
+                sDao.deleteAllStampsByOwner(expectedUid)
+            }
+
+            // 2. Purge drafts & draft media files owned by this account
+            db?.stampDraftDao()?.let { dDao ->
+                val userDrafts = dDao.getAllDraftsByOwner(expectedUid)
+                for (d in userDrafts) {
+                    AccountDeletionHelper.safelyDeleteAppPrivateFile(context, d.originalImagePath)
+                    AccountDeletionHelper.safelyDeleteAppPrivateFile(context, d.croppedImagePath)
+                    AccountDeletionHelper.safelyDeleteAppPrivateFile(context, d.renderedImagePath)
+                }
+                dDao.deleteAllDraftsByOwner(expectedUid)
+            }
+
+            // 3. Purge collections owned by this account
+            db?.collectionDao()?.deleteAllCollectionsByOwner(expectedUid)
+
+            // 4. Purge feeds owned/authored by this account
+            db?.feedDao()?.let { fDao ->
+                fDao.deletePostsByAuthor(expectedUid)
+                fDao.deleteReactionsByUser(expectedUid)
+                fDao.deleteCommentsByAuthor(expectedUid)
+                fDao.deleteRepliesByAuthor(expectedUid)
+                fDao.deleteSeenByUser(expectedUid)
+            }
+
+            // 5. Purge circles owned by this account
+            db?.circleDao()?.deleteAllCirclesByOwner(expectedUid)
+
+            // 6. Purge Room user row
+            userDao?.deleteUserByUid(expectedUid)
+
+            // 7. Purge local profile media if in sandbox
+            AccountDeletionHelper.safelyDeleteAppPrivateFile(context, _currentUser.value.avatarUrl)
+            AccountDeletionHelper.safelyDeleteAppPrivateFile(context, _currentUser.value.coverUrl)
+
+            // 8. Purge chat local cache
+            ChatRepository.getInstance(context).clearAccountLocalData(expectedUid)
+
+            // 9. Purge account-scoped preferences
+            prefs?.edit()?.remove(AccountDeletionHelper.getFriendsPrefKey(expectedUid))?.apply()
+            requestsPrefs?.edit()?.clear()?.apply()
+            friendsPrefs?.edit()?.clear()?.apply()
+
+            // 10. Disconnect Realtime socket
+            SupabaseRealtimeClient.getInstance(context).disconnect()
+        } catch (_: Throwable) {
+            // Non-fatal error during local file purge should not prevent session clearing
+        }
+
+        // 11. Clear local auth/session state (local-only, no remote signOut since user is deleted)
+        sessionStore.clear()
+        prefs?.edit()?.putBoolean("is_logged_in", false)?.remove("user_profile_json")?.apply()
+
+        _isLoggedIn.value = false
+        _authUserId.value = null
+        _accessToken.value = null
+        _refreshToken.value = null
+        supabaseClient.userAccessToken = null
+
+        _friendIds.value = emptySet()
+        _friendRequests.value = emptyList()
+
+        _currentUser.value = createGuestUser()
+        _isSessionPersistent.value = sessionStore.sessionPersistenceAvailable
 
         Result.success(Unit)
     }
