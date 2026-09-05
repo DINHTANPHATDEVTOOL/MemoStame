@@ -1009,7 +1009,7 @@ class E2EContractRunner:
         assert resp_bytes == PNG_1X1_FIXTURE
 
         # Create Feed Post by User D
-        post_d_id = f"post_d_{self.run_id}_{secrets.token_hex(4)}"
+        post_d_id = str(uuid.uuid4())
         status, _, text, _ = self.client.request(
             "POST",
             "/rest/v1/feed_posts",
@@ -1027,7 +1027,7 @@ class E2EContractRunner:
         self.assert_status(status, [200, 201], "User D creates feed post", "POST", "/rest/v1/feed_posts", text)
 
         # Create Friend Request involving User D (D -> A)
-        freq_d_id = f"freq_d_{self.run_id}_{secrets.token_hex(4)}"
+        freq_d_id = str(uuid.uuid4())
         status, _, text, _ = self.client.request(
             "POST",
             "/rest/v1/friend_requests",
@@ -1043,7 +1043,7 @@ class E2EContractRunner:
         self.assert_status(status, [200, 201], "User D sends friend request to A", "POST", "/rest/v1/friend_requests", text)
 
         # Create Direct Message involving User D (D -> A)
-        dm_d_id = f"dm_d_{self.run_id}_{secrets.token_hex(4)}"
+        dm_d_id = str(uuid.uuid4())
         status, _, text, _ = self.client.request(
             "POST",
             "/rest/v1/direct_messages",
@@ -1057,6 +1057,23 @@ class E2EContractRunner:
             }
         )
         self.assert_status(status, [200, 201], "User D sends direct message to A", "POST", "/rest/v1/direct_messages", text)
+
+        # Verify A can see incoming friend request and direct message before deletion
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friend_requests?id=eq.{freq_d_id}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "A sees incoming friend request from D before deletion", "GET", "/rest/v1/friend_requests", text)
+        assert isinstance(data, list) and len(data) == 1, "A should see D's friend request before deletion"
+
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/direct_messages?id=eq.{dm_d_id}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "A sees incoming direct message from D before deletion", "GET", "/rest/v1/direct_messages", text)
+        assert isinstance(data, list) and len(data) == 1, "A should see D's direct message before deletion"
         self.log("PHASE 8", "User D setup complete: profile, storage, post, friend request, direct message verified")
 
         # Step 2: Negative Deletion Tests
@@ -1145,7 +1162,16 @@ class E2EContractRunner:
         self.assert_status(status, 200, "Query feed posts by deleted user D", "GET", "/rest/v1/feed_posts", text)
         assert isinstance(data, list) and len(data) == 0, f"Feed posts for deleted user D still exist: {data}"
 
-        # Friend request involving D must be gone
+        # Specific Friend request involving D must be gone
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friend_requests?id=eq.{freq_d_id}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "Query specific friend request after D deletion", "GET", "/rest/v1/friend_requests", text)
+        assert isinstance(data, list) and len(data) == 0, f"Friend request {freq_d_id} still exists after D deletion"
+
+        # All friend requests involving D must be gone
         status, data, text, _ = self.client.request(
             "GET",
             f"/rest/v1/friend_requests?or=(sender_id.eq.{uid_d},recipient_id.eq.{uid_d})",
@@ -1154,7 +1180,16 @@ class E2EContractRunner:
         self.assert_status(status, 200, "Query friend requests involving user D", "GET", "/rest/v1/friend_requests", text)
         assert isinstance(data, list) and len(data) == 0, f"Friend requests for deleted user D still exist: {data}"
 
-        # Direct message involving D must be gone
+        # Specific Direct message involving D must be gone
+        status, data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/direct_messages?id=eq.{dm_d_id}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "Query specific direct message after D deletion", "GET", "/rest/v1/direct_messages", text)
+        assert isinstance(data, list) and len(data) == 0, f"Direct message {dm_d_id} still exists after D deletion"
+
+        # All direct messages involving D must be gone
         status, data, text, _ = self.client.request(
             "GET",
             f"/rest/v1/direct_messages?or=(sender_id.eq.{uid_d},recipient_id.eq.{uid_d})",

@@ -47,6 +47,7 @@ jobs:
           PARSED_KEY=$(python3 -c "import json, sys; d=json.loads(sys.argv[1]); print(d.get('SERVICE_ROLE_KEY') or d.get('service_role_key') or '')" "$STATUS_JSON" 2>/dev/null || true)
           if [ -n "$PARSED_KEY" ]; then
             export SUPABASE_SERVICE_ROLE_KEY="$PARSED_KEY"
+            printf "SUPABASE_SERVICE_ROLE_KEY=%s\n" "$PARSED_KEY" > supabase/functions/.env
           fi
           supabase functions serve delete-account --no-verify-jwt > /tmp/delete_account_function.log 2>&1 &
           echo $! > /tmp/delete_account_function.pid
@@ -75,6 +76,7 @@ jobs:
       - name: Cleanup Delete-Account Function Process
         if: always()
         run: |
+          rm -f supabase/functions/.env
           if [ -f /tmp/delete_account_function.pid ]; then
             kill $(cat /tmp/delete_account_function.pid) 2>/dev/null || true
           fi

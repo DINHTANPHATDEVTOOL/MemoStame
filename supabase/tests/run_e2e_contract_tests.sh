@@ -40,10 +40,14 @@ HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$FUNCTION_URL" 2>
 FUNC_PID=""
 if [ "$HTTP_CODE" != "200" ] && command -v supabase >/dev/null 2>&1; then
     echo "Starting local delete-account function in background..."
+    if [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+        printf "SUPABASE_SERVICE_ROLE_KEY=%s\n" "$SUPABASE_SERVICE_ROLE_KEY" > supabase/functions/.env
+    fi
     supabase functions serve delete-account --no-verify-jwt > /tmp/supabase_functions_serve.log 2>&1 &
     FUNC_PID=$!
 
     cleanup_func() {
+        rm -f supabase/functions/.env
         if [ -n "$FUNC_PID" ]; then
             kill "$FUNC_PID" 2>/dev/null || true
             wait "$FUNC_PID" 2>/dev/null || true
