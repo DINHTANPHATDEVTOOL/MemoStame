@@ -1001,6 +1001,27 @@ fun PassportScreen(
 
                         HorizontalDivider(color = UIBorder)
 
+                        // 3.8 Privacy Policy Action
+                        OutlinedButton(
+                            onClick = {
+                                val url = com.mipastudio.memostamp.core.privacy.PrivacyConfig.getPrivacyPolicyUrl()
+                                try {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {
+                                    Toast.makeText(context, "Không thể mở trình duyệt", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.Policy, contentDescription = null, tint = PrimaryText, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chính sách quyền riêng tư", color = PrimaryText, fontWeight = FontWeight.SemiBold)
+                        }
+
+                        HorizontalDivider(color = UIBorder)
+
                         // 4. Logout Action
                         Button(
                             onClick = {

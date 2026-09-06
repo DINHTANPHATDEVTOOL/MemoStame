@@ -847,6 +847,23 @@ struct ProfileSettingsSheetView: View {
                         .disabled(isSavingProfile)
 
                         Button(action: {
+                            if let url = URL(string: PrivacyConfig.privacyPolicyUrl), UIApplication.shared.canOpenURL(url) {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "hand.raised.fill")
+                                Text(langManager.string(vi: "Chính Sách Quyền Riêng Tư", en: "Privacy Policy"))
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(MSColors.stamp)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(MSColors.stamp.opacity(0.08))
+                            .cornerRadius(14)
+                        }
+
+                        Button(action: {
                             presentationMode.wrappedValue.dismiss()
                             if let onLogout = onLogout {
                                 onLogout()
@@ -1199,5 +1216,10 @@ struct BlockedUsersManagementSheetView: View {
             }
         }
     }
+}
+
+enum PrivacyConfig {
+    static let privacyPolicyUrl = "https://memostamp.mipastudio.com/privacy"
+    static let accountDeletionUrl = "https://memostamp.mipastudio.com/account-deletion"
 }
 

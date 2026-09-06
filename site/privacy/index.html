@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - MemoStamp</title>
+    <style>
+        :root {
+            --primary: #8B2635;
+            --primary-dark: #651A26;
+            --surface: #FDFBF7;
+            --card-bg: #FFFFFF;
+            --text-main: #2C2523;
+            --text-muted: #6B625E;
+            --border: #E8DFD8;
+            --accent: #D4A373;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--surface);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        }
+        header {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        h2 {
+            color: var(--primary-dark);
+            font-size: 1.3rem;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+            padding-left: 12px;
+        }
+        h3 {
+            font-size: 1.05rem;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+        p, ul, ol {
+            margin-bottom: 14px;
+            color: var(--text-main);
+        }
+        ul, ol {
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        .highlight-box {
+            background-color: #FAF5F0;
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .highlight-box strong {
+            color: var(--primary);
+        }
+        footer {
+            margin-top: 48px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MemoStamp Privacy Policy</h1>
+            <div class="meta">Effective Date: September 2026 | Application: MemoStamp (by Mipa Studio)</div>
+        </header>
+
+        <section>
+            <h2>1. Introduction & Overview</h2>
+            <p>Welcome to <strong>MemoStamp</strong>, a mobile application developed by Mipa Studio designed to let you capture, commemorate, and collect meaningful life moments through virtual personalized stamps.</p>
+            <p>Your privacy is fundamental to our product design. This Privacy Policy details the exact categories of data MemoStamp collects, why we collect it, how it is stored and processed, and the controls you have over your personal data.</p>
+            <div class="highlight-box">
+                <strong>Our Core Commitments:</strong>
+                <ul>
+                    <li><strong>No Ad Networks:</strong> We do not integrate third-party advertising SDKs and do not collect advertising identifiers (IDFA/AD_ID).</li>
+                    <li><strong>No Tracking:</strong> We do not track you across apps or websites owned by other companies.</li>
+                    <li><strong>No Data Sales:</strong> We never sell, rent, or trade your personal information.</li>
+                    <li><strong>Full Deletion Authority:</strong> You can permanently delete your account and all associated personal content directly within the application at any time.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>2. Data We Collect & How We Use It</h2>
+
+            <h3>A. Account & Identity Information</h3>
+            <ul>
+                <li><strong>Email Address:</strong> Required to register and securely authenticate your account, prevent unauthorized access, and deliver password recovery instructions.</li>
+                <li><strong>User ID:</strong> A unique cryptographic UUID assigned by our authentication system to associate your stamps, posts, and settings with your account.</li>
+                <li><strong>Display Name & Avatar:</strong> Optional profile details provided by you to identify yourself to your friends in the app.</li>
+            </ul>
+
+            <h3>B. User-Generated Content</h3>
+            <ul>
+                <li><strong>Stamp Photos & Stories:</strong> Photos captured with your device camera or chosen from your photo library to form commemorative stamps, along with custom titles and notes.</li>
+                <li><strong>Feed Posts, Comments & Reactions:</strong> Content you optionally choose to share publicly or with friends on the MemoStamp community feed.</li>
+                <li><strong>Direct Messages:</strong> Private 1-on-1 messages exchanged between mutual friends.</li>
+                <li><strong>Stamp Trades:</strong> Records of stamp copies shared between friends.</li>
+            </ul>
+
+            <h3>C. Location Information</h3>
+            <ul>
+                <li><strong>Precise / Approximate Location:</strong> When creating a stamp, you may grant location permission so the app can record geographical postmark coordinates and place names onto your commemorative stamp. Geolocation is collected only when actively creating a stamp; MemoStamp does not track your location in the background.</li>
+            </ul>
+
+            <h3>D. Device & Notification Identifiers</h3>
+            <ul>
+                <li><strong>Push Notification Device Tokens:</strong> Apple Push Notification service (APNs) and Firebase Cloud Messaging (FCM) tokens required to route incoming message, friend request, and trade alerts to your device.</li>
+                <li><strong>Installation Identifier:</strong> A randomly generated UUID stored locally to ensure session isolation and push token deduplication across multiple accounts on the same device.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>3. Device Permissions Requested</h2>
+            <ul>
+                <li><strong>Camera (android.permission.CAMERA / NSCameraUsageDescription):</strong> Used to take real-time photos for new commemorative stamps.</li>
+                <li><strong>Location (ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION / NSLocationWhenInUseUsageDescription):</strong> Used to stamp the current place and geographic provenance onto your stamp.</li>
+                <li><strong>Notifications (POST_NOTIFICATIONS / Remote Notifications):</strong> Used to notify you of incoming direct messages, friend requests, and stamp trades.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>4. Third-Party Service Providers (Sub-Processors)</h2>
+            <p>We rely on trusted cloud infrastructure to securely run MemoStamp. These providers process data strictly on our behalf under confidential terms:</p>
+            <ul>
+                <li><strong>Supabase Inc.:</strong> Cloud database (PostgreSQL), authentication authority, encrypted media storage, and secure server-side Edge Functions.</li>
+                <li><strong>Google Cloud (Firebase Cloud Messaging):</strong> Server-side delivery of push notifications to Android devices.</li>
+                <li><strong>Apple Inc. (Apple Push Notification service):</strong> Server-side delivery of remote notifications to iOS devices.</li>
+                <li><strong>Google Places API:</strong> Location search and place-name autocomplete on Android.</li>
+                <li><strong>Google Gemini (Server-Side):</strong> Location context enrichment for postmark historical notes, accessed strictly through server-side Edge Functions without client credentials.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>5. Data Security & Retention</h2>
+            <p>We implement industry-standard technical measures to protect your data:</p>
+            <ul>
+                <li>All data transmitted between the app, our backend, and third-party APIs is encrypted in transit using Transport Layer Security (TLS 1.3 / HTTPS).</li>
+                <li>Access to your stored data is governed by database Row Level Security (RLS) policies enforcing user identity verification on every query.</li>
+                <li>While we maintain rigorous security standards, no method of electronic storage or transmission is 100% infallible, and we cannot guarantee absolute security.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>6. Account Deletion & Data Rights</h2>
+            <p>You have full ownership of your data and can delete your account at any time:</p>
+            <ul>
+                <li><strong>In-App Deletion:</strong> Open the MemoStamp app, navigate to <strong>Profile > Settings > Delete Account</strong>, enter your password, and confirm.</li>
+                <li><strong>Immediate Purge:</strong> Upon confirmation, our server immediately purges your authentication records, profile, photo media, stamps, feed posts, direct messages, and push tokens.</li>
+                <li><strong>Stamp Trades:</strong> If you previously gifted or traded a stamp copy to another user, their acquired copy remains in their collection with your identity anonymized (original creator linkage set to NULL).</li>
+                <li><strong>External Deletion Request:</strong> If you cannot access the app, you may request deletion via our <a href="../account-deletion/">Public Account Deletion Page</a>.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>7. Children's Privacy</h2>
+            <p>MemoStamp is not intended for or directed toward children under 13 years of age (or the relevant age of digital consent in your jurisdiction). We do not knowingly collect personal data from children.</p>
+        </section>
+
+        <section>
+            <h2>8. Contact Information</h2>
+            <p>If you have any questions or concerns regarding this Privacy Policy or your personal data, please contact our privacy and support team through the official support channel listed on our store download page.</p>
+        </section>
+
+        <footer>
+            &copy; 2026 MemoStamp &bull; Mipa Studio. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>

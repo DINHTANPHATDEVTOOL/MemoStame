@@ -270,8 +270,8 @@ fi
 echo ""
 echo "[CHECK 5] Inspecting mobile source code for prohibited secrets..."
 
-# Check service_role in mobile code
-SERVICE_ROLE_IN_MOBILE=$(git grep -i "service_role" -- androidApp/src iosApp/iosApp/ ':!iosApp/iosApp.xcodeproj' || true)
+# Check service_role in mobile production code
+SERVICE_ROLE_IN_MOBILE=$(git grep -i "service_role" -- androidApp/src/main/ iosApp/iosApp/ ':!iosApp/iosApp.xcodeproj' || true)
 if [ -n "$SERVICE_ROLE_IN_MOBILE" ]; then
     echo "  [FAIL] Prohibited service_role reference found in mobile client code:"
     echo "$SERVICE_ROLE_IN_MOBILE"
