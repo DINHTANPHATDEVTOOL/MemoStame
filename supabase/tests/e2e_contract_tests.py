@@ -3503,7 +3503,13 @@ class E2EContractRunner:
         self.log("PHASE 13", "Case 18: Testing Block policy precedence over rate limiting...")
         blocker = make_disposable_user("blocker")
         blocked = make_disposable_user("blocked")
-        self.client.request("POST", "/rest/v1/rpc/block_user", token=blocker["token"], json_data={"p_blocked_user_id": blocked["uid"]})
+        st_block, block_data, txt_block, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/block_user",
+            token=blocker["token"],
+            json_data={"p_blocked_id": blocked["uid"]}
+        )
+        self.assert_status(st_block, 200, "Blocker blocks blocked user", "POST", "/rest/v1/rpc/block_user", txt_block)
 
         st, _, txt, _ = self.client.request(
             "POST",
