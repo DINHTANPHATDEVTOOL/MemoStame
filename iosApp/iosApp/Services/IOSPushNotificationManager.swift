@@ -79,7 +79,10 @@ final class IOSPushNotificationManager: NSObject, ObservableObject, UNUserNotifi
     }
 
     func handleRegistrationError(_ error: Error) {
-        // Silently handle simulator or permission rejection without logging sensitive data
+        // Fail safely without claiming push is active, without inventing tokens, and without logging sensitive credentials
+        #if DEBUG
+        NSLog("[MemoStamp Push] APNs registration not available in current environment: %@", error.localizedDescription)
+        #endif
     }
 
     func registerCurrentDeviceToken(session: AuthSessionData) {
