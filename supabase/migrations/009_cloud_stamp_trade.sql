@@ -49,10 +49,14 @@ GRANT SELECT ON public.stamp_trade_requests TO authenticated;
 CREATE TABLE IF NOT EXISTS public.received_trade_stamps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    recipient_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     source_trade_id UUID UNIQUE REFERENCES public.stamp_trade_requests(id) ON DELETE SET NULL,
+    trade_id UUID REFERENCES public.stamp_trade_requests(id) ON DELETE SET NULL,
     original_sender_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     recipient_media_path TEXT NOT NULL,
+    media_path TEXT,
     stamp_title TEXT NOT NULL,
+    stamp_name TEXT,
     stamp_shape TEXT NOT NULL DEFAULT 'RECTANGLE',
     location TEXT,
     note TEXT,
@@ -60,14 +64,16 @@ CREATE TABLE IF NOT EXISTS public.received_trade_stamps (
 );
 
 CREATE INDEX IF NOT EXISTS idx_received_stamps_owner ON public.received_trade_stamps(owner_id);
+CREATE INDEX IF NOT EXISTS idx_received_stamps_recipient ON public.received_trade_stamps(recipient_id);
 CREATE INDEX IF NOT EXISTS idx_received_stamps_source_trade ON public.received_trade_stamps(source_trade_id);
+CREATE INDEX IF NOT EXISTS idx_received_stamps_trade ON public.received_trade_stamps(trade_id);
 
 ALTER TABLE public.received_trade_stamps ENABLE ROW LEVEL SECURITY;
 
 -- Only recipient owner may select their received stamps:
 DROP POLICY IF EXISTS "Owner select received trade stamps" ON public.received_trade_stamps;
 CREATE POLICY "Owner select received trade stamps" ON public.received_trade_stamps
-    FOR SELECT USING (auth.uid() = owner_id);
+    FOR SELECT USING (auth.uid() = owner_id OR auth.uid() = recipient_id);
 
 GRANT SELECT ON public.received_trade_stamps TO authenticated;
 
@@ -405,26 +411,35 @@ BEGIN
     -- Insert into received_trade_stamps
     INSERT INTO public.received_trade_stamps (
         owner_id,
+        recipient_id,
         source_trade_id,
+        trade_id,
         original_sender_id,
         recipient_media_path,
+        media_path,
         stamp_title,
+        stamp_name,
         stamp_shape,
         location,
         note
     )
     VALUES (
         v_acting_uid,
+        v_acting_uid,
+        p_trade_id,
         p_trade_id,
         v_trade.sender_id,
         v_media_path,
+        v_media_path,
+        v_trade.stamp_title,
         v_trade.stamp_title,
         v_trade.stamp_shape,
         v_trade.location,
         v_trade.note
     )
     ON CONFLICT (source_trade_id) DO UPDATE
-        SET recipient_media_path = EXCLUDED.recipient_media_path
+        SET recipient_media_path = EXCLUDED.recipient_media_path,
+            media_path = EXCLUDED.media_path
     RETURNING id INTO v_rec_id;
 
     -- Update trade request status
