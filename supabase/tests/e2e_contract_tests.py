@@ -3725,8 +3725,9 @@ class E2EContractRunner:
         u_b = self.users["B"]
 
         def make_disposable_user(prefix):
-            raw_email = f"{prefix}_{secrets.token_hex(6)}@memostamp-test.local"
-            pwd = f"SecP@ss_{secrets.token_hex(8)}"
+            suffix = secrets.token_hex(6)
+            raw_email = f"{prefix}_{suffix}@memostamp-test.local"
+            pwd = f"SecP@ss_{suffix}"
             st, data, txt, _ = self.client.request(
                 "POST",
                 "/auth/v1/signup",
@@ -3743,6 +3744,17 @@ class E2EContractRunner:
                 )
                 self.assert_status(st2, 200, f"Login disposable {prefix}", "POST", "/auth/v1/token", txt2)
                 tok = d2["access_token"]
+            # Create profile so foreign key on app_private.rate_limit_buckets(actor_id) succeeds
+            self.client.request(
+                "POST",
+                "/rest/v1/profiles",
+                token=tok,
+                json_data={
+                    "id": uid,
+                    "username": f"{prefix}_{suffix}",
+                    "display_name": f"User {prefix}"
+                }
+            )
             return {"uid": uid, "token": tok, "email": raw_email}
 
         # Case 1: Anonymous request denied (401)
