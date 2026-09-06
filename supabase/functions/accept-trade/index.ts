@@ -159,11 +159,17 @@ Deno.serve(async (req: Request) => {
       if (recResp.ok) {
         const recList = await recResp.json();
         if (Array.isArray(recList) && recList.length > 0) {
+          const recObj = recList[0];
+          const destKey = recObj.recipient_media_path || recObj.media_path || `${recipientUid}/received/${trade.id}.png`;
           return jsonResponse(200, {
             success: true,
             trade_id: trade.id,
             status: "ACCEPTED",
-            received_stamp: recList[0],
+            destination_key: destKey,
+            recipient_media_path: destKey,
+            destination_media_path: destKey,
+            received_stamp: recObj,
+            received_stamp_id: recObj.id,
             idempotent: true,
           });
         }
@@ -345,7 +351,9 @@ Deno.serve(async (req: Request) => {
       success: true,
       trade_id: trade.id,
       status: "ACCEPTED",
+      destination_key: destinationKey,
       recipient_media_path: destinationKey,
+      destination_media_path: destinationKey,
       received_stamp_id: rpcResult.received_stamp_id,
     });
   } catch (err: any) {

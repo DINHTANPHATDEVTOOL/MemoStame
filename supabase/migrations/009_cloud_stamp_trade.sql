@@ -10,18 +10,29 @@ CREATE TABLE IF NOT EXISTS public.stamp_trade_requests (
     sender_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     recipient_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     source_stamp_id TEXT,
+    stamp_id TEXT,
     source_object_name TEXT NOT NULL,
+    stamp_media_path TEXT,
     stamp_title TEXT NOT NULL,
+    stamp_name TEXT,
     stamp_shape TEXT NOT NULL DEFAULT 'RECTANGLE',
     location TEXT,
     note TEXT,
     status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'ACCEPTED', 'DECLINED', 'CANCELLED')),
+    destination_media_path TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     responded_at TIMESTAMPTZ,
     CONSTRAINT chk_trade_no_self CHECK (sender_id <> recipient_id),
     CONSTRAINT chk_trade_note_len CHECK (note IS NULL OR length(note) <= 1000)
 );
+
+ALTER TABLE public.stamp_trade_requests ADD COLUMN IF NOT EXISTS stamp_id TEXT;
+ALTER TABLE public.stamp_trade_requests ADD COLUMN IF NOT EXISTS stamp_media_path TEXT;
+ALTER TABLE public.stamp_trade_requests ADD COLUMN IF NOT EXISTS stamp_name TEXT;
+ALTER TABLE public.stamp_trade_requests ADD COLUMN IF NOT EXISTS destination_media_path TEXT;
+
+ALTER TABLE public.received_trade_stamps ADD COLUMN IF NOT EXISTS stamp_id TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_stamp_trades_sender ON public.stamp_trade_requests(sender_id);
 CREATE INDEX IF NOT EXISTS idx_stamp_trades_recipient ON public.stamp_trade_requests(recipient_id);
@@ -91,14 +102,22 @@ GRANT SELECT ON public.received_trade_stamps TO authenticated;
 -- ===================================================
 
 -- 4.1 Create Stamp Trade RPC
+DROP FUNCTION IF EXISTS public.create_stamp_trade(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS public.create_stamp_trade(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION public.create_stamp_trade(
     p_recipient_id UUID,
-    p_source_object_name TEXT,
-    p_stamp_title TEXT,
+    p_source_object_name TEXT DEFAULT NULL,
+    p_stamp_title TEXT DEFAULT NULL,
     p_stamp_shape TEXT DEFAULT 'RECTANGLE',
     p_location TEXT DEFAULT NULL,
     p_note TEXT DEFAULT NULL,
-    p_source_stamp_id TEXT DEFAULT NULL
+    p_source_stamp_id TEXT DEFAULT NULL,
+    p_stamp_id TEXT DEFAULT NULL,
+    p_stamp_name TEXT DEFAULT NULL,
+    p_stamp_media_path TEXT DEFAULT NULL,
+    p_stamp_category TEXT DEFAULT NULL,
+    p_stamp_svg TEXT DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -112,6 +131,9 @@ DECLARE
     v_clean_shape TEXT;
     v_clean_note TEXT;
     v_clean_source_name TEXT;
+    v_source_name TEXT;
+    v_title TEXT;
+    v_source_stamp TEXT;
 BEGIN
     v_acting_uid := auth.uid();
     IF v_acting_uid IS NULL THEN
@@ -141,12 +163,13 @@ BEGIN
         RAISE EXCEPTION 'Cannot trade: relationship is blocked';
     END IF;
 
-    -- Validate source object name
-    IF p_source_object_name IS NULL THEN
+    -- Resolve source object name
+    v_source_name := COALESCE(p_source_object_name, p_stamp_media_path);
+    IF v_source_name IS NULL THEN
         RAISE EXCEPTION 'Source object name is required';
     END IF;
 
-    v_clean_source_name := trim(p_source_object_name);
+    v_clean_source_name := trim(v_source_name);
     IF v_clean_source_name = '' THEN
         RAISE EXCEPTION 'Source object name cannot be empty';
     END IF;
@@ -175,13 +198,16 @@ BEGIN
         RAISE EXCEPTION 'Source media object not found in stamp-media';
     END IF;
 
-    -- Validate title
-    v_clean_title := trim(p_stamp_title);
-    IF v_clean_title IS NULL OR v_clean_title = '' THEN
+    -- Resolve title
+    v_title := COALESCE(p_stamp_title, p_stamp_name);
+    IF v_title IS NULL OR trim(v_title) = '' THEN
         RAISE EXCEPTION 'Stamp title is required';
     END IF;
+    v_clean_title := trim(v_title);
 
     v_clean_shape := COALESCE(nullif(trim(p_stamp_shape), ''), 'RECTANGLE');
+    v_source_stamp := COALESCE(p_source_stamp_id, p_stamp_id);
+
     IF p_note IS NOT NULL THEN
         v_clean_note := trim(p_note);
         IF length(v_clean_note) > 1000 THEN
@@ -196,8 +222,11 @@ BEGIN
         sender_id,
         recipient_id,
         source_stamp_id,
+        stamp_id,
         source_object_name,
+        stamp_media_path,
         stamp_title,
+        stamp_name,
         stamp_shape,
         location,
         note,
@@ -206,8 +235,11 @@ BEGIN
     VALUES (
         v_acting_uid,
         p_recipient_id,
-        p_source_stamp_id,
+        v_source_stamp,
+        v_source_stamp,
         v_clean_source_name,
+        v_clean_source_name,
+        v_clean_title,
         v_clean_title,
         v_clean_shape,
         trim(p_location),
@@ -217,9 +249,23 @@ BEGIN
     RETURNING id INTO v_trade_id;
 
     RETURN jsonb_build_object(
-        'success', true,
+        'id', v_trade_id,
         'trade_id', v_trade_id,
-        'status', 'PENDING'
+        'sender_id', v_acting_uid,
+        'recipient_id', p_recipient_id,
+        'source_stamp_id', v_source_stamp,
+        'stamp_id', v_source_stamp,
+        'source_object_name', v_clean_source_name,
+        'stamp_media_path', v_clean_source_name,
+        'stamp_title', v_clean_title,
+        'stamp_name', v_clean_title,
+        'stamp_shape', v_clean_shape,
+        'location', trim(p_location),
+        'note', v_clean_note,
+        'status', 'PENDING',
+        'success', true,
+        'created_at', now(),
+        'updated_at', now()
     );
 END;
 $$;
@@ -265,9 +311,10 @@ BEGIN
     WHERE id = p_trade_id;
 
     RETURN jsonb_build_object(
-        'success', true,
+        'id', p_trade_id,
         'trade_id', p_trade_id,
-        'status', 'DECLINED'
+        'status', 'DECLINED',
+        'success', true
     );
 END;
 $$;
@@ -313,9 +360,10 @@ BEGIN
     WHERE id = p_trade_id;
 
     RETURN jsonb_build_object(
-        'success', true,
+        'id', p_trade_id,
         'trade_id', p_trade_id,
-        'status', 'CANCELLED'
+        'status', 'CANCELLED',
+        'success', true
     );
 END;
 $$;
@@ -356,10 +404,13 @@ BEGIN
         SELECT id INTO v_rec_id FROM public.received_trade_stamps WHERE source_trade_id = p_trade_id;
         IF v_rec_id IS NOT NULL THEN
             RETURN jsonb_build_object(
-                'success', true,
+                'id', p_trade_id,
                 'trade_id', p_trade_id,
                 'status', 'ACCEPTED',
+                'destination_media_path', v_trade.destination_media_path,
+                'recipient_media_path', v_trade.destination_media_path,
                 'received_stamp_id', v_rec_id,
+                'success', true,
                 'idempotent', true
             );
         END IF;
@@ -445,15 +496,19 @@ BEGIN
     -- Update trade request status
     UPDATE public.stamp_trade_requests
     SET status = 'ACCEPTED',
+        destination_media_path = v_media_path,
         responded_at = now(),
         updated_at = now()
     WHERE id = p_trade_id;
 
     RETURN jsonb_build_object(
-        'success', true,
+        'id', p_trade_id,
         'trade_id', p_trade_id,
         'status', 'ACCEPTED',
-        'received_stamp_id', v_rec_id
+        'destination_media_path', v_media_path,
+        'recipient_media_path', v_media_path,
+        'received_stamp_id', v_rec_id,
+        'success', true
     );
 END;
 $$;
@@ -532,8 +587,8 @@ $$;
 -- 6. EXPLICIT LEAST-PRIVILEGE SECURITY DEFINER GRANTS
 -- ===================================================
 
-REVOKE ALL ON FUNCTION public.create_stamp_trade(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.create_stamp_trade(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_stamp_trade(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_stamp_trade(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
 
 REVOKE ALL ON FUNCTION public.decline_stamp_trade(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.decline_stamp_trade(UUID) TO authenticated;
