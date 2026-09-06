@@ -2240,6 +2240,90 @@ class E2EContractRunner:
         )
         assert status in [400, 401, 403], f"Direct client insert to user_blocks should be denied, got {status}: {text}"
 
+        # Step 9.1: Block Oracle Hardening - public.is_blocked_bidirectional must NOT exist
+        self.log("PHASE 11", "Step 9.1: Verifying public block oracle is removed from PostgREST...")
+        # 1. User B cannot call public RPC to test if A blocked B
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/is_blocked_bidirectional",
+            token=u_b["token"],
+            json_data={"p_user_1": u_a["uid"], "p_user_2": u_b["uid"]}
+        )
+        assert status == 404, f"Public block oracle must return 404 Not Found, got status {status}: {text}"
+
+        # 2. Anonymous client cannot query block status via public RPC
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/is_blocked_bidirectional",
+            token=None,
+            json_data={"p_user_1": u_a["uid"], "p_user_2": u_b["uid"]}
+        )
+        assert status in [401, 403, 404], f"Anonymous block oracle call must be denied/absent, got status {status}: {text}"
+
+        # 3. Third-party User C cannot query if A and B have a block relation
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/is_blocked_bidirectional",
+            token=u_c["token"],
+            json_data={"p_user_1": u_a["uid"], "p_user_2": u_b["uid"]}
+        )
+        assert status == 404, f"User C querying block relationship must return 404, got status {status}: {text}"
+
+        # 4. Internal predicate in app_private cannot be called through PostgREST
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/app_private.is_blocked_bidirectional",
+            token=u_b["token"],
+            json_data={"p_user_1": u_a["uid"], "p_user_2": u_b["uid"]}
+        )
+        assert status == 404, f"Internal helper in app_private must not be accessible via PostgREST RPC, got status {status}: {text}"
+
+        # Step 9.2: Anonymous RPC Privilege Hardening Audit
+        self.log("PHASE 11", "Step 9.2: Verifying anonymous execution denied on sensitive RPCs...")
+        # Anonymous cannot call block_user
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/block_user",
+            token=None,
+            json_data={"p_blocked_id": u_b["uid"]}
+        )
+        assert status in [401, 403], f"Anonymous call to block_user must be denied (401/403), got {status}: {text}"
+
+        # Anonymous cannot call unblock_user
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/unblock_user",
+            token=None,
+            json_data={"p_blocked_id": u_b["uid"]}
+        )
+        assert status in [401, 403], f"Anonymous call to unblock_user must be denied (401/403), got {status}: {text}"
+
+        # Anonymous cannot call report_user
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/report_user",
+            token=None,
+            json_data={"p_reported_user_id": u_b["uid"], "p_category": "spam"}
+        )
+        assert status in [401, 403], f"Anonymous call to report_user must be denied (401/403), got {status}: {text}"
+
+        # Anonymous cannot call accept_friend_request
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/accept_friend_request",
+            token=None,
+            json_data={"p_request_id": str(uuid.uuid4())}
+        )
+        assert status in [401, 403], f"Anonymous call to accept_friend_request must be denied (401/403), got {status}: {text}"
+
+        # Anonymous cannot browse user_blocks
+        status, anon_blocks, text, _ = self.client.request(
+            "GET",
+            "/rest/v1/user_blocks",
+            token=None
+        )
+        assert status in [401, 403] or (status == 200 and len(anon_blocks) == 0), f"Anonymous reading user_blocks must be denied or empty, got {status}: {text}"
+
         # Step 10: Abuse Reporting RPC
         self.log("PHASE 11", "Step 10: Testing report_user RPC...")
         # Self-report rejected

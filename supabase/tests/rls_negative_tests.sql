@@ -996,6 +996,174 @@ END $$;
 
 
 -- ===================================================
+-- SECURITY DEFINER PRIVILEGE AUDIT & BLOCK ORACLE HARDENING (TASK #54 / HOTFIX)
+-- ===================================================
+
+-- Assertion 56: Public Block Oracle is completely absent from public schema (PUBLIC BLOCK ORACLE: ABSENT/DENIED)
+DO $$
+DECLARE
+    v_cnt INT;
+BEGIN
+    SELECT COUNT(*) INTO v_cnt
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'is_blocked_bidirectional';
+
+    IF v_cnt <> 0 THEN
+        RAISE EXCEPTION 'Public Block Oracle Violation: public.is_blocked_bidirectional still exists in public schema!';
+    END IF;
+END $$;
+
+-- Assertion 57: Block helper relocated to private schema 'app_private' (INTERNAL BLOCK PREDICATE: NOT POSTGREST-EXPOSED)
+DO $$
+DECLARE
+    v_cnt INT;
+    v_has_usage BOOLEAN;
+BEGIN
+    -- Check function exists in app_private
+    SELECT COUNT(*) INTO v_cnt
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'app_private' AND p.proname = 'is_blocked_bidirectional';
+
+    IF v_cnt = 0 THEN
+        RAISE EXCEPTION 'Internal Block Helper Missing: app_private.is_blocked_bidirectional does not exist';
+    END IF;
+
+    -- Verify PUBLIC has no direct usage on app_private
+    SELECT has_schema_privilege('public', 'app_private', 'USAGE') INTO v_has_usage;
+    IF v_has_usage THEN
+        RAISE EXCEPTION 'Schema Privilege Leak: PUBLIC has USAGE privilege on app_private';
+    END IF;
+END $$;
+
+-- Assertion 58: Project-Wide Privilege Audit: No Security-Sensitive Function Has PUBLIC or anon EXECUTE
+DO $$
+DECLARE
+    v_func_record RECORD;
+    v_anon_allowed BOOLEAN;
+    v_sensitive_funcs TEXT[] := ARRAY[
+        'block_user',
+        'unblock_user',
+        'report_user',
+        'accept_friend_request',
+        'decline_friend_request',
+        'cancel_friend_request',
+        'unfriend_user',
+        'mark_direct_messages_read',
+        'register_push_device_token',
+        'unregister_push_device_token',
+        'sync_profile_user_id'
+    ];
+BEGIN
+    FOR v_func_record IN
+        SELECT p.oid, p.proname, n.nspname
+        FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public'
+          AND p.proname = ANY(v_sensitive_funcs)
+    LOOP
+        v_anon_allowed := has_function_privilege('anon', v_func_record.oid, 'EXECUTE');
+        IF v_anon_allowed THEN
+            RAISE EXCEPTION 'Privilege Leak Detected: Function %.% is executable by anon!',
+                v_func_record.nspname, v_func_record.proname;
+        END IF;
+    END LOOP;
+END $$;
+
+-- Assertion 59: Anonymous Direct Execution of Sensitive RPCs is DENIED (ANON BLOCK HELPER EXECUTE: DENIED)
+DO $$
+BEGIN
+    SET LOCAL ROLE anon;
+
+    -- block_user must be denied to anon by PostgreSQL permission system
+    BEGIN
+        PERFORM public.block_user('22222222-2222-2222-2222-222222222222');
+        RAISE EXCEPTION 'Privilege Violation: anon role was able to execute block_user';
+    EXCEPTION WHEN insufficient_privilege THEN
+        NULL; -- Expected 42501 permission denied
+    WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Privilege Violation%' THEN RAISE; END IF;
+    END;
+
+    -- unblock_user must be denied to anon
+    BEGIN
+        PERFORM public.unblock_user('22222222-2222-2222-2222-222222222222');
+        RAISE EXCEPTION 'Privilege Violation: anon role was able to execute unblock_user';
+    EXCEPTION WHEN insufficient_privilege THEN
+        NULL; -- Expected 42501 permission denied
+    WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Privilege Violation%' THEN RAISE; END IF;
+    END;
+
+    -- report_user must be denied to anon
+    BEGIN
+        PERFORM public.report_user('22222222-2222-2222-2222-222222222222', 'spam');
+        RAISE EXCEPTION 'Privilege Violation: anon role was able to execute report_user';
+    EXCEPTION WHEN insufficient_privilege THEN
+        NULL; -- Expected 42501 permission denied
+    WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Privilege Violation%' THEN RAISE; END IF;
+    END;
+
+    -- accept_friend_request must be denied to anon
+    BEGIN
+        PERFORM public.accept_friend_request('aaaaaaaa-0000-0000-0000-000000000001');
+        RAISE EXCEPTION 'Privilege Violation: anon role was able to execute accept_friend_request';
+    EXCEPTION WHEN insufficient_privilege THEN
+        NULL; -- Expected 42501 permission denied
+    WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Privilege Violation%' THEN RAISE; END IF;
+    END;
+END $$;
+
+-- Assertion 60: Authenticated Client Cannot Call Drop Oracle (AUTH DIRECT BLOCK HELPER EXECUTE: DENIED)
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Attempting to call public.is_blocked_bidirectional fails because function does not exist
+    BEGIN
+        EXECUTE 'SELECT public.is_blocked_bidirectional(''11111111-1111-1111-1111-111111111111''::UUID, ''22222222-2222-2222-2222-222222222222''::UUID)';
+        RAISE EXCEPTION 'Public Oracle Leak: public.is_blocked_bidirectional was callable by authenticated user';
+    EXCEPTION WHEN undefined_function THEN
+        NULL; -- Expected: function does not exist
+    WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Public Oracle Leak%' THEN RAISE; END IF;
+    END;
+END $$;
+
+-- Assertion 61: Block Relationship Privacy Invariant (OUTBOUND BLOCK LIST PRIVACY: PASS & BLOCKED USER ENUMERATION: DENIED)
+DO $$
+DECLARE
+    v_a_outbound INT;
+    v_b_inbound INT;
+BEGIN
+    SET ROLE postgres;
+    -- Ensure clean block state: A blocks B
+    INSERT INTO public.user_blocks (blocker_id, blocked_id)
+    VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT (blocker_id, blocked_id) DO NOTHING;
+
+    -- User A can view own outbound blocks
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    SELECT COUNT(*) INTO v_a_outbound FROM public.user_blocks WHERE blocker_id = '11111111-1111-1111-1111-111111111111';
+    IF v_a_outbound < 1 THEN
+        RAISE EXCEPTION 'Outbound Block List Privacy Failed: Blocker cannot read own block list';
+    END IF;
+
+    -- User B cannot see inbound blocks (cannot determine that A blocked B)
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    SELECT COUNT(*) INTO v_b_inbound FROM public.user_blocks;
+    IF v_b_inbound <> 0 THEN
+        RAISE EXCEPTION 'Blocked User Enumeration Failed: Blocked user B was able to enumerate blocks (% found)', v_b_inbound;
+    END IF;
+END $$;
+
+
+-- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
