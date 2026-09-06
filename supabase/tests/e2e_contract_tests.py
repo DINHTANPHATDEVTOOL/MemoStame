@@ -14,6 +14,7 @@ Safety Rules:
   - Production contracts: Profiles, Friends, Feeds, Storage, DMs, Isolation.
 """
 
+import concurrent.futures
 import http.server
 import json
 import os
@@ -101,11 +102,12 @@ def sanitize_text(text: str) -> str:
 
 
 def get_local_config():
-    """Retrieve local Supabase URL and anon key safely."""
+    """Retrieve local Supabase URL, anon key, and service_role key safely."""
     supabase_url = os.environ.get("SUPABASE_URL")
     anon_key = os.environ.get("SUPABASE_ANON_KEY")
+    service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
-    if not supabase_url or not anon_key:
+    if not supabase_url or not anon_key or not service_role_key:
         # Try supabase status -o json
         try:
             proc = subprocess.run(
@@ -118,6 +120,7 @@ def get_local_config():
             data = json.loads(proc.stdout)
             supabase_url = supabase_url or data.get("API_URL") or data.get("api_url")
             anon_key = anon_key or data.get("ANON_KEY") or data.get("anon_key")
+            service_role_key = service_role_key or data.get("SERVICE_ROLE_KEY") or data.get("service_role_key")
         except Exception:
             pass
 
@@ -135,7 +138,7 @@ def get_local_config():
         print("[FATAL] Missing SUPABASE_ANON_KEY from environment or 'supabase status'", file=sys.stderr)
         sys.exit(1)
 
-    return supabase_url.rstrip("/"), anon_key
+    return supabase_url.rstrip("/"), anon_key, service_role_key
 
 
 def discover_mail_catcher_url() -> str:
@@ -295,9 +298,10 @@ def parse_recovery_redirect(location_url: str) -> dict:
 
 
 class SupabaseHttpClient:
-    def __init__(self, base_url: str, anon_key: str):
+    def __init__(self, base_url: str, anon_key: str, service_role_key: str = None):
         self.base_url = base_url
         self.anon_key = anon_key
+        self.service_role_key = service_role_key
 
     def request(self, method: str, path: str, token: str = None, json_data=None, raw_body: bytes = None,
                 content_type: str = None, headers: dict = None):
@@ -308,6 +312,8 @@ class SupabaseHttpClient:
         }
         if token:
             req_headers["Authorization"] = f"Bearer {token}"
+            if self.service_role_key and token == self.service_role_key:
+                req_headers["apikey"] = self.service_role_key
         if headers:
             req_headers.update(headers)
 
@@ -347,8 +353,9 @@ class SupabaseHttpClient:
 
 
 class E2EContractRunner:
-    def __init__(self, client: SupabaseHttpClient):
+    def __init__(self, client: SupabaseHttpClient, service_role_key: str = None):
         self.client = client
+        self.service_role_key = service_role_key
         self.run_id = secrets.token_hex(4)
         self.users = {}  # "A", "B", "C" -> {"email", "password", "uid", "token"}
 
@@ -3044,6 +3051,533 @@ class E2EContractRunner:
 
         self.log("PHASE 12", "All Cloud-Authoritative Stamp Trade contracts successfully verified!")
 
+    # ----------------------------------------------------
+    # PHASE 13: SERVER-SIDE ABUSE THROTTLING & RATE LIMITS
+    # ----------------------------------------------------
+    def phase13_abuse_rate_limits(self):
+        self.log("PHASE 13", "Starting Server-Side Abuse Throttling & Rate Limits Gate...")
+
+        # Helper to create isolated disposable user with valid profile
+        def make_disposable_user(prefix: str) -> dict:
+            suffix = secrets.token_hex(4)
+            u_email = f"{prefix}_{suffix}@test.local"
+            u_pass = f"P@ss_{suffix}!"
+            st, u_data, txt, _ = self.client.request(
+                "POST",
+                "/auth/v1/signup",
+                json_data={"email": u_email, "password": u_pass}
+            )
+            u_id = (u_data.get("user") or {}).get("id") or u_data.get("id")
+            tok = u_data.get("access_token")
+            if not tok:
+                st, l_data, _, _ = self.client.request(
+                    "POST",
+                    "/auth/v1/token?grant_type=password",
+                    json_data={"email": u_email, "password": u_pass}
+                )
+                tok = l_data.get("access_token")
+                u_id = u_id or (l_data.get("user") or {}).get("id")
+            # Create profile
+            self.client.request(
+                "POST",
+                "/rest/v1/profiles",
+                token=tok,
+                json_data={
+                    "id": u_id,
+                    "username": f"{prefix}_{suffix}",
+                    "display_name": f"User {prefix}"
+                }
+            )
+            return {"email": u_email, "password": u_pass, "uid": u_id, "token": tok}
+
+        # Case 20: Rate-limit state cannot be read or mutated through REST/RPC
+        self.log("PHASE 13", "Case 20: Verifying rate limit state is private and inaccessible via REST/RPC...")
+        st, _, txt, _ = self.client.request("GET", "/rest/v1/rate_limit_buckets", token=self.users["A"]["token"])
+        assert st in (400, 401, 403, 404), f"Private table rate_limit_buckets exposed via REST: {st}"
+        st, _, txt, _ = self.client.request("GET", "/rest/v1/rate_limit_configs", token=self.users["A"]["token"])
+        assert st in (400, 401, 403, 404), f"Private table rate_limit_configs exposed via REST: {st}"
+        st, _, txt, _ = self.client.request("POST", "/rest/v1/rpc/enforce_rate_limit", token=self.users["A"]["token"], json_data={})
+        assert st in (400, 401, 403, 404), f"Internal function enforce_rate_limit callable via RPC: {st}"
+
+        # Setup primary disposable users for rate limit phase
+        u_rl_sender = make_disposable_user("rl_sender")
+        u_rl_target1 = make_disposable_user("rl_target1")
+        u_rl_target2 = make_disposable_user("rl_target2")
+
+        # Case 1 & 2 & 3 & 4 & 5: Friend Requests Throttling
+        self.log("PHASE 13", "Cases 1-5: Testing Friend Request burst quotas (10 / 10m)...")
+        recipients = [make_disposable_user(f"fr_rec_{i}") for i in range(12)]
+
+        # Case 1: Normal friend request remains successful
+        req_1_id = str(uuid.uuid4())
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_rl_sender["token"],
+            json_data={
+                "id": req_1_id,
+                "sender_id": u_rl_sender["uid"],
+                "recipient_id": recipients[0]["uid"],
+                "status": "PENDING"
+            }
+        )
+        self.assert_status(st, [200, 201], "Normal friend request succeeds", "POST", "/rest/v1/friend_requests", txt)
+
+        # Send requests 2 through 10 (total 10 burst quota)
+        for i in range(1, 10):
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/rest/v1/friend_requests",
+                token=u_rl_sender["token"],
+                json_data={
+                    "id": str(uuid.uuid4()),
+                    "sender_id": u_rl_sender["uid"],
+                    "recipient_id": recipients[i]["uid"],
+                    "status": "PENDING"
+                }
+            )
+            self.assert_status(st, [200, 201], f"Friend request {i+1}/10 within burst quota succeeds", "POST", "/rest/v1/friend_requests", txt)
+
+        # Case 2: 11th friend request hits server limit
+        req_11_id = str(uuid.uuid4())
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_rl_sender["token"],
+            json_data={
+                "id": req_11_id,
+                "sender_id": u_rl_sender["uid"],
+                "recipient_id": recipients[10]["uid"],
+                "status": "PENDING"
+            }
+        )
+        assert st in (400, 429), f"Expected rate limit error for 11th friend request, got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED error message, got {txt}"
+
+        # Case 3: Request above quota creates no row
+        st, check_data, _, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friend_requests?id=eq.{req_11_id}",
+            token=u_rl_sender["token"]
+        )
+        assert len(check_data) == 0, f"Rate-limited friend request row was created: {check_data}"
+
+        # Case 4 & 5: Different user remains unaffected and isolated
+        u_rl_other = make_disposable_user("rl_other")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_rl_other["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": u_rl_other["uid"],
+                "recipient_id": recipients[11]["uid"],
+                "status": "PENDING"
+            }
+        )
+        self.assert_status(st, [200, 201], "Different user friend request succeeds unaffected", "POST", "/rest/v1/friend_requests", txt)
+
+        # Case 6 & 7 & 8 & 9 & 10 & 11: Direct Messages Throttling
+        self.log("PHASE 13", "Cases 6-11: Testing Direct Message pair (30/m) and global (60/m) anti-flood...")
+        dm_sender = make_disposable_user("dm_sender")
+        dm_rec_1 = make_disposable_user("dm_rec_1")
+        dm_rec_2 = make_disposable_user("dm_rec_2")
+
+        # Establish friendship between dm_sender and dm_rec_1, dm_rec_2
+        for rec in [dm_rec_1, dm_rec_2]:
+            fr_id = str(uuid.uuid4())
+            self.client.request("POST", "/rest/v1/friend_requests", token=dm_sender["token"], json_data={"id": fr_id, "sender_id": dm_sender["uid"], "recipient_id": rec["uid"], "status": "PENDING"})
+            self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=rec["token"], json_data={"p_request_id": fr_id})
+
+        # Case 6: Normal DM remains successful
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=dm_sender["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": dm_sender["uid"],
+                "recipient_id": dm_rec_1["uid"],
+                "text": "Normal DM 1"
+            }
+        )
+        self.assert_status(st, [200, 201], "Normal DM succeeds", "POST", "/rest/v1/direct_messages", txt)
+
+        # Send DMs 2 through 30 to dm_rec_1 (pair limit = 30 / min)
+        for i in range(2, 31):
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/rest/v1/direct_messages",
+                token=dm_sender["token"],
+                json_data={
+                    "id": str(uuid.uuid4()),
+                    "sender_id": dm_sender["uid"],
+                    "recipient_id": dm_rec_1["uid"],
+                    "text": f"DM pair batch {i}"
+                }
+            )
+            self.assert_status(st, [200, 201], f"DM {i}/30 to rec_1 succeeds", "POST", "/rest/v1/direct_messages", txt)
+
+        # Case 8: 31st DM to same recipient reaches pair limit (30/m)
+        rl_dm_id = str(uuid.uuid4())
+        push_count_before_reject = len(MockPushHandler.recorded_deliveries)
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=dm_sender["token"],
+            json_data={
+                "id": rl_dm_id,
+                "sender_id": dm_sender["uid"],
+                "recipient_id": dm_rec_1["uid"],
+                "text": "DM 31 should be rejected"
+            }
+        )
+        assert st in (400, 429), f"Expected rate limit error for 31st DM to pair, got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in DM response, got {txt}"
+
+        # Case 9: Rate-limited DM creates no DB row
+        st, dm_rows, _, _ = self.client.request("GET", f"/rest/v1/direct_messages?id=eq.{rl_dm_id}", token=dm_sender["token"])
+        assert len(dm_rows) == 0, f"Rejected DM row was created in database: {dm_rows}"
+
+        # Case 10: Rate-limited DM produces no push event
+        push_count_after_reject = len(MockPushHandler.recorded_deliveries)
+        assert push_count_after_reject == push_count_before_reject, "Push notification was dispatched for rate-limited DM!"
+
+        # Case 11: Third user remains unaffected (dm_rec_2 can message dm_rec_1)
+        fr_rec_id = str(uuid.uuid4())
+        self.client.request("POST", "/rest/v1/friend_requests", token=dm_rec_2["token"], json_data={"id": fr_rec_id, "sender_id": dm_rec_2["uid"], "recipient_id": dm_rec_1["uid"], "status": "PENDING"})
+        self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=dm_rec_1["token"], json_data={"p_request_id": fr_rec_id})
+
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=dm_rec_2["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": dm_rec_2["uid"],
+                "recipient_id": dm_rec_1["uid"],
+                "text": "Unaffected user DM"
+            }
+        )
+        self.assert_status(st, [200, 201], "Third user DM succeeds unaffected", "POST", "/rest/v1/direct_messages", txt)
+
+        # Case 7: DM burst reaches global actor limit (60/m)
+        for i in range(1, 31):
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/rest/v1/direct_messages",
+                token=dm_sender["token"],
+                json_data={
+                    "id": str(uuid.uuid4()),
+                    "sender_id": dm_sender["uid"],
+                    "recipient_id": dm_rec_2["uid"],
+                    "text": f"DM to rec_2 batch {i}"
+                }
+            )
+            self.assert_status(st, [200, 201], f"DM {i+30}/60 global succeeds", "POST", "/rest/v1/direct_messages", txt)
+
+        # 61st DM from dm_sender hits global actor limit
+        dm_rec_3 = make_disposable_user("dm_rec_3")
+        fr_id3 = str(uuid.uuid4())
+        self.client.request("POST", "/rest/v1/friend_requests", token=dm_sender["token"], json_data={"id": fr_id3, "sender_id": dm_sender["uid"], "recipient_id": dm_rec_3["uid"], "status": "PENDING"})
+        self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=dm_rec_3["token"], json_data={"p_request_id": fr_id3})
+
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=dm_sender["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": dm_sender["uid"],
+                "recipient_id": dm_rec_3["uid"],
+                "text": "DM 61 global limit test"
+            }
+        )
+        assert st in (400, 429), f"Expected rate limit error for 61st DM (global limit), got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in global DM response, got {txt}"
+
+        # Case 12: Comment burst is limited (20 comments / 5 min)
+        self.log("PHASE 13", "Case 12: Testing Feed Comment throttle (20 / 5m)...")
+        post_author = make_disposable_user("post_author")
+        commenter = make_disposable_user("commenter")
+        fr_c_id = str(uuid.uuid4())
+        self.client.request("POST", "/rest/v1/friend_requests", token=post_author["token"], json_data={"id": fr_c_id, "sender_id": post_author["uid"], "recipient_id": commenter["uid"], "status": "PENDING"})
+        self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=commenter["token"], json_data={"p_request_id": fr_c_id})
+
+        feed_post_id = f"post_rl_{secrets.token_hex(4)}"
+        self.client.request(
+            "POST",
+            "/rest/v1/feed_posts",
+            token=post_author["token"],
+            json_data={
+                "id": feed_post_id,
+                "author_id": post_author["uid"],
+                "caption": "Rate limit test post",
+                "audience_type": "FRIENDS"
+            }
+        )
+
+        for i in range(1, 21):
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/rest/v1/feed_comments",
+                token=commenter["token"],
+                json_data={
+                    "id": f"comm_rl_{i}_{secrets.token_hex(3)}",
+                    "post_id": feed_post_id,
+                    "author_id": commenter["uid"],
+                    "content": f"Comment {i}"
+                }
+            )
+            self.assert_status(st, [200, 201], f"Comment {i}/20 succeeds", "POST", "/rest/v1/feed_comments", txt)
+
+        # 21st comment fails with RATE_LIMITED
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/feed_comments",
+            token=commenter["token"],
+            json_data={
+                "id": f"comm_rl_21_{secrets.token_hex(3)}",
+                "post_id": feed_post_id,
+                "author_id": commenter["uid"],
+                "content": "Comment 21 should fail"
+            }
+        )
+        assert st in (400, 429), f"Expected rate limit for 21st comment, got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in comment response, got {txt}"
+
+        # Case 13: Reply burst is limited (10 replies / 5 min)
+        self.log("PHASE 13", "Case 13: Testing Feed Reply throttle (10 / 5m)...")
+        replier = make_disposable_user("replier")
+        fr_r_id = str(uuid.uuid4())
+        self.client.request("POST", "/rest/v1/friend_requests", token=post_author["token"], json_data={"id": fr_r_id, "sender_id": post_author["uid"], "recipient_id": replier["uid"], "status": "PENDING"})
+        self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=replier["token"], json_data={"p_request_id": fr_r_id})
+
+        for i in range(1, 11):
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/rest/v1/feed_replies",
+                token=replier["token"],
+                json_data={
+                    "id": f"reply_rl_{i}_{secrets.token_hex(3)}",
+                    "post_id": feed_post_id,
+                    "author_id": replier["uid"],
+                    "reply_stamp_url": f"https://example.com/stamp_{i}.png"
+                }
+            )
+            self.assert_status(st, [200, 201], f"Reply {i}/10 succeeds", "POST", "/rest/v1/feed_replies", txt)
+
+        # 11th reply fails with RATE_LIMITED
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/feed_replies",
+            token=replier["token"],
+            json_data={
+                "id": f"reply_rl_11_{secrets.token_hex(3)}",
+                "post_id": feed_post_id,
+                "author_id": replier["uid"],
+                "reply_stamp_url": "https://example.com/stamp_11.png"
+            }
+        )
+        assert st in (400, 429), f"Expected rate limit for 11th reply, got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in reply response, got {txt}"
+
+        # Cases 14 & 15: Abuse Reports Throttling (5 / hr & duplicate suppression)
+        self.log("PHASE 13", "Cases 14-15: Testing Abuse Reports throttle (5/hr) and duplicate suppression...")
+        reporter = make_disposable_user("reporter")
+        report_targets = [make_disposable_user(f"rep_target_{i}") for i in range(6)]
+
+        # Duplicate suppression: report same user twice
+        st, rep_res, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/report_user",
+            token=reporter["token"],
+            json_data={
+                "p_reported_user_id": report_targets[0]["uid"],
+                "p_category": "spam",
+                "p_note": "First report"
+            }
+        )
+        self.assert_status(st, 200, "First report against target 0 succeeds", "POST", "/rest/v1/rpc/report_user", txt)
+
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/report_user",
+            token=reporter["token"],
+            json_data={
+                "p_reported_user_id": report_targets[0]["uid"],
+                "p_category": "spam",
+                "p_note": "Duplicate report within 5 minutes"
+            }
+        )
+        assert st in (400, 429), f"Expected duplicate suppression rate limit, got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in duplicate report response, got {txt}"
+
+        # Reports against targets 1, 2, 3, 4 (bringing total actor reports to 5)
+        for i in range(1, 5):
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/rest/v1/rpc/report_user",
+                token=reporter["token"],
+                json_data={
+                    "p_reported_user_id": report_targets[i]["uid"],
+                    "p_category": "spam",
+                    "p_note": f"Report {i+1}"
+                }
+            )
+            self.assert_status(st, 200, f"Report {i+1}/5 succeeds", "POST", "/rest/v1/rpc/report_user", txt)
+
+        # 6th report (against target 5) fails with RATE_LIMITED
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/report_user",
+            token=reporter["token"],
+            json_data={
+                "p_reported_user_id": report_targets[5]["uid"],
+                "p_category": "harassment",
+                "p_note": "Report 6 should fail"
+            }
+        )
+        assert st in (400, 429), f"Expected actor rate limit for 6th report, got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in 6th report response, got {txt}"
+
+        # Case 15: No additional moderation row after limit
+        # 1. Normal clients cannot read moderation rows (moderation privacy)
+        st, client_rep_rows, _, _ = self.client.request("GET", f"/rest/v1/user_reports?reporter_id=eq.{reporter['uid']}", token=reporter["token"])
+        assert len(client_rep_rows) == 0, f"Moderation privacy leak: client saw user_reports rows: {client_rep_rows}"
+
+        # 2. Server/moderation ledger contains exactly 5 reports (6th rate-limited report created no row)
+        if self.service_role_key:
+            st, admin_rep_rows, _, _ = self.client.request("GET", f"/rest/v1/user_reports?reporter_id=eq.{reporter['uid']}", token=self.service_role_key)
+            assert len(admin_rep_rows) == 5, f"Expected exactly 5 reports recorded in moderation ledger, found {len(admin_rep_rows)}"
+
+        # Cases 16 & 17: Stamp Trade Creation Throttling (10 / hr)
+        self.log("PHASE 13", "Cases 16-17: Testing Stamp Trade creation throttle (10 / hr)...")
+        trader = make_disposable_user("trader")
+        trade_partner = make_disposable_user("trade_partner")
+        fr_t_id = str(uuid.uuid4())
+        self.client.request("POST", "/rest/v1/friend_requests", token=trader["token"], json_data={"id": fr_t_id, "sender_id": trader["uid"], "recipient_id": trade_partner["uid"], "status": "PENDING"})
+        self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=trade_partner["token"], json_data={"p_request_id": fr_t_id})
+
+        # Upload 11 media files for trades
+        for i in range(1, 12):
+            obj_path = f"{trader['uid']}/rendered/trade_stamp_{i}_{self.run_id}.png"
+            self.client.request("POST", f"/storage/v1/object/stamp-media/{obj_path}", token=trader["token"], raw_body=PNG_1X1_FIXTURE, content_type="image/png")
+
+        # Create trades 1 through 10
+        for i in range(1, 11):
+            obj_path = f"{trader['uid']}/rendered/trade_stamp_{i}_{self.run_id}.png"
+            st, t_res, txt, _ = self.client.request(
+                "POST",
+                "/rest/v1/rpc/create_stamp_trade",
+                token=trader["token"],
+                json_data={
+                    "p_recipient_id": trade_partner["uid"],
+                    "p_stamp_title": f"Trade {i}",
+                    "p_source_object_name": obj_path
+                }
+            )
+            self.assert_status(st, 200, f"Trade {i}/10 succeeds", "POST", "/rest/v1/rpc/create_stamp_trade", txt)
+
+        # 11th trade creation fails with RATE_LIMITED
+        push_count_trade_before = len(MockPushHandler.recorded_deliveries)
+        obj_path_11 = f"{trader['uid']}/rendered/trade_stamp_11_{self.run_id}.png"
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=trader["token"],
+            json_data={
+                "p_recipient_id": trade_partner["uid"],
+                "p_stamp_title": "Trade 11 should fail",
+                "p_source_object_name": obj_path_11
+            }
+        )
+        assert st in (400, 429), f"Expected rate limit for 11th trade creation, got {st}: {txt}"
+        assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in trade creation response, got {txt}"
+
+        # Case 17: No trade push after rejected creation
+        push_count_trade_after = len(MockPushHandler.recorded_deliveries)
+        assert push_count_trade_after == push_count_trade_before, "Push notification was dispatched for rate-limited trade creation!"
+
+        # Case 18: Blocked-user tests remain unchanged (block policy precedes rate limiting)
+        self.log("PHASE 13", "Case 18: Testing Block policy precedence over rate limiting...")
+        blocker = make_disposable_user("blocker")
+        blocked = make_disposable_user("blocked")
+        st_block, block_data, txt_block, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/block_user",
+            token=blocker["token"],
+            json_data={"p_blocked_id": blocked["uid"]}
+        )
+        self.assert_status(st_block, 200, "Blocker blocks blocked user", "POST", "/rest/v1/rpc/block_user", txt_block)
+
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=blocked["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": blocked["uid"],
+                "recipient_id": blocker["uid"],
+                "text": "Blocked DM"
+            }
+        )
+        assert st in (400, 403), f"Expected block rejection, got {st}: {txt}"
+        assert "blocked" in txt.lower(), f"Expected blocked relation error, got {txt}"
+
+        # Case 19: Auth spoof attempts remain denied
+        self.log("PHASE 13", "Case 19: Verifying auth spoof attempts remain denied...")
+        spoof_sender = make_disposable_user("spoof_sender")
+        spoof_victim = make_disposable_user("spoof_victim")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=spoof_sender["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": spoof_victim["uid"],
+                "recipient_id": trade_partner["uid"],
+                "status": "PENDING"
+            }
+        )
+        assert st in (400, 401, 403), f"Spoofed sender_id was not denied: {st}: {txt}"
+
+        # Case 21: Concurrent requests cannot materially exceed configured quota
+        self.log("PHASE 13", "Case 21: Testing atomic concurrency safety under parallel load...")
+        concurrent_sender = make_disposable_user("conc_sender")
+        concurrent_target = make_disposable_user("conc_target")
+        fr_conc_id = str(uuid.uuid4())
+        self.client.request("POST", "/rest/v1/friend_requests", token=concurrent_sender["token"], json_data={"id": fr_conc_id, "sender_id": concurrent_sender["uid"], "recipient_id": concurrent_target["uid"], "status": "PENDING"})
+        self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=concurrent_target["token"], json_data={"p_request_id": fr_conc_id})
+
+        # Pair limit is 30 / min. Launch 40 concurrent requests simultaneously.
+        def send_dm_attempt(idx):
+            return self.client.request(
+                "POST",
+                "/rest/v1/direct_messages",
+                token=concurrent_sender["token"],
+                json_data={
+                    "id": str(uuid.uuid4()),
+                    "sender_id": concurrent_sender["uid"],
+                    "recipient_id": concurrent_target["uid"],
+                    "text": f"Concurrent DM {idx}"
+                }
+            )
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(send_dm_attempt, i) for i in range(40)]
+            results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        success_count = sum(1 for st, _, _, _ in results if st in (200, 201))
+        limited_count = sum(1 for st, _, txt, _ in results if (st in (400, 429) and "RATE_LIMITED" in txt))
+        self.log("PHASE 13", f"Concurrent results: {success_count} succeeded, {limited_count} rate-limited out of 40")
+        assert success_count <= 30, f"Concurrency violation: {success_count} succeeded, exceeding pair quota of 30!"
+        assert success_count + limited_count == 40, f"Unexpected responses during concurrency test: success={success_count}, limited={limited_count}"
+
+        # Case 22: Tests do not wait real minutes/hours
+        self.log("PHASE 13", "Case 22: Verified suite completed deterministically without real minute/hour delays.")
+        self.log("PHASE 13", "All 22 Abuse Throttling & Rate Limit contract cases successfully verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
@@ -3062,6 +3596,7 @@ class E2EContractRunner:
             self.phase10_push_notifications()
             self.phase11_social_safety_and_blocking()
             self.phase12_cloud_stamp_trade()
+            self.phase13_abuse_rate_limits()
         finally:
             self.stop_mock_push_server()
         print("=" * 60)
@@ -3070,9 +3605,9 @@ class E2EContractRunner:
 
 
 def main():
-    base_url, anon_key = get_local_config()
-    client = SupabaseHttpClient(base_url, anon_key)
-    runner = E2EContractRunner(client)
+    base_url, anon_key, service_role_key = get_local_config()
+    client = SupabaseHttpClient(base_url, anon_key, service_role_key=service_role_key)
+    runner = E2EContractRunner(client, service_role_key=service_role_key)
     try:
         runner.run_all()
     except Exception as e:

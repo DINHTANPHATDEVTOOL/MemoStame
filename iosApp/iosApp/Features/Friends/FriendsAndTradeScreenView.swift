@@ -196,7 +196,12 @@ struct FriendsAndTradeScreenView: View {
                                     triggerToast(msg)
                                     friendCode = ""
                                 case .failure(let err):
-                                    triggerToast(err.localizedDescription)
+                                    let errStr = err.localizedDescription
+                                    if errStr.localizedCaseInsensitiveContains("RATE_LIMITED") || errStr.contains("429") {
+                                        triggerToast("You're doing that too quickly. Please try again shortly.")
+                                    } else {
+                                        triggerToast(errStr)
+                                    }
                                 }
                             }
                         }) {
@@ -365,7 +370,12 @@ struct FriendsAndTradeScreenView: View {
                                                 showTradeModal = false
                                                 triggerToast("Sent trade offer to \(friend.displayName)!")
                                             case .failure(let err):
-                                                triggerToast("Lỗi tạo yêu cầu trao đổi: \(err.localizedDescription)")
+                                                let errStr = err.localizedDescription
+                                                if errStr.localizedCaseInsensitiveContains("RATE_LIMITED") || errStr.contains("429") {
+                                                    triggerToast("You're doing that too quickly. Please try again shortly.")
+                                                } else {
+                                                    triggerToast("Lỗi tạo yêu cầu trao đổi: \(errStr)")
+                                                }
                                             }
                                         }
                                     }
