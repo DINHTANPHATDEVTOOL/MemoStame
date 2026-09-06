@@ -1998,12 +1998,14 @@ BEGIN
 
     -- 21st comment fails
     BEGIN
-        INSERT INTO public.feed_comments (id, post_id, author_id, text)
+        INSERT INTO public.feed_comments (id, post_id, author_id, content)
         VALUES ('comment_limit_21', 'post_a_only_me', '11111111-1111-1111-1111-111111111111', 'Comment 21');
     EXCEPTION
         WHEN OTHERS THEN
             IF SQLERRM LIKE '%RATE_LIMITED%' THEN
                 v_threw := true;
+            ELSE
+                RAISE EXCEPTION 'COMMENT LIMIT Failed with unexpected error: %', SQLERRM;
             END IF;
     END;
 
@@ -2041,6 +2043,8 @@ BEGIN
         WHEN OTHERS THEN
             IF SQLERRM LIKE '%RATE_LIMITED%' THEN
                 v_threw := true;
+            ELSE
+                RAISE EXCEPTION 'REPLY LIMIT Failed with unexpected error: %', SQLERRM;
             END IF;
     END;
 
@@ -2078,6 +2082,8 @@ BEGIN
         WHEN OTHERS THEN
             IF SQLERRM LIKE '%RATE_LIMITED%' THEN
                 v_threw := true;
+            ELSE
+                RAISE EXCEPTION 'REPORT LIMIT Failed with unexpected error: %', SQLERRM;
             END IF;
     END;
 
@@ -2133,6 +2139,8 @@ BEGIN
         WHEN OTHERS THEN
             IF SQLERRM LIKE '%RATE_LIMITED%' THEN
                 v_threw := true;
+            ELSE
+                RAISE EXCEPTION 'TRADE CREATE LIMIT Failed with unexpected error: %', SQLERRM;
             END IF;
     END;
 
