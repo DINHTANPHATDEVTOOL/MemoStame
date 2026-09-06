@@ -17,12 +17,14 @@ struct StampEditorScreenView: View {
     var initialImageUrl: String? = nil
     var onStampSaved: ((URL) -> Void)? = nil
     var onContinue: ((String, String, String) -> Void)? = nil
+    var onContinueWithLocation: ((String, String, String, String?) -> Void)? = nil
     var onCancel: (() -> Void)? = nil
 
     @State private var selectedMoldId: String = "classic_perforated"
     @State private var selectedColorHex: String = "#D32F2F"
     @State private var stampTitle: String = ""
     @State private var stampLocation: String = ""
+    @State private var showLocationPickerSheet: Bool = false
     @State private var stampDate: String = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy.MM.dd"
@@ -83,7 +85,9 @@ struct StampEditorScreenView: View {
                 Button(action: {
                     HapticFeedbackManager.shared.playSuccess()
                     SoundEffectsManager.shared.playStampPressSound()
-                    if let onContinue = onContinue {
+                    if let onContinueWithLocation = onContinueWithLocation {
+                        onContinueWithLocation(initialImageUrl ?? "", selectedMoldId, selectedColorHex, stampLocation.isEmpty ? nil : stampLocation)
+                    } else if let onContinue = onContinue {
                         onContinue(initialImageUrl ?? "", selectedMoldId, selectedColorHex)
                     } else if let callback = onStampSaved, let urlStr = initialImageUrl, let url = URL(string: urlStr) {
                         callback(url)
@@ -199,6 +203,57 @@ struct StampEditorScreenView: View {
                                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.85, green: 0.25, blue: 0.20)))
                             }
                         }
+
+                        // Section 3: Stamp Location & Grounding
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("ĐỊA ĐIỂM DẤU BƯU CHÍNH (LOCATION)")
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                if !stampLocation.isEmpty {
+                                    Button(action: {
+                                        stampLocation = ""
+                                    }) {
+                                        Text("Xóa")
+                                            .font(.caption2.bold())
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+
+                            Button(action: {
+                                showLocationPickerSheet = true
+                            }) {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "mappin.and.ellipse")
+                                        .foregroundColor(stampLocation.isEmpty ? .gray : Color(red: 0.85, green: 0.25, blue: 0.20))
+                                        .font(.system(size: 15))
+
+                                    Text(stampLocation.isEmpty ? "Chọn địa điểm dập dấu bưu điện..." : stampLocation)
+                                        .font(.subheadline)
+                                        .foregroundColor(stampLocation.isEmpty ? .gray : Color(red: 0.15, green: 0.15, blue: 0.18))
+                                        .lineLimit(1)
+
+                                    Spacer()
+
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
+                                        .padding(5)
+                                        .background(Color(red: 0.82, green: 0.65, blue: 0.35).opacity(0.15))
+                                        .clipShape(Circle())
+                                }
+                                .padding(12)
+                                .background(Color.white)
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                        .shadow(color: Color.black.opacity(0.03), radius: 2)
+                                )
+                            }
+                        }
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 32)
@@ -206,6 +261,20 @@ struct StampEditorScreenView: View {
             }
         }
         .background(Color(red: 0.98, green: 0.96, blue: 0.92).ignoresSafeArea())
+        .sheet(isPresented: $showLocationPickerSheet) {
+            LocationPickerSheetView(
+                initialLocation: stampLocation,
+                onDismiss: { showLocationPickerSheet = false },
+                onLocationSelected: { locationName, suggestedTitle, story in
+                    showLocationPickerSheet = false
+                    stampLocation = locationName
+                    if stampTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       let sug = suggestedTitle?.trimmingCharacters(in: .whitespacesAndNewlines), !sug.isEmpty {
+                        stampTitle = sug
+                    }
+                }
+            )
+        }
     }
 }
 
