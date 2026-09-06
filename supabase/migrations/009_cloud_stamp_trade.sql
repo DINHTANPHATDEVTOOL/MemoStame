@@ -7,8 +7,8 @@
 
 CREATE TABLE IF NOT EXISTS public.stamp_trade_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sender_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    recipient_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    sender_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    recipient_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     source_stamp_id TEXT,
     stamp_id TEXT,
     source_object_name TEXT NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.stamp_trade_requests (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     responded_at TIMESTAMPTZ,
-    CONSTRAINT chk_trade_no_self CHECK (sender_id <> recipient_id),
+    CONSTRAINT chk_trade_no_self CHECK (sender_id IS NULL OR recipient_id IS NULL OR sender_id <> recipient_id),
     CONSTRAINT chk_trade_note_len CHECK (note IS NULL OR length(note) <= 1000)
 );
 
@@ -59,8 +59,8 @@ CREATE TABLE IF NOT EXISTS public.received_trade_stamps (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     recipient_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-    source_trade_id UUID UNIQUE REFERENCES public.stamp_trade_requests(id) ON DELETE SET NULL,
-    trade_id UUID REFERENCES public.stamp_trade_requests(id) ON DELETE SET NULL,
+    source_trade_id UUID UNIQUE,
+    trade_id UUID,
     original_sender_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     recipient_media_path TEXT NOT NULL,
     media_path TEXT,
