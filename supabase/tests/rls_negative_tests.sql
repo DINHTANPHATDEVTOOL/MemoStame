@@ -1164,9 +1164,577 @@ END $$;
 
 
 -- ===================================================
+-- CLOUD-AUTHORITATIVE STAMP TRADE ASSERTIONS (TASK #57)
+-- ===================================================
+
+-- Assertion 62: Stamp Trade Requests RLS - Participants only, third party denied
+DO $$
+DECLARE
+    v_trade_id UUID := gen_random_uuid();
+    v_a_cnt INT;
+    v_b_cnt INT;
+    v_c_cnt INT;
+BEGIN
+    SET ROLE postgres;
+    -- Setup friendship between A and B
+    INSERT INTO public.friends (user_id_1, user_id_2)
+    VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT DO NOTHING;
+
+    -- Clean any blocks between A and B
+    DELETE FROM public.user_blocks
+    WHERE (blocker_id = '11111111-1111-1111-1111-111111111111' AND blocked_id = '22222222-2222-2222-2222-222222222222')
+       OR (blocker_id = '22222222-2222-2222-2222-222222222222' AND blocked_id = '11111111-1111-1111-1111-111111111111');
+
+    -- Insert mock trade request between A (sender) and B (recipient)
+    INSERT INTO public.stamp_trade_requests (
+        id, sender_id, recipient_id, source_object_name, stamp_title, status
+    ) VALUES (
+        v_trade_id,
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+        '11111111-1111-1111-1111-111111111111/rendered/stamp_rls.png',
+        'RLS Stamp',
+        'PENDING'
+    );
+
+    -- Sender A can select
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    SELECT COUNT(*) INTO v_a_cnt FROM public.stamp_trade_requests WHERE id = v_trade_id;
+    IF v_a_cnt <> 1 THEN RAISE EXCEPTION 'Trade RLS Failed: Sender A cannot select trade request'; END IF;
+
+    -- Recipient B can select
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    SELECT COUNT(*) INTO v_b_cnt FROM public.stamp_trade_requests WHERE id = v_trade_id;
+    IF v_b_cnt <> 1 THEN RAISE EXCEPTION 'Trade RLS Failed: Recipient B cannot select trade request'; END IF;
+
+    -- Third-party C cannot select
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    SELECT COUNT(*) INTO v_c_cnt FROM public.stamp_trade_requests WHERE id = v_trade_id;
+    IF v_c_cnt <> 0 THEN RAISE EXCEPTION 'Trade RLS Leak: Third-party C was able to select trade request'; END IF;
+
+    SET ROLE postgres;
+    DELETE FROM public.stamp_trade_requests WHERE id = v_trade_id;
+END $$;
+
+-- Assertion 63: Direct client mutations on stamp_trade_requests are denied
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Direct client INSERT denied
+    BEGIN
+        INSERT INTO public.stamp_trade_requests (sender_id, recipient_id, source_object_name, stamp_title)
+        VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'hack.png', 'Hack');
+        RAISE EXCEPTION 'Direct Trade Insert Allowed: Client directly inserted row';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM LIKE '%Direct Trade Insert Allowed%' THEN RAISE; END IF;
+    END;
+
+    -- Direct client UPDATE denied
+    UPDATE public.stamp_trade_requests SET status = 'ACCEPTED' WHERE sender_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Direct client DELETE denied
+    DELETE FROM public.stamp_trade_requests WHERE sender_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 64: create_stamp_trade rejects self-trade
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        PERFORM public.create_stamp_trade(
+            '11111111-1111-1111-1111-111111111111',
+            '11111111-1111-1111-1111-111111111111/rendered/stamp.png',
+            'Self Stamp'
+        );
+        RAISE EXCEPTION 'Self Trade Allowed: create_stamp_trade accepted self-trade';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Cannot trade with oneself%' THEN
+            RAISE EXCEPTION 'Unexpected error on self-trade: %', SQLERRM;
+        END IF;
+    END;
+END $$;
+
+-- Assertion 65: create_stamp_trade rejects non-friend
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- User A and User C are not friends
+    BEGIN
+        PERFORM public.create_stamp_trade(
+            '33333333-3333-3333-3333-333333333333',
+            '11111111-1111-1111-1111-111111111111/rendered/stamp.png',
+            'Non-friend Stamp'
+        );
+        RAISE EXCEPTION 'Non-Friend Trade Allowed: create_stamp_trade accepted non-friend';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Recipient must be an active friend%' THEN
+            RAISE EXCEPTION 'Unexpected error on non-friend trade: %', SQLERRM;
+        END IF;
+    END;
+END $$;
+
+-- Assertion 66: create_stamp_trade rejects blocked relationship
+DO $$
+BEGIN
+    SET ROLE postgres;
+    -- Artificially block A and B
+    INSERT INTO public.user_blocks (blocker_id, blocked_id)
+    VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT DO NOTHING;
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        PERFORM public.create_stamp_trade(
+            '22222222-2222-2222-2222-222222222222',
+            '11111111-1111-1111-1111-111111111111/rendered/stamp.png',
+            'Blocked Stamp'
+        );
+        RAISE EXCEPTION 'Blocked Trade Allowed: create_stamp_trade accepted blocked pair';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Cannot trade: relationship is blocked%' THEN
+            RAISE EXCEPTION 'Unexpected error on blocked trade: %', SQLERRM;
+        END IF;
+    END;
+
+    -- Clean up block and restore friendship for subsequent tests
+    SET ROLE postgres;
+    DELETE FROM public.user_blocks
+    WHERE blocker_id = '11111111-1111-1111-1111-111111111111' AND blocked_id = '22222222-2222-2222-2222-222222222222';
+    INSERT INTO public.friends (user_id_1, user_id_2)
+    VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT DO NOTHING;
+END $$;
+
+-- Assertion 67: create_stamp_trade rejects local/data/blob/external URLs
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Reject file:// URL
+    BEGIN
+        PERFORM public.create_stamp_trade(
+            '22222222-2222-2222-2222-222222222222',
+            'file:///local/path/stamp.png',
+            'File Stamp'
+        );
+        RAISE EXCEPTION 'Local Media Allowed: create_stamp_trade accepted file:// URL';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Local or external media URLs are not permitted%' THEN
+            RAISE EXCEPTION 'Unexpected error on file:// URL: %', SQLERRM;
+        END IF;
+    END;
+
+    -- Reject data: URI
+    BEGIN
+        PERFORM public.create_stamp_trade(
+            '22222222-2222-2222-2222-222222222222',
+            'data:image/png;base64,iVBORw0KGgo...',
+            'Data Stamp'
+        );
+        RAISE EXCEPTION 'Data URI Allowed: create_stamp_trade accepted data: URI';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Local or external media URLs are not permitted%' THEN
+            RAISE EXCEPTION 'Unexpected error on data: URI: %', SQLERRM;
+        END IF;
+    END;
+END $$;
+
+-- Assertion 68: create_stamp_trade rejects nonexistent media in stamp-media
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        PERFORM public.create_stamp_trade(
+            '22222222-2222-2222-2222-222222222222',
+            '11111111-1111-1111-1111-111111111111/rendered/ghost_media.png',
+            'Ghost Stamp'
+        );
+        RAISE EXCEPTION 'Nonexistent Media Allowed: create_stamp_trade accepted nonexistent object';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Source media object not found in stamp-media%' THEN
+            RAISE EXCEPTION 'Unexpected error on nonexistent media: %', SQLERRM;
+        END IF;
+    END;
+END $$;
+
+-- Assertion 69: create_stamp_trade succeeds with valid friend & existing media
+DO $$
+DECLARE
+    v_res JSONB;
+    v_trade_id UUID;
+    v_status TEXT;
+BEGIN
+    SET ROLE postgres;
+    -- Insert mock storage object in stamp-media
+    INSERT INTO storage.objects (id, bucket_id, name, owner)
+    VALUES (
+        gen_random_uuid(),
+        'stamp-media',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_69.png',
+        '11111111-1111-1111-1111-111111111111'
+    ) ON CONFLICT DO NOTHING;
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    v_res := public.create_stamp_trade(
+        '22222222-2222-2222-2222-222222222222',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_69.png',
+        'Chùa Một Cột',
+        'RECTANGLE',
+        'Hà Nội',
+        'Tặng bạn tem kỷ niệm nhé!',
+        'local_stamp_001'
+    );
+
+    v_trade_id := (v_res->>'trade_id')::UUID;
+    v_status := v_res->>'status';
+    IF v_trade_id IS NULL OR v_status <> 'PENDING' THEN
+        RAISE EXCEPTION 'Create Trade Failed: unexpected response %', v_res;
+    END IF;
+END $$;
+
+-- Assertion 70: decline_stamp_trade allowed ONLY for recipient
+DO $$
+DECLARE
+    v_trade_id UUID;
+    v_dec_res JSONB;
+BEGIN
+    SET ROLE postgres;
+    -- Create fresh pending trade from A to B
+    INSERT INTO storage.objects (id, bucket_id, name, owner)
+    VALUES (
+        gen_random_uuid(),
+        'stamp-media',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_70.png',
+        '11111111-1111-1111-1111-111111111111'
+    ) ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.stamp_trade_requests (
+        sender_id, recipient_id, source_object_name, stamp_title, status
+    ) VALUES (
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_70.png',
+        'Decline Test Stamp',
+        'PENDING'
+    ) RETURNING id INTO v_trade_id;
+
+    -- Sender A cannot decline
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        PERFORM public.decline_stamp_trade(v_trade_id);
+        RAISE EXCEPTION 'Sender Decline Allowed: sender was able to decline trade';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Only recipient can decline trade request%' THEN
+            RAISE EXCEPTION 'Unexpected error on sender decline: %', SQLERRM;
+        END IF;
+    END;
+
+    -- Third-party C cannot decline
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    BEGIN
+        PERFORM public.decline_stamp_trade(v_trade_id);
+        RAISE EXCEPTION 'Third Party Decline Allowed: user C was able to decline trade';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Only recipient can decline trade request%' THEN
+            RAISE EXCEPTION 'Unexpected error on third party decline: %', SQLERRM;
+        END IF;
+    END;
+
+    -- Recipient B can decline
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    v_dec_res := public.decline_stamp_trade(v_trade_id);
+    IF (v_dec_res->>'status') <> 'DECLINED' THEN
+        RAISE EXCEPTION 'Recipient Decline Failed: unexpected response %', v_dec_res;
+    END IF;
+END $$;
+
+-- Assertion 71: cancel_stamp_trade allowed ONLY for sender
+DO $$
+DECLARE
+    v_trade_id UUID;
+    v_cancel_res JSONB;
+BEGIN
+    SET ROLE postgres;
+    INSERT INTO public.stamp_trade_requests (
+        sender_id, recipient_id, source_object_name, stamp_title, status
+    ) VALUES (
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_70.png',
+        'Cancel Test Stamp',
+        'PENDING'
+    ) RETURNING id INTO v_trade_id;
+
+    -- Recipient B cannot cancel
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    BEGIN
+        PERFORM public.cancel_stamp_trade(v_trade_id);
+        RAISE EXCEPTION 'Recipient Cancel Allowed: recipient was able to cancel trade';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Only sender can cancel trade request%' THEN
+            RAISE EXCEPTION 'Unexpected error on recipient cancel: %', SQLERRM;
+        END IF;
+    END;
+
+    -- Sender A can cancel
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    v_cancel_res := public.cancel_stamp_trade(v_trade_id);
+    IF (v_cancel_res->>'status') <> 'CANCELLED' THEN
+        RAISE EXCEPTION 'Sender Cancel Failed: unexpected response %', v_cancel_res;
+    END IF;
+END $$;
+
+-- Assertion 72: accept_stamp_trade allowed ONLY for recipient
+DO $$
+DECLARE
+    v_trade_id UUID;
+BEGIN
+    SET ROLE postgres;
+    INSERT INTO public.stamp_trade_requests (
+        sender_id, recipient_id, source_object_name, stamp_title, status
+    ) VALUES (
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_70.png',
+        'Accept Auth Test Stamp',
+        'PENDING'
+    ) RETURNING id INTO v_trade_id;
+
+    -- Sender A cannot accept
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        PERFORM public.accept_stamp_trade(v_trade_id);
+        RAISE EXCEPTION 'Sender Accept Allowed: sender was able to accept trade';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Only recipient can accept trade request%' THEN
+            RAISE EXCEPTION 'Unexpected error on sender accept: %', SQLERRM;
+        END IF;
+    END;
+
+    -- Third-party C cannot accept
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    BEGIN
+        PERFORM public.accept_stamp_trade(v_trade_id);
+        RAISE EXCEPTION 'Third Party Accept Allowed: user C was able to accept trade';
+    EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM NOT LIKE '%Only recipient can accept trade request%' THEN
+            RAISE EXCEPTION 'Unexpected error on third party accept: %', SQLERRM;
+        END IF;
+    END;
+END $$;
+
+-- Assertion 73: accept_stamp_trade succeeds, creates received_trade_stamps, idempotent
+DO $$
+DECLARE
+    v_trade_id UUID;
+    v_accept_res JSONB;
+    v_accept_res_dup JSONB;
+    v_rec_cnt INT;
+BEGIN
+    SET ROLE postgres;
+    INSERT INTO public.stamp_trade_requests (
+        sender_id, recipient_id, source_object_name, stamp_title, location, note, status
+    ) VALUES (
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_70.png',
+        'Tháp Rùa',
+        'Hà Nội',
+        'Tem nhận kỷ niệm',
+        'PENDING'
+    ) RETURNING id INTO v_trade_id;
+
+    -- Insert mock recipient copy in storage
+    INSERT INTO storage.objects (id, bucket_id, name, owner)
+    VALUES (
+        gen_random_uuid(),
+        'stamp-media',
+        '22222222-2222-2222-2222-222222222222/received/' || v_trade_id::text || '.png',
+        '22222222-2222-2222-2222-222222222222'
+    ) ON CONFLICT DO NOTHING;
+
+    -- Recipient B accepts
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    v_accept_res := public.accept_stamp_trade(
+        v_trade_id,
+        '22222222-2222-2222-2222-222222222222/received/' || v_trade_id::text || '.png'
+    );
+    IF (v_accept_res->>'status') <> 'ACCEPTED' THEN
+        RAISE EXCEPTION 'Accept Trade Failed: unexpected response %', v_accept_res;
+    END IF;
+
+    -- Check received stamp row created
+    SELECT COUNT(*) INTO v_rec_cnt FROM public.received_trade_stamps WHERE source_trade_id = v_trade_id;
+    IF v_rec_cnt <> 1 THEN
+        RAISE EXCEPTION 'Received Stamp Missing: expected 1 row in received_trade_stamps, found %', v_rec_cnt;
+    END IF;
+
+    -- Duplicate accept call is idempotent
+    v_accept_res_dup := public.accept_stamp_trade(
+        v_trade_id,
+        '22222222-2222-2222-2222-222222222222/received/' || v_trade_id::text || '.png'
+    );
+    IF (v_accept_res_dup->>'status') <> 'ACCEPTED' THEN
+        RAISE EXCEPTION 'Duplicate Accept Failed: %', v_accept_res_dup;
+    END IF;
+END $$;
+
+-- Assertion 74: received_trade_stamps privacy - owner only
+DO $$
+DECLARE
+    v_b_cnt INT;
+    v_a_cnt INT;
+    v_c_cnt INT;
+BEGIN
+    -- Owner B can select
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    SELECT COUNT(*) INTO v_b_cnt FROM public.received_trade_stamps;
+    IF v_b_cnt < 1 THEN RAISE EXCEPTION 'Received Stamp Privacy: Owner B cannot select own stamps'; END IF;
+
+    -- Sender A cannot select B's received collection
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    SELECT COUNT(*) INTO v_a_cnt FROM public.received_trade_stamps WHERE owner_id = '22222222-2222-2222-2222-222222222222';
+    IF v_a_cnt <> 0 THEN RAISE EXCEPTION 'Received Stamp Leak: Sender A was able to select B received stamps'; END IF;
+
+    -- Third-party C cannot select B's received collection
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    SELECT COUNT(*) INTO v_c_cnt FROM public.received_trade_stamps WHERE owner_id = '22222222-2222-2222-2222-222222222222';
+    IF v_c_cnt <> 0 THEN RAISE EXCEPTION 'Received Stamp Leak: User C was able to select B received stamps'; END IF;
+END $$;
+
+-- Assertion 75: block_user cancels pending trades between pair
+DO $$
+DECLARE
+    v_trade_id UUID;
+    v_status TEXT;
+BEGIN
+    SET ROLE postgres;
+    INSERT INTO public.stamp_trade_requests (
+        sender_id, recipient_id, source_object_name, stamp_title, status
+    ) VALUES (
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+        '11111111-1111-1111-1111-111111111111/rendered/test_stamp_70.png',
+        'Block Cancel Test',
+        'PENDING'
+    ) RETURNING id INTO v_trade_id;
+
+    -- User A blocks User B
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    PERFORM public.block_user('22222222-2222-2222-2222-222222222222');
+
+    -- Trade status must now be CANCELLED
+    SET ROLE postgres;
+    SELECT status INTO v_status FROM public.stamp_trade_requests WHERE id = v_trade_id;
+    IF v_status <> 'CANCELLED' THEN
+        RAISE EXCEPTION 'Block Trade Cancellation Failed: expected CANCELLED, got %', v_status;
+    END IF;
+
+    -- Unblock User B
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    PERFORM public.unblock_user('22222222-2222-2222-2222-222222222222');
+
+    -- Cancelled trade must NOT be resurrected
+    SET ROLE postgres;
+    SELECT status INTO v_status FROM public.stamp_trade_requests WHERE id = v_trade_id;
+    IF v_status <> 'CANCELLED' THEN
+        RAISE EXCEPTION 'Unblock Resurrected Trade: expected CANCELLED, got %', v_status;
+    END IF;
+END $$;
+
+-- Assertion 76: Account Deletion Durability - recipient received stamp preserved
+DO $$
+DECLARE
+    v_trade_id UUID;
+    v_rec_id UUID;
+    v_rec_exists INT;
+    v_orig_sender UUID;
+BEGIN
+    SET ROLE postgres;
+    -- Create disposable user D
+    INSERT INTO auth.users (id, email, role, aud) VALUES
+        ('55555555-5555-5555-5555-555555555555', 'user_d_trade@test.local', 'authenticated', 'authenticated')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.profiles (id, username, display_name) VALUES
+        ('55555555-5555-5555-5555-555555555555', 'user_d_trade', 'User D Trade')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.friends (user_id_1, user_id_2) VALUES
+        ('22222222-2222-2222-2222-222222222222', '55555555-5555-5555-5555-555555555555')
+    ON CONFLICT DO NOTHING;
+
+    -- Trade from D to B accepted
+    INSERT INTO public.stamp_trade_requests (
+        sender_id, recipient_id, source_object_name, stamp_title, status
+    ) VALUES (
+        '55555555-5555-5555-5555-555555555555',
+        '22222222-2222-2222-2222-222222222222',
+        '55555555-5555-5555-5555-555555555555/rendered/stamp_d.png',
+        'D Stamp',
+        'ACCEPTED'
+    ) RETURNING id INTO v_trade_id;
+
+    INSERT INTO public.received_trade_stamps (
+        owner_id, source_trade_id, original_sender_id, recipient_media_path, stamp_title
+    ) VALUES (
+        '22222222-2222-2222-2222-222222222222',
+        v_trade_id,
+        '55555555-5555-5555-5555-555555555555',
+        '22222222-2222-2222-2222-222222222222/received/stamp_d.png',
+        'D Stamp'
+    ) RETURNING id INTO v_rec_id;
+
+    -- Delete user D account
+    DELETE FROM auth.users WHERE id = '55555555-5555-5555-5555-555555555555';
+
+    -- Recipient B's received stamp row must still exist
+    SELECT COUNT(*), original_sender_id INTO v_rec_exists, v_orig_sender
+    FROM public.received_trade_stamps WHERE id = v_rec_id
+    GROUP BY original_sender_id;
+
+    IF v_rec_exists <> 1 THEN
+        RAISE EXCEPTION 'Received Stamp Durability Failed: recipient stamp was deleted when sender deleted account';
+    END IF;
+
+    IF v_orig_sender IS NOT NULL THEN
+        RAISE EXCEPTION 'Sender Anonymization Failed: original_sender_id was not set to NULL on deletion';
+    END IF;
+
+    -- Cleanup
+    DELETE FROM public.received_trade_stamps WHERE id = v_rec_id;
+END $$;
+
+
+-- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
+
+DELETE FROM public.received_trade_stamps WHERE owner_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
+DELETE FROM public.stamp_trade_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
 
 DELETE FROM public.user_reports WHERE reporter_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444') OR reported_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 DELETE FROM public.user_blocks WHERE blocker_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444') OR blocked_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');

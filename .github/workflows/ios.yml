@@ -56,8 +56,10 @@ jobs:
           for i in $(seq 1 30); do
             CODE_DEL=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "http://127.0.0.1:54321/functions/v1/delete-account" 2>/dev/null || true)
             CODE_PUSH=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "http://127.0.0.1:54321/functions/v1/dispatch-push" 2>/dev/null || true)
+            CODE_TRADE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "http://127.0.0.1:54321/functions/v1/accept-trade" 2>/dev/null || true)
             if ([ "$CODE_DEL" = "200" ] || [ "$CODE_DEL" = "401" ] || [ "$CODE_DEL" = "405" ]) && \
-               ([ "$CODE_PUSH" = "200" ] || [ "$CODE_PUSH" = "401" ] || [ "$CODE_PUSH" = "405" ]); then
+               ([ "$CODE_PUSH" = "200" ] || [ "$CODE_PUSH" = "401" ] || [ "$CODE_PUSH" = "405" ]) && \
+               ([ "$CODE_TRADE" = "200" ] || [ "$CODE_TRADE" = "401" ] || [ "$CODE_TRADE" = "405" ]); then
               READY=1
               break
             fi
@@ -68,7 +70,7 @@ jobs:
             cat /tmp/supabase_functions.log || true
             exit 1
           fi
-          echo "Local Edge Functions (delete-account & dispatch-push) are ready."
+          echo "Local Edge Functions (delete-account, dispatch-push, accept-trade) are ready."
 
       - name: Run Black-Box Multi-User E2E Contract Tests
         run: |

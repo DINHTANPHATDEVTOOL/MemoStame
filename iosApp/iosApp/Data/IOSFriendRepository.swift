@@ -15,9 +15,21 @@ class IOSFriendRepository: ObservableObject {
     @Published var friends: [FriendItem] = []
     @Published var incomingRequests: [FriendRequestItem] = []
     @Published var outgoingRequests: [FriendRequestItem] = []
+    @Published var tradeRequests: [SupabaseTradeRequestRecord] = []
+    @Published var receivedStamps: [SupabaseReceivedStampRecord] = []
     @Published var searchedProfiles: [UserProfile] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
+
+    var incomingTrades: [SupabaseTradeRequestRecord] {
+        guard !activeUserId.isEmpty else { return [] }
+        return tradeRequests.filter { $0.recipientId == activeUserId }
+    }
+
+    var outgoingTrades: [SupabaseTradeRequestRecord] {
+        guard !activeUserId.isEmpty else { return [] }
+        return tradeRequests.filter { $0.senderId == activeUserId }
+    }
 
     private(set) var activeUserId: String = ""
     private let fileManager = FileManager.default
@@ -52,6 +64,8 @@ class IOSFriendRepository: ObservableObject {
             self.friends = []
             self.incomingRequests = []
             self.outgoingRequests = []
+            self.tradeRequests = []
+            self.receivedStamps = []
             self.searchedProfiles = []
             self.errorMessage = nil
             self.activeUserId = ""
@@ -66,6 +80,8 @@ class IOSFriendRepository: ObservableObject {
         self.friends = []
         self.incomingRequests = []
         self.outgoingRequests = []
+        self.tradeRequests = []
+        self.receivedStamps = []
         self.searchedProfiles = []
         self.errorMessage = nil
         self.activeUserId = cleanUid
@@ -204,6 +220,28 @@ class IOSFriendRepository: ObservableObject {
                 print("Friends list cloud sync error (retaining offline cache): \(err.localizedDescription)")
                 DispatchQueue.main.async {
                     group.leave()
+                }
+            }
+        }
+
+        // 3. Fetch stamp trade requests
+        group.enter()
+        SupabaseSocialClient.shared.fetchTradeRequests(userId: activeUserId) { [weak self] result in
+            DispatchQueue.main.async {
+                defer { group.leave() }
+                if case .success(let list) = result {
+                    self?.tradeRequests = list
+                }
+            }
+        }
+
+        // 4. Fetch received trade stamps
+        group.enter()
+        SupabaseSocialClient.shared.fetchReceivedStamps(userId: activeUserId) { [weak self] result in
+            DispatchQueue.main.async {
+                defer { group.leave() }
+                if case .success(let list) = result {
+                    self?.receivedStamps = list
                 }
             }
         }
@@ -407,6 +445,77 @@ class IOSFriendRepository: ObservableObject {
         SupabaseSocialClient.shared.fetchBlockedUsers { result in
             DispatchQueue.main.async {
                 completion(result)
+            }
+        }
+    }
+
+    // MARK: - Cloud Stamp Trade Actions
+    func createTradeRequest(
+        recipientId: String,
+        stampId: String,
+        stampName: String,
+        stampMediaPath: String,
+        stampCategory: String? = nil,
+        stampSvg: String? = nil,
+        note: String? = nil,
+        completion: @escaping (Result<SupabaseTradeRequestRecord, Error>) -> Void
+    ) {
+        SupabaseSocialClient.shared.createStampTradeRpc(
+            recipientId: recipientId,
+            stampId: stampId,
+            stampName: stampName,
+            stampMediaPath: stampMediaPath,
+            stampCategory: stampCategory,
+            stampSvg: stampSvg,
+            note: note
+        ) { [weak self] result in
+            DispatchQueue.main.async {
+                if case .success = result {
+                    self?.loadCloudData()
+                }
+                completion(result)
+            }
+        }
+    }
+
+    func acceptTrade(tradeId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        SupabaseSocialClient.shared.acceptStampTradeEdgeFunction(tradeId: tradeId) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.loadCloudData()
+                    completion(.success(()))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        }
+    }
+
+    func declineTrade(tradeId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        SupabaseSocialClient.shared.declineStampTradeRpc(tradeId: tradeId) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.loadCloudData()
+                    completion(.success(()))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        }
+    }
+
+    func cancelTrade(tradeId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        SupabaseSocialClient.shared.cancelStampTradeRpc(tradeId: tradeId) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.loadCloudData()
+                    completion(.success(()))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
             }
         }
     }

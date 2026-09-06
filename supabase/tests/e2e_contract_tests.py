@@ -2416,6 +2416,634 @@ class E2EContractRunner:
 
         self.log("PHASE 11", "All social safety & blocking contracts successfully verified!")
 
+    # ----------------------------------------------------
+    # PHASE 12: CLOUD-AUTHORITATIVE STAMP TRADE E2E
+    # ----------------------------------------------------
+    def phase12_cloud_stamp_trade(self):
+        self.log("PHASE 12", "Starting Cloud-Authoritative Stamp Trade E2E tests...")
+        u_a = self.users["A"]
+        u_b = self.users["B"]
+        u_c = self.users["C"]
+
+        # Step 1: Re-establish A <-> B friendship
+        self.log("PHASE 12", "Step 1: Re-establishing A <-> B friendship...")
+        status, reqs, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friend_requests?recipient_id=eq.{u_a['uid']}&sender_id=eq.{u_b['uid']}&status=eq.PENDING",
+            token=u_a["token"]
+        )
+        if reqs and len(reqs) > 0:
+            freq_id = reqs[0]["id"]
+        else:
+            freq_id = str(uuid.uuid4())
+            status, _, text, _ = self.client.request(
+                "POST",
+                "/rest/v1/friend_requests",
+                token=u_b["token"],
+                json_data={
+                    "id": freq_id,
+                    "sender_id": u_b["uid"],
+                    "recipient_id": u_a["uid"],
+                    "status": "PENDING"
+                }
+            )
+            self.assert_status(status, [200, 201], "User B creates friend request", "POST", "/rest/v1/friend_requests", text)
+
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/accept_friend_request",
+            token=u_a["token"],
+            json_data={"p_request_id": freq_id}
+        )
+        self.assert_status(status, 200, "User A accepts User B friend request", "POST", "/rest/v1/rpc/accept_friend_request", text)
+
+        # Step 2: Upload source stamp media for User A
+        self.log("PHASE 12", "Step 2: Upload source stamp media for User A...")
+        src_media_path = f"{u_a['uid']}/rendered/trade_source_{uuid.uuid4()}.png"
+        status, _, text, _ = self.client.request(
+            "POST",
+            f"/storage/v1/object/stamp-media/{src_media_path}",
+            token=u_a["token"],
+            raw_body=PNG_1X1_FIXTURE,
+            content_type="image/png"
+        )
+        self.assert_status(status, [200, 201], "User A uploads trade source media", "POST", f"/storage/v1/object/stamp-media/{src_media_path}", text)
+
+        # Step 3: create_stamp_trade RPC validations & security
+        self.log("PHASE 12", "Step 3: Testing create_stamp_trade RPC validations...")
+
+        # Negative 1: Self-trade rejected
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_a["uid"],
+                "p_stamp_id": "stamp_self",
+                "p_stamp_name": "Self Stamp",
+                "p_stamp_media_path": src_media_path
+            }
+        )
+        assert status in [400, 500], f"Self-trade should be rejected, got {status}: {text}"
+
+        # Negative 2: Non-friend trade rejected (User C is not friend of A)
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_c["uid"],
+                "p_stamp_id": "stamp_non_friend",
+                "p_stamp_name": "Non Friend Stamp",
+                "p_stamp_media_path": src_media_path
+            }
+        )
+        assert status in [400, 403, 500], f"Non-friend trade should be rejected, got {status}: {text}"
+
+        # Negative 3: Invalid media path (foreign prefix)
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_bad_path",
+                "p_stamp_name": "Bad Path Stamp",
+                "p_stamp_media_path": f"{u_b['uid']}/rendered/foreign.png"
+            }
+        )
+        assert status in [400, 500], f"Trade with foreign media prefix should be rejected, got {status}: {text}"
+
+        # Negative 4: Anon cannot call create_stamp_trade
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=None,
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_anon",
+                "p_stamp_name": "Anon Stamp",
+                "p_stamp_media_path": src_media_path
+            }
+        )
+        assert status in [401, 403], f"Anon call to create_stamp_trade should be 401/403, got {status}: {text}"
+
+        # Positive: User A creates trade 1 to User B
+        status, trade_1, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_gold_1",
+                "p_stamp_name": "Golden Sunset",
+                "p_stamp_media_path": src_media_path,
+                "p_stamp_category": "landscape",
+                "p_note": "A gift for you!"
+            }
+        )
+        self.assert_status(status, 200, "User A creates trade 1 to User B", "POST", "/rest/v1/rpc/create_stamp_trade", text)
+        assert trade_1.get("sender_id") == u_a["uid"]
+        assert trade_1.get("recipient_id") == u_b["uid"]
+        assert trade_1.get("status") == "PENDING"
+        assert trade_1.get("stamp_name") == "Golden Sunset"
+        assert trade_1.get("stamp_media_path") == src_media_path
+        trade_1_id = trade_1["id"]
+
+        # Step 4: Direct client insert to stamp_trade_requests denied
+        self.log("PHASE 12", "Step 4: Direct client insert to stamp_trade_requests denied...")
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/stamp_trade_requests",
+            token=u_a["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": u_a["uid"],
+                "recipient_id": u_b["uid"],
+                "stamp_id": "spoof",
+                "stamp_name": "Spoof",
+                "stamp_media_path": src_media_path,
+                "status": "ACCEPTED"
+            }
+        )
+        assert status in [400, 401, 403], f"Direct insert to stamp_trade_requests should be denied, got {status}: {text}"
+
+        # Step 5: Trade Visibility & Isolation
+        self.log("PHASE 12", "Step 5: Testing Trade Visibility & Privacy Isolation...")
+        # User A can query trade 1
+        status, data_a, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/stamp_trade_requests?id=eq.{trade_1_id}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "User A queries trade 1", "GET", "/rest/v1/stamp_trade_requests", text)
+        assert len(data_a) == 1, f"Expected User A to see trade 1, got {data_a}"
+
+        # User B can query trade 1
+        status, data_b, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/stamp_trade_requests?id=eq.{trade_1_id}",
+            token=u_b["token"]
+        )
+        self.assert_status(status, 200, "User B queries trade 1", "GET", "/rest/v1/stamp_trade_requests", text)
+        assert len(data_b) == 1, f"Expected User B to see trade 1, got {data_b}"
+
+        # User C (third party) CANNOT see trade 1
+        status, data_c, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/stamp_trade_requests?id=eq.{trade_1_id}",
+            token=u_c["token"]
+        )
+        self.assert_status(status, 200, "User C queries trade 1", "GET", "/rest/v1/stamp_trade_requests", text)
+        assert len(data_c) == 0, f"Privacy Leak: User C saw trade 1: {data_c}"
+
+        # Anon cannot see trade 1
+        status, data_anon, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/stamp_trade_requests?id=eq.{trade_1_id}",
+            token=None
+        )
+        assert status in [401, 403] or (status == 200 and len(data_anon) == 0), f"Anon saw trade 1: {status}, {data_anon}"
+
+        # Step 6: decline_stamp_trade RPC
+        self.log("PHASE 12", "Step 6: Testing decline_stamp_trade RPC...")
+        # Negative: Sender A cannot decline own trade
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/decline_stamp_trade",
+            token=u_a["token"],
+            json_data={"p_trade_id": trade_1_id}
+        )
+        assert status in [400, 500], f"Sender A declining own trade should fail, got {status}: {text}"
+
+        # Negative: Third-party C cannot decline
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/decline_stamp_trade",
+            token=u_c["token"],
+            json_data={"p_trade_id": trade_1_id}
+        )
+        assert status in [400, 500], f"Third-party C declining trade should fail, got {status}: {text}"
+
+        # Positive: Recipient B declines trade 1
+        status, declined_trade, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/decline_stamp_trade",
+            token=u_b["token"],
+            json_data={"p_trade_id": trade_1_id}
+        )
+        self.assert_status(status, 200, "Recipient B declines trade 1", "POST", "/rest/v1/rpc/decline_stamp_trade", text)
+        assert declined_trade.get("status") == "DECLINED"
+
+        # Idempotency / State machine: cannot decline again
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/decline_stamp_trade",
+            token=u_b["token"],
+            json_data={"p_trade_id": trade_1_id}
+        )
+        assert status in [400, 500], f"Double decline should fail, got {status}: {text}"
+
+        # Cannot accept declined trade via accept-trade Edge Function
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_b["token"],
+            json_data={"trade_id": trade_1_id}
+        )
+        assert status in [400, 422, 500], f"Accepting declined trade should fail, got {status}: {text}"
+
+        # Step 7: cancel_stamp_trade RPC
+        self.log("PHASE 12", "Step 7: Testing cancel_stamp_trade RPC...")
+        # Create trade 2 from A to B
+        status, trade_2, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_cancel_test",
+                "p_stamp_name": "Cancel Test",
+                "p_stamp_media_path": src_media_path
+            }
+        )
+        self.assert_status(status, 200, "User A creates trade 2", "POST", "/rest/v1/rpc/create_stamp_trade", text)
+        trade_2_id = trade_2["id"]
+
+        # Negative: Recipient B cannot cancel trade 2
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/cancel_stamp_trade",
+            token=u_b["token"],
+            json_data={"p_trade_id": trade_2_id}
+        )
+        assert status in [400, 500], f"Recipient B cancelling trade should fail, got {status}: {text}"
+
+        # Negative: Third-party C cannot cancel trade 2
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/cancel_stamp_trade",
+            token=u_c["token"],
+            json_data={"p_trade_id": trade_2_id}
+        )
+        assert status in [400, 500], f"Third party C cancelling trade should fail, got {status}: {text}"
+
+        # Positive: Sender A cancels trade 2
+        status, cancelled_trade, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/cancel_stamp_trade",
+            token=u_a["token"],
+            json_data={"p_trade_id": trade_2_id}
+        )
+        self.assert_status(status, 200, "Sender A cancels trade 2", "POST", "/rest/v1/rpc/cancel_stamp_trade", text)
+        assert cancelled_trade.get("status") == "CANCELLED"
+
+        # State machine: cannot accept cancelled trade
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_b["token"],
+            json_data={"trade_id": trade_2_id}
+        )
+        assert status in [400, 422, 500], f"Accepting cancelled trade should fail, got {status}: {text}"
+
+        # Step 8: accept-trade Edge Function
+        self.log("PHASE 12", "Step 8: Testing accept-trade Edge Function and Media Durability...")
+        # Create trade 3 from A to B
+        status, trade_3, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_accept_test",
+                "p_stamp_name": "Accepted Treasure",
+                "p_stamp_media_path": src_media_path,
+                "p_stamp_category": "special",
+                "p_note": "Enjoy this permanent copy"
+            }
+        )
+        self.assert_status(status, 200, "User A creates trade 3", "POST", "/rest/v1/rpc/create_stamp_trade", text)
+        trade_3_id = trade_3["id"]
+
+        # Negative 1: Anon cannot call accept-trade
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=None,
+            json_data={"trade_id": trade_3_id}
+        )
+        assert status in [401, 403], f"Anon accept-trade should be 401/403, got {status}: {text}"
+
+        # Negative 2: Sender A cannot accept own trade
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_a["token"],
+            json_data={"trade_id": trade_3_id}
+        )
+        assert status in [400, 403], f"Sender A accepting own trade should fail, got {status}: {text}"
+
+        # Negative 3: Third party C cannot accept trade
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_c["token"],
+            json_data={"trade_id": trade_3_id}
+        )
+        assert status in [400, 403, 404], f"Third party C accepting trade should fail, got {status}: {text}"
+
+        # Positive: Recipient B accepts trade 3
+        status, accept_res, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_b["token"],
+            json_data={"trade_id": trade_3_id}
+        )
+        self.assert_status(status, 200, "Recipient B accepts trade 3", "POST", "/functions/v1/accept-trade", text)
+        assert accept_res.get("success") is True, f"Expected success: true, got: {accept_res}"
+        dest_key = accept_res.get("destination_key")
+        received_stamp_id = accept_res.get("received_stamp_id")
+        expected_dest_key = f"{u_b['uid']}/received/{trade_3_id}.png"
+        assert dest_key == expected_dest_key, f"Expected destination_key {expected_dest_key}, got {dest_key}"
+
+        # Media Durability verification
+        # 1. Recipient's copied media exists and matches source bytes
+        status, _, text, dest_bytes = self.client.request(
+            "GET",
+            f"/storage/v1/object/public/stamp-media/{dest_key}"
+        )
+        self.assert_status(status, 200, "Read copied recipient stamp media", "GET", f"/storage/v1/object/public/stamp-media/{dest_key}", text)
+        assert dest_bytes == PNG_1X1_FIXTURE, "Copied media bytes do not match original fixture"
+
+        # 2. Sender's original media remains intact (non-destructive)
+        status, _, text, src_bytes = self.client.request(
+            "GET",
+            f"/storage/v1/object/public/stamp-media/{src_media_path}"
+        )
+        self.assert_status(status, 200, "Read original sender stamp media", "GET", f"/storage/v1/object/public/stamp-media/{src_media_path}", text)
+        assert src_bytes == PNG_1X1_FIXTURE, "Original sender media altered or missing"
+
+        # Database State & Vault Records
+        # Query trade status
+        status, trades_after, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/stamp_trade_requests?id=eq.{trade_3_id}",
+            token=u_b["token"]
+        )
+        assert len(trades_after) == 1
+        assert trades_after[0]["status"] == "ACCEPTED"
+        assert trades_after[0]["destination_media_path"] == dest_key
+
+        # Recipient B sees received stamp
+        status, r_stamps_b, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/received_trade_stamps?trade_id=eq.{trade_3_id}",
+            token=u_b["token"]
+        )
+        self.assert_status(status, 200, "Recipient B reads received stamps", "GET", "/rest/v1/received_trade_stamps", text)
+        assert len(r_stamps_b) == 1, f"Expected 1 received stamp for B, got {r_stamps_b}"
+        assert r_stamps_b[0]["owner_id"] == u_b["uid"]
+        assert r_stamps_b[0]["original_sender_id"] == u_a["uid"]
+        assert r_stamps_b[0]["media_path"] == dest_key
+        assert r_stamps_b[0]["stamp_name"] == "Accepted Treasure"
+
+        # User A cannot see B's received stamp row (RLS vault privacy)
+        status, r_stamps_a, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/received_trade_stamps?trade_id=eq.{trade_3_id}",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "User A queries B received stamp", "GET", "/rest/v1/received_trade_stamps", text)
+        assert len(r_stamps_a) == 0, f"Privacy Leak: User A saw User B's received stamp: {r_stamps_a}"
+
+        # Direct client insert to received_trade_stamps denied
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/received_trade_stamps",
+            token=u_b["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "owner_id": u_b["uid"],
+                "trade_id": trade_3_id,
+                "stamp_id": "spoof",
+                "stamp_name": "Spoof",
+                "media_path": dest_key
+            }
+        )
+        assert status in [400, 401, 403], f"Direct insert to received_trade_stamps should be denied, got {status}: {text}"
+
+        # Idempotency: re-accepting already accepted trade
+        status, re_res, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_b["token"],
+            json_data={"trade_id": trade_3_id}
+        )
+        assert status == 200 or status in [400, 422], f"Re-accept trade unexpected status {status}: {text}"
+
+        # Step 9: Push notification trigger for trade events
+        self.log("PHASE 12", "Step 9: Testing Push Notification trigger for trade events...")
+        # trade_accepted push event from B to A
+        status, push_res, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_b["token"],
+            json_data={
+                "event_type": "trade_accepted",
+                "entity_id": trade_3_id
+            }
+        )
+        self.assert_status(status, 200, "User B dispatches trade_accepted push", "POST", "/functions/v1/dispatch-push", text)
+
+        # Step 10: Blocking interactions
+        self.log("PHASE 12", "Step 10: Testing Blocking interactions on Trades...")
+        # Create trade 4 from A to B
+        status, trade_4, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_block_test",
+                "p_stamp_name": "Block Test Stamp",
+                "p_stamp_media_path": src_media_path
+            }
+        )
+        self.assert_status(status, 200, "User A creates trade 4", "POST", "/rest/v1/rpc/create_stamp_trade", text)
+        trade_4_id = trade_4["id"]
+
+        # User A blocks User B
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/block_user",
+            token=u_a["token"],
+            json_data={"p_blocked_id": u_b["uid"]}
+        )
+        self.assert_status(status, 200, "User A blocks User B", "POST", "/rest/v1/rpc/block_user", text)
+
+        # Pending trade 4 MUST have been cancelled automatically
+        status, t4_data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/stamp_trade_requests?id=eq.{trade_4_id}",
+            token=u_a["token"]
+        )
+        assert len(t4_data) == 1 and t4_data[0]["status"] == "CANCELLED", f"Pending trade not cancelled by block: {t4_data}"
+
+        # B cannot accept trade 4
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_b["token"],
+            json_data={"trade_id": trade_4_id}
+        )
+        assert status in [400, 403, 500], f"Accepting trade across blocked pair must fail, got {status}: {text}"
+
+        # Cannot create new trade across blocked pair
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=u_a["token"],
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_blocked",
+                "p_stamp_name": "Blocked Stamp",
+                "p_stamp_media_path": src_media_path
+            }
+        )
+        assert status in [400, 403, 500], f"Creating trade across blocked pair should fail, got {status}: {text}"
+
+        # Unblock User B
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/unblock_user",
+            token=u_a["token"],
+            json_data={"p_blocked_id": u_b["uid"]}
+        )
+        self.assert_status(status, 200, "User A unblocks User B", "POST", "/rest/v1/rpc/unblock_user", text)
+
+        # Step 11: Account Deletion Durability
+        self.log("PHASE 12", "Step 11: Testing Account Deletion Durability for Received Stamps...")
+        # Signup disposable User E
+        email_e = f"e2e-e-{self.run_id}-{secrets.token_hex(4)}@memostamp.test"
+        password_e = f"TestPass123!{secrets.token_hex(6)}"
+        status, data_e, text, _ = self.client.request(
+            "POST",
+            "/auth/v1/signup",
+            json_data={"email": email_e, "password": password_e}
+        )
+        uid_e = (data_e.get("user") or {}).get("id") or data_e.get("id")
+        token_e = data_e.get("access_token")
+        if not token_e:
+            login_status, login_data, _, _ = self.client.request(
+                "POST",
+                "/auth/v1/token?grant_type=password",
+                json_data={"email": email_e, "password": password_e}
+            )
+            token_e = login_data.get("access_token")
+            uid_e = uid_e or (login_data.get("user") or {}).get("id")
+
+        # Create Profile for User E
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/profiles",
+            token=token_e,
+            json_data={
+                "id": uid_e,
+                "username": f"user_e_{self.run_id}",
+                "display_name": "Disposable Trader E"
+            }
+        )
+
+        # Make User E and User B friends
+        freq_e_id = str(uuid.uuid4())
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=token_e,
+            json_data={
+                "id": freq_e_id,
+                "sender_id": uid_e,
+                "recipient_id": u_b["uid"],
+                "status": "PENDING"
+            }
+        )
+        self.assert_status(status, [200, 201], "User E sends friend request to B", "POST", "/rest/v1/friend_requests", text)
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/accept_friend_request",
+            token=u_b["token"],
+            json_data={"p_request_id": freq_e_id}
+        )
+        self.assert_status(status, 200, "User B accepts User E friend request", "POST", "/rest/v1/rpc/accept_friend_request", text)
+
+        # User E uploads media
+        src_e_path = f"{uid_e}/rendered/e_stamp_{uuid.uuid4()}.png"
+        status, _, text, _ = self.client.request(
+            "POST",
+            f"/storage/v1/object/stamp-media/{src_e_path}",
+            token=token_e,
+            raw_body=PNG_1X1_FIXTURE,
+            content_type="image/png"
+        )
+        self.assert_status(status, [200, 201], "User E uploads stamp media", "POST", f"/storage/v1/object/stamp-media/{src_e_path}", text)
+
+        # User E creates trade to User B
+        status, trade_e, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/create_stamp_trade",
+            token=token_e,
+            json_data={
+                "p_recipient_id": u_b["uid"],
+                "p_stamp_id": "stamp_e_durable",
+                "p_stamp_name": "E Durable Stamp",
+                "p_stamp_media_path": src_e_path
+            }
+        )
+        self.assert_status(status, 200, "User E creates trade to B", "POST", "/rest/v1/rpc/create_stamp_trade", text)
+        trade_e_id = trade_e["id"]
+
+        # User B accepts trade
+        status, accept_e_res, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/accept-trade",
+            token=u_b["token"],
+            json_data={"trade_id": trade_e_id}
+        )
+        self.assert_status(status, 200, "User B accepts trade from E", "POST", "/functions/v1/accept-trade", text)
+        dest_e_key = accept_e_res.get("destination_key")
+
+        # Now User E deletes account!
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/delete-account",
+            token=token_e,
+            json_data={}
+        )
+        self.assert_status(status, [200, 204], "User E deletes account", "POST", "/functions/v1/delete-account", text)
+
+        # User B verifies received stamp remains intact and durable in vault!
+        status, r_stamps_durable, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/received_trade_stamps?trade_id=eq.{trade_e_id}",
+            token=u_b["token"]
+        )
+        self.assert_status(status, 200, "User B queries received stamp after sender deletion", "GET", "/rest/v1/received_trade_stamps", text)
+        assert len(r_stamps_durable) == 1, f"Received stamp lost after sender account deletion: {r_stamps_durable}"
+        assert r_stamps_durable[0]["owner_id"] == u_b["uid"]
+        assert r_stamps_durable[0]["original_sender_id"] is None, f"Expected original_sender_id to be NULL after deletion, got: {r_stamps_durable[0]['original_sender_id']}"
+        assert r_stamps_durable[0]["media_path"] == dest_e_key
+
+        # Verify media file at dest_e_key is still accessible
+        status, _, text, e_dest_bytes = self.client.request(
+            "GET",
+            f"/storage/v1/object/public/stamp-media/{dest_e_key}"
+        )
+        self.assert_status(status, 200, "Recipient media intact after sender deletion", "GET", f"/storage/v1/object/public/stamp-media/{dest_e_key}", text)
+        assert e_dest_bytes == PNG_1X1_FIXTURE, "Recipient media corrupted after sender account deletion"
+
+        self.log("PHASE 12", "All Cloud-Authoritative Stamp Trade contracts successfully verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
@@ -2433,6 +3061,7 @@ class E2EContractRunner:
             self.phase9_password_recovery()
             self.phase10_push_notifications()
             self.phase11_social_safety_and_blocking()
+            self.phase12_cloud_stamp_trade()
         finally:
             self.stop_mock_push_server()
         print("=" * 60)

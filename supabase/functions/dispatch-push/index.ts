@@ -223,10 +223,10 @@ Deno.serve(async (req: Request) => {
     eventType = typeof body.event_type === "string" ? body.event_type.trim().toLowerCase() : "";
     entityId = typeof body.entity_id === "string" ? body.entity_id.trim() : "";
 
-    if (!["direct_message", "friend_request"].includes(eventType)) {
+    if (!["direct_message", "friend_request", "trade_request", "trade_accepted"].includes(eventType)) {
       return jsonResponse(400, {
         error: "INVALID_EVENT_TYPE",
-        message: "Supported event types are 'direct_message' and 'friend_request'",
+        message: "Supported event types are 'direct_message', 'friend_request', 'trade_request', and 'trade_accepted'",
       });
     }
 
@@ -372,6 +372,62 @@ Deno.serve(async (req: Request) => {
 
       notificationTitle = "Lời mời kết bạn mới";
       notificationBody = `${senderName} đã gửi cho bạn lời mời kết bạn`;
+    } else if (eventType === "trade_request" || eventType === "trade_accepted") {
+      const tradeResp = await fetch(
+        `${supabaseUrl}/rest/v1/stamp_trade_requests?id=eq.${entityId}&select=id,sender_id,recipient_id,stamp_title,status`,
+        { headers: restHeaders }
+      );
+      if (!tradeResp.ok) {
+        return jsonResponse(500, { error: "DB_FETCH_ERROR", message: "Failed to query stamp trade request" });
+      }
+      const trades = await tradeResp.json();
+      if (!Array.isArray(trades) || trades.length === 0) {
+        return jsonResponse(404, { error: "NOT_FOUND", message: "Stamp trade request not found" });
+      }
+
+      const trade = trades[0];
+      if (eventType === "trade_request") {
+        if (trade.sender_id !== callerUid) {
+          return jsonResponse(403, {
+            error: "FORBIDDEN",
+            message: "Caller is not the authoritative sender of this trade request",
+          });
+        }
+        recipientUid = trade.recipient_id;
+        route = "TRADE";
+
+        const profileResp = await fetch(
+          `${supabaseUrl}/rest/v1/profiles?id=eq.${callerUid}&select=display_name,username`,
+          { headers: restHeaders }
+        );
+        const profiles = profileResp.ok ? await profileResp.json() : [];
+        const senderProfile = Array.isArray(profiles) && profiles.length > 0 ? profiles[0] : null;
+        const senderName = senderProfile?.display_name || senderProfile?.username || "Một người bạn";
+
+        notificationTitle = "Yêu cầu trao đổi tem mới";
+        notificationBody = `${senderName} muốn trao đổi tem "${trade.stamp_title}" với bạn 📮`;
+      } else {
+        // trade_accepted: caller must be recipient
+        if (trade.recipient_id !== callerUid) {
+          return jsonResponse(403, {
+            error: "FORBIDDEN",
+            message: "Caller is not the authoritative recipient of this trade request",
+          });
+        }
+        recipientUid = trade.sender_id;
+        route = "TRADE";
+
+        const profileResp = await fetch(
+          `${supabaseUrl}/rest/v1/profiles?id=eq.${callerUid}&select=display_name,username`,
+          { headers: restHeaders }
+        );
+        const profiles = profileResp.ok ? await profileResp.json() : [];
+        const recipientProfile = Array.isArray(profiles) && profiles.length > 0 ? profiles[0] : null;
+        const recipientName = recipientProfile?.display_name || recipientProfile?.username || "Một người bạn";
+
+        notificationTitle = "Đề nghị trao đổi tem được chấp nhận";
+        notificationBody = `${recipientName} đã nhận con tem "${trade.stamp_title}" từ bạn 🤝`;
+      }
     }
   } catch (_e) {
     return jsonResponse(500, { error: "SERVER_ERROR", message: "Failed to resolve entity" });

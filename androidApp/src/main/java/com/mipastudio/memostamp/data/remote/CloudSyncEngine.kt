@@ -117,28 +117,58 @@ class CloudSyncEngine private constructor(private val context: Context) {
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
             val currentUser = authRepository.currentUser.value
-            val resolvedStampUrl = if (com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(stamp.stampImagePath)) {
-                stamp.stampImagePath
-            } else {
-                val uploadRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseMediaUploader.getInstance(context)
-                    .ensureRemoteRenderedStamp(currentUser.userId, stamp.stampImagePath)
-                uploadRes.getOrDefault(stamp.stampImagePath)
+            if (currentUser.userId.isBlank() || currentUser.userId.startsWith("guest_")) {
+                return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to trade"))
             }
-            val tradePayload = CloudTradePayload(
-                tradeId = "trade_cloud_" + System.currentTimeMillis(),
-                senderUserId = currentUser.userId,
-                senderUsername = currentUser.displayName,
-                recipientUsername = recipientUsername,
-                stampTitle = stamp.title,
-                stampImageUrl = resolvedStampUrl,
-                location = stamp.location ?: "MemoStamp Memory",
+
+            // Find recipient user profile
+            val cleanUsername = recipientUsername.trim().removePrefix("@").lowercase()
+            val recipientProfile = authRepository.supabaseClient.getProfileByUsername(cleanUsername)
+                ?: return@withContext Result.failure(IllegalArgumentException("Không tìm thấy người dùng @$cleanUsername"))
+
+            val recipientId = recipientProfile.userId
+            if (recipientId.isBlank()) {
+                return@withContext Result.failure(IllegalArgumentException("Không xác định được ID người nhận"))
+            }
+
+            // Ensure media is uploaded to Supabase Storage - NO FALLBACK to local path!
+            val uploadRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseMediaUploader.getInstance(context)
+                .ensureRemoteRenderedStamp(currentUser.userId, stamp.stampImagePath)
+
+            if (uploadRes.isFailure) {
+                return@withContext Result.failure(
+                    uploadRes.exceptionOrNull() ?: IllegalStateException("Tải ảnh tem lên máy chủ thất bại. Không thể tạo giao dịch.")
+                )
+            }
+
+            val remoteMediaUrlOrPath = uploadRes.getOrThrow()
+            if (!com.mipastudio.memostamp.domain.model.isValidRemoteStampUrl(remoteMediaUrlOrPath) && !remoteMediaUrlOrPath.contains("/rendered/")) {
+                return@withContext Result.failure(IllegalStateException("Đường dẫn media tem không hợp lệ"))
+            }
+
+            // Extract relative storage path e.g. <uid>/rendered/<filename>.png
+            val storageMediaPath = if (remoteMediaUrlOrPath.contains("/stamp-media/")) {
+                remoteMediaUrlOrPath.substringAfter("/stamp-media/")
+            } else {
+                remoteMediaUrlOrPath
+            }
+
+            val rpcResult = authRepository.createTradeRequest(
+                recipientId = recipientId,
+                stampId = stamp.id,
+                stampName = stamp.title,
+                stampMediaPath = storageMediaPath,
+                stampCategory = stamp.collectionId ?: "general",
+                stampSvg = null,
                 note = note
             )
 
-            // Save payload to local queue / mock cloud database
-            saveCloudTradePayload(tradePayload)
-
-            Result.success(tradePayload.tradeId)
+            if (rpcResult.isSuccess) {
+                val record = rpcResult.getOrThrow()
+                Result.success(record.id)
+            } else {
+                Result.failure(rpcResult.exceptionOrNull() ?: Exception("Tạo giao dịch thất bại"))
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
@@ -146,29 +176,22 @@ class CloudSyncEngine private constructor(private val context: Context) {
     }
 
     suspend fun fetchPendingCloudTrades(): List<CloudTradePayload> = withContext(Dispatchers.IO) {
-        val json = prefs.getString("cloud_trades_json", null) ?: return@withContext emptyList()
-        try {
-            val type = object : TypeToken<List<CloudTradePayload>>() {}.type
-            gson.fromJson<List<CloudTradePayload>>(json, type) ?: emptyList()
-        } catch (e: Exception) {
-            emptyList()
+        val currentUid = authRepository.currentUser.value.userId
+        val trades = authRepository.tradeRequests.value
+        trades.filter { it.recipientId == currentUid && it.status == "PENDING" }.map { t ->
+            val mediaUrl = if (t.stampMediaPath.startsWith("http")) t.stampMediaPath else "${SupabaseConfig.getSupabaseUrl(context).trimEnd('/')}/storage/v1/object/public/stamp-media/${t.stampMediaPath}"
+            CloudTradePayload(
+                tradeId = t.id,
+                senderUserId = t.senderId,
+                senderUsername = t.senderDisplayName.ifBlank { t.senderUsername },
+                recipientUsername = t.recipientUsername,
+                stampTitle = t.stampName,
+                stampImageUrl = mediaUrl,
+                location = "MemoStamp Trade",
+                note = t.note ?: "",
+                timestamp = (t.createdAt as? Double)?.toLong() ?: (t.createdAt as? Long) ?: System.currentTimeMillis()
+            )
         }
-    }
-
-    private fun saveCloudTradePayload(payload: CloudTradePayload) {
-        val currentTrades = prefs.getString("cloud_trades_json", null)
-        val list = if (currentTrades != null) {
-            try {
-                val type = object : TypeToken<MutableList<CloudTradePayload>>() {}.type
-                gson.fromJson<MutableList<CloudTradePayload>>(currentTrades, type)
-            } catch (e: Exception) {
-                mutableListOf()
-            }
-        } else {
-            mutableListOf()
-        }
-        list.add(0, payload)
-        prefs.edit().putString("cloud_trades_json", gson.toJson(list)).apply()
     }
 
     companion object {

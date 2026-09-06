@@ -71,6 +71,41 @@ data class SupabaseBlockedUser(
     @SerializedName("created_at") val createdAt: Any? = null
 )
 
+data class SupabaseTradeRequestRecord(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("sender_id") val senderId: String = "",
+    @SerializedName("sender_username") val senderUsername: String = "",
+    @SerializedName("sender_display_name") val senderDisplayName: String = "",
+    @SerializedName("sender_avatar") val senderAvatar: String? = null,
+    @SerializedName("recipient_id") val recipientId: String = "",
+    @SerializedName("recipient_username") val recipientUsername: String = "",
+    @SerializedName("recipient_display_name") val recipientDisplayName: String = "",
+    @SerializedName("recipient_avatar") val recipientAvatar: String? = null,
+    @SerializedName("stamp_id") val stampId: String = "",
+    @SerializedName("stamp_name") val stampName: String = "",
+    @SerializedName("stamp_media_path") val stampMediaPath: String = "",
+    @SerializedName("stamp_category") val stampCategory: String? = null,
+    @SerializedName("stamp_svg") val stampSvg: String? = null,
+    @SerializedName("destination_media_path") val destinationMediaPath: String? = null,
+    @SerializedName("note") val note: String? = null,
+    @SerializedName("status") val status: String = "PENDING",
+    @SerializedName("created_at") val createdAt: Any? = null,
+    @SerializedName("updated_at") val updatedAt: Any? = null
+)
+
+data class SupabaseReceivedStampRecord(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("owner_id") val ownerId: String = "",
+    @SerializedName("trade_id") val tradeId: String? = null,
+    @SerializedName("original_sender_id") val originalSenderId: String? = null,
+    @SerializedName("stamp_id") val stampId: String = "",
+    @SerializedName("stamp_name") val stampName: String = "",
+    @SerializedName("media_path") val mediaPath: String = "",
+    @SerializedName("stamp_category") val stampCategory: String? = null,
+    @SerializedName("stamp_svg") val stampSvg: String? = null,
+    @SerializedName("created_at") val createdAt: Any? = null
+)
+
 data class SupabaseDirectMessageRecord(
     @SerializedName("id") val id: String = "",
     @SerializedName("sender_id") val senderId: String = "",
@@ -733,6 +768,92 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         try {
             val listType = object : TypeToken<List<SupabaseBlockedUser>>() {}.type
             val list: List<SupabaseBlockedUser> = gson.fromJson(res.getOrNull() ?: "[]", listType) ?: emptyList()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ==========================================
+    // CLOUD STAMP TRADE SYSTEM
+    // ==========================================
+
+    suspend fun createStampTradeRpc(
+        recipientId: String,
+        stampId: String,
+        stampName: String,
+        stampMediaPath: String,
+        stampCategory: String? = null,
+        stampSvg: String? = null,
+        note: String? = null
+    ): Result<SupabaseTradeRequestRecord> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/create_stamp_trade"
+        val payload = mutableMapOf<String, Any>(
+            "p_recipient_id" to recipientId.trim(),
+            "p_stamp_id" to stampId.trim(),
+            "p_stamp_name" to stampName.trim(),
+            "p_stamp_media_path" to stampMediaPath.trim()
+        )
+        if (!stampCategory.isNullOrBlank()) payload["p_stamp_category"] = stampCategory.trim()
+        if (!stampSvg.isNullOrBlank()) payload["p_stamp_svg"] = stampSvg.trim()
+        if (!note.isNullOrBlank()) payload["p_note"] = note.trim()
+        val body = gson.toJson(payload)
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) {
+            try {
+                val record = gson.fromJson(res.getOrNull() ?: "", SupabaseTradeRequestRecord::class.java)
+                Result.success(record)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        } else {
+            Result.failure(res.exceptionOrNull() ?: Exception("Failed to create stamp trade"))
+        }
+    }
+
+    suspend fun declineStampTradeRpc(tradeId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/decline_stamp_trade"
+        val body = gson.toJson(mapOf("p_trade_id" to tradeId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to decline stamp trade via RPC"))
+    }
+
+    suspend fun cancelStampTradeRpc(tradeId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/cancel_stamp_trade"
+        val body = gson.toJson(mapOf("p_trade_id" to tradeId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to cancel stamp trade via RPC"))
+    }
+
+    suspend fun acceptStampTradeEdgeFunction(tradeId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/functions/v1/accept-trade"
+        val body = gson.toJson(mapOf("trade_id" to tradeId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to accept trade via accept-trade Edge Function"))
+    }
+
+    suspend fun getTradeRequestsForUser(userId: String): Result<List<SupabaseTradeRequestRecord>> = withContext(Dispatchers.IO) {
+        val encoded = URLEncoder.encode(userId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/stamp_trade_requests?or=(recipient_id.eq.$encoded,sender_id.eq.$encoded)&select=*&order=created_at.desc"
+        val res = executeHttp(endpoint, method = "GET", requireUserAuth = true)
+        if (res.isFailure) return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Failed to fetch trade requests"))
+        try {
+            val listType = object : TypeToken<List<SupabaseTradeRequestRecord>>() {}.type
+            val list: List<SupabaseTradeRequestRecord> = gson.fromJson(res.getOrNull() ?: "[]", listType) ?: emptyList()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getReceivedStampsForUser(userId: String): Result<List<SupabaseReceivedStampRecord>> = withContext(Dispatchers.IO) {
+        val encoded = URLEncoder.encode(userId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/received_trade_stamps?owner_id=eq.$encoded&select=*&order=created_at.desc"
+        val res = executeHttp(endpoint, method = "GET", requireUserAuth = true)
+        if (res.isFailure) return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Failed to fetch received stamps"))
+        try {
+            val listType = object : TypeToken<List<SupabaseReceivedStampRecord>>() {}.type
+            val list: List<SupabaseReceivedStampRecord> = gson.fromJson(res.getOrNull() ?: "[]", listType) ?: emptyList()
             Result.success(list)
         } catch (e: Exception) {
             Result.failure(e)

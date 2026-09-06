@@ -120,23 +120,19 @@ struct FriendsAndTradeScreenView: View {
         friendRepo.friends
     }
 
-    var allTradeRequests: [TradeRequest] {
+    var incomingTradeRequests: [SupabaseTradeRequestRecord] {
         _ = refreshTrigger
-        return (repository.tradeRequests.value as? [TradeRequest]) ?? []
+        return friendRepo.incomingTrades
     }
 
-    var incomingTradeRequests: [TradeRequest] {
-        guard let uid = authenticatedUid else { return [] }
-        return allTradeRequests.filter { trade in
-            trade.recipientId == uid
-        }
+    var outgoingTradeRequests: [SupabaseTradeRequestRecord] {
+        _ = refreshTrigger
+        return friendRepo.outgoingTrades
     }
 
-    var outgoingTradeRequests: [TradeRequest] {
-        guard let uid = authenticatedUid else { return [] }
-        return allTradeRequests.filter { trade in
-            trade.senderId == uid && trade.recipientId != uid
-        }
+    var receivedTradeStamps: [SupabaseReceivedStampRecord] {
+        _ = refreshTrigger
+        return friendRepo.receivedStamps
     }
 
     var stamps: [StampItem] {
@@ -276,7 +272,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "envelope.fill")
                                     .font(.caption.bold())
-                                Text("\(langManager.string(vi: "Hộp thư", en: "Inbox")) (\(visibleReceivedStamps.count))")
+                                Text("\(langManager.string(vi: "Hộp thư", en: "Inbox")) (\(visibleReceivedStamps.count + receivedTradeStamps.count))")
                                     .font(.subheadline.bold())
                             }
                             .padding(.vertical, 9)
@@ -335,20 +331,46 @@ struct FriendsAndTradeScreenView: View {
                     stamps: stamps,
                     onSendTrade: { stampId in
                         guard let uid = validatedMutationUid() else { return }
-                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
-                        let success = repository.sendTradeRequest(friendId: friend.id, stampId: stampId)
-                        if !success {
-                            triggerToast("Không thể gửi yêu cầu trao đổi.")
+                        guard let selectedStamp = stamps.first(where: { $0.id == stampId }) else {
+                            triggerToast("Không tìm thấy con tem đã chọn.")
                             return
                         }
-                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
-                        if persisted {
-                            refreshTrigger.toggle()
-                            showTradeModal = false
-                            triggerToast("Sent trade offer to \(friend.displayName)!")
-                        } else {
-                            repository.restoreTradeRequests(trades: previousTrades)
-                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
+                        SupabaseMediaUploader.shared.ensureRemoteRenderedStamp(
+                            ownerUid: uid,
+                            localOrRemotePath: selectedStamp.stampImagePath
+                        ) { uploadResult in
+                            DispatchQueue.main.async {
+                                switch uploadResult {
+                                case .failure(let err):
+                                    triggerToast("Lỗi tải ảnh tem lên Cloud: \(err.localizedDescription)")
+                                case .success(let remoteUrl):
+                                    let storageMediaPath: String = {
+                                        if remoteUrl.contains("/stamp-media/") {
+                                            return String(remoteUrl.components(separatedBy: "/stamp-media/").last ?? remoteUrl)
+                                        }
+                                        return remoteUrl
+                                    }()
+                                    friendRepo.createTradeRequest(
+                                        recipientId: friend.id,
+                                        stampId: selectedStamp.id,
+                                        stampName: selectedStamp.title,
+                                        stampMediaPath: storageMediaPath,
+                                        stampCategory: selectedStamp.collectionId,
+                                        stampSvg: nil,
+                                        note: nil
+                                    ) { tradeRes in
+                                        DispatchQueue.main.async {
+                                            switch tradeRes {
+                                            case .success:
+                                                showTradeModal = false
+                                                triggerToast("Sent trade offer to \(friend.displayName)!")
+                                            case .failure(let err):
+                                                triggerToast("Lỗi tạo yêu cầu trao đổi: \(err.localizedDescription)")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 )
@@ -788,7 +810,7 @@ struct FriendsAndTradeScreenView: View {
                     ForEach(incomingTradeRequests, id: \.id) { trade in
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
-                                Text(trade.senderName)
+                                Text(trade.senderDisplayName.isEmpty ? trade.senderUsername : trade.senderDisplayName)
                                     .font(.subheadline.bold())
                                     .foregroundColor(MSColors.ink)
                                 Text("gửi lời đề nghị trao đổi tem!")
@@ -799,78 +821,117 @@ struct FriendsAndTradeScreenView: View {
                                     .font(.caption2.bold())
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
-                                    .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
+                                    .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "DECLINED" || trade.status == "CANCELLED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
+                                    .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "DECLINED" || trade.status == "CANCELLED" ? .red : MSColors.gold))
                                     .cornerRadius(8)
                             }
 
                             HStack(spacing: 12) {
-                                MemoStampImageView(urlString: trade.stampUrl) {
+                                let mediaUrl = trade.stampMediaPath.hasPrefix("http") ? trade.stampMediaPath : "\(SupabaseSocialClient.shared.supabaseUrl)/storage/v1/object/public/stamp-media/\(trade.stampMediaPath)"
+                                MemoStampImageView(urlString: mediaUrl) {
                                     MSColors.lightGrey
                                 }
                                 .frame(width: 60, height: 60)
                                 .cornerRadius(8)
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(trade.stampTitle)
+                                    Text(trade.stampName)
                                         .font(.subheadline.bold())
                                         .foregroundColor(MSColors.ink)
                                     Text("Bộ sưu tập độc bản #2026")
                                         .font(.caption)
                                         .foregroundColor(MSColors.grey)
-                                    Button(action: {
-                                        guard let uid = validatedMutationUid() else { return }
-                                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
-                                        let success = repository.acceptTrade(tradeId: trade.id)
-                                        if !success {
-                                            triggerToast("Không có quyền chấp nhận yêu cầu này.")
-                                            return
-                                        }
-                                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
-                                        if persisted {
-                                            refreshTrigger.toggle()
-                                            triggerToast("Đã chấp nhận đề nghị trao đổi")
-                                        } else {
-                                            repository.restoreTradeRequests(trades: previousTrades)
-                                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
-                                        }
-                                    }) {
-                                        Text("Chấp nhận")
-                                            .font(.caption.bold())
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 8)
-                                            .background(MSColors.stamp)
-                                            .foregroundColor(.white)
-                                            .cornerRadius(10)
-                                    }
 
-                                    Button(action: {
-                                        guard let uid = validatedMutationUid() else { return }
-                                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
-                                        let success = repository.rejectTrade(tradeId: trade.id)
-                                        if !success {
-                                            triggerToast("Không thể thực hiện thao tác.")
-                                            return
+                                    if trade.status == "PENDING" {
+                                        HStack(spacing: 8) {
+                                            Button(action: {
+                                                guard validatedMutationUid() != nil else { return }
+                                                friendRepo.acceptTrade(tradeId: trade.id) { result in
+                                                    switch result {
+                                                    case .success:
+                                                        triggerToast("Đã chấp nhận đề nghị trao đổi")
+                                                    case .failure(let err):
+                                                        triggerToast("Lỗi: \(err.localizedDescription)")
+                                                    }
+                                                }
+                                            }) {
+                                                Text("Chấp nhận")
+                                                    .font(.caption.bold())
+                                                    .frame(maxWidth: .infinity)
+                                                    .padding(.vertical, 8)
+                                                    .background(MSColors.stamp)
+                                                    .foregroundColor(.white)
+                                                    .cornerRadius(10)
+                                            }
+
+                                            Button(action: {
+                                                guard validatedMutationUid() != nil else { return }
+                                                friendRepo.declineTrade(tradeId: trade.id) { result in
+                                                    switch result {
+                                                    case .success:
+                                                        triggerToast("Đã từ chối đề nghị trao đổi.")
+                                                    case .failure(let err):
+                                                        triggerToast("Lỗi: \(err.localizedDescription)")
+                                                    }
+                                                }
+                                            }) {
+                                                Text("Từ chối")
+                                                    .font(.caption.bold())
+                                                    .padding(.horizontal, 14)
+                                                    .padding(.vertical, 8)
+                                                    .background(Color.gray.opacity(0.15))
+                                                    .foregroundColor(.gray)
+                                                    .cornerRadius(10)
+                                            }
                                         }
-                                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
-                                        if persisted {
-                                            refreshTrigger.toggle()
-                                            triggerToast("Đã từ chối đề nghị trao đổi.")
-                                        } else {
-                                            repository.restoreTradeRequests(trades: previousTrades)
-                                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
-                                        }
-                                    }) {
-                                        Text("Từ chối")
-                                            .font(.caption.bold())
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 8)
-                                            .background(Color.gray.opacity(0.15))
-                                            .foregroundColor(.gray)
-                                            .cornerRadius(10)
                                     }
                                 }
                             }
+                        }
+                        .padding(14)
+                        .background(Color.white)
+                        .cornerRadius(16)
+                    }
+                }
+            }
+
+            if !receivedTradeStamps.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("TEM KỶ NIỆM ĐÃ NHẬN QUA TRAO ĐỔI (\(receivedTradeStamps.count))")
+                        .font(.caption2.bold())
+                        .foregroundColor(MSColors.grey)
+                        .padding(.horizontal, 4)
+
+                    ForEach(receivedTradeStamps, id: \.id) { rStamp in
+                        HStack(spacing: 12) {
+                            let mediaUrl = rStamp.mediaPath.hasPrefix("http") ? rStamp.mediaPath : "\(SupabaseSocialClient.shared.supabaseUrl)/storage/v1/object/public/stamp-media/\(rStamp.mediaPath)"
+                            MemoStampImageView(urlString: mediaUrl) {
+                                MSColors.lightGrey
+                            }
+                            .frame(width: 56, height: 56)
+                            .cornerRadius(8)
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(rStamp.stampName)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(MSColors.ink)
+                                Text("Đã lưu vĩnh viễn trong Kho tem")
+                                    .font(.caption2)
+                                    .foregroundColor(.green)
+                                Text("Độc bản giao lưu qua Supabase Cloud")
+                                    .font(.caption2)
+                                    .foregroundColor(MSColors.grey)
+                            }
+
+                            Spacer()
+
+                            Text("Đã sở hữu ✨")
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(MSColors.stamp.opacity(0.12))
+                                .foregroundColor(MSColors.stamp)
+                                .cornerRadius(8)
                         }
                         .padding(14)
                         .background(Color.white)
@@ -889,7 +950,7 @@ struct FriendsAndTradeScreenView: View {
                     ForEach(outgoingTradeRequests, id: \.id) { trade in
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
-                                Text("Đã gửi tới \(trade.recipientName.isEmpty ? "bạn bè" : trade.recipientName)")
+                                Text("Đã gửi tới \(trade.recipientDisplayName.isEmpty ? trade.recipientUsername : trade.recipientDisplayName)")
                                     .font(.subheadline.bold())
                                     .foregroundColor(MSColors.ink)
                                 Spacer()
@@ -897,23 +958,24 @@ struct FriendsAndTradeScreenView: View {
                                     .font(.caption2.bold())
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "REJECTED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
-                                    .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "REJECTED" ? .red : MSColors.gold))
+                                    .background(trade.status == "ACCEPTED" ? Color.green.opacity(0.2) : (trade.status == "DECLINED" || trade.status == "CANCELLED" ? Color.red.opacity(0.15) : MSColors.gold.opacity(0.2)))
+                                    .foregroundColor(trade.status == "ACCEPTED" ? .green : (trade.status == "DECLINED" || trade.status == "CANCELLED" ? .red : MSColors.gold))
                                     .cornerRadius(8)
                             }
 
                             HStack(spacing: 12) {
-                                MemoStampImageView(urlString: trade.stampUrl) {
+                                let mediaUrl = trade.stampMediaPath.hasPrefix("http") ? trade.stampMediaPath : "\(SupabaseSocialClient.shared.supabaseUrl)/storage/v1/object/public/stamp-media/\(trade.stampMediaPath)"
+                                MemoStampImageView(urlString: mediaUrl) {
                                     MSColors.lightGrey
                                 }
                                 .frame(width: 60, height: 60)
                                 .cornerRadius(8)
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(trade.stampTitle)
+                                    Text(trade.stampName)
                                         .font(.subheadline.bold())
                                         .foregroundColor(MSColors.ink)
-                                    Text("Đang chờ bạn bè xác nhận...")
+                                    Text(trade.status == "PENDING" ? "Đang chờ bạn bè xác nhận..." : (trade.status == "ACCEPTED" ? "Đã được chấp nhận ✨" : "Đã kết thúc"))
                                         .font(.caption)
                                         .foregroundColor(MSColors.grey)
                                 }
@@ -922,20 +984,14 @@ struct FriendsAndTradeScreenView: View {
 
                                 if trade.status == "PENDING" {
                                     Button(action: {
-                                        guard let uid = validatedMutationUid() else { return }
-                                        let previousTrades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
-                                        let success = repository.cancelOutgoingTrade(tradeId: trade.id)
-                                        if !success {
-                                            triggerToast("Không thể hủy yêu cầu.")
-                                            return
-                                        }
-                                        let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
-                                        if persisted {
-                                            refreshTrigger.toggle()
-                                            triggerToast("Đã hủy yêu cầu trao đổi.")
-                                        } else {
-                                            repository.restoreTradeRequests(trades: previousTrades)
-                                            triggerToast("Lỗi lưu dữ liệu. Vui lòng thử lại.")
+                                        guard validatedMutationUid() != nil else { return }
+                                        friendRepo.cancelTrade(tradeId: trade.id) { result in
+                                            switch result {
+                                            case .success:
+                                                triggerToast("Đã hủy yêu cầu trao đổi.")
+                                            case .failure(let err):
+                                                triggerToast("Lỗi: \(err.localizedDescription)")
+                                            }
                                         }
                                     }) {
                                         Text("Hủy yêu cầu")
@@ -1100,10 +1156,59 @@ struct FriendsAndTradeScreenView: View {
 
     @ViewBuilder
     private var receivedStampsInboxTabContent: some View {
-        if visibleReceivedStamps.isEmpty {
+        if visibleReceivedStamps.isEmpty && receivedTradeStamps.isEmpty {
             receivedStampsEmptyView
         } else {
-            receivedStampsListView
+            VStack(spacing: 12) {
+                if !receivedTradeStamps.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TEM KỶ NIỆM ĐÃ NHẬN TỪ TRAO ĐỔI (\(receivedTradeStamps.count))")
+                            .font(.caption2.bold())
+                            .foregroundColor(MSColors.grey)
+                            .padding(.horizontal, 4)
+
+                        ForEach(receivedTradeStamps, id: \.id) { rStamp in
+                            HStack(spacing: 12) {
+                                let mediaUrl = rStamp.mediaPath.hasPrefix("http") ? rStamp.mediaPath : "\(SupabaseSocialClient.shared.supabaseUrl)/storage/v1/object/public/stamp-media/\(rStamp.mediaPath)"
+                                MemoStampImageView(urlString: mediaUrl) {
+                                    MSColors.lightGrey
+                                }
+                                .frame(width: 56, height: 56)
+                                .cornerRadius(8)
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(rStamp.stampName)
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(MSColors.ink)
+                                    Text("Đã lưu vĩnh viễn trong Kho tem")
+                                        .font(.caption2)
+                                        .foregroundColor(.green)
+                                    Text("Độc bản giao lưu qua Supabase Cloud")
+                                        .font(.caption2)
+                                        .foregroundColor(MSColors.grey)
+                                }
+
+                                Spacer()
+
+                                Text("Đã sở hữu ✨")
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(MSColors.stamp.opacity(0.12))
+                                    .foregroundColor(MSColors.stamp)
+                                    .cornerRadius(8)
+                            }
+                            .padding(14)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                        }
+                    }
+                }
+
+                if !visibleReceivedStamps.isEmpty {
+                    receivedStampsListView
+                }
+            }
         }
     }
 
