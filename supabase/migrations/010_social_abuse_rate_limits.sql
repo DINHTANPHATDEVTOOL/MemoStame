@@ -209,10 +209,16 @@ DECLARE
 BEGIN
     v_actor := auth.uid();
     IF v_actor IS NULL THEN
+        IF current_user IN ('postgres', 'supabase_admin', 'service_role') OR coalesce(auth.role(), '') = 'service_role' THEN
+            RETURN NEW;
+        END IF;
         RAISE EXCEPTION 'Unauthorized: User authentication required' USING ERRCODE = '42501';
     END IF;
 
-    -- Strict actor identity: sender_id must be caller
+    -- Strict actor identity: sender_id must match authenticated user
+    IF NEW.sender_id IS NOT NULL AND NEW.sender_id <> v_actor THEN
+        RAISE EXCEPTION 'Forbidden: sender_id must match authenticated user' USING ERRCODE = '42501';
+    END IF;
     NEW.sender_id := v_actor;
 
     -- Self-request check
@@ -251,10 +257,16 @@ DECLARE
 BEGIN
     v_actor := auth.uid();
     IF v_actor IS NULL THEN
+        IF current_user IN ('postgres', 'supabase_admin', 'service_role') OR coalesce(auth.role(), '') = 'service_role' THEN
+            RETURN NEW;
+        END IF;
         RAISE EXCEPTION 'Unauthorized: User authentication required' USING ERRCODE = '42501';
     END IF;
 
-    -- Strict actor identity: sender_id must be caller
+    -- Strict actor identity: sender_id must match authenticated user
+    IF NEW.sender_id IS NOT NULL AND NEW.sender_id <> v_actor THEN
+        RAISE EXCEPTION 'Forbidden: sender_id must match authenticated user' USING ERRCODE = '42501';
+    END IF;
     NEW.sender_id := v_actor;
 
     -- Block check strictly precedes rate limit
@@ -289,9 +301,16 @@ DECLARE
 BEGIN
     v_actor := auth.uid();
     IF v_actor IS NULL THEN
+        IF current_user IN ('postgres', 'supabase_admin', 'service_role') OR coalesce(auth.role(), '') = 'service_role' THEN
+            RETURN NEW;
+        END IF;
         RAISE EXCEPTION 'Unauthorized: User authentication required' USING ERRCODE = '42501';
     END IF;
 
+    -- Strict actor identity: author_id must match authenticated user
+    IF NEW.author_id IS NOT NULL AND NEW.author_id <> v_actor THEN
+        RAISE EXCEPTION 'Forbidden: author_id must match authenticated user' USING ERRCODE = '42501';
+    END IF;
     NEW.author_id := v_actor;
 
     -- Check if post exists and check block relation
@@ -330,9 +349,16 @@ DECLARE
 BEGIN
     v_actor := auth.uid();
     IF v_actor IS NULL THEN
+        IF current_user IN ('postgres', 'supabase_admin', 'service_role') OR coalesce(auth.role(), '') = 'service_role' THEN
+            RETURN NEW;
+        END IF;
         RAISE EXCEPTION 'Unauthorized: User authentication required' USING ERRCODE = '42501';
     END IF;
 
+    -- Strict actor identity: author_id must match authenticated user
+    IF NEW.author_id IS NOT NULL AND NEW.author_id <> v_actor THEN
+        RAISE EXCEPTION 'Forbidden: author_id must match authenticated user' USING ERRCODE = '42501';
+    END IF;
     NEW.author_id := v_actor;
 
     -- Check if post exists and check block relation

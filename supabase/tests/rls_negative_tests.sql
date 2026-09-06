@@ -1766,6 +1766,8 @@ BEGIN
     EXCEPTION
         WHEN insufficient_privilege THEN NULL;
     END;
+
+    SET ROLE postgres;
 END $$;
 
 -- Assertion 78: ANON RATE LIMIT STATE: DENIED
@@ -1786,6 +1788,8 @@ BEGIN
     EXCEPTION
         WHEN insufficient_privilege THEN NULL;
     END;
+
+    SET ROLE postgres;
 END $$;
 
 -- Assertion 79: AUTH DIRECT RATE LIMIT STATE: DENIED
@@ -1807,11 +1811,14 @@ BEGIN
     EXCEPTION
         WHEN insufficient_privilege THEN NULL;
     END;
+
+    SET ROLE postgres;
 END $$;
 
 -- Assertion 80: NO ACCIDENTAL PUBLIC EXECUTE: PASS
 DO $$
 BEGIN
+    SET ROLE postgres;
     IF has_function_privilege('anon', 'app_private.enforce_rate_limit(uuid, text, text)', 'EXECUTE') THEN
         RAISE EXCEPTION 'NO ACCIDENTAL PUBLIC EXECUTE Failed: anon has EXECUTE on enforce_rate_limit';
     END IF;
@@ -1827,6 +1834,7 @@ BEGIN
     IF has_function_privilege('authenticated', 'app_private.cleanup_expired_rate_limit_buckets()', 'EXECUTE') THEN
         RAISE EXCEPTION 'NO ACCIDENTAL PUBLIC EXECUTE Failed: authenticated has EXECUTE on cleanup_expired_rate_limit_buckets';
     END IF;
+    SET ROLE postgres;
 END $$;
 
 -- Assertion 81: ACTOR DERIVED FROM AUTH.UID: PASS
@@ -2097,6 +2105,15 @@ BEGIN
     VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
     ON CONFLICT DO NOTHING;
 
+    -- Mock storage object in stamp-media bucket
+    INSERT INTO storage.objects (id, bucket_id, name, owner)
+    VALUES (
+        gen_random_uuid(),
+        'stamp-media',
+        '11111111-1111-1111-1111-111111111111/rendered/stamp11.png',
+        '11111111-1111-1111-1111-111111111111'
+    ) ON CONFLICT DO NOTHING;
+
     -- Seed trade bucket to 10 (limit 10 / hr)
     v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 3600) * 3600);
     INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
@@ -2125,6 +2142,7 @@ BEGIN
 
     SET ROLE postgres;
     DELETE FROM public.stamp_trade_requests WHERE sender_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM storage.objects WHERE bucket_id = 'stamp-media' AND name = '11111111-1111-1111-1111-111111111111/rendered/stamp11.png';
     DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
 END $$;
 
