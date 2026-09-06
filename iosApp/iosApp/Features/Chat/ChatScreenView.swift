@@ -534,7 +534,12 @@ struct ChatScreenView: View {
                                 case .success:
                                     toastMessage = "Báo cáo của bạn đã được gửi thành công"
                                 case .failure(let err):
-                                    toastMessage = "Lỗi gửi báo cáo: \(err.localizedDescription)"
+                                    let errStr = err.localizedDescription
+                                    if errStr.localizedCaseInsensitiveContains("RATE_LIMITED") || errStr.contains("429") {
+                                        toastMessage = "You're doing that too quickly. Please try again shortly."
+                                    } else {
+                                        toastMessage = "Lỗi gửi báo cáo: \(errStr)"
+                                    }
                                 }
                             }
                         }
@@ -566,7 +571,12 @@ struct ChatScreenView: View {
                 print("Cloud DM sent successfully to \(recipientUserId)")
             case .failure(let err):
                 isSending = false
-                toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
+                let errStr = err.localizedDescription
+                if errStr.localizedCaseInsensitiveContains("RATE_LIMITED") || errStr.contains("429") {
+                    toastMessage = "You're doing that too quickly. Please try again shortly."
+                } else {
+                    toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
+                }
                 print("Cloud DM send error: \(err.localizedDescription)")
             }
         }
@@ -596,7 +606,12 @@ struct ChatScreenView: View {
                         self.toastMessage = nil
                         print("Cloud Stamp DM sent successfully")
                     case .failure(let err):
-                        self.toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
+                        let errStr = err.localizedDescription
+                        if errStr.localizedCaseInsensitiveContains("RATE_LIMITED") || errStr.contains("429") {
+                            self.toastMessage = "You're doing that too quickly. Please try again shortly."
+                        } else {
+                            self.toastMessage = "Không thể gửi tin nhắn. Kiểm tra kết nối và thử lại."
+                        }
                         print("Cloud Stamp DM send error: \(err.localizedDescription)")
                     }
                 }

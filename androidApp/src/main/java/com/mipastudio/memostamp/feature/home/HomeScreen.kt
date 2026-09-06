@@ -1092,8 +1092,18 @@ fun HomeScreen(
                                             keyboardActions = KeyboardActions(onSend = {
                                                 if (currentCommentText.isNotBlank()) {
                                                     coroutineScope.launch {
-                                                        feedRepo.addComment(post.id, currentCommentText)
-                                                        commentInputs = commentInputs + (post.id to "")
+                                                        try {
+                                                            feedRepo.addComment(post.id, currentCommentText)
+                                                            commentInputs = commentInputs + (post.id to "")
+                                                        } catch (e: Exception) {
+                                                            val errMsg = e.message ?: ""
+                                                            val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
+                                                                "You're doing that too quickly. Please try again shortly."
+                                                            } else {
+                                                                "Lỗi gửi bình luận: $errMsg"
+                                                            }
+                                                            Toast.makeText(context, displayMsg, Toast.LENGTH_SHORT).show()
+                                                        }
                                                     }
                                                 }
                                             }),
@@ -1107,8 +1117,18 @@ fun HomeScreen(
                                             onClick = {
                                                 if (currentCommentText.isNotBlank()) {
                                                     coroutineScope.launch {
-                                                        feedRepo.addComment(post.id, currentCommentText)
-                                                        commentInputs = commentInputs + (post.id to "")
+                                                        try {
+                                                            feedRepo.addComment(post.id, currentCommentText)
+                                                            commentInputs = commentInputs + (post.id to "")
+                                                        } catch (e: Exception) {
+                                                            val errMsg = e.message ?: ""
+                                                            val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
+                                                                "You're doing that too quickly. Please try again shortly."
+                                                            } else {
+                                                                "Lỗi gửi bình luận: $errMsg"
+                                                            }
+                                                            Toast.makeText(context, displayMsg, Toast.LENGTH_SHORT).show()
+                                                        }
                                                     }
                                                 }
                                             },

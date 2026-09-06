@@ -179,7 +179,13 @@ fun ChatScreen(
                 selectedStampToSend = null
                 focusManager.clearFocus()
             } else {
-                Toast.makeText(context, "Gửi tin nhắn thất bại: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                val errMsg = res.exceptionOrNull()?.message ?: ""
+                val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
+                    "You're doing that too quickly. Please try again shortly."
+                } else {
+                    "Gửi tin nhắn thất bại: $errMsg"
+                }
+                Toast.makeText(context, displayMsg, Toast.LENGTH_SHORT).show()
             }
         }
     }

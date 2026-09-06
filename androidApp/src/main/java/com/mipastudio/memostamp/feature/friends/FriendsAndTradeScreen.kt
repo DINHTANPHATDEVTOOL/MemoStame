@@ -517,7 +517,13 @@ fun FriendsAndTradeScreen(
                                                         Toast.makeText(context, "Đã gửi lời mời kết bạn đến @${user.username}! ✉️", Toast.LENGTH_SHORT).show()
                                                     },
                                                     onFailure = { err ->
-                                                        Toast.makeText(context, err.message ?: "Không thể gửi lời mời", Toast.LENGTH_SHORT).show()
+                                                        val errMsg = err.message ?: ""
+                                                        val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
+                                                            "You're doing that too quickly. Please try again shortly."
+                                                        } else {
+                                                            errMsg.ifBlank { "Không thể gửi lời mời" }
+                                                        }
+                                                        Toast.makeText(context, displayMsg, Toast.LENGTH_SHORT).show()
                                                     }
                                                 )
                                             }
@@ -1587,7 +1593,13 @@ fun FriendsAndTradeScreen(
                                         Toast.makeText(context, "Đã gửi đề nghị trao đổi tem tới @${friend.username}! 📮", Toast.LENGTH_SHORT).show()
                                     },
                                     onFailure = { err ->
-                                        Toast.makeText(context, "Lỗi gửi đề nghị: ${err.message}", Toast.LENGTH_LONG).show()
+                                        val errMsg = err.message ?: ""
+                                        val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
+                                            "You're doing that too quickly. Please try again shortly."
+                                        } else {
+                                            "Lỗi gửi đề nghị: $errMsg"
+                                        }
+                                        Toast.makeText(context, displayMsg, Toast.LENGTH_LONG).show()
                                     }
                                 )
                             }
@@ -1623,7 +1635,15 @@ fun FriendsAndTradeScreen(
                         val result = authRepo.sendFriendRequest(targetUser)
                         result.fold(
                             onSuccess = { Toast.makeText(context, "Đã gửi lời mời kết bạn đến @${targetUser.username}! 📩", Toast.LENGTH_SHORT).show() },
-                            onFailure = { err -> Toast.makeText(context, err.message ?: "Chưa thể gửi lời mời", Toast.LENGTH_SHORT).show() }
+                            onFailure = { err ->
+                                val errMsg = err.message ?: ""
+                                val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
+                                    "You're doing that too quickly. Please try again shortly."
+                                } else {
+                                    errMsg.ifBlank { "Chưa thể gửi lời mời" }
+                                }
+                                Toast.makeText(context, displayMsg, Toast.LENGTH_SHORT).show()
+                            }
                         )
                     }
                 },

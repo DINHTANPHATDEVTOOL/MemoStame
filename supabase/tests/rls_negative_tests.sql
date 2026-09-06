@@ -102,6 +102,7 @@ END $$;
 -- ===================================================
 -- 2. FIXTURE CLEANUP & POPULATION (SUPERUSER ROLE)
 -- ===================================================
+DELETE FROM app_private.rate_limit_buckets WHERE actor_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.push_delivery_events WHERE recipient_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.push_device_tokens WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.feed_replies WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
@@ -1729,13 +1730,488 @@ END $$;
 
 
 -- ===================================================
+-- 3.10 RATE LIMIT & ABUSE THROTTLING ASSERTIONS (TASK #59)
+-- ===================================================
+
+-- Assertion 77: RATE LIMIT TABLE PRIVATE: PASS
+DO $$
+BEGIN
+    SET ROLE anon;
+    BEGIN
+        PERFORM COUNT(*) FROM app_private.rate_limit_buckets;
+        RAISE EXCEPTION 'RATE LIMIT TABLE PRIVATE Failed: anon was able to SELECT from rate_limit_buckets';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+
+    BEGIN
+        PERFORM COUNT(*) FROM app_private.rate_limit_configs;
+        RAISE EXCEPTION 'RATE LIMIT TABLE PRIVATE Failed: anon was able to SELECT from rate_limit_configs';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+
+    SET ROLE authenticated;
+    SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        PERFORM COUNT(*) FROM app_private.rate_limit_buckets;
+        RAISE EXCEPTION 'RATE LIMIT TABLE PRIVATE Failed: authenticated was able to SELECT from rate_limit_buckets';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+
+    BEGIN
+        PERFORM COUNT(*) FROM app_private.rate_limit_configs;
+        RAISE EXCEPTION 'RATE LIMIT TABLE PRIVATE Failed: authenticated was able to SELECT from rate_limit_configs';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+END $$;
+
+-- Assertion 78: ANON RATE LIMIT STATE: DENIED
+DO $$
+BEGIN
+    SET ROLE anon;
+    BEGIN
+        INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+        VALUES ('11111111-1111-1111-1111-111111111111', 'direct_message', '', now(), 60, 1);
+        RAISE EXCEPTION 'ANON RATE LIMIT STATE Failed: anon was able to INSERT into rate_limit_buckets';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+
+    BEGIN
+        PERFORM app_private.enforce_rate_limit('11111111-1111-1111-1111-111111111111', 'direct_message');
+        RAISE EXCEPTION 'ANON RATE LIMIT STATE Failed: anon was able to call enforce_rate_limit';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+END $$;
+
+-- Assertion 79: AUTH DIRECT RATE LIMIT STATE: DENIED
+DO $$
+BEGIN
+    SET ROLE authenticated;
+    SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+        VALUES ('11111111-1111-1111-1111-111111111111', 'direct_message', '', now(), 60, 1);
+        RAISE EXCEPTION 'AUTH DIRECT RATE LIMIT STATE Failed: authenticated was able to INSERT into rate_limit_buckets';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+
+    BEGIN
+        PERFORM app_private.enforce_rate_limit('11111111-1111-1111-1111-111111111111', 'direct_message');
+        RAISE EXCEPTION 'AUTH DIRECT RATE LIMIT STATE Failed: authenticated was able to direct execute enforce_rate_limit';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+END $$;
+
+-- Assertion 80: NO ACCIDENTAL PUBLIC EXECUTE: PASS
+DO $$
+BEGIN
+    IF has_function_privilege('anon', 'app_private.enforce_rate_limit(uuid, text, text)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'NO ACCIDENTAL PUBLIC EXECUTE Failed: anon has EXECUTE on enforce_rate_limit';
+    END IF;
+    IF has_function_privilege('authenticated', 'app_private.enforce_rate_limit(uuid, text, text)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'NO ACCIDENTAL PUBLIC EXECUTE Failed: authenticated has EXECUTE on enforce_rate_limit';
+    END IF;
+    IF has_function_privilege('public', 'app_private.enforce_rate_limit(uuid, text, text)', 'EXECUTE') THEN
+        RAISE EXCEPTION 'NO ACCIDENTAL PUBLIC EXECUTE Failed: public has EXECUTE on enforce_rate_limit';
+    END IF;
+    IF has_function_privilege('anon', 'app_private.cleanup_expired_rate_limit_buckets()', 'EXECUTE') THEN
+        RAISE EXCEPTION 'NO ACCIDENTAL PUBLIC EXECUTE Failed: anon has EXECUTE on cleanup_expired_rate_limit_buckets';
+    END IF;
+    IF has_function_privilege('authenticated', 'app_private.cleanup_expired_rate_limit_buckets()', 'EXECUTE') THEN
+        RAISE EXCEPTION 'NO ACCIDENTAL PUBLIC EXECUTE Failed: authenticated has EXECUTE on cleanup_expired_rate_limit_buckets';
+    END IF;
+END $$;
+
+-- Assertion 81: ACTOR DERIVED FROM AUTH.UID: PASS
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Attempt to send friend request claiming sender is user B
+    BEGIN
+        INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+        VALUES (gen_random_uuid(), '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', 'PENDING');
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- Verify no request with spoofed sender was accepted
+    SET ROLE postgres;
+    IF EXISTS (SELECT 1 FROM public.friend_requests WHERE sender_id = '22222222-2222-2222-2222-222222222222' AND recipient_id = '33333333-3333-3333-3333-333333333333') THEN
+        RAISE EXCEPTION 'ACTOR DERIVED FROM AUTH.UID Failed: spoofed friend request inserted';
+    END IF;
+END $$;
+
+-- Assertion 82: FRIEND REQUEST LIMIT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_threw BOOLEAN := false;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM public.friends WHERE (user_id_1 = '11111111-1111-1111-1111-111111111111' OR user_id_2 = '11111111-1111-1111-1111-111111111111');
+    DELETE FROM public.user_blocks WHERE blocker_id = '11111111-1111-1111-1111-111111111111' OR blocked_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM public.friend_requests WHERE sender_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Seed bucket count directly to limit (limit is 10 for burst 600s)
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 600) * 600);
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'friend_request', '', v_window_start, 600, 10);
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- 11th request must fail with RATE_LIMITED
+    BEGIN
+        INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+        VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'PENDING');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%RATE_LIMITED%' THEN
+                v_threw := true;
+            ELSE
+                RAISE EXCEPTION 'FRIEND REQUEST LIMIT Failed: unexpected error %', SQLERRM;
+            END IF;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'FRIEND REQUEST LIMIT Failed: 11th request succeeded beyond quota';
+    END IF;
+
+    SET ROLE postgres;
+    DELETE FROM public.friend_requests WHERE sender_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 83: DM GLOBAL LIMIT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_threw BOOLEAN := false;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Seed DM global bucket to 60 (limit is 60/min)
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 60) * 60);
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'direct_message', '', v_window_start, 60, 60);
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- 61st message fails
+    BEGIN
+        INSERT INTO public.direct_messages (id, sender_id, recipient_id, text)
+        VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', 'DM 61');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%RATE_LIMITED%' THEN
+                v_threw := true;
+            ELSE
+                RAISE EXCEPTION 'DM GLOBAL LIMIT Failed: unexpected error %', SQLERRM;
+            END IF;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'DM GLOBAL LIMIT Failed: 61st message succeeded beyond quota';
+    END IF;
+
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 84: DM PAIR LIMIT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_threw BOOLEAN := false;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Seed DM pair bucket to 30 (limit 30/min to User B)
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 60) * 60);
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'direct_message', '22222222-2222-2222-2222-222222222222', v_window_start, 60, 30);
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- 31st message to User B fails with RATE_LIMITED
+    BEGIN
+        INSERT INTO public.direct_messages (id, sender_id, recipient_id, text)
+        VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'DM Pair 31');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%RATE_LIMITED%' THEN
+                v_threw := true;
+            END IF;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'DM PAIR LIMIT Failed: 31st message to User B succeeded';
+    END IF;
+
+    -- Message to User C succeeds because pair bucket for C is separate
+    INSERT INTO public.direct_messages (id, sender_id, recipient_id, text)
+    VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', 'DM to C');
+
+    SET ROLE postgres;
+    DELETE FROM public.direct_messages WHERE text IN ('DM Pair 31', 'DM to C');
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 85: COMMENT LIMIT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_threw BOOLEAN := false;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Seed feed comment bucket to 20 (limit 20 / 5 min)
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 300) * 300);
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'feed_comment', '', v_window_start, 300, 20);
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- 21st comment fails
+    BEGIN
+        INSERT INTO public.feed_comments (id, post_id, author_id, text)
+        VALUES ('comment_limit_21', 'post_a_only_me', '11111111-1111-1111-1111-111111111111', 'Comment 21');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%RATE_LIMITED%' THEN
+                v_threw := true;
+            END IF;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'COMMENT LIMIT Failed: 21st comment succeeded';
+    END IF;
+
+    SET ROLE postgres;
+    DELETE FROM public.feed_comments WHERE id = 'comment_limit_21';
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 86: REPLY LIMIT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_threw BOOLEAN := false;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Seed feed reply bucket to 10 (limit 10 / 5 min)
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 300) * 300);
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'feed_reply', '', v_window_start, 300, 10);
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- 11th reply fails
+    BEGIN
+        INSERT INTO public.feed_replies (id, post_id, author_id, reply_stamp_url)
+        VALUES ('reply_limit_11', 'post_a_only_me', '11111111-1111-1111-1111-111111111111', 'https://example.com/stamp11.png');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%RATE_LIMITED%' THEN
+                v_threw := true;
+            END IF;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'REPLY LIMIT Failed: 11th reply succeeded';
+    END IF;
+
+    SET ROLE postgres;
+    DELETE FROM public.feed_replies WHERE id = 'reply_limit_11';
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 87: REPORT LIMIT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_threw BOOLEAN := false;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM public.user_reports WHERE reporter_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Seed report bucket to 5 (limit 5 / hr)
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 3600) * 3600);
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'report_user', '', v_window_start, 3600, 5);
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- 6th report fails
+    BEGIN
+        PERFORM public.report_user('33333333-3333-3333-3333-333333333333', 'spam', 'Report 6');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%RATE_LIMITED%' THEN
+                v_threw := true;
+            END IF;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'REPORT LIMIT Failed: 6th report succeeded';
+    END IF;
+
+    SET ROLE postgres;
+    DELETE FROM public.user_reports WHERE reporter_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 88: TRADE CREATE LIMIT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_threw BOOLEAN := false;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM public.stamp_trade_requests WHERE sender_id = '11111111-1111-1111-1111-111111111111';
+
+    -- Establish friendship between A and B
+    INSERT INTO public.friends (user_id_1, user_id_2)
+    VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT DO NOTHING;
+
+    -- Seed trade bucket to 10 (limit 10 / hr)
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 3600) * 3600);
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'stamp_trade', '', v_window_start, 3600, 10);
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- 11th trade fails with RATE_LIMITED
+    BEGIN
+        PERFORM public.create_stamp_trade(
+            p_recipient_id := '22222222-2222-2222-2222-222222222222',
+            p_stamp_title := 'Trade Stamp 11',
+            p_source_object_name := '11111111-1111-1111-1111-111111111111/rendered/stamp11.png'
+        );
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%RATE_LIMITED%' THEN
+                v_threw := true;
+            END IF;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'TRADE CREATE LIMIT Failed: 11th trade succeeded';
+    END IF;
+
+    SET ROLE postgres;
+    DELETE FROM public.stamp_trade_requests WHERE sender_id = '11111111-1111-1111-1111-111111111111';
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+-- Assertion 89: BLOCK ENFORCEMENT PRESERVED: PASS
+DO $$
+DECLARE
+    v_threw_block BOOLEAN := false;
+    v_count INT;
+BEGIN
+    SET ROLE postgres;
+    -- A blocks B
+    INSERT INTO public.user_blocks (blocker_id, blocked_id)
+    VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT DO NOTHING;
+
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '22222222-2222-2222-2222-222222222222';
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    -- B tries to DM A (blocked)
+    BEGIN
+        INSERT INTO public.direct_messages (id, sender_id, recipient_id, text)
+        VALUES (gen_random_uuid(), '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'DM across block');
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM LIKE '%blocked%' THEN
+                v_threw_block := true;
+            END IF;
+    END;
+
+    IF NOT v_threw_block THEN
+        RAISE EXCEPTION 'BLOCK ENFORCEMENT PRESERVED Failed: expected blocked error';
+    END IF;
+
+    -- Verify rate limit bucket for B was NOT created or incremented because block check precedes rate limit
+    SET ROLE postgres;
+    SELECT COUNT(*) INTO v_count FROM app_private.rate_limit_buckets WHERE actor_id = '22222222-2222-2222-2222-222222222222';
+    IF v_count <> 0 THEN
+        RAISE EXCEPTION 'BLOCK ENFORCEMENT PRESERVED Failed: quota bucket was incremented despite block rejection';
+    END IF;
+
+    -- Clean up block
+    DELETE FROM public.user_blocks WHERE blocker_id = '11111111-1111-1111-1111-111111111111' AND blocked_id = '22222222-2222-2222-2222-222222222222';
+END $$;
+
+-- Assertion 90: CONCURRENT QUOTA ENFORCEMENT: PASS
+DO $$
+DECLARE
+    v_window_start TIMESTAMPTZ;
+    v_c1 INT;
+    v_c2 INT;
+BEGIN
+    SET ROLE postgres;
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+
+    v_window_start := to_timestamp(floor(extract(epoch from clock_timestamp()) / 60) * 60);
+
+    -- Simulating 2 concurrent increments on same bucket key
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'direct_message', '', v_window_start, 60, 1)
+    ON CONFLICT (actor_id, action_type, target_id, window_start)
+    DO UPDATE SET request_count = app_private.rate_limit_buckets.request_count + 1
+    RETURNING request_count INTO v_c1;
+
+    INSERT INTO app_private.rate_limit_buckets (actor_id, action_type, target_id, window_start, bucket_interval_seconds, request_count)
+    VALUES ('11111111-1111-1111-1111-111111111111', 'direct_message', '', v_window_start, 60, 1)
+    ON CONFLICT (actor_id, action_type, target_id, window_start)
+    DO UPDATE SET request_count = app_private.rate_limit_buckets.request_count + 1
+    RETURNING request_count INTO v_c2;
+
+    IF v_c1 <> 1 OR v_c2 <> 2 THEN
+        RAISE EXCEPTION 'CONCURRENT QUOTA ENFORCEMENT Failed: expected c1=1, c2=2, got c1=%, c2=%', v_c1, v_c2;
+    END IF;
+
+    DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
+END $$;
+
+
+-- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
 
+DELETE FROM app_private.rate_limit_buckets WHERE actor_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
 DELETE FROM public.received_trade_stamps WHERE owner_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
 DELETE FROM public.stamp_trade_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
-
 DELETE FROM public.user_reports WHERE reporter_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444') OR reported_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 DELETE FROM public.user_blocks WHERE blocker_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444') OR blocked_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 DELETE FROM public.push_delivery_events WHERE recipient_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
@@ -1749,3 +2225,4 @@ DELETE FROM public.direct_messages WHERE sender_id IN ('11111111-1111-1111-1111-
 DELETE FROM public.feed_posts WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.profiles WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM auth.users WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+
