@@ -6,16 +6,57 @@ import shared
 
 struct MemoryNoteScreenView: View {
     let imageUrl: String
-    var shape: String = "classic"
-    var stampColorHex: String = "#D32F2F"
-    var replyToPostId: String? = nil
+    var shape: String
+    var stampColorHex: String
+    var replyToPostId: String?
+    var initialLocation: String
     let repository: SharedMemoStampRepository
     var onSavedSuccess: () -> Void
     var onCancel: () -> Void
 
+    init(
+        imageUrl: String,
+        shape: String = "classic",
+        stampColorHex: String = "#D32F2F",
+        replyToPostId: String? = nil,
+        initialLocation: String = "",
+        repository: SharedMemoStampRepository,
+        onSavedSuccess: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.imageUrl = imageUrl
+        self.shape = shape
+        self.stampColorHex = stampColorHex
+        self.replyToPostId = replyToPostId
+        self.initialLocation = initialLocation
+        self.repository = repository
+        self.onSavedSuccess = onSavedSuccess
+        self.onCancel = onCancel
+    }
+
+    init(
+        imageUrl: String,
+        shape: String = "classic",
+        stampColorHex: String = "#D32F2F",
+        replyToPostId: String? = nil,
+        repository: SharedMemoStampRepository,
+        onSavedSuccess: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.imageUrl = imageUrl
+        self.shape = shape
+        self.stampColorHex = stampColorHex
+        self.replyToPostId = replyToPostId
+        self.initialLocation = ""
+        self.repository = repository
+        self.onSavedSuccess = onSavedSuccess
+        self.onCancel = onCancel
+    }
+
     @State private var title: String = ""
     @State private var caption: String = ""
     @State private var locationSearch: String = ""
+    @State private var showLocationPickerSheet: Bool = false
     @State private var selectedAudience: String = "Friends"
     @State private var selectedCollectionId: String? = nil
     @State private var selectedMood: String = "😊 Happy"
@@ -293,24 +334,46 @@ struct MemoryNoteScreenView: View {
                                 .font(.caption2.bold())
                                 .foregroundColor(.secondary)
                             Spacer()
+                            Button(action: { showLocationPickerSheet = true }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "map.fill")
+                                        .font(.caption2)
+                                    Text("Bản đồ AI")
+                                        .font(.caption2.bold())
+                                }
+                                .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
+                            }
                         }
 
-                        // Search Bar
-                        HStack {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.gray)
-                            TextField("Nhập địa điểm, quán cà phê...", text: $locationSearch)
+                        // Search & Picker Field
+                        HStack(spacing: 10) {
+                            Image(systemName: "mappin.and.ellipse")
+                                .foregroundColor(locationSearch.isEmpty ? .gray : Color(red: 0.85, green: 0.25, blue: 0.20))
+
+                            TextField("Nhập hoặc chọn địa điểm kỷ niệm...", text: $locationSearch)
                                 .font(.subheadline)
+                                .foregroundColor(MSColors.ink)
+
                             if !locationSearch.isEmpty {
                                 Button(action: { locationSearch = "" }) {
                                     Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.gray.opacity(0.6))
                                 }
+                            }
+
+                            Button(action: { showLocationPickerSheet = true }) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
+                                    .padding(6)
+                                    .background(Color(red: 0.82, green: 0.65, blue: 0.35).opacity(0.15))
+                                    .clipShape(Circle())
                             }
                         }
                         .padding(12)
                         .background(Color.white)
                         .cornerRadius(10)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
 
                         // GPS Quick Action
                         Button(action: {
@@ -371,6 +434,33 @@ struct MemoryNoteScreenView: View {
             }
         }
         .background(Color(red: 0.98, green: 0.96, blue: 0.92).ignoresSafeArea())
+        .onAppear {
+            if locationSearch.isEmpty && !initialLocation.isEmpty {
+                locationSearch = initialLocation
+            }
+        }
+        .sheet(isPresented: $showLocationPickerSheet) {
+            LocationPickerSheetView(
+                initialLocation: locationSearch,
+                onDismiss: { showLocationPickerSheet = false },
+                onLocationSelected: { locationName, suggestedTitle, story in
+                    showLocationPickerSheet = false
+                    locationSearch = locationName
+
+                    // Non-destructive title autofill: only populate if user title is currently blank
+                    if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       let sug = suggestedTitle?.trimmingCharacters(in: .whitespacesAndNewlines), !sug.isEmpty {
+                        title = sug
+                    }
+
+                    // Non-destructive caption autofill: only populate if user caption is currently blank
+                    if caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       let storyNote = story?.poeticNote.trimmingCharacters(in: .whitespacesAndNewlines), !storyNote.isEmpty {
+                        caption = storyNote
+                    }
+                }
+            )
+        }
         .alert(isPresented: $showAlert) {
             Alert(
                 title: Text("Thông Báo"),

@@ -53,6 +53,8 @@
 		1D36249B2D00000100000001 /* SupabaseMediaUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36249A2D00000100000001 /* SupabaseMediaUploader.swift */; };
 		1D36249D2D00000100000001 /* IOSFeedRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36249C2D00000100000001 /* IOSFeedRepository.swift */; };
 		1D3624A22D00000100000001 /* IOSPasswordRecoveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624A12D00000100000001 /* IOSPasswordRecoveryCoordinator.swift */; };
+		1D3624D12D00000100000001 /* IOSMapsGroundingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624D02D00000100000001 /* IOSMapsGroundingClient.swift */; };
+		1D3624D32D00000100000001 /* LocationPickerSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624D22D00000100000001 /* LocationPickerSheetView.swift */; };
 		1D36249F2D00000100000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */; };
 		1D36234B2D00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D36234A2D00000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -105,6 +107,8 @@
 		1D36249A2D00000100000001 /* SupabaseMediaUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/SupabaseMediaUploader.swift; sourceTree = "<group>"; };
 		1D36249C2D00000100000001 /* IOSFeedRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSFeedRepository.swift; sourceTree = "<group>"; };
 		1D3624A12D00000100000001 /* IOSPasswordRecoveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSPasswordRecoveryCoordinator.swift; sourceTree = "<group>"; };
+		1D3624D02D00000100000001 /* IOSMapsGroundingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSMapsGroundingClient.swift; sourceTree = "<group>"; };
+		1D3624D22D00000100000001 /* LocationPickerSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPickerSheetView.swift; sourceTree = "<group>"; };
 		1D3624A32D00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1D3624C02D00000100000001 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
@@ -157,6 +161,7 @@
 				1D36249A2D00000100000001 /* SupabaseMediaUploader.swift */,
 				1D36249C2D00000100000001 /* IOSFeedRepository.swift */,
 				1D3624A12D00000100000001 /* IOSPasswordRecoveryCoordinator.swift */,
+				1D3624D02D00000100000001 /* IOSMapsGroundingClient.swift */,
 				1D3624A32D00000100000001 /* Info.plist */,
 				1D3624C02D00000100000001 /* iosApp.entitlements */,
 				1D3623502D00000100000001 /* UI */,
@@ -191,8 +196,17 @@
 				1D3623592D00000100000001 /* Friends */,
 				1D36235B2D00000100000001 /* Chat */,
 				1D36235A2D00000100000001 /* Profile */,
+				1D3624D42D00000100000001 /* Location */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		1D3624D42D00000100000001 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				1D3624D22D00000100000001 /* LocationPickerSheetView.swift */,
+			);
+			path = Location;
 			sourceTree = "<group>";
 		};
 		1D3623522D00000100000001 /* Home */ = {
@@ -453,6 +467,8 @@
 				1D3624A22D00000100000001 /* IOSPasswordRecoveryCoordinator.swift in Sources */,
 				1D3624B12D00000100000001 /* IOSPushNotificationManager.swift in Sources */,
 				1D3624B32D00000100000001 /* IOSPushEventDeduper.swift in Sources */,
+				1D3624D12D00000100000001 /* IOSMapsGroundingClient.swift in Sources */,
+				1D3624D32D00000100000001 /* LocationPickerSheetView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
