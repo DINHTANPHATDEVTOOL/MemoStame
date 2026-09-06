@@ -1,8 +1,12 @@
 package com.mipastudio.memostamp.feature.camera.components
 
 import androidx.camera.core.ImageCapture
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +48,7 @@ fun CameraControls(
     zoomRatio: Float,
     minZoomRatio: Float = 1.0f,
     maxZoomRatio: Float = 5.0f,
+    opticalLenses: List<com.mipastudio.memostamp.feature.camera.lens.OpticalLens> = emptyList(),
     hasUltraWideCamera: Boolean = false,
     onZoomSelected: (Float) -> Unit,
     onCaptureClick: () -> Unit,
@@ -56,17 +61,12 @@ fun CameraControls(
     filterBarContent: (@Composable () -> Unit)? = null
 ) {
     val isEnabled = captureState == CaptureState.READY
-    val zoomPresets = remember(minZoomRatio, maxZoomRatio, hasUltraWideCamera) {
-        buildList {
-            if (hasUltraWideCamera || minZoomRatio < 1f) {
-                add(((minZoomRatio * 10f).roundToInt() / 10f).coerceAtLeast(0.5f))
-            }
-            if (1f in minZoomRatio..maxZoomRatio || hasUltraWideCamera) add(1f)
-            listOf(2f, 3f, 5f).forEach { candidate ->
-                if (candidate > minZoomRatio && candidate <= maxZoomRatio) add(candidate)
-            }
-            if (isEmpty()) add(1f)
-        }.distinct().sorted()
+    val lenses = remember(opticalLenses, minZoomRatio, maxZoomRatio) {
+        if (opticalLenses.isNotEmpty()) {
+            opticalLenses
+        } else {
+            com.mipastudio.memostamp.feature.camera.lens.NativeCameraLensDiscovery.fallbackLenses(minZoomRatio, maxZoomRatio)
+        }
     }
 
     Column(
@@ -145,6 +145,30 @@ fun CameraControls(
                 .padding(bottom = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            val isMatchingOpticalLens = lenses.any { abs(zoomRatio - it.factor) < 0.08f }
+            AnimatedVisibility(
+                visible = !isMatchingOpticalLens,
+                enter = fadeIn(tween(150)),
+                exit = fadeOut(tween(150))
+            ) {
+                val liveLabel = if (zoomRatio % 1f == 0f) "${zoomRatio.toInt()}x" else "${(zoomRatio * 10).roundToInt() / 10f}x"
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.58f))
+                        .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f), CircleShape)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = liveLabel,
+                        color = Color(0xFFFFD700),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
             Row(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -153,19 +177,18 @@ fun CameraControls(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                zoomPresets.forEach { z ->
-                    val selected = abs(zoomRatio - z) < 0.18f
-                    val label = if (z % 1f == 0f) "${z.toInt()}×" else "${(z * 10).roundToInt() / 10f}×"
+                lenses.forEach { lens ->
+                    val selected = abs(zoomRatio - lens.factor) < 0.08f
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(if (selected) Color.White else Color.Transparent)
-                            .clickable(enabled = isEnabled) { onZoomSelected(z) }
+                            .clickable(enabled = isEnabled) { onZoomSelected(lens.factor) }
                             .padding(horizontal = 10.dp, vertical = 5.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            label,
+                            lens.label,
                             color = if (selected) Color.Black else Color.White.copy(alpha = 0.78f),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold

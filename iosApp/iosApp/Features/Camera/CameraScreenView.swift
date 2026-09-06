@@ -6,13 +6,29 @@ import PhotosUI
 #endif
 import shared
 
+struct OpticalLensPreset: Identifiable, Equatable {
+    let id: String
+    let displayFactor: CGFloat
+    let nativeZoomFactor: CGFloat
+    let label: String
+}
+
+struct CameraZoomCapabilities: Equatable {
+    let presets: [OpticalLensPreset]
+    let multiplier: CGFloat
+    let minNativeZoom: CGFloat
+    let maxNativeZoom: CGFloat
+    let defaultNativeZoom: CGFloat
+}
+
 #if canImport(UIKit)
 // MARK: - Native AVFoundation Live Camera Preview Layer
 struct CameraPreviewView: UIViewRepresentable {
     @Binding var cameraPosition: AVCaptureDevice.Position
     @Binding var flashOn: Bool
-    @Binding var zoomScale: CGFloat
+    @Binding var nativeZoomFactor: CGFloat
     @Binding var captureTrigger: Bool
+    var onCapabilitiesDiscovered: ((CameraZoomCapabilities) -> Void)?
     var onPhotoCaptured: ((UIImage) -> Void)?
 
     class Coordinator: NSObject, AVCapturePhotoCaptureDelegate {
@@ -40,13 +56,15 @@ struct CameraPreviewView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> CameraPreviewContainerView {
         let view = CameraPreviewContainerView()
+        view.onCapabilitiesDiscovered = onCapabilitiesDiscovered
         view.setupSession(position: cameraPosition, coordinator: context.coordinator)
         return view
     }
 
     func updateUIView(_ uiView: CameraPreviewContainerView, context: Context) {
+        uiView.onCapabilitiesDiscovered = onCapabilitiesDiscovered
         uiView.updateCamera(position: cameraPosition)
-        uiView.setZoomFactor(zoomScale)
+        uiView.setZoomFactor(nativeZoomFactor)
         if captureTrigger {
             DispatchQueue.main.async {
                 captureTrigger = false
@@ -61,10 +79,146 @@ class CameraPreviewContainerView: UIView {
     private var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     private var photoOutput = AVCapturePhotoOutput()
     private var currentPosition: AVCaptureDevice.Position = .back
+    var onCapabilitiesDiscovered: ((CameraZoomCapabilities) -> Void)?
 
     override func layoutSubviews() {
         super.layoutSubviews()
         videoPreviewLayer?.frame = self.bounds
+    }
+
+    static func selectBestCameraDevice(for position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        if position == .back {
+            let priorityTypes: [AVCaptureDevice.DeviceType] = [
+                .builtInTripleCamera,
+                .builtInDualWideCamera,
+                .builtInDualCamera,
+                .builtInWideAngleCamera
+            ]
+            let discovery = AVCaptureDevice.DiscoverySession(
+                deviceTypes: priorityTypes,
+                mediaType: .video,
+                position: .back
+            )
+            for type in priorityTypes {
+                if let dev = discovery.devices.first(where: { $0.deviceType == type }) {
+                    return dev
+                }
+            }
+            return discovery.devices.first ?? AVCaptureDevice.default(for: .video)
+        } else {
+            return AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+                ?? AVCaptureDevice.default(for: .video)
+        }
+    }
+
+    static func discoverCapabilities(for device: AVCaptureDevice) -> CameraZoomCapabilities {
+        let minNative = device.minAvailableVideoZoomFactor
+        let maxNative = min(device.maxAvailableVideoZoomFactor, device.activeFormat.videoMaxZoomFactor)
+
+        var resolvedMultiplier: CGFloat? = nil
+        if device.responds(to: NSSelectorFromString("displayVideoZoomFactorMultiplier")),
+           let num = device.value(forKey: "displayVideoZoomFactorMultiplier") as? NSNumber {
+            resolvedMultiplier = CGFloat(num.doubleValue)
+        } else if device.activeFormat.responds(to: NSSelectorFromString("displayVideoZoomFactorMultiplier")),
+                  let num = device.activeFormat.value(forKey: "displayVideoZoomFactorMultiplier") as? NSNumber {
+            resolvedMultiplier = CGFloat(num.doubleValue)
+        }
+
+        let constituents = device.constituentDevices
+        let switchFactors = device.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat($0.doubleValue) }
+
+        var presets: [OpticalLensPreset] = []
+        var defaultNativeZoom: CGFloat = 1.0
+
+        if !constituents.isEmpty {
+            let hasUltraWide = constituents.first?.deviceType == .builtInUltraWideCamera
+            if hasUltraWide && !switchFactors.isEmpty {
+                // First switch factor is from Ultra Wide to Wide (1x baseline)
+                let wideNativeFactor = switchFactors[0]
+                let multiplier = resolvedMultiplier ?? (1.0 / wideNativeFactor)
+                resolvedMultiplier = multiplier
+                defaultNativeZoom = wideNativeFactor
+
+                // Ultra-Wide lens
+                let uwDisplay = minNative * multiplier
+                presets.append(OpticalLensPreset(
+                    id: "uw",
+                    displayFactor: uwDisplay,
+                    nativeZoomFactor: minNative,
+                    label: formatDisplayFactor(uwDisplay)
+                ))
+
+                // Wide lens (1.0x)
+                let wideDisplay = wideNativeFactor * multiplier
+                presets.append(OpticalLensPreset(
+                    id: "wide",
+                    displayFactor: wideDisplay,
+                    nativeZoomFactor: wideNativeFactor,
+                    label: formatDisplayFactor(wideDisplay)
+                ))
+
+                // Telephoto lens if triple camera
+                if switchFactors.count >= 2 {
+                    let teleNativeFactor = switchFactors[1]
+                    let teleDisplay = teleNativeFactor * multiplier
+                    presets.append(OpticalLensPreset(
+                        id: "tele",
+                        displayFactor: teleDisplay,
+                        nativeZoomFactor: teleNativeFactor,
+                        label: formatDisplayFactor(teleDisplay)
+                    ))
+                }
+            } else if !switchFactors.isEmpty {
+                // Dual camera: Wide (constituent 0) + Telephoto (constituent 1)
+                let multiplier = resolvedMultiplier ?? 1.0
+                resolvedMultiplier = multiplier
+                defaultNativeZoom = 1.0
+
+                presets.append(OpticalLensPreset(
+                    id: "wide",
+                    displayFactor: 1.0,
+                    nativeZoomFactor: 1.0,
+                    label: "1x"
+                ))
+
+                let teleNativeFactor = switchFactors[0]
+                let teleDisplay = teleNativeFactor * multiplier
+                presets.append(OpticalLensPreset(
+                    id: "tele",
+                    displayFactor: teleDisplay,
+                    nativeZoomFactor: teleNativeFactor,
+                    label: formatDisplayFactor(teleDisplay)
+                ))
+            }
+        }
+
+        let finalMultiplier = resolvedMultiplier ?? 1.0
+
+        if presets.isEmpty {
+            presets.append(OpticalLensPreset(
+                id: "1x",
+                displayFactor: 1.0,
+                nativeZoomFactor: 1.0,
+                label: "1x"
+            ))
+            defaultNativeZoom = 1.0
+        }
+
+        return CameraZoomCapabilities(
+            presets: presets,
+            multiplier: finalMultiplier,
+            minNativeZoom: minNative,
+            maxNativeZoom: maxNative,
+            defaultNativeZoom: defaultNativeZoom
+        )
+    }
+
+    static func formatDisplayFactor(_ factor: CGFloat) -> String {
+        if factor.truncatingRemainder(dividingBy: 1.0) == 0 {
+            return String(format: "%.0fx", factor)
+        } else {
+            return String(format: "%.1fx", factor)
+        }
     }
 
     func setupSession(position: AVCaptureDevice.Position, coordinator: CameraPreviewView.Coordinator) {
@@ -73,7 +227,7 @@ class CameraPreviewContainerView: UIView {
         session.beginConfiguration()
         session.sessionPreset = .photo
 
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+        guard let device = Self.selectBestCameraDevice(for: position),
               let input = try? AVCaptureDeviceInput(device: device) else {
             session.commitConfiguration()
             return
@@ -88,6 +242,19 @@ class CameraPreviewContainerView: UIView {
         }
 
         session.commitConfiguration()
+
+        let capabilities = Self.discoverCapabilities(for: device)
+        do {
+            try device.lockForConfiguration()
+            device.videoZoomFactor = capabilities.defaultNativeZoom
+            device.unlockForConfiguration()
+        } catch {
+            print("Initial videoZoomFactor error: \(error)")
+        }
+
+        DispatchQueue.main.async {
+            self.onCapabilitiesDiscovered?(capabilities)
+        }
 
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill
@@ -110,10 +277,21 @@ class CameraPreviewContainerView: UIView {
             for input in session.inputs {
                 session.removeInput(input)
             }
-            if let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position),
+            if let device = Self.selectBestCameraDevice(for: position),
                let input = try? AVCaptureDeviceInput(device: device),
                session.canAddInput(input) {
                 session.addInput(input)
+                let capabilities = Self.discoverCapabilities(for: device)
+                do {
+                    try device.lockForConfiguration()
+                    device.videoZoomFactor = capabilities.defaultNativeZoom
+                    device.unlockForConfiguration()
+                } catch {
+                    print("Update videoZoomFactor error: \(error)")
+                }
+                DispatchQueue.main.async {
+                    self.onCapabilitiesDiscovered?(capabilities)
+                }
             }
             session.commitConfiguration()
         }
@@ -125,8 +303,9 @@ class CameraPreviewContainerView: UIView {
         let device = input.device
         do {
             try device.lockForConfiguration()
-            let maxZoom = min(device.activeFormat.videoMaxZoomFactor, 5.0)
-            let clampedZoom = min(max(factor, 1.0), maxZoom)
+            let minZoom = device.minAvailableVideoZoomFactor
+            let maxZoom = min(device.activeFormat.videoMaxZoomFactor, device.maxAvailableVideoZoomFactor)
+            let clampedZoom = min(max(factor, minZoom), maxZoom)
             device.videoZoomFactor = clampedZoom
             device.unlockForConfiguration()
         } catch {
@@ -188,9 +367,15 @@ struct CameraScreenView: View {
     var onCancel: () -> Void
 
     @State private var selectedFilterIndex: Int = 5 // Film 35mm
-    @State private var zoomScale: CGFloat = 1.0
+    @State private var nativeZoomFactor: CGFloat = 1.0
+    @State private var displayZoom: CGFloat = 1.0
     @State private var zoomBeforeGesture: CGFloat = 1.0
-    @State private var selectedZoomPill: String = "1x"
+    @State private var opticalLenses: [OpticalLensPreset] = [
+        OpticalLensPreset(id: "1x", displayFactor: 1.0, nativeZoomFactor: 1.0, label: "1x")
+    ]
+    @State private var zoomMultiplier: CGFloat = 1.0
+    @State private var minNativeZoom: CGFloat = 1.0
+    @State private var maxNativeZoom: CGFloat = 5.0
     @State private var contrast: Double = 1.0
     @State private var brightness: Double = 0.0
     @State private var saturation: Double = 1.0
@@ -216,7 +401,6 @@ struct CameraScreenView: View {
     @State private var actualMoldFrame: CGRect = .zero
 
     let filters = FilterPresets.shared.ALL
-    let zoomOptions = ["1x", "2x", "3x", "5x"]
 
     var activePhotoUrl: String {
         return customCapturedImageUrl ?? ""
@@ -242,8 +426,17 @@ struct CameraScreenView: View {
                 CameraPreviewView(
                     cameraPosition: $cameraPosition,
                     flashOn: $flashOn,
-                    zoomScale: $zoomScale,
+                    nativeZoomFactor: $nativeZoomFactor,
                     captureTrigger: $captureTrigger,
+                    onCapabilitiesDiscovered: { caps in
+                        self.opticalLenses = caps.presets
+                        self.zoomMultiplier = caps.multiplier
+                        self.minNativeZoom = caps.minNativeZoom
+                        self.maxNativeZoom = caps.maxNativeZoom
+                        self.nativeZoomFactor = caps.defaultNativeZoom
+                        self.zoomBeforeGesture = caps.defaultNativeZoom
+                        self.displayZoom = caps.defaultNativeZoom * caps.multiplier
+                    },
                     onPhotoCaptured: { img in
                         self.selectedUIImage = img
                     }
@@ -255,7 +448,7 @@ struct CameraScreenView: View {
                 if let img = phase.image {
                     img.resizable()
                         .aspectRatio(contentMode: .fill)
-                        .scaleEffect(zoomScale)
+                        .scaleEffect(displayZoom)
                         .ignoresSafeArea()
                 } else {
                     Color.black.ignoresSafeArea()
@@ -391,46 +584,54 @@ struct CameraScreenView: View {
                     MagnificationGesture()
                         .onChanged { value in
                             let target = zoomBeforeGesture * value
-                            zoomScale = min(max(target, 1.0), 5.0)
+                            let clamped = min(max(target, minNativeZoom), maxNativeZoom)
+                            nativeZoomFactor = clamped
+                            displayZoom = clamped * zoomMultiplier
                         }
                         .onEnded { _ in
-                            zoomBeforeGesture = zoomScale
+                            zoomBeforeGesture = nativeZoomFactor
                         }
                 )
 
                 Spacer()
 
-                // Focal Zoom Pill Selector (1x, 2x, 3x, 5x)
-                HStack(spacing: 8) {
-                    ForEach(zoomOptions, id: \.self) { pill in
-                        Button(action: {
-                            selectedZoomPill = pill
-                            triggerHapticFeedback()
-                            switch pill {
-                            case "1x":
-                                zoomScale = 1.0
-                                zoomBeforeGesture = 1.0
-                            case "2x":
-                                zoomScale = 2.0
-                                zoomBeforeGesture = 2.0
-                            case "3x":
-                                zoomScale = 3.0
-                                zoomBeforeGesture = 3.0
-                            case "5x":
-                                zoomScale = 5.0
-                                zoomBeforeGesture = 5.0
-                            default:
-                                zoomScale = 1.0
-                                zoomBeforeGesture = 1.0
+                // Optical Lens Presets & Live Zoom Readout
+                VStack(spacing: 6) {
+                    let isMatchingLens = opticalLenses.contains(where: { abs(displayZoom - $0.displayFactor) < 0.08 })
+                    if !isMatchingLens {
+                        Text(String(format: "%.1fx", displayZoom))
+                            .font(.caption2.bold())
+                            .foregroundColor(Color(red: 1.0, green: 0.84, blue: 0.0))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.black.opacity(0.6))
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color(red: 1.0, green: 0.84, blue: 0.0).opacity(0.4), lineWidth: 1)
+                            )
+                            .transition(.opacity)
+                    }
+
+                    HStack(spacing: 8) {
+                        ForEach(opticalLenses) { lens in
+                            let isSelected = abs(displayZoom - lens.displayFactor) < 0.08
+                            Button(action: {
+                                triggerHapticFeedback()
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    nativeZoomFactor = lens.nativeZoomFactor
+                                    zoomBeforeGesture = lens.nativeZoomFactor
+                                    displayZoom = lens.displayFactor
+                                }
+                            }) {
+                                Text(lens.label)
+                                    .font(.caption2.bold())
+                                    .foregroundColor(isSelected ? .black : .white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(isSelected ? Color.white : Color.black.opacity(0.4))
+                                    .cornerRadius(14)
                             }
-                        }) {
-                            Text(pill)
-                                .font(.caption2.bold())
-                                .foregroundColor(selectedZoomPill == pill ? .black : .white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(selectedZoomPill == pill ? Color.white : Color.black.opacity(0.4))
-                                .cornerRadius(14)
                         }
                     }
                 }

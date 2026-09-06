@@ -45,6 +45,14 @@ class CameraController(
     var maxZoomRatio: Float by mutableFloatStateOf(5.0f)
         private set
 
+    var currentZoomRatio: Float by mutableFloatStateOf(1.0f)
+        private set
+
+    var opticalLenses: List<com.mipastudio.memostamp.feature.camera.lens.OpticalLens> by mutableStateOf(
+        listOf(com.mipastudio.memostamp.feature.camera.lens.OpticalLens(1.0f, "1x"))
+    )
+        private set
+
     var hasUltraWideCamera: Boolean by mutableStateOf(false)
         private set
 
@@ -161,9 +169,11 @@ class CameraController(
                     if (zoomState != null) {
                         minZoomRatio = zoomState.minZoomRatio
                         maxZoomRatio = zoomState.maxZoomRatio
+                        currentZoomRatio = zoomState.zoomRatio
                         if (minZoomRatio < 0.9f) {
                             hasUltraWideCamera = true
                         }
+                        updateOpticalLenses()
                     }
                 }
 
@@ -187,11 +197,22 @@ class CameraController(
                     }
                 }
 
+                updateOpticalLenses()
                 onCameraBound()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }, ContextCompat.getMainExecutor(context))
+    }
+
+    fun updateOpticalLenses() {
+        val info = camera?.cameraInfo ?: return
+        opticalLenses = com.mipastudio.memostamp.feature.camera.lens.NativeCameraLensDiscovery.discoverOpticalLenses(
+            cameraInfo = info,
+            context = context,
+            minZoomRatio = minZoomRatio,
+            maxZoomRatio = maxZoomRatio
+        )
     }
 
     fun toggleCameraLens(
@@ -219,7 +240,8 @@ class CameraController(
 
     fun setZoomRatio(ratio: Float) {
         try {
-            camera?.cameraControl?.setZoomRatio(ratio.coerceIn(minZoomRatio, maxZoomRatio))
+            val clamped = ratio.coerceIn(minZoomRatio, maxZoomRatio)
+            camera?.cameraControl?.setZoomRatio(clamped)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -227,30 +249,10 @@ class CameraController(
 
     fun setZoomPreset(
         ratio: Float,
-        lifecycleOwner: LifecycleOwner,
-        previewView: PreviewView
+        lifecycleOwner: LifecycleOwner? = null,
+        previewView: PreviewView? = null
     ) {
-        if (ratio < 1.0f) {
-            if (minZoomRatio <= ratio && !isUltraWideActive) {
-                setZoomRatio(ratio)
-            } else if (ultraWideCameraInfo != null) {
-                if (!isUltraWideActive) {
-                    isUltraWideActive = true
-                    bindCamera(lifecycleOwner, previewView, useFrontLens = false)
-                }
-            } else {
-                setZoomRatio(ratio)
-            }
-        } else {
-            if (isUltraWideActive) {
-                isUltraWideActive = false
-                bindCamera(lifecycleOwner, previewView, useFrontLens = false) {
-                    setZoomRatio(ratio)
-                }
-            } else {
-                setZoomRatio(ratio)
-            }
-        }
+        setZoomRatio(ratio)
     }
 
     suspend fun capturePhotoToFile(outputFile: File): File = suspendCancellableCoroutine { continuation ->

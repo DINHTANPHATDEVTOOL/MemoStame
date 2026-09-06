@@ -9,8 +9,14 @@ import shared
 /// Native Swift ViewModel for CameraScreen managing filter presets, zoom scales, tune adjustments, shutter captures, and camera states.
 class CameraViewModel: ObservableObject {
     @Published var selectedFilterIndex: Int = 5 // Film 35mm
-    @Published var zoomScale: CGFloat = 1.0
-    @Published var selectedZoomPill: String = "1x"
+    @Published var nativeZoomFactor: CGFloat = 1.0
+    @Published var displayZoom: CGFloat = 1.0
+    @Published var opticalLenses: [OpticalLensPreset] = [
+        OpticalLensPreset(id: "1x", displayFactor: 1.0, nativeZoomFactor: 1.0, label: "1x")
+    ]
+    @Published var minNativeZoom: CGFloat = 1.0
+    @Published var maxNativeZoom: CGFloat = 5.0
+    @Published var zoomMultiplier: CGFloat = 1.0
     @Published var contrast: Double = 1.0
     @Published var brightness: Double = 0.0
     @Published var saturation: Double = 1.0
@@ -27,7 +33,6 @@ class CameraViewModel: ObservableObject {
     @Published var selectedImageIndex: Int = 0
 
     let filters = FilterPresets.shared.ALL
-    let zoomOptions = ["1x", "2x", "3x", "5x"]
     
     init() {}
 
@@ -68,16 +73,16 @@ class CameraViewModel: ObservableObject {
         showFilterToast(currentFilter.name)
     }
 
-    func setZoomPill(_ pill: String) {
-        selectedZoomPill = pill
+    func selectOpticalLens(_ lens: OpticalLensPreset) {
+        nativeZoomFactor = lens.nativeZoomFactor
+        displayZoom = lens.displayFactor
         HapticFeedbackManager.shared.playImpact(style: .medium)
-        switch pill {
-        case "1x": zoomScale = 1.0
-        case "2x": zoomScale = 1.8
-        case "3x": zoomScale = 2.8
-        case "5x": zoomScale = 4.2
-        default: zoomScale = 1.0
-        }
+    }
+
+    func setContinuousZoom(nativeFactor: CGFloat) {
+        let clamped = min(max(nativeFactor, minNativeZoom), maxNativeZoom)
+        nativeZoomFactor = clamped
+        displayZoom = clamped * zoomMultiplier
     }
 
     func toggleFlash() {
