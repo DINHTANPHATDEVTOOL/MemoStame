@@ -40,14 +40,14 @@ jobs:
           set -euo pipefail
           PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U postgres -d postgres -f supabase/tests/rls_negative_tests.sql
 
-      - name: Start & Verify Local Edge Functions (delete-account & dispatch-push)
+      - name: Start & Verify Local Edge Functions (delete-account, dispatch-push, accept-trade, maps-grounding)
         run: |
           set -euo pipefail
           STATUS_JSON=$(supabase status -o json 2>/dev/null || true)
           PARSED_KEY=$(python3 -c "import json, sys; d=json.loads(sys.argv[1]); print(d.get('SERVICE_ROLE_KEY') or d.get('service_role_key') or '')" "$STATUS_JSON" 2>/dev/null || true)
           if [ -n "$PARSED_KEY" ]; then
             export SUPABASE_SERVICE_ROLE_KEY="$PARSED_KEY"
-            printf "SUPABASE_SERVICE_ROLE_KEY=%s\nPUSH_PROVIDER_MODE=mock\nMOCK_PUSH_URL=http://127.0.0.1:54325/mock-push\n" "$PARSED_KEY" > supabase/functions/.env
+            printf "SUPABASE_SERVICE_ROLE_KEY=%s\nPUSH_PROVIDER_MODE=mock\nMOCK_PUSH_URL=http://127.0.0.1:54325/mock-push\nGEMINI_PROVIDER_MODE=mock\nMOCK_GEMINI_URL=http://127.0.0.1:54326/mock-gemini\nGEMINI_API_KEY=test-mock-gemini-key\n" "$PARSED_KEY" > supabase/functions/.env
           fi
           supabase functions serve --no-verify-jwt > /tmp/supabase_functions.log 2>&1 &
           echo $! > /tmp/supabase_functions.pid
@@ -57,9 +57,11 @@ jobs:
             CODE_DEL=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "http://127.0.0.1:54321/functions/v1/delete-account" 2>/dev/null || true)
             CODE_PUSH=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "http://127.0.0.1:54321/functions/v1/dispatch-push" 2>/dev/null || true)
             CODE_TRADE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "http://127.0.0.1:54321/functions/v1/accept-trade" 2>/dev/null || true)
+            CODE_MAPS=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "http://127.0.0.1:54321/functions/v1/maps-grounding" 2>/dev/null || true)
             if ([ "$CODE_DEL" = "200" ] || [ "$CODE_DEL" = "401" ] || [ "$CODE_DEL" = "405" ]) && \
                ([ "$CODE_PUSH" = "200" ] || [ "$CODE_PUSH" = "401" ] || [ "$CODE_PUSH" = "405" ]) && \
-               ([ "$CODE_TRADE" = "200" ] || [ "$CODE_TRADE" = "401" ] || [ "$CODE_TRADE" = "405" ]); then
+               ([ "$CODE_TRADE" = "200" ] || [ "$CODE_TRADE" = "401" ] || [ "$CODE_TRADE" = "405" ]) && \
+               ([ "$CODE_MAPS" = "200" ] || [ "$CODE_MAPS" = "401" ] || [ "$CODE_MAPS" = "405" ]); then
               READY=1
               break
             fi
@@ -70,7 +72,7 @@ jobs:
             cat /tmp/supabase_functions.log || true
             exit 1
           fi
-          echo "Local Edge Functions (delete-account, dispatch-push, accept-trade) are ready."
+          echo "Local Edge Functions (delete-account, dispatch-push, accept-trade, maps-grounding) are ready."
 
       - name: Run Black-Box Multi-User E2E Contract Tests
         run: |

@@ -107,11 +107,16 @@ cd MemoStame
 ```
 
 ### 2. Configure Environment Variables
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory for client SDKs (Google Maps Places SDK):
 ```env
-GEMINI_API_KEY=your_gemini_api_key
 GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```
+
+> **Security Note**: `GEMINI_API_KEY` is server-authoritative and must **NEVER** be placed in mobile artifacts or client environments. It is configured strictly as a Supabase Edge Function secret:
+> ```bash
+> supabase secrets set GEMINI_API_KEY="your_gemini_api_key"
+> ```
+> For Google Maps Places on Android, ensure your Google Cloud key is restricted by Android Package Name (`com.mipastudio.memostamp`) and Release Signing SHA-1 fingerprint.
 
 ### 3. Build & Run Android App
 ```bash
