@@ -2150,7 +2150,6 @@ BEGIN
 
     SET ROLE postgres;
     DELETE FROM public.stamp_trade_requests WHERE sender_id = '11111111-1111-1111-1111-111111111111';
-    DELETE FROM storage.objects WHERE bucket_id = 'stamp-media' AND name = '11111111-1111-1111-1111-111111111111/rendered/stamp11.png';
     DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
 END $$;
 
