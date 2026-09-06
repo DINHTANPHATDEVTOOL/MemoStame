@@ -362,7 +362,7 @@ CREATE POLICY "User insert feed reaction" ON public.feed_reactions
         )
     );
 
--- 4.5 Feed Comments: Deny comment if post author or parent comment author is blocked
+-- 4.5 Feed Comments: Deny comment if post author and commenter have a block relation
 DROP POLICY IF EXISTS "Author insert feed comment" ON public.feed_comments;
 CREATE POLICY "Author insert feed comment" ON public.feed_comments
     FOR INSERT WITH CHECK (
@@ -373,16 +373,6 @@ CREATE POLICY "Author insert feed comment" ON public.feed_comments
               ON (ub.blocker_id = author_id AND ub.blocked_id = fp.author_id)
               OR (ub.blocker_id = fp.author_id AND ub.blocked_id = author_id)
             WHERE fp.id::text = feed_comments.post_id::text
-        )
-        AND (
-            parent_comment_id IS NULL
-            OR NOT EXISTS (
-                SELECT 1 FROM public.feed_comments pc
-                JOIN public.user_blocks ub 
-                  ON (ub.blocker_id = author_id AND ub.blocked_id = pc.author_id)
-                  OR (ub.blocker_id = pc.author_id AND ub.blocked_id = author_id)
-                WHERE pc.id::text = feed_comments.parent_comment_id::text
-            )
         )
     );
 
