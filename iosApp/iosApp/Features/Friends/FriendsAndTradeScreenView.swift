@@ -377,7 +377,7 @@ struct FriendsAndTradeScreenView: View {
                 primaryButton: .destructive(Text(langManager.string(vi: "Chặn", en: "Block"))) {
                     if let target = friendToBlock {
                         isSubmittingSafety = true
-                        friendRepo.blockUser(targetUserId: target.id) { result in
+                        friendRepo.blockUser(blockedId: target.id) { result in
                             isSubmittingSafety = false
                             switch result {
                             case .success:

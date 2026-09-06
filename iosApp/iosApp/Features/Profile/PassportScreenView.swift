@@ -1188,7 +1188,7 @@ struct BlockedUsersManagementSheetView: View {
 
     private func unblock(_ blockedId: String) {
         unblockingId = blockedId
-        IOSFriendRepository.shared.unblockUser(blockedUserId: blockedId) { result in
+        IOSFriendRepository.shared.unblockUser(blockedId: blockedId) { result in
             unblockingId = nil
             switch result {
             case .success:
