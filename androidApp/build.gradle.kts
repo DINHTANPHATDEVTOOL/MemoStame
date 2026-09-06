@@ -17,6 +17,29 @@ if (hasGoogleServicesConfig) {
     apply(plugin = "com.google.gms.google-services")
 }
 
+// Versioning overrides for Release Candidate / Store builds
+val envVersionCode = System.getenv("MEMOSTAMP_VERSION_CODE")
+    ?: (project.findProperty("MEMOSTAMP_VERSION_CODE") as? String)
+val parsedVersionCode = if (!envVersionCode.isNullOrBlank()) {
+    val code = envVersionCode.toIntOrNull()
+        ?: throw IllegalArgumentException("MEMOSTAMP_VERSION_CODE must be a valid integer, got: '$envVersionCode'")
+    require(code > 0) { "MEMOSTAMP_VERSION_CODE must be a positive integer, got: $code" }
+    code
+} else {
+    1
+}
+
+val envVersionName = System.getenv("MEMOSTAMP_VERSION_NAME")
+    ?: (project.findProperty("MEMOSTAMP_VERSION_NAME") as? String)
+val parsedVersionName = if (!envVersionName.isNullOrBlank()) {
+    require(envVersionName.matches(Regex("^[0-9]+(\\.[0-9]+)+(-[a-zA-Z0-9.]+)?$"))) {
+        "MEMOSTAMP_VERSION_NAME is malformed: '$envVersionName'. Expected format like 1.0, 1.0.1, or 1.0.0-rc1"
+    }
+    envVersionName
+} else {
+    "1.0"
+}
+
 android {
     namespace = "com.mipastudio.memostamp"
     compileSdk = 36
@@ -25,10 +48,48 @@ android {
         applicationId = "com.mipastudio.memostamp"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = parsedVersionCode
+        versionName = parsedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            val storeFilePath = System.getenv("MEMOSTAMP_RELEASE_STORE_FILE")
+                ?: (project.findProperty("MEMOSTAMP_RELEASE_STORE_FILE") as? String)
+            val storePassword = System.getenv("MEMOSTAMP_RELEASE_STORE_PASSWORD")
+                ?: (project.findProperty("MEMOSTAMP_RELEASE_STORE_PASSWORD") as? String)
+            val keyAlias = System.getenv("MEMOSTAMP_RELEASE_KEY_ALIAS")
+                ?: (project.findProperty("MEMOSTAMP_RELEASE_KEY_ALIAS") as? String)
+            val keyPassword = System.getenv("MEMOSTAMP_RELEASE_KEY_PASSWORD")
+                ?: (project.findProperty("MEMOSTAMP_RELEASE_KEY_PASSWORD") as? String)
+            val requireSigning = (System.getenv("MEMOSTAMP_REQUIRE_RELEASE_SIGNING")
+                ?: (project.findProperty("MEMOSTAMP_REQUIRE_RELEASE_SIGNING") as? String))?.toBoolean() ?: false
+
+            val hasAllSigningProperties = !storeFilePath.isNullOrBlank() &&
+                !storePassword.isNullOrBlank() &&
+                !keyAlias.isNullOrBlank() &&
+                !keyPassword.isNullOrBlank()
+
+            if (hasAllSigningProperties) {
+                val resolvedStoreFile = file(storeFilePath!!)
+                if (requireSigning && !resolvedStoreFile.exists()) {
+                    throw IllegalArgumentException("MEMOSTAMP_RELEASE_STORE_FILE does not exist at: $storeFilePath")
+                }
+                storeFile = resolvedStoreFile
+                this.storePassword = storePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            } else if (requireSigning) {
+                val missing = mutableListOf<String>()
+                if (storeFilePath.isNullOrBlank()) missing.add("MEMOSTAMP_RELEASE_STORE_FILE")
+                if (storePassword.isNullOrBlank()) missing.add("MEMOSTAMP_RELEASE_STORE_PASSWORD")
+                if (keyAlias.isNullOrBlank()) missing.add("MEMOSTAMP_RELEASE_KEY_ALIAS")
+                if (keyPassword.isNullOrBlank()) missing.add("MEMOSTAMP_RELEASE_KEY_PASSWORD")
+                throw IllegalArgumentException("Production release signing is required (MEMOSTAMP_REQUIRE_RELEASE_SIGNING=true), but missing properties: ${missing.joinToString(", ")}")
+            }
+        }
     }
 
     buildTypes {
@@ -39,6 +100,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile != null) {
+                signingConfig = releaseSigning
+            }
         }
     }
     compileOptions {

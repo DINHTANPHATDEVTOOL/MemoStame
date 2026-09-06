@@ -146,5 +146,45 @@ jobs:
             :androidApp:testReleaseUnitTest \
             :androidApp:lintRelease \
             :androidApp:assembleRelease \
-            :androidApp:bundleRelease \
             --no-daemon
+
+      - name: Generate Ephemeral CI Keystore & Build Signed Release Bundle
+        env:
+          MEMOSTAMP_RELEASE_STORE_FILE: /tmp/ci_ephemeral_keystore.jks
+          MEMOSTAMP_RELEASE_STORE_PASSWORD: ci_ephemeral_pass123
+          MEMOSTAMP_RELEASE_KEY_ALIAS: ci_ephemeral_key
+          MEMOSTAMP_RELEASE_KEY_PASSWORD: ci_ephemeral_pass123
+          MEMOSTAMP_REQUIRE_RELEASE_SIGNING: "true"
+        run: |
+          set -euo pipefail
+          # 1. Create temporary disposable keystore with keytool (PKCS12 standard requires identical storepass and keypass)
+          keytool -genkeypair -v \
+            -keystore /tmp/ci_ephemeral_keystore.jks \
+            -storepass ci_ephemeral_pass123 \
+            -alias ci_ephemeral_key \
+            -keypass ci_ephemeral_pass123 \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 1 \
+            -dname "CN=CI Ephemeral, OU=CI, O=MemoStamp, L=San Francisco, ST=California, C=US"
+
+          # 2 & 3. Run Release bundle build with ephemeral signing
+          ./gradlew :androidApp:bundleRelease --no-daemon
+
+          # 4. Verify AAB signature deterministically using jarsigner
+          echo "Verifying signed Release AAB..."
+          AAB_FILE="androidApp/build/outputs/bundle/release/androidApp-release.aab"
+          if [ ! -f "$AAB_FILE" ]; then
+            echo "[ERROR] Release AAB file not found at $AAB_FILE"
+            exit 1
+          fi
+          jarsigner -verify -verbose "$AAB_FILE" | grep -q "jar verified" || {
+            echo "[ERROR] Release AAB verification failed: AAB is not signed!"
+            exit 1
+          }
+          echo "[PASS] Release AAB successfully signed and verified with ephemeral CI keystore."
+
+      - name: Cleanup Ephemeral Keystore
+        if: always()
+        run: |
+          rm -f /tmp/ci_ephemeral_keystore.jks

@@ -1,6 +1,7 @@
 workflows:
+  # Unsigned PR / CI compilation workflow (does not require Apple signing credentials)
   ios-kmp-workflow:
-    name: iOS Build (Kotlin Multiplatform / Xcode)
+    name: iOS Build & Verify (Unsigned / PR Verification)
     max_build_duration: 60
     instance_type: mac_mini_m1
     environment:
@@ -24,11 +25,90 @@ workflows:
             -archivePath build/ios/xcarchive/iosApp.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
-      - name: Export IPA Payload from Archive
-        script: |
-          mkdir -p build/ios/ipa/Payload
-          cp -R build/ios/xcarchive/iosApp.xcarchive/Products/Applications/*.app build/ios/ipa/Payload/
-          cd build/ios/ipa && zip -r iosApp_unsigned.ipa Payload
     artifacts:
       - build/ios/xcarchive/*.xcarchive
+
+  # Production App Store & TestFlight signed release candidate workflow
+  ios-app-store-release:
+    name: iOS App Store & TestFlight Release Candidate
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      java: 17
+      groups:
+        - app_store_credentials # External Codemagic secret group: APP_STORE_CONNECT_PRIVATE_KEY, CERT_KEY, etc.
+      vars:
+        XCODE_PROJECT: "iosApp/iosApp.xcodeproj"
+        XCODE_SCHEME: "iosApp"
+        BUNDLE_ID: "com.mipastudio.memostamp"
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Make gradlew executable & Build KMP Shared Framework
+        script: |
+          chmod +x gradlew
+          ./gradlew :shared:linkReleaseFrameworkIosArm64 :shared:assemble
+
+      - name: Set up code signing settings on Xcode project
+        script: |
+          # Use Codemagic automatic code signing or external profile management
+          xcode-project use-profiles
+
+      - name: Build iOS App Store Archive (.xcarchive)
+        script: |
+          # Overrides MARKETING_VERSION and CURRENT_PROJECT_VERSION externally without source edits
+          TARGET_VERSION="${MEMOSTAMP_VERSION_NAME:-1.0}"
+          TARGET_BUILD="${MEMOSTAMP_VERSION_CODE:-1}"
+          echo "Archiving Release for generic/platform=iOS with version $TARGET_VERSION ($TARGET_BUILD)..."
+
+          xcodebuild archive \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -destination "generic/platform=iOS" \
+            -archivePath build/ios/xcarchive/iosApp.xcarchive \
+            MARKETING_VERSION="$TARGET_VERSION" \
+            CURRENT_PROJECT_VERSION="$TARGET_BUILD"
+
+      - name: Export Signed IPA for App Store / TestFlight
+        script: |
+          xcodebuild -exportArchive \
+            -archivePath build/ios/xcarchive/iosApp.xcarchive \
+            -exportOptionsPlist iosApp/ExportOptions-AppStore.plist \
+            -exportPath build/ios/ipa
+
+      - name: Verify Signed IPA & APNs Production Entitlement
+        script: |
+          set -euo pipefail
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -n 1)
+          if [ -z "$IPA_PATH" ]; then
+            echo "[ERROR] No exported IPA found in build/ios/ipa!"
+            exit 1
+          fi
+          echo "Inspecting exported IPA: $IPA_PATH"
+
+          # Extract Payload to inspect signed application bundle
+          EXTRACT_DIR="/tmp/ipa_inspect"
+          rm -rf "$EXTRACT_DIR"
+          mkdir -p "$EXTRACT_DIR"
+          unzip -q "$IPA_PATH" -d "$EXTRACT_DIR"
+          APP_PATH=$(find "$EXTRACT_DIR/Payload" -maxdepth 1 -name "*.app" | head -n 1)
+
+          echo "Validating signature of $APP_PATH..."
+          codesign -v --verbose=2 "$APP_PATH"
+
+          echo "Inspecting entitlements for production APNs..."
+          ENTITLEMENTS=$(codesign -d --entitlements :- "$APP_PATH" 2>&1 || true)
+          echo "$ENTITLEMENTS" | grep -A 1 'aps-environment' | grep -q 'production' || {
+            echo "[ERROR] Signed IPA does not have production aps-environment entitlement!"
+            exit 1
+          }
+          echo "[PASS] Signed IPA verified: valid signature, aps-environment = production."
+          rm -rf "$EXTRACT_DIR"
+
+    artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/xcarchive/*.xcarchive
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
