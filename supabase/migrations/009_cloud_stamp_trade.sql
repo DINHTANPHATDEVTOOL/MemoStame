@@ -32,8 +32,6 @@ ALTER TABLE public.stamp_trade_requests ADD COLUMN IF NOT EXISTS stamp_media_pat
 ALTER TABLE public.stamp_trade_requests ADD COLUMN IF NOT EXISTS stamp_name TEXT;
 ALTER TABLE public.stamp_trade_requests ADD COLUMN IF NOT EXISTS destination_media_path TEXT;
 
-ALTER TABLE public.received_trade_stamps ADD COLUMN IF NOT EXISTS stamp_id TEXT;
-
 CREATE INDEX IF NOT EXISTS idx_stamp_trades_sender ON public.stamp_trade_requests(sender_id);
 CREATE INDEX IF NOT EXISTS idx_stamp_trades_recipient ON public.stamp_trade_requests(recipient_id);
 CREATE INDEX IF NOT EXISTS idx_stamp_trades_status ON public.stamp_trade_requests(status);
@@ -66,6 +64,7 @@ CREATE TABLE IF NOT EXISTS public.received_trade_stamps (
     original_sender_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     recipient_media_path TEXT NOT NULL,
     media_path TEXT,
+    stamp_id TEXT,
     stamp_title TEXT NOT NULL,
     stamp_name TEXT,
     stamp_shape TEXT NOT NULL DEFAULT 'RECTANGLE',
@@ -73,6 +72,10 @@ CREATE TABLE IF NOT EXISTS public.received_trade_stamps (
     note TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.received_trade_stamps ADD COLUMN IF NOT EXISTS stamp_id TEXT;
+ALTER TABLE public.received_trade_stamps ADD COLUMN IF NOT EXISTS media_path TEXT;
+ALTER TABLE public.received_trade_stamps ADD COLUMN IF NOT EXISTS stamp_name TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_received_stamps_owner ON public.received_trade_stamps(owner_id);
 CREATE INDEX IF NOT EXISTS idx_received_stamps_recipient ON public.received_trade_stamps(recipient_id);
