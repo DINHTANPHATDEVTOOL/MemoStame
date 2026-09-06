@@ -6,6 +6,17 @@ plugins {
     alias(libs.plugins.secrets)
 }
 
+// Process google-services.json only when external Firebase configuration is present.
+// Normal CI builds without google-services.json continue building cleanly without crashing.
+val hasGoogleServicesConfig = file("google-services.json").exists() ||
+    file("src/release/google-services.json").exists() ||
+    file("src/debug/google-services.json").exists() ||
+    (project.findProperty("googleServicesJsonPath") as? String)?.let { file(it).exists() } == true
+
+if (hasGoogleServicesConfig) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.mipastudio.memostamp"
     compileSdk = 36

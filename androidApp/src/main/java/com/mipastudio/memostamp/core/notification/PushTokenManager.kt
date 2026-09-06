@@ -240,12 +240,14 @@ object PushTokenManager {
                 setRequestProperty("Authorization", "Bearer $accessToken")
             }
 
+            val environment = if (com.mipastudio.memostamp.BuildConfig.DEBUG) "development" else "production"
+
             val body = mapOf(
                 "p_platform" to "android",
                 "p_provider" to "fcm",
                 "p_token" to token,
                 "p_installation_id" to installationId,
-                "p_environment" to "production"
+                "p_environment" to environment
             )
 
             OutputStreamWriter(conn.outputStream, "UTF-8").use { writer ->

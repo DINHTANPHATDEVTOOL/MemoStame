@@ -23,6 +23,8 @@ local.properties
 *.mobileprovision
 ipa/
 *.ipa
+**/google-services.json
+*service-account*.json
 
 .kotlin/
 .env.test
