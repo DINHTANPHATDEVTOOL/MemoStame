@@ -237,6 +237,24 @@ GRANT EXECUTE ON FUNCTION public.block_user(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.unblock_user(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.report_user(UUID, TEXT, TEXT, TEXT, TEXT) TO authenticated;
 
+-- 3.4 Helper function to check bidirectional block status
+-- Runs with SECURITY DEFINER so that RLS evaluation on caller doesn't hide blocks where caller is blocked.
+CREATE OR REPLACE FUNCTION public.is_blocked_bidirectional(p_user_1 UUID, p_user_2 UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.user_blocks ub
+        WHERE (ub.blocker_id = p_user_1 AND ub.blocked_id = p_user_2)
+           OR (ub.blocker_id = p_user_2 AND ub.blocked_id = p_user_1)
+    );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_blocked_bidirectional(UUID, UUID) TO authenticated, anon;
+
 
 -- ===================================================
 -- 4. SOCIAL & FEED RLS POLICIES HARDENED WITH BLOCK CHECKS
@@ -248,11 +266,7 @@ CREATE POLICY "Sender insert friend request" ON public.friend_requests
     FOR INSERT WITH CHECK (
         auth.uid() = sender_id 
         AND sender_id <> recipient_id
-        AND NOT EXISTS (
-            SELECT 1 FROM public.user_blocks ub
-            WHERE (ub.blocker_id = sender_id AND ub.blocked_id = recipient_id)
-               OR (ub.blocker_id = recipient_id AND ub.blocked_id = sender_id)
-        )
+        AND NOT public.is_blocked_bidirectional(sender_id, recipient_id)
     );
 
 -- 4.2 Accept Friend Request RPC: Reject if blocked in either direction
@@ -300,11 +314,7 @@ BEGIN
     END IF;
 
     -- 6. Deny if either user has blocked the other
-    IF EXISTS (
-        SELECT 1 FROM public.user_blocks ub
-        WHERE (ub.blocker_id = v_acting_uid AND ub.blocked_id = v_req.sender_id)
-           OR (ub.blocker_id = v_req.sender_id AND ub.blocked_id = v_acting_uid)
-    ) THEN
+    IF public.is_blocked_bidirectional(v_acting_uid, v_req.sender_id) THEN
         RAISE EXCEPTION 'Cannot accept friend request: relationship is blocked';
     END IF;
 
@@ -341,11 +351,7 @@ DROP POLICY IF EXISTS "Sender insert direct message" ON public.direct_messages;
 CREATE POLICY "Sender insert direct message" ON public.direct_messages
     FOR INSERT WITH CHECK (
         auth.uid() = sender_id
-        AND NOT EXISTS (
-            SELECT 1 FROM public.user_blocks ub
-            WHERE (ub.blocker_id = sender_id AND ub.blocked_id = recipient_id)
-               OR (ub.blocker_id = recipient_id AND ub.blocked_id = sender_id)
-        )
+        AND NOT public.is_blocked_bidirectional(sender_id, recipient_id)
     );
 
 -- 4.4 Feed Reactions: Deny reaction if post author and reactor have a block relation
@@ -355,10 +361,8 @@ CREATE POLICY "User insert feed reaction" ON public.feed_reactions
         auth.uid() = user_id
         AND NOT EXISTS (
             SELECT 1 FROM public.feed_posts fp
-            JOIN public.user_blocks ub 
-              ON (ub.blocker_id = user_id AND ub.blocked_id = fp.author_id)
-              OR (ub.blocker_id = fp.author_id AND ub.blocked_id = user_id)
             WHERE fp.id::text = feed_reactions.post_id::text
+              AND public.is_blocked_bidirectional(user_id, fp.author_id)
         )
     );
 
@@ -369,10 +373,8 @@ CREATE POLICY "Author insert feed comment" ON public.feed_comments
         auth.uid() = author_id
         AND NOT EXISTS (
             SELECT 1 FROM public.feed_posts fp
-            JOIN public.user_blocks ub 
-              ON (ub.blocker_id = author_id AND ub.blocked_id = fp.author_id)
-              OR (ub.blocker_id = fp.author_id AND ub.blocked_id = author_id)
             WHERE fp.id::text = feed_comments.post_id::text
+              AND public.is_blocked_bidirectional(author_id, fp.author_id)
         )
     );
 
@@ -387,9 +389,7 @@ CREATE POLICY "Author insert feed reply" ON public.feed_replies
         )
         AND NOT EXISTS (
             SELECT 1 FROM public.feed_posts fp
-            JOIN public.user_blocks ub 
-              ON (ub.blocker_id = author_id AND ub.blocked_id = fp.author_id)
-              OR (ub.blocker_id = fp.author_id AND ub.blocked_id = author_id)
             WHERE fp.id = feed_replies.post_id
+              AND public.is_blocked_bidirectional(author_id, fp.author_id)
         )
     );
