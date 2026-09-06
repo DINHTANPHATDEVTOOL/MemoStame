@@ -3,10 +3,10 @@ package com.mipastudio.memostamp.core.location
 import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
-import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import com.mipastudio.memostamp.BuildConfig
+import com.mipastudio.memostamp.data.remote.supabase.AndroidAuthSessionStore
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -35,31 +35,21 @@ data class GroundedPostmarkStory(
 
 object GeminiMapsGroundingService {
     private const val TAG = "GeminiMapsGrounding"
-    private const val MODEL_NAME = "gemini-3.5-flash"
-    private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/$MODEL_NAME:generateContent"
 
     private val gson = Gson()
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
             .build()
     }
 
-    private fun getApiKey(): String {
-        return try {
-            val key = BuildConfig.GEMINI_API_KEY
-            if (key.contains("Placeholder")) "" else key
-        } catch (e: Throwable) {
-            ""
-        }
-    }
-
     /**
-     * Search places grounded with Google Maps data via gemini-3.5-flash and ranked with Google Maps Algorithm
+     * Search places grounded with Google Maps data via server-side MemoStame Edge Function.
+     * Android clients never contain, transmit, or configure Gemini provider secrets.
      */
     suspend fun searchPlacesWithMaps(
         context: Context? = null,
@@ -69,17 +59,15 @@ object GeminiMapsGroundingService {
         userLng: Double? = null,
         categoryFilter: String = "ALL"
     ): List<GroundedPlace> = withContext(Dispatchers.IO) {
-        val apiKey = getApiKey()
-        
-        // 1. If Google Places SDK is configured and context is provided, query Places Autocomplete
+        // 1. Query native Google Places SDK if configured and context is available
         val placesSdkResults = if (context != null && GooglePlacesService.isPlacesSdkAvailable() && query.isNotBlank()) {
             GooglePlacesService.searchPredictions(context, query, userLat, userLng)
         } else {
             emptyList()
         }
 
-        // 2. Fast local candidate ranking with Google Maps Algorithm (Prefix + Token + Haversine 2km radius + Rating)
-        val rankedLocal = GoogleMapsRankingEngine.rankPlaces(
+        // 2. Fast local candidate ranking with Google Maps Algorithm
+        val localCandidates = GoogleMapsRankingEngine.rankPlaces(
             query = query,
             userLat = userLat,
             userLng = userLng,
@@ -95,113 +83,69 @@ object GeminiMapsGroundingService {
                 rating = ranked.place.rating,
                 distanceMeters = ranked.distanceMeters,
                 distanceFormatted = ranked.distanceFormatted,
-                isGroundedWithMaps = true
+                isGroundedWithMaps = false
             )
+        }.ifEmpty {
+            getFallbackPlaces(query, currentCity).map { it.copy(isGroundedWithMaps = false) }
         }
 
-        if (apiKey.isBlank()) {
-            if (placesSdkResults.isNotEmpty()) {
-                val merged = mutableListOf<GroundedPlace>()
-                merged.addAll(placesSdkResults)
-                merged.addAll(rankedLocal)
-                return@withContext merged
-            }
-            return@withContext rankedLocal
+        // 3. Fallback immediately if context or authenticated session is absent
+        if (context == null) {
+            return@withContext if (placesSdkResults.isNotEmpty()) placesSdkResults + localCandidates else localCandidates
         }
 
+        val session = AndroidAuthSessionStore(context).load()
+        val accessToken = session?.accessToken
+        if (accessToken.isNullOrBlank()) {
+            return@withContext if (placesSdkResults.isNotEmpty()) placesSdkResults + localCandidates else localCandidates
+        }
+
+        // 4. Invoke server-side maps-grounding Edge Function
         try {
-            val isSpecificSearch = query.isNotBlank() && query != currentCity
-            val prompt = if (!isSpecificSearch && userLat != null && userLng != null) {
-                """
-                You are Google Maps Search Engine for the MemoStamp app.
-                User is at coordinates: (Latitude $userLat, Longitude $userLng), City: ${currentCity ?: "Vietnam"}.
-                Return 6 to 8 real Google Maps places, cafes, landmarks, tourist attractions strictly within a 2km radius of (lat: $userLat, lng: $userLng).
-                
-                For each place, output a JSON array of objects with:
-                - "name": Exact verified name on Google Maps
-                - "address": Real address
-                - "category": One of "LANDMARK", "CAFE", "HERITAGE", "NATURE", "STREET", "RESTAURANT"
-                - "description": 1-sentence poetic highlight in Vietnamese
-                - "stampTitleSuggestion": 2-4 word vintage stamp title
-                - "rating": Google Maps rating (e.g. "4.8★")
-                - "approxDistanceMeters": Approximate distance in meters from (lat $userLat, lng $userLng)
+            val baseUrl = SupabaseConfig.getSupabaseUrl(context).trimEnd('/')
+            val anonKey = SupabaseConfig.getAnonKey(context).trim()
+            val functionUrl = "$baseUrl/functions/v1/maps-grounding"
 
-                Return ONLY raw JSON array.
-                """.trimIndent()
-            } else {
-                val locContext = if (userLat != null && userLng != null) {
-                    "near coordinates (lat: $userLat, lng: $userLng, City: ${currentCity ?: "Vietnam"})"
-                } else {
-                    "in ${currentCity ?: "Vietnam"}"
-                }
-                """
-                You are Google Maps Search Engine for the MemoStamp app.
-                Search Google Maps for query: "$query" $locContext.
-                Use prefix, token, and location bias matching to return 6 to 8 verified places matching this search query like real Google Maps.
-
-                For each place, output a JSON array of objects with:
-                - "name": Exact place name
-                - "address": Full verified address
-                - "category": One of "LANDMARK", "CAFE", "HERITAGE", "NATURE", "STREET", "RESTAURANT"
-                - "description": 1-sentence poetic highlight in Vietnamese
-                - "stampTitleSuggestion": 2-4 word evocative stamp title
-                - "rating": Verified rating (e.g. "4.7★")
-                - "approxDistanceMeters": Distance in meters if nearby or null
-
-                Return ONLY raw JSON array.
-                """.trimIndent()
-            }
-
-            // Request body with googleMaps tool grounding
             val requestJson = JsonObject().apply {
-                val contentsArray = JsonArray().apply {
-                    val contentObj = JsonObject().apply {
-                        val partsArray = JsonArray().apply {
-                            val partObj = JsonObject().apply {
-                                addProperty("text", prompt)
-                            }
-                            add(partObj)
-                        }
-                        add("parts", partsArray)
-                    }
-                    add(contentObj)
-                }
-                add("contents", contentsArray)
-
-                // Add Google Maps Grounding Tool
-                val toolsArray = JsonArray().apply {
-                    val mapsTool = JsonObject().apply {
-                        add("googleMaps", JsonObject())
-                    }
-                    add(mapsTool)
-                }
-                add("tools", toolsArray)
+                addProperty("action", "SEARCH_PLACES")
+                addProperty("query", query.take(100))
+                if (currentCity != null) addProperty("currentCity", currentCity.take(100))
+                if (userLat != null && !userLat.isNaN() && userLat in -90.0..90.0) addProperty("latitude", userLat)
+                if (userLng != null && !userLng.isNaN() && userLng in -180.0..180.0) addProperty("longitude", userLng)
+                addProperty("categoryFilter", categoryFilter)
             }
 
-            val url = "$BASE_URL?key=$apiKey"
             val body = requestJson.toString().toRequestBody(jsonMediaType)
             val request = Request.Builder()
-                .url(url)
+                .url(functionUrl)
+                .addHeader("Authorization", "Bearer $accessToken")
+                .addHeader("apikey", anonKey)
                 .post(body)
                 .build()
 
             val response = httpClient.newCall(request).execute()
             if (response.isSuccessful) {
                 val responseBody = response.body?.string().orEmpty()
-                val parsedList = parseGeminiPlacesResponse(responseBody, userLat, userLng)
-                if (parsedList.isNotEmpty()) {
-                    // Merge AI Grounding results with ranked local candidates, deduplicate by normalized name
+                val parsedPlaces = parseServerPlacesResponse(responseBody)
+                if (parsedPlaces.isNotEmpty()) {
                     val merged = mutableListOf<GroundedPlace>()
                     val seenNames = mutableSetOf<String>()
 
-                    for (p in parsedList) {
+                    for (p in parsedPlaces) {
                         val norm = GoogleMapsRankingEngine.normalize(p.name)
                         if (norm !in seenNames) {
                             seenNames.add(norm)
                             merged.add(p)
                         }
                     }
-                    for (p in rankedLocal) {
+                    for (p in placesSdkResults) {
+                        val norm = GoogleMapsRankingEngine.normalize(p.name)
+                        if (norm !in seenNames) {
+                            seenNames.add(norm)
+                            merged.add(p)
+                        }
+                    }
+                    for (p in localCandidates) {
                         val norm = GoogleMapsRankingEngine.normalize(p.name)
                         if (norm !in seenNames) {
                             seenNames.add(norm)
@@ -210,120 +154,88 @@ object GeminiMapsGroundingService {
                     }
                     return@withContext merged
                 }
+            } else {
+                Log.w(TAG, "Server maps-grounding returned HTTP ${response.code}; falling back to local results")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Exception during Gemini Maps Grounding: ${e.message}", e)
+            Log.w(TAG, "Maps grounding request failed; falling back to local results: ${e.message}")
         }
 
-        rankedLocal
+        if (placesSdkResults.isNotEmpty()) placesSdkResults + localCandidates else localCandidates
     }
 
     /**
-     * Generate poetic stamp story & postmark details for the back of the stamp
+     * Generate poetic stamp story & postmark details via server-side MemoStame Edge Function.
      */
     suspend fun generateGroundedPostmarkNote(
         placeName: String,
-        locationAddress: String
+        locationAddress: String,
+        context: Context? = null
     ): GroundedPostmarkStory = withContext(Dispatchers.IO) {
-        val apiKey = getApiKey()
-        if (apiKey.isBlank()) {
-            return@withContext GroundedPostmarkStory(
-                poeticNote = "Những khoảnh khắc đẹp đẽ nhất luôn nằm lại nơi góc quán quen và con đường ngập nắng $placeName.",
-                historicalFact = "$placeName là một trong những điểm dừng chân ghi dấu kỷ niệm khó quên tại $locationAddress.",
-                suggestedPostmarkCode = "MEMO-${placeName.take(4).uppercase()}"
-            )
-        }
+        val fallbackStory = GroundedPostmarkStory(
+            poeticNote = "Những khoảnh khắc đẹp đẽ nhất luôn nằm lại nơi góc quán quen và con đường ngập nắng $placeName.",
+            historicalFact = "$placeName là một trong những điểm dừng chân ghi dấu kỷ niệm khó quên tại $locationAddress.",
+            suggestedPostmarkCode = "MEMO-${placeName.take(4).uppercase()}"
+        )
+
+        if (context == null) return@withContext fallbackStory
+
+        val session = AndroidAuthSessionStore(context).load()
+        val accessToken = session?.accessToken
+        if (accessToken.isNullOrBlank()) return@withContext fallbackStory
 
         try {
-            val prompt = """
-                Use Google Maps data and cultural knowledge about place: "$placeName" at "$locationAddress".
-                Provide a JSON object with:
-                - "poeticNote": A warm, poetic 2-sentence postcard note (Vietnamese) capturing the vibe and soul of this place.
-                - "historicalFact": A 1-sentence verified interesting fact or highlight about this spot.
-                - "suggestedPostmarkCode": A 6-character postmark code like "VN-DLT26" or "HCM-BT26".
-
-                Return ONLY raw JSON object.
-            """.trimIndent()
+            val baseUrl = SupabaseConfig.getSupabaseUrl(context).trimEnd('/')
+            val anonKey = SupabaseConfig.getAnonKey(context).trim()
+            val functionUrl = "$baseUrl/functions/v1/maps-grounding"
 
             val requestJson = JsonObject().apply {
-                val contentsArray = JsonArray().apply {
-                    val contentObj = JsonObject().apply {
-                        val partsArray = JsonArray().apply {
-                            val partObj = JsonObject().apply {
-                                addProperty("text", prompt)
-                            }
-                            add(partObj)
-                        }
-                        add("parts", partsArray)
-                    }
-                    add(contentObj)
-                }
-                add("contents", contentsArray)
-                val toolsArray = JsonArray().apply {
-                    val mapsTool = JsonObject().apply {
-                        add("googleMaps", JsonObject())
-                    }
-                    add(mapsTool)
-                }
-                add("tools", toolsArray)
+                addProperty("action", "GENERATE_POSTMARK_STORY")
+                addProperty("placeName", placeName.take(150))
+                addProperty("locationAddress", locationAddress.take(250))
             }
 
-            val url = "$BASE_URL?key=$apiKey"
             val body = requestJson.toString().toRequestBody(jsonMediaType)
             val request = Request.Builder()
-                .url(url)
+                .url(functionUrl)
+                .addHeader("Authorization", "Bearer $accessToken")
+                .addHeader("apikey", anonKey)
                 .post(body)
                 .build()
 
             val response = httpClient.newCall(request).execute()
             if (response.isSuccessful) {
                 val responseBody = response.body?.string().orEmpty()
-                val parsed = parseGeminiStoryResponse(responseBody, placeName, locationAddress)
+                val parsed = parseServerStoryResponse(responseBody, placeName, locationAddress)
                 if (parsed != null) return@withContext parsed
+            } else {
+                Log.w(TAG, "Server postmark story returned HTTP ${response.code}; using fallback story")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed generating story: ${e.message}")
+            Log.w(TAG, "Postmark story request failed; using fallback story: ${e.message}")
         }
 
-        GroundedPostmarkStory(
-            poeticNote = "Lưu giữ một thoáng mộng mơ cùng ánh nắng dịu dàng tại $placeName.",
-            historicalFact = "Điểm ghi dấu hành trình bưu chính tại $locationAddress.",
-            suggestedPostmarkCode = "POST-${placeName.take(3).uppercase()}"
-        )
+        fallbackStory
     }
 
-    private fun parseGeminiPlacesResponse(jsonString: String, userLat: Double? = null, userLng: Double? = null): List<GroundedPlace> {
+    private fun parseServerPlacesResponse(jsonString: String): List<GroundedPlace> {
         val places = mutableListOf<GroundedPlace>()
         try {
             val root = JsonParser.parseString(jsonString).asJsonObject
-            val candidates = root.getAsJsonArray("candidates") ?: return emptyList()
-            if (candidates.size() == 0) return emptyList()
+            val placesArray = root.getAsJsonArray("places") ?: return emptyList()
 
-            val firstCandidate = candidates[0].asJsonObject
-            val content = firstCandidate.getAsJsonObject("content") ?: return emptyList()
-            val parts = content.getAsJsonArray("parts") ?: return emptyList()
-
-            var textContent = ""
-            for (p in parts) {
-                val partObj = p.asJsonObject
-                if (partObj.has("text")) {
-                    textContent += partObj.get("text").asString
-                }
-            }
-
-            // Extract JSON array from textContent
-            val jsonArrayStr = extractJsonArray(textContent) ?: return emptyList()
-            val jsonArray = JsonParser.parseString(jsonArrayStr).asJsonArray
-
-            for (element in jsonArray) {
+            for (element in placesArray) {
+                if (!element.isJsonObject) continue
                 val obj = element.asJsonObject
                 val name = obj.get("name")?.asString.orEmpty()
                 val address = obj.get("address")?.asString.orEmpty()
                 val category = obj.get("category")?.asString ?: "LANDMARK"
                 val desc = obj.get("description")?.asString.orEmpty()
                 val stampTitle = obj.get("stampTitleSuggestion")?.asString.orEmpty()
-                val rating = obj.get("rating")?.asString
-                val approxDist = obj.get("approxDistanceMeters")?.asDouble
+                val rating = if (obj.has("rating") && !obj.get("rating").isJsonNull) obj.get("rating").asString else null
+                val approxDist = if (obj.has("approximateDistanceMeters") && !obj.get("approximateDistanceMeters").isJsonNull) {
+                    obj.get("approximateDistanceMeters").asDouble
+                } else null
 
                 if (name.isNotBlank()) {
                     places.add(
@@ -342,58 +254,30 @@ object GeminiMapsGroundingService {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing places JSON: ${e.message}", e)
+            Log.e(TAG, "Error parsing server places response: ${e.message}")
         }
         return places
     }
 
-    private fun parseGeminiStoryResponse(jsonString: String, placeName: String, locationAddress: String): GroundedPostmarkStory? {
-        try {
+    private fun parseServerStoryResponse(jsonString: String, placeName: String, locationAddress: String): GroundedPostmarkStory? {
+        return try {
             val root = JsonParser.parseString(jsonString).asJsonObject
-            val candidates = root.getAsJsonArray("candidates") ?: return null
-            val firstCandidate = candidates[0].asJsonObject
-            val content = firstCandidate.getAsJsonObject("content") ?: return null
-            val parts = content.getAsJsonArray("parts") ?: return null
+            val poeticNote = root.get("poeticNote")?.asString
+                ?: "Lưu giữ một thoáng mộng mơ cùng ánh nắng dịu dàng tại $placeName."
+            val historicalFact = root.get("historicalFact")?.asString
+                ?: "Điểm ghi dấu hành trình bưu chính tại $locationAddress."
+            val suggestedPostmarkCode = root.get("suggestedPostmarkCode")?.asString
+                ?: "POST-${placeName.take(3).uppercase()}"
 
-            var textContent = ""
-            for (p in parts) {
-                if (p.asJsonObject.has("text")) {
-                    textContent += p.asJsonObject.get("text").asString
-                }
-            }
-
-            val jsonObjectStr = extractJsonObject(textContent) ?: return null
-            val obj = JsonParser.parseString(jsonObjectStr).asJsonObject
-
-            return GroundedPostmarkStory(
-                poeticNote = obj.get("poeticNote")?.asString ?: "Gửi trọn một thoáng thương nhớ từ $placeName.",
-                historicalFact = obj.get("historicalFact")?.asString ?: "$placeName tọa lạc tại $locationAddress.",
-                suggestedPostmarkCode = obj.get("suggestedPostmarkCode")?.asString ?: "POST-${placeName.take(3).uppercase()}"
+            GroundedPostmarkStory(
+                poeticNote = poeticNote,
+                historicalFact = historicalFact,
+                suggestedPostmarkCode = suggestedPostmarkCode
             )
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing story JSON: ${e.message}")
-            return null
+            Log.e(TAG, "Error parsing server story response: ${e.message}")
+            null
         }
-    }
-
-    private fun extractJsonArray(text: String): String? {
-        val trimmed = text.trim()
-        val start = trimmed.indexOf('[')
-        val end = trimmed.lastIndexOf(']')
-        if (start != -1 && end != -1 && end > start) {
-            return trimmed.substring(start, end + 1)
-        }
-        return null
-    }
-
-    private fun extractJsonObject(text: String): String? {
-        val trimmed = text.trim()
-        val start = trimmed.indexOf('{')
-        val end = trimmed.lastIndexOf('}')
-        if (start != -1 && end != -1 && end > start) {
-            return trimmed.substring(start, end + 1)
-        }
-        return null
     }
 
     private fun getFallbackPlaces(query: String, currentCity: String?): List<GroundedPlace> {

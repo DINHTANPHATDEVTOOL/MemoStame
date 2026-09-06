@@ -37,15 +37,17 @@ fi
 DEL_URL="${SUPABASE_URL}/functions/v1/delete-account"
 PUSH_URL="${SUPABASE_URL}/functions/v1/dispatch-push"
 TRADE_URL="${SUPABASE_URL}/functions/v1/accept-trade"
+MAPS_URL="${SUPABASE_URL}/functions/v1/maps-grounding"
 DEL_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$DEL_URL" 2>/dev/null || true)
 PUSH_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$PUSH_URL" 2>/dev/null || true)
 TRADE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$TRADE_URL" 2>/dev/null || true)
+MAPS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$MAPS_URL" 2>/dev/null || true)
 
 FUNC_PID=""
-if ([ "$DEL_CODE" != "200" ] || [ "$PUSH_CODE" != "200" ] || [ "$TRADE_CODE" != "200" ]) && command -v supabase >/dev/null 2>&1; then
+if ([ "$DEL_CODE" != "200" ] || [ "$PUSH_CODE" != "200" ] || [ "$TRADE_CODE" != "200" ] || [ "$MAPS_CODE" != "200" ]) && command -v supabase >/dev/null 2>&1; then
     echo "Starting local Edge Functions in background..."
     if [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
-        printf "SUPABASE_SERVICE_ROLE_KEY=%s\nPUSH_PROVIDER_MODE=mock\nMOCK_PUSH_URL=http://127.0.0.1:54325/mock-push\n" "$SUPABASE_SERVICE_ROLE_KEY" > supabase/functions/.env
+        printf "SUPABASE_SERVICE_ROLE_KEY=%s\nPUSH_PROVIDER_MODE=mock\nMOCK_PUSH_URL=http://127.0.0.1:54325/mock-push\nGEMINI_PROVIDER_MODE=mock\nMOCK_GEMINI_URL=http://127.0.0.1:54326/mock-gemini\nGEMINI_API_KEY=test-mock-gemini-key\n" "$SUPABASE_SERVICE_ROLE_KEY" > supabase/functions/.env
     fi
     supabase functions serve --no-verify-jwt > /tmp/supabase_functions_serve.log 2>&1 &
     FUNC_PID=$!
@@ -65,9 +67,11 @@ if ([ "$DEL_CODE" != "200" ] || [ "$PUSH_CODE" != "200" ] || [ "$TRADE_CODE" != 
         PROBE_DEL=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$DEL_URL" 2>/dev/null || true)
         PROBE_PUSH=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$PUSH_URL" 2>/dev/null || true)
         PROBE_TRADE=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$TRADE_URL" 2>/dev/null || true)
+        PROBE_MAPS=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$MAPS_URL" 2>/dev/null || true)
         if ([ "$PROBE_DEL" = "200" ] || [ "$PROBE_DEL" = "401" ] || [ "$PROBE_DEL" = "405" ]) && \
            ([ "$PROBE_PUSH" = "200" ] || [ "$PROBE_PUSH" = "401" ] || [ "$PROBE_PUSH" = "405" ]) && \
-           ([ "$PROBE_TRADE" = "200" ] || [ "$PROBE_TRADE" = "401" ] || [ "$PROBE_TRADE" = "405" ]); then
+           ([ "$PROBE_TRADE" = "200" ] || [ "$PROBE_TRADE" = "401" ] || [ "$PROBE_TRADE" = "405" ]) && \
+           ([ "$PROBE_MAPS" = "200" ] || [ "$PROBE_MAPS" = "401" ] || [ "$PROBE_MAPS" = "405" ]); then
             READY=1
             break
         fi
@@ -79,7 +83,7 @@ if ([ "$DEL_CODE" != "200" ] || [ "$PUSH_CODE" != "200" ] || [ "$TRADE_CODE" != 
         cat /tmp/supabase_functions_serve.log || true
         exit 1
     fi
-    echo "Edge functions (delete-account, dispatch-push, accept-trade) are ready."
+    echo "Edge functions (delete-account, dispatch-push, accept-trade, maps-grounding) are ready."
 fi
 
 # Execute Python black-box E2E contract runner

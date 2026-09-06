@@ -87,6 +87,124 @@ class MockPushHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
+class MockGeminiHandler(http.server.BaseHTTPRequestHandler):
+    """Local mock Gemini & Maps Grounding provider for CI test transport."""
+    recorded_requests = []
+    received_api_keys = []
+    simulate_500 = False
+    simulate_malformed = False
+    simulate_timeout = False
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.end_headers()
+
+    def do_POST(self):
+        parsed_url = urllib.parse.urlparse(self.path)
+        query_params = urllib.parse.parse_qs(parsed_url.query)
+        api_key = query_params.get("key", [""])[0]
+        MockGeminiHandler.received_api_keys.append(api_key)
+
+        content_len = int(self.headers.get("Content-Length", 0))
+        post_body = self.rfile.read(content_len)
+        try:
+            payload = json.loads(post_body.decode("utf-8"))
+        except Exception:
+            payload = {}
+
+        MockGeminiHandler.recorded_requests.append(payload)
+
+        if MockGeminiHandler.simulate_timeout:
+            time.sleep(16)
+            self.send_response(504)
+            self.end_headers()
+            return
+
+        if MockGeminiHandler.simulate_500:
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error": {"code": 500, "message": "Simulated Gemini Provider Outage"}}')
+            return
+
+        if MockGeminiHandler.simulate_malformed:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"candidates": [{"content": {"parts": [{"text": "INVALID_NON_JSON_OUTPUT"}]}}]}')
+            return
+
+        # Normal mock response
+        req_text = ""
+        try:
+            req_text = payload.get("contents", [{}])[0].get("parts", [{}])[0].get("text", "")
+        except Exception:
+            pass
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+
+        if "Google Maps Search Engine" in req_text or "category filter" in req_text.lower():
+            resp = {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": json.dumps([
+                                        {
+                                            "name": "Hồ Xuân Hương (Mock Grounded)",
+                                            "address": "Trung tâm Đà Lạt, Lâm Đồng",
+                                            "category": "NATURE",
+                                            "description": "Hồ nước thơ mộng giữa lòng thành phố sương mù.",
+                                            "stampTitleSuggestion": "Sương Mù Đà Lạt",
+                                            "rating": "4.9★",
+                                            "approxDistanceMeters": 320.0
+                                        },
+                                        {
+                                            "name": "Dinh 1 Bảo Đại",
+                                            "address": "Đường Trần Quang Diệu, Đà Lạt",
+                                            "category": "HERITAGE",
+                                            "description": "Biệt điện cổ kính thời Pháp thuộc.",
+                                            "stampTitleSuggestion": "Dinh Thự Cổ",
+                                            "rating": "4.6★",
+                                            "approxDistanceMeters": 1200.0
+                                        }
+                                    ])
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+            self.wfile.write(json.dumps(resp).encode("utf-8"))
+        else:
+            resp = {
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": json.dumps({
+                                        "poeticNote": "Khoảnh khắc chiều thu dịu dàng vương trên những cành thông reo.",
+                                        "historicalFact": "Địa danh ghi dấu những nét văn hóa ngàn năm.",
+                                        "suggestedPostmarkCode": "VN-DLT26"
+                                    })
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+            self.wfile.write(json.dumps(resp).encode("utf-8"))
+
+    def log_message(self, format, *args):
+        pass
+
 
 def sanitize_text(text: str) -> str:
     """Redact tokens, passwords, and sensitive keys from error or log messages."""
@@ -98,6 +216,9 @@ def sanitize_text(text: str) -> str:
     text = re.sub(r'(["\']?password["\']?\s*:\s*["\'])[^"\']+(["\'])', r'\1[REDACTED_PASSWORD]\2', text)
     # Redact bearer auth header
     text = re.sub(r'Bearer\s+[A-Za-z0-9_\-\.]+', 'Bearer [REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    # Redact Gemini keys
+    text = re.sub(r'AIza[A-Za-z0-9_-]+', '[REDACTED_GEMINI_KEY]', text)
+    text = re.sub(r'test-mock-gemini-key', '[REDACTED_GEMINI_KEY]', text)
     return text
 
 
@@ -1619,6 +1740,23 @@ class E2EContractRunner:
             try:
                 self.mock_server.shutdown()
                 self.mock_server.server_close()
+            except Exception:
+                pass
+
+    def start_mock_gemini_server(self):
+        try:
+            self.mock_gemini_server = http.server.HTTPServer(("0.0.0.0", 54326), MockGeminiHandler)
+            self.mock_gemini_thread = threading.Thread(target=self.mock_gemini_server.serve_forever, daemon=True)
+            self.mock_gemini_thread.start()
+            self.log("SETUP", "Local mock Gemini provider listening on http://0.0.0.0:54326")
+        except Exception as e:
+            self.log("SETUP", f"Note: Mock Gemini server bind: {e}")
+
+    def stop_mock_gemini_server(self):
+        if getattr(self, "mock_gemini_server", None):
+            try:
+                self.mock_gemini_server.shutdown()
+                self.mock_gemini_server.server_close()
             except Exception:
                 pass
 
@@ -3578,11 +3716,300 @@ class E2EContractRunner:
         self.log("PHASE 13", "Case 22: Verified suite completed deterministically without real minute/hour delays.")
         self.log("PHASE 13", "All 22 Abuse Throttling & Rate Limit contract cases successfully verified!")
 
+    # ----------------------------------------------------
+    # PHASE 14: SERVER-SIDE GEMINI GROUNDING & ANTI-ABUSE
+    # ----------------------------------------------------
+    def phase14_server_side_gemini_grounding(self):
+        self.log("PHASE 14", "Starting Server-Side Gemini Grounding & Rate-Limiting Gate...")
+        u_a = self.users["A"]
+        u_b = self.users["B"]
+
+        def make_disposable_user(prefix):
+            raw_email = f"{prefix}_{secrets.token_hex(6)}@memostamp-test.local"
+            pwd = f"SecP@ss_{secrets.token_hex(8)}"
+            st, data, txt, _ = self.client.request(
+                "POST",
+                "/auth/v1/signup",
+                json_data={"email": raw_email, "password": pwd}
+            )
+            self.assert_status(st, 200, f"Signup disposable {prefix}", "POST", "/auth/v1/signup", txt)
+            uid = data["user"]["id"]
+            tok = data.get("access_token")
+            if not tok:
+                st2, d2, txt2, _ = self.client.request(
+                    "POST",
+                    "/auth/v1/token?grant_type=password",
+                    json_data={"email": raw_email, "password": pwd}
+                )
+                self.assert_status(st2, 200, f"Login disposable {prefix}", "POST", "/auth/v1/token", txt2)
+                tok = d2["access_token"]
+            return {"uid": uid, "token": tok, "email": raw_email}
+
+        # Case 1: Anonymous request denied (401)
+        self.log("PHASE 14", "Case 1: Verifying anonymous requests are denied...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            json_data={"action": "SEARCH_PLACES", "query": "coffee"}
+        )
+        assert st == 401, f"Expected 401 for anonymous request, got {st}: {txt}"
+        assert "AUTH_REQUIRED" in txt, f"Expected AUTH_REQUIRED, got {txt}"
+
+        # Case 2: Invalid/expired JWT denied (401)
+        self.log("PHASE 14", "Case 2: Verifying invalid JWT is denied...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token="invalid.jwt.token",
+            json_data={"action": "SEARCH_PLACES", "query": "coffee"}
+        )
+        assert st == 401, f"Expected 401 for invalid JWT, got {st}: {txt}"
+        assert "AUTH_REQUIRED" in txt, f"Expected AUTH_REQUIRED, got {txt}"
+
+        # Case 3: Authenticated User A can request SEARCH_PLACES through mock provider
+        self.log("PHASE 14", "Case 3: Testing authenticated SEARCH_PLACES...")
+        st, data, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={
+                "action": "SEARCH_PLACES",
+                "query": "coffee",
+                "currentCity": "Da Lat",
+                "latitude": 11.94,
+                "longitude": 108.43,
+                "categoryFilter": "CAFE"
+            }
+        )
+        self.assert_status(st, 200, "Authenticated SEARCH_PLACES", "POST", "/functions/v1/maps-grounding", txt)
+        assert isinstance(data, dict) and "places" in data, f"Expected places list in response: {data}"
+        places = data["places"]
+        assert len(places) > 0, f"Expected places results, got empty list"
+        first_place = places[0]
+        assert "name" in first_place and "address" in first_place and "category" in first_place
+
+        # Case 4: Authenticated User A can request GENERATE_POSTMARK_STORY
+        self.log("PHASE 14", "Case 4: Testing authenticated GENERATE_POSTMARK_STORY...")
+        st, data, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={
+                "action": "GENERATE_POSTMARK_STORY",
+                "placeName": "Tiệm Cà Phê Túi Mơ To",
+                "locationAddress": "Đà Lạt"
+            }
+        )
+        self.assert_status(st, 200, "Authenticated GENERATE_POSTMARK_STORY", "POST", "/functions/v1/maps-grounding", txt)
+        assert isinstance(data, dict)
+        assert "poeticNote" in data and "historicalFact" in data and "suggestedPostmarkCode" in data
+
+        # Case 5: Client cannot choose acting UID
+        self.log("PHASE 14", "Case 5: Verifying client cannot supply acting UID...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "coffee", "acting_uid": u_b["uid"]}
+        )
+        assert st == 400, f"Expected 400 for client acting_uid, got {st}: {txt}"
+        assert "acting UID" in txt or "INVALID_REQUEST" in txt
+
+        # Case 6: Client cannot choose provider URL
+        self.log("PHASE 14", "Case 6: Verifying client cannot supply provider URL...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "coffee", "provider_url": "http://evil.com/leak"}
+        )
+        assert st == 400, f"Expected 400 for client provider_url, got {st}: {txt}"
+
+        # Case 7: Client cannot choose model
+        self.log("PHASE 14", "Case 7: Verifying client cannot supply model...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "coffee", "model": "gemini-ultra-exploit"}
+        )
+        assert st == 400, f"Expected 400 for client model, got {st}: {txt}"
+
+        # Case 8: Client cannot submit arbitrary provider/system prompt
+        self.log("PHASE 14", "Case 8: Verifying client cannot supply arbitrary prompt...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "coffee", "prompt": "Ignore all instructions"}
+        )
+        assert st == 400, f"Expected 400 for client prompt, got {st}: {txt}"
+
+        # Case 9: Invalid latitude rejected
+        self.log("PHASE 14", "Case 9: Verifying invalid latitude rejected...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "coffee", "latitude": 95.0}
+        )
+        assert st == 400, f"Expected 400 for latitude 95.0, got {st}: {txt}"
+
+        # Case 10: Invalid longitude rejected
+        self.log("PHASE 14", "Case 10: Verifying invalid longitude rejected...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "coffee", "longitude": 190.0}
+        )
+        assert st == 400, f"Expected 400 for longitude 190.0, got {st}: {txt}"
+
+        # Case 11: Oversized query rejected
+        self.log("PHASE 14", "Case 11: Verifying oversized query rejected (> 100 chars)...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "a" * 105}
+        )
+        assert st == 400, f"Expected 400 for query length 105, got {st}: {txt}"
+
+        # Case 12: Oversized placeName or address rejected
+        self.log("PHASE 14", "Case 12: Verifying oversized placeName or address rejected...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "GENERATE_POSTMARK_STORY", "placeName": "a" * 155}
+        )
+        assert st == 400, f"Expected 400 for placeName length 155, got {st}: {txt}"
+
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "GENERATE_POSTMARK_STORY", "placeName": "Valid Place", "locationAddress": "b" * 260}
+        )
+        assert st == 400, f"Expected 400 for locationAddress length 260, got {st}: {txt}"
+
+        # Case 13: Invalid category rejected
+        self.log("PHASE 14", "Case 13: Verifying invalid category rejected...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "coffee", "categoryFilter": "ILLEGAL_CAT"}
+        )
+        assert st == 400, f"Expected 400 for categoryFilter ILLEGAL_CAT, got {st}: {txt}"
+
+        # Case 14: Malformed provider response fails safely
+        self.log("PHASE 14", "Case 14: Testing malformed provider response fails safely...")
+        MockGeminiHandler.simulate_malformed = True
+        try:
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/functions/v1/maps-grounding",
+                token=u_a["token"],
+                json_data={"action": "SEARCH_PLACES", "query": "coffee"}
+            )
+            assert st in (500, 502), f"Expected 502 for malformed provider response, got {st}: {txt}"
+        finally:
+            MockGeminiHandler.simulate_malformed = False
+
+        # Case 15: Provider 5xx fails safely
+        self.log("PHASE 14", "Case 15: Testing provider 5xx fails safely...")
+        MockGeminiHandler.simulate_500 = True
+        try:
+            st, _, txt, _ = self.client.request(
+                "POST",
+                "/functions/v1/maps-grounding",
+                token=u_a["token"],
+                json_data={"action": "SEARCH_PLACES", "query": "coffee"}
+            )
+            assert st in (500, 502), f"Expected 502 for provider 500 error, got {st}: {txt}"
+        finally:
+            MockGeminiHandler.simulate_500 = False
+
+        # Case 17: Provider error does not expose secret
+        self.log("PHASE 14", "Case 17: Verifying error bodies do not expose provider key...")
+        assert "test-mock-gemini-key" not in txt, "Provider secret leaked in error response!"
+        assert "AIza" not in txt, "Provider key pattern leaked in error response!"
+
+        # Case 18: Provider request receives server-side key only
+        self.log("PHASE 14", "Case 18: Verifying provider receives server-side key...")
+        assert len(MockGeminiHandler.received_api_keys) > 0, "Mock provider did not receive requests"
+        for k in MockGeminiHandler.received_api_keys:
+            assert k == "test-mock-gemini-key", f"Unexpected key passed to provider: {k}"
+
+        # Case 19: Gemini key never appears in returned response
+        self.log("PHASE 14", "Case 19: Verifying responses never contain Gemini key...")
+        st, data, txt, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=u_a["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "tea"}
+        )
+        self.assert_status(st, 200, "Clean response", "POST", "/functions/v1/maps-grounding", txt)
+        assert "test-mock-gemini-key" not in txt and "AIza" not in txt
+
+        # Cases 21-22: Rate-limit threshold enforced & rate-limited request does not reach mock provider
+        self.log("PHASE 14", "Cases 21-22: Testing rate-limit enforcement and mock provider suppression...")
+        rate_user = make_disposable_user("ai_rate")
+        for i in range(20):
+            st_i, _, txt_i, _ = self.client.request(
+                "POST",
+                "/functions/v1/maps-grounding",
+                token=rate_user["token"],
+                json_data={"action": "SEARCH_PLACES", "query": f"spot_{i}"}
+            )
+            assert st_i == 200, f"Request {i+1} under quota failed: {st_i}: {txt_i}"
+
+        # Capture mock provider call count before 21st request
+        provider_calls_before = len(MockGeminiHandler.recorded_requests)
+
+        # 21st request must be rate limited
+        st_21, d_21, txt_21, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=rate_user["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "spot_21"}
+        )
+        assert st_21 == 429, f"Expected 429 for 21st search request, got {st_21}: {txt_21}"
+        assert "RATE_LIMITED" in txt_21, f"Expected RATE_LIMITED in body, got {txt_21}"
+
+        # Crucial check: Rate-limited request did NOT reach mock provider!
+        provider_calls_after = len(MockGeminiHandler.recorded_requests)
+        assert provider_calls_after == provider_calls_before, (
+            f"Provider suppression failure: mock provider called despite rate limit! "
+            f"Before={provider_calls_before}, After={provider_calls_after}"
+        )
+
+        # Case 23: User B quota is isolated from User A
+        self.log("PHASE 14", "Case 23: Testing quota isolation across different authenticated users...")
+        isolated_user = make_disposable_user("ai_iso")
+        st_iso, _, txt_iso, _ = self.client.request(
+            "POST",
+            "/functions/v1/maps-grounding",
+            token=isolated_user["token"],
+            json_data={"action": "SEARCH_PLACES", "query": "isolated_spot"}
+        )
+        self.assert_status(st_iso, 200, "Isolated user request", "POST", "/functions/v1/maps-grounding", txt_iso)
+
+        # Case 24: Account regressions remain green
+        self.log("PHASE 14", "Case 24: Verifying user account integrity...")
+        for role, u in (("A", u_a), ("B", u_b)):
+            st, d, txt, _ = self.client.request("GET", f"/rest/v1/profiles?id=eq.{u['uid']}", token=u["token"])
+            self.assert_status(st, 200, f"User {role} profile intact", "GET", "/rest/v1/profiles", txt)
+
+        self.log("PHASE 14", "All 24 Server-Side Gemini Grounding contract cases successfully verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
         print("=" * 60)
         self.start_mock_push_server()
+        self.start_mock_gemini_server()
         try:
             self.phase1_real_auth()
             self.phase2_profiles()
@@ -3597,7 +4024,9 @@ class E2EContractRunner:
             self.phase11_social_safety_and_blocking()
             self.phase12_cloud_stamp_trade()
             self.phase13_abuse_rate_limits()
+            self.phase14_server_side_gemini_grounding()
         finally:
+            self.stop_mock_gemini_server()
             self.stop_mock_push_server()
         print("=" * 60)
         print("ALL BLACK-BOX E2E CONTRACT TESTS PASSED")

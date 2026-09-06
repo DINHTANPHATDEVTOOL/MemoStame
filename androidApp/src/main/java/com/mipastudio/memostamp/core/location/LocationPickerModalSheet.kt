@@ -429,7 +429,7 @@ fun LocationPickerModalSheet(
                                 isSelected = initialLocation.contains(place.name),
                                 onSelect = {
                                     coroutineScope.launch {
-                                        val story = GeminiMapsGroundingService.generateGroundedPostmarkNote(place.name, place.address)
+                                        val story = GeminiMapsGroundingService.generateGroundedPostmarkNote(place.name, place.address, context)
                                         onLocationSelected(place.name, place.stampTitleSuggestion, story)
                                         onDismiss()
                                     }
