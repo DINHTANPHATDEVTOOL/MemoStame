@@ -188,6 +188,11 @@ fun CameraScreen(
 
     // Smart Camera Gestures State (Swipe to Filter & Pinch Zoom)
     var zoomRatio by remember { mutableFloatStateOf(1.0f) }
+    LaunchedEffect(cameraController.currentZoomRatio) {
+        if (kotlin.math.abs(zoomRatio - cameraController.currentZoomRatio) > 0.05f) {
+            zoomRatio = cameraController.currentZoomRatio
+        }
+    }
     var swipeToastFilterName by remember { mutableStateOf<String?>(null) }
     var totalDragX by remember { mutableFloatStateOf(0f) }
 
@@ -222,15 +227,12 @@ fun CameraScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(cameraController.minZoomRatio, cameraController.maxZoomRatio, cameraController.hasUltraWideCamera) {
+                .pointerInput(cameraController.minZoomRatio, cameraController.maxZoomRatio) {
                     detectTransformGestures { _, _, zoom, _ ->
                         if (zoom != 1.0f) {
-                            val minZ = if (cameraController.hasUltraWideCamera) 0.5f else cameraController.minZoomRatio
-                            val newZoom = (zoomRatio * zoom).coerceIn(minZ, cameraController.maxZoomRatio)
+                            val newZoom = (zoomRatio * zoom).coerceIn(cameraController.minZoomRatio, cameraController.maxZoomRatio)
                             zoomRatio = newZoom
-                            previewViewRef?.let { pView ->
-                                cameraController.setZoomPreset(newZoom, lifecycleOwner, pView)
-                            } ?: cameraController.setZoomRatio(newZoom)
+                            cameraController.setZoomRatio(newZoom)
                         }
                     }
                 }
@@ -483,12 +485,11 @@ fun CameraScreen(
             zoomRatio = zoomRatio,
             minZoomRatio = cameraController.minZoomRatio,
             maxZoomRatio = cameraController.maxZoomRatio,
+            opticalLenses = cameraController.opticalLenses,
             hasUltraWideCamera = cameraController.hasUltraWideCamera,
             onZoomSelected = { z ->
                 zoomRatio = z
-                previewViewRef?.let { pView ->
-                    cameraController.setZoomPreset(z, lifecycleOwner, pView)
-                } ?: cameraController.setZoomRatio(z)
+                cameraController.setZoomRatio(z)
             },
             onCaptureClick = {
                 if (hasCameraPermission) {

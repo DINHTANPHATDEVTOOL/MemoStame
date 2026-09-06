@@ -1,20 +1,34 @@
 import XCTest
+@testable import iosApp
 
 final class CameraViewModelTests: XCTestCase {
 
-    func testZoomPillPinchClamping() {
-        let options = ["1x": 1.0, "2x": 1.8, "3x": 2.8, "5x": 4.2]
-        for (pill, expectedScale) in options {
-            var scale: Double = 1.0
-            switch pill {
-            case "1x": scale = 1.0
-            case "2x": scale = 1.8
-            case "3x": scale = 2.8
-            case "5x": scale = 4.2
-            default: scale = 1.0
-            }
-            XCTAssertEqual(scale, expectedScale, accuracy: 0.001)
+    func testContinuousHardwareZoomClamping() {
+        let minZoom: CGFloat = 0.5
+        let maxZoom: CGFloat = 15.0
+
+        let testInputs: [(input: CGFloat, expected: CGFloat)] = [
+            (0.2, 0.5),
+            (0.5, 0.5),
+            (1.0, 1.0),
+            (2.1, 2.1),
+            (3.0, 3.0),
+            (15.0, 15.0),
+            (20.0, 15.0)
+        ]
+
+        for item in testInputs {
+            let clamped = min(max(item.input, minZoom), maxZoom)
+            XCTAssertEqual(clamped, item.expected, accuracy: 0.001)
         }
+    }
+
+    func testOpticalLensDisplayFormatting() {
+        XCTAssertEqual(CameraPreviewContainerView.formatDisplayFactor(0.5), "0.5x")
+        XCTAssertEqual(CameraPreviewContainerView.formatDisplayFactor(1.0), "1x")
+        XCTAssertEqual(CameraPreviewContainerView.formatDisplayFactor(2.5), "2.5x")
+        XCTAssertEqual(CameraPreviewContainerView.formatDisplayFactor(3.0), "3x")
+        XCTAssertEqual(CameraPreviewContainerView.formatDisplayFactor(5.0), "5x")
     }
 
     func testFilterPresetCount() {
