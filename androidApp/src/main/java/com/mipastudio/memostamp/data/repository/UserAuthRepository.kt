@@ -18,6 +18,8 @@ import com.mipastudio.memostamp.data.remote.supabase.SupabaseAuthService
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseBlockedUser
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseClient
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseRealtimeClient
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseTradeRequestRecord
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseReceivedStampRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -110,6 +112,12 @@ class UserAuthRepository internal constructor(
 
     private val _friendRequests = MutableStateFlow<List<FriendRequest>>(emptyList())
     val friendRequests: StateFlow<List<FriendRequest>> = _friendRequests.asStateFlow()
+
+    private val _tradeRequests = MutableStateFlow<List<SupabaseTradeRequestRecord>>(emptyList())
+    val tradeRequests: StateFlow<List<SupabaseTradeRequestRecord>> = _tradeRequests.asStateFlow()
+
+    private val _receivedStamps = MutableStateFlow<List<SupabaseReceivedStampRecord>>(emptyList())
+    val receivedStamps: StateFlow<List<SupabaseReceivedStampRecord>> = _receivedStamps.asStateFlow()
 
     private val notifiedPendingRequestIds = mutableSetOf<String>()
     private val notifiedAcceptedRequestIds = mutableSetOf<String>()
@@ -277,6 +285,16 @@ class UserAuthRepository internal constructor(
                     val resolvedFriends = (cloudFriends + newAcceptedFriendIds).filter { it.isNotBlank() && it != currentUid }.toSet()
                     _friendIds.value = resolvedFriends
                     friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(currentUid), resolvedFriends)?.apply()
+                }
+
+                // 5. Sync Trade Requests & Received Stamps
+                val resTrades = supabaseClient.getTradeRequestsForUser(currentUid)
+                if (resTrades.isSuccess) {
+                    _tradeRequests.value = resTrades.getOrNull() ?: emptyList()
+                }
+                val resReceived = supabaseClient.getReceivedStampsForUser(currentUid)
+                if (resReceived.isSuccess) {
+                    _receivedStamps.value = resReceived.getOrNull() ?: emptyList()
                 }
             }
         } catch (e: Exception) {
@@ -648,7 +666,86 @@ class UserAuthRepository internal constructor(
             return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Bỏ chặn người dùng thất bại"))
         }
 
+        syncWithSupabaseOnce()
         Result.success(Unit)
+    }
+
+    // ==========================================
+    // CLOUD STAMP TRADE ACTIONS
+    // ==========================================
+
+    suspend fun createTradeRequest(
+        recipientId: String,
+        stampId: String,
+        stampName: String,
+        stampMediaPath: String,
+        stampCategory: String? = null,
+        stampSvg: String? = null,
+        note: String? = null
+    ): Result<SupabaseTradeRequestRecord> = withContext(Dispatchers.IO) {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to create a trade"))
+        }
+        val res = supabaseClient.createStampTradeRpc(
+            recipientId = recipientId,
+            stampId = stampId,
+            stampName = stampName,
+            stampMediaPath = stampMediaPath,
+            stampCategory = stampCategory,
+            stampSvg = stampSvg,
+            note = note
+        )
+        if (res.isSuccess) {
+            syncWithSupabaseOnce()
+        }
+        res
+    }
+
+    suspend fun acceptTradeRequest(tradeId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to accept a trade"))
+        }
+        val res = supabaseClient.acceptStampTradeEdgeFunction(tradeId)
+        if (res.isSuccess) {
+            syncWithSupabaseOnce()
+            Result.success(Unit)
+        } else {
+            Result.failure(res.exceptionOrNull() ?: Exception("Accept trade failed"))
+        }
+    }
+
+    suspend fun declineTradeRequest(tradeId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to decline a trade"))
+        }
+        val res = supabaseClient.declineStampTradeRpc(tradeId)
+        if (res.isSuccess) {
+            syncWithSupabaseOnce()
+            Result.success(Unit)
+        } else {
+            Result.failure(res.exceptionOrNull() ?: Exception("Decline trade failed"))
+        }
+    }
+
+    suspend fun cancelTradeRequest(tradeId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to cancel a trade"))
+        }
+        val res = supabaseClient.cancelStampTradeRpc(tradeId)
+        if (res.isSuccess) {
+            syncWithSupabaseOnce()
+            Result.success(Unit)
+        } else {
+            Result.failure(res.exceptionOrNull() ?: Exception("Cancel trade failed"))
+        }
     }
 
     suspend fun reportUser(
@@ -1240,6 +1337,8 @@ class UserAuthRepository internal constructor(
 
         _friendIds.value = emptySet()
         _friendRequests.value = emptyList()
+        _tradeRequests.value = emptyList()
+        _receivedStamps.value = emptyList()
 
         _currentUser.value = createGuestUser()
         _isSessionPersistent.value = sessionStore.sessionPersistenceAvailable
@@ -1268,6 +1367,8 @@ class UserAuthRepository internal constructor(
 
         _friendIds.value = emptySet()
         _friendRequests.value = emptyList()
+        _tradeRequests.value = emptyList()
+        _receivedStamps.value = emptyList()
 
         _currentUser.value = createGuestUser()
     }

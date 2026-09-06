@@ -49,6 +49,9 @@ import com.mipastudio.memostamp.data.repository.UserAuthRepository
 import com.mipastudio.memostamp.data.repository.UserProfile
 import com.mipastudio.memostamp.data.repository.ChatRepository
 import com.mipastudio.memostamp.data.repository.StampRepository
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseTradeRequestRecord
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseReceivedStampRecord
 import com.mipastudio.memostamp.domain.model.StampDraft
 import kotlinx.coroutines.launch
 
@@ -82,6 +85,8 @@ fun FriendsAndTradeScreen(
     val friendIds by authRepo.friendIds.collectAsState()
     val friendRequests by authRepo.friendRequests.collectAsState()
     val allChatMessages by chatRepo.messages.collectAsState()
+    val cloudTrades by authRepo.tradeRequests.collectAsState()
+    val receivedStamps by authRepo.receivedStamps.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(4) } // Default: 4 (Tin nhắn Messenger)
@@ -148,6 +153,14 @@ fun FriendsAndTradeScreen(
 
     val outgoingRequests = remember(friendRequests, currentUser) {
         friendRequests.filter { it.senderId == currentUser.userId && it.status.equals("PENDING", ignoreCase = true) }
+    }
+
+    val incomingCloudTrades = remember(cloudTrades, currentUser) {
+        cloudTrades.filter { it.recipientId == currentUser.userId && it.status.equals("PENDING", ignoreCase = true) }
+    }
+
+    val outgoingCloudTrades = remember(cloudTrades, currentUser) {
+        cloudTrades.filter { it.senderId == currentUser.userId && it.status.equals("PENDING", ignoreCase = true) }
     }
 
     val receivedPostcards = remember(allChatMessages, currentUser) {
@@ -246,7 +259,7 @@ fun FriendsAndTradeScreen(
                     "📩 Lời mời (${incomingRequests.size})" to 2,
                     "👥 Bạn bè (${friendsList.size})" to 0,
                     "🔍 Tìm kiếm" to 1,
-                    "📮 Hộp thư" + (if (visiblePostcards.size + visibleInboxItems.size > 0) " (${visiblePostcards.size + visibleInboxItems.size})" else "") to 3
+                    "📮 Hộp thư" + (if (visiblePostcards.size + incomingCloudTrades.size + receivedStamps.size > 0) " (${visiblePostcards.size + incomingCloudTrades.size + receivedStamps.size})" else "") to 3
                 )
                 tabs.forEach { (label, idx) ->
                     val selected = selectedTab == idx
@@ -735,7 +748,7 @@ fun FriendsAndTradeScreen(
                 }
 
                 3 -> { // TAB 3: Hộp thư lưu niệm (Tem nhận được & Thư bưu chính)
-                    val totalItems = visiblePostcards.size + visibleInboxItems.size
+                    val totalItems = visiblePostcards.size + incomingCloudTrades.size + outgoingCloudTrades.size + receivedStamps.size + visibleInboxItems.size
                     if (totalItems == 0) {
                         Box(
                             modifier = Modifier
@@ -774,6 +787,217 @@ fun FriendsAndTradeScreen(
                         }
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            // Section 1: Lời đề nghị trao đổi tem nhận được
+                            if (incomingCloudTrades.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        "Lời đề nghị trao đổi nhận được (${incomingCloudTrades.size})",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryText
+                                    )
+                                }
+                                items(incomingCloudTrades, key = { it.id }) { trade ->
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = SurfaceWhite,
+                                        shadowElevation = 1.5.dp,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(modifier = Modifier.padding(14.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(
+                                                    trade.senderDisplayName.ifBlank { trade.senderUsername },
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = PrimaryText
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text("gửi lời đề nghị trao đổi tem!", fontSize = 12.sp, color = SecondaryText)
+                                            }
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                val mediaUrl = if (trade.stampMediaPath.startsWith("http")) trade.stampMediaPath else "${SupabaseConfig.getSupabaseUrl(context).trimEnd('/')}/storage/v1/object/public/stamp-media/${trade.stampMediaPath}"
+                                                AsyncImage(
+                                                    model = MemoImageProcessor.resolveImageModel(mediaUrl),
+                                                    contentDescription = trade.stampName,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier
+                                                        .size(64.dp)
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                )
+                                                Spacer(modifier = Modifier.width(10.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(trade.stampName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                                                    if (!trade.note.isNullOrBlank()) {
+                                                        Text("“${trade.note}”", fontSize = 11.sp, color = SecondaryText)
+                                                    }
+                                                    Text("Bộ sưu tập bưu chính #2026", fontSize = 10.sp, color = AccentBlue)
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.End,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        coroutineScope.launch {
+                                                            val res = authRepo.declineTradeRequest(trade.id)
+                                                            res.fold(
+                                                                onSuccess = { Toast.makeText(context, "Đã từ chối đề nghị trao đổi", Toast.LENGTH_SHORT).show() },
+                                                                onFailure = { err -> Toast.makeText(context, err.message ?: "Từ chối thất bại", Toast.LENGTH_SHORT).show() }
+                                                            )
+                                                        }
+                                                    },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                                ) {
+                                                    Text("Từ chối", fontSize = 11.sp, color = SecondaryText)
+                                                }
+
+                                                Spacer(modifier = Modifier.width(8.dp))
+
+                                                Button(
+                                                    onClick = {
+                                                        coroutineScope.launch {
+                                                            val res = authRepo.acceptTradeRequest(trade.id)
+                                                            res.fold(
+                                                                onSuccess = {
+                                                                    Toast.makeText(context, "Đã chấp nhận trao đổi tem thành công! 📮", Toast.LENGTH_SHORT).show()
+                                                                },
+                                                                onFailure = { err ->
+                                                                    Toast.makeText(context, err.message ?: "Chấp nhận thất bại", Toast.LENGTH_SHORT).show()
+                                                                }
+                                                            )
+                                                        }
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                                ) {
+                                                    Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text("Chấp nhận", fontSize = 11.sp)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Section 2: Tem đã nhận từ trao đổi (Vault đã lưu trữ)
+                            if (receivedStamps.isNotEmpty()) {
+                                item {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        "Tem đã nhận từ bạn bè (${receivedStamps.size})",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryText
+                                    )
+                                }
+                                items(receivedStamps, key = { it.id }) { rStamp ->
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = SurfaceWhite,
+                                        shadowElevation = 1.dp,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            val mediaUrl = if (rStamp.mediaPath.startsWith("http")) rStamp.mediaPath else "${SupabaseConfig.getSupabaseUrl(context).trimEnd('/')}/storage/v1/object/public/stamp-media/${rStamp.mediaPath}"
+                                            AsyncImage(
+                                                model = MemoImageProcessor.resolveImageModel(mediaUrl),
+                                                contentDescription = rStamp.stampName,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .size(56.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(rStamp.stampName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                                                Text("Đã lưu vĩnh viễn trong Kho tem", fontSize = 11.sp, color = SuccessGreen)
+                                                Text("Độc bản giao lưu qua Supabase Cloud", fontSize = 10.sp, color = TertiaryText)
+                                            }
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = AccentRed.copy(alpha = 0.1f)
+                                            ) {
+                                                Text(
+                                                    "Đã sở hữu ✨",
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = AccentRed,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Section 3: Đề nghị trao đổi đã gửi đi
+                            if (outgoingCloudTrades.isNotEmpty()) {
+                                item {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        "Đề nghị trao đổi đã gửi đi (${outgoingCloudTrades.size})",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryText
+                                    )
+                                }
+                                items(outgoingCloudTrades, key = { it.id }) { outTrade ->
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = SurfaceWhite,
+                                        shadowElevation = 1.dp,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            val mediaUrl = if (outTrade.stampMediaPath.startsWith("http")) outTrade.stampMediaPath else "${SupabaseConfig.getSupabaseUrl(context).trimEnd('/')}/storage/v1/object/public/stamp-media/${outTrade.stampMediaPath}"
+                                            AsyncImage(
+                                                model = MemoImageProcessor.resolveImageModel(mediaUrl),
+                                                contentDescription = outTrade.stampName,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .size(48.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                            )
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text("Gửi tới @${outTrade.recipientUsername}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                                                Text(outTrade.stampName, fontSize = 11.sp, color = SecondaryText)
+                                                Text("Đang chờ phản hồi...", fontSize = 10.sp, color = AccentBlue)
+                                            }
+                                            OutlinedButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        val res = authRepo.cancelTradeRequest(outTrade.id)
+                                                        res.fold(
+                                                            onSuccess = { Toast.makeText(context, "Đã thu hồi đề nghị trao đổi", Toast.LENGTH_SHORT).show() },
+                                                            onFailure = { err -> Toast.makeText(context, err.message ?: "Thu hồi thất bại", Toast.LENGTH_SHORT).show() }
+                                                        )
+                                                    }
+                                                },
+                                                shape = RoundedCornerShape(10.dp),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                            ) {
+                                                Text("Thu hồi", fontSize = 10.sp, color = AccentRed)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             // Show received chat stamps
                             items(visiblePostcards, key = { it.id }) { msg ->
                                 Surface(
@@ -944,89 +1168,6 @@ fun FriendsAndTradeScreen(
                                                         repo.saveStamp(draft)
                                                         dismissInboxItem(msg.id)
                                                         Toast.makeText(context, "Đã lưu con tem vào Kho của bạn thành công! 📮", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                },
-                                                colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
-                                                shape = RoundedCornerShape(12.dp),
-                                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                            ) {
-                                                Icon(Icons.Outlined.SaveAlt, contentDescription = null, modifier = Modifier.size(14.dp))
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Lưu vào Kho", fontSize = 11.sp)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Show trade offers in inbox
-                            items(visibleInboxItems, key = { it.id }) { item ->
-                                Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = SurfaceWhite,
-                                    shadowElevation = 1.dp,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(modifier = Modifier.padding(14.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(item.senderName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text("đã gửi một món quà kỷ niệm", fontSize = 12.sp, color = SecondaryText)
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            AsyncImage(
-                                                model = MemoImageProcessor.resolveImageModel(item.imageUrl),
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier
-                                                    .size(60.dp)
-                                                    .clip(RoundedCornerShape(8.dp))
-                                            )
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text("📍 ${item.location}", fontSize = 11.sp, color = AccentBlue)
-                                                Text("“${item.note}”", fontSize = 12.sp, color = PrimaryText)
-                                                Text(item.time, fontSize = 10.sp, color = TertiaryText)
-                                            }
-                                        }
-
-                                        Spacer(modifier = Modifier.height(10.dp))
-
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.End,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            OutlinedButton(
-                                                onClick = {
-                                                    dismissInboxItem(item.id)
-                                                    Toast.makeText(context, "Đã từ chối con tem này ❌", Toast.LENGTH_SHORT).show()
-                                                },
-                                                shape = RoundedCornerShape(12.dp),
-                                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                                            ) {
-                                                Icon(Icons.Outlined.Close, contentDescription = null, modifier = Modifier.size(14.dp), tint = SecondaryText)
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Từ chối", fontSize = 11.sp, color = SecondaryText)
-                                            }
-
-                                            Spacer(modifier = Modifier.width(8.dp))
-
-                                            Button(
-                                                onClick = {
-                                                    coroutineScope.launch {
-                                                        val draft = StampDraft(
-                                                            originalImagePath = item.imageUrl,
-                                                            renderedImagePath = item.imageUrl,
-                                                            title = "Tem từ ${item.senderName}",
-                                                            location = item.location,
-                                                            memoryDate = System.currentTimeMillis(),
-                                                            note = item.note
-                                                        )
-                                                        repo.saveStamp(draft)
-                                                        dismissInboxItem(item.id)
-                                                        Toast.makeText(context, "Đã lưu con tem vào Kho thành công! 📮", Toast.LENGTH_SHORT).show()
                                                     }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
@@ -1431,35 +1572,27 @@ fun FriendsAndTradeScreen(
                     Button(
                         onClick = {
                             val sel = myStamps.find { it.id == selectedStampId }
+                            if (sel == null) {
+                                Toast.makeText(context, "Vui lòng chọn con tem để gửi", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
                             val noteText = tradeNote.ifBlank { "Tặng bạn dấu tem kỷ niệm này nhé! 📮" }
-                            val newOffer = TradeOfferItem(
-                                id = "trade_" + System.currentTimeMillis(),
-                                senderId = currentUser.userId,
-                                senderName = currentUser.displayName,
-                                recipientId = friend.userId,
-                                note = noteText,
-                                time = "Vừa xong",
-                                imageUrl = sel?.stampImagePath ?: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600",
-                                location = sel?.location ?: currentUser.city
-                            )
-                            inboxItems = listOf(newOffer) + inboxItems
 
-                            // Send through ChatRepository to deliver to Supabase & recipient inbox
                             coroutineScope.launch {
-                                chatRepo.sendMessageCloud(
-                                    recipient = friend,
-                                    text = noteText,
-                                    stampId = sel?.id,
-                                    stampTitle = sel?.title ?: "Tem kỷ niệm",
-                                    stampImageUrl = sel?.stampImagePath,
-                                    stampLocation = sel?.location ?: currentUser.city
+                                val tradeRes = com.mipastudio.memostamp.data.remote.CloudSyncEngine.getInstance(context)
+                                    .sendCloudTradeRequest(recipientUsername = friend.username, stamp = sel, note = noteText)
+                                tradeRes.fold(
+                                    onSuccess = { tradeId ->
+                                        friendToTradeWith = null
+                                        Toast.makeText(context, "Đã gửi đề nghị trao đổi tem tới @${friend.username}! 📮", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onFailure = { err ->
+                                        Toast.makeText(context, "Lỗi gửi đề nghị: ${err.message}", Toast.LENGTH_LONG).show()
+                                    }
                                 )
                             }
-
-                            friendToTradeWith = null
-                            Toast.makeText(context, "Đã gửi tem và lời nhắn cho @${friend.username}! 📮", Toast.LENGTH_SHORT).show()
                         },
-                        enabled = selectedStampId != null || myStamps.isEmpty(),
+                        enabled = selectedStampId != null,
                         colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                     ) {
                         Text("Gửi Thư & Tem ✉️")

@@ -228,6 +228,76 @@ func isValidRemoteStampUrl(_ url: String?) -> Bool {
     return true
 }
 
+struct SupabaseTradeRequestRecord: Codable, Identifiable {
+    let id: String
+    let senderId: String
+    let senderUsername: String
+    let senderDisplayName: String
+    let senderAvatar: String?
+    let recipientId: String
+    let recipientUsername: String
+    let recipientDisplayName: String
+    let recipientAvatar: String?
+    let stampId: String
+    let stampName: String
+    let stampMediaPath: String
+    let stampCategory: String?
+    let stampSvg: String?
+    let note: String?
+    let status: String
+    let createdAt: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case senderId = "sender_id"
+        case senderUsername = "sender_username"
+        case senderDisplayName = "sender_display_name"
+        case senderAvatar = "sender_avatar"
+        case recipientId = "recipient_id"
+        case recipientUsername = "recipient_username"
+        case recipientDisplayName = "recipient_display_name"
+        case recipientAvatar = "recipient_avatar"
+        case stampId = "stamp_id"
+        case stampName = "stamp_name"
+        case stampMediaPath = "stamp_media_path"
+        case stampCategory = "stamp_category"
+        case stampSvg = "stamp_svg"
+        case note
+        case status
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct SupabaseReceivedStampRecord: Codable, Identifiable {
+    let id: String
+    let recipientId: String
+    let tradeId: String
+    let originalStampId: String
+    let originalOwnerId: String?
+    let stampName: String
+    let mediaPath: String
+    let category: String?
+    let svgData: String?
+    let note: String?
+    let receivedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case recipientId = "recipient_id"
+        case tradeId = "trade_id"
+        case originalStampId = "original_stamp_id"
+        case originalOwnerId = "original_owner_id"
+        case stampName = "stamp_name"
+        case mediaPath = "media_path"
+        case category
+        case svgData = "svg_data"
+        case note
+        case receivedAt = "received_at"
+    }
+}
+
 struct SupabaseFeedPostRecord: Codable, Identifiable {
     let id: String
     let stampId: String?
@@ -767,6 +837,149 @@ class SupabaseSocialClient {
                     let decoder = JSONDecoder()
                     let records = try decoder.decode([SupabaseBlockedUserRecord].self, from: data)
                     completion(.success(records))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    // MARK: - Stamp Trade RPCs & Edge Functions
+    func createStampTradeRpc(
+        recipientId: String,
+        stampId: String,
+        stampName: String,
+        stampMediaPath: String,
+        stampCategory: String? = nil,
+        stampSvg: String? = nil,
+        note: String? = nil,
+        completion: @escaping (Result<SupabaseTradeRequestRecord, Error>) -> Void
+    ) {
+        let endpoint = "\(supabaseUrl)/rest/v1/rpc/create_stamp_trade"
+        var body: [String: Any] = [
+            "p_recipient_id": recipientId.trimmingCharacters(in: .whitespacesAndNewlines),
+            "p_stamp_id": stampId.trimmingCharacters(in: .whitespacesAndNewlines),
+            "p_stamp_name": stampName.trimmingCharacters(in: .whitespacesAndNewlines),
+            "p_stamp_media_path": stampMediaPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        ]
+        if let sc = stampCategory, !sc.isEmpty { body["p_stamp_category"] = sc }
+        if let svg = stampSvg, !svg.isEmpty { body["p_stamp_svg"] = svg }
+        if let n = note, !n.isEmpty { body["p_note"] = n }
+
+        do {
+            let data = try JSONSerialization.data(withJSONObject: body)
+            let jsonBody = String(data: data, encoding: .utf8)
+            executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, prefer: "return=representation", requireUserAuth: true) { result in
+                switch result {
+                case .success(let resData):
+                    do {
+                        let decoder = JSONDecoder()
+                        let resString = String(data: resData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        if resString.hasPrefix("[") {
+                            let list = try decoder.decode([SupabaseTradeRequestRecord].self, from: resData)
+                            if let first = list.first {
+                                completion(.success(first))
+                            } else {
+                                completion(.failure(SupabaseSocialError.invalidData("Server returned empty trade request list")))
+                            }
+                        } else {
+                            let item = try decoder.decode(SupabaseTradeRequestRecord.self, from: resData)
+                            completion(.success(item))
+                        }
+                    } catch {
+                        completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                    }
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        } catch {
+            completion(.failure(SupabaseSocialError.invalidData(error.localizedDescription)))
+        }
+    }
+
+    func declineStampTradeRpc(tradeId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/rpc/decline_stamp_trade"
+        let body = ["p_trade_id": tradeId.trimmingCharacters(in: .whitespacesAndNewlines)]
+        let jsonBody = try? String(data: JSONEncoder().encode(body), encoding: .utf8)
+
+        executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func cancelStampTradeRpc(tradeId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/rpc/cancel_stamp_trade"
+        let body = ["p_trade_id": tradeId.trimmingCharacters(in: .whitespacesAndNewlines)]
+        let jsonBody = try? String(data: JSONEncoder().encode(body), encoding: .utf8)
+
+        executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func acceptStampTradeEdgeFunction(tradeId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/functions/v1/accept-trade"
+        let body = ["trade_id": tradeId.trimmingCharacters(in: .whitespacesAndNewlines)]
+        let jsonBody = try? String(data: JSONEncoder().encode(body), encoding: .utf8)
+
+        executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func fetchTradeRequests(userId: String, completion: @escaping (Result<[SupabaseTradeRequestRecord], Error>) -> Void) {
+        guard let encUid = userId.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            completion(.failure(SupabaseSocialError.invalidUrl))
+            return
+        }
+        let endpoint = "\(supabaseUrl)/rest/v1/stamp_trade_requests?or=(sender_id.eq.\(encUid),recipient_id.eq.\(encUid))&order=created_at.desc"
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let list = try decoder.decode([SupabaseTradeRequestRecord].self, from: data)
+                    completion(.success(list))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                }
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func fetchReceivedStamps(userId: String, completion: @escaping (Result<[SupabaseReceivedStampRecord], Error>) -> Void) {
+        guard let encUid = userId.trimmingCharacters(in: .whitespacesAndNewlines).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            completion(.failure(SupabaseSocialError.invalidUrl))
+            return
+        }
+        let endpoint = "\(supabaseUrl)/rest/v1/received_trade_stamps?recipient_id=eq.\(encUid)&order=received_at.desc"
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let list = try decoder.decode([SupabaseReceivedStampRecord].self, from: data)
+                    completion(.success(list))
                 } catch {
                     completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
                 }
