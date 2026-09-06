@@ -3320,7 +3320,7 @@ class E2EContractRunner:
                     "id": f"comm_rl_{i}_{secrets.token_hex(3)}",
                     "post_id": feed_post_id,
                     "author_id": commenter["uid"],
-                    "text": f"Comment {i}"
+                    "content": f"Comment {i}"
                 }
             )
             self.assert_status(st, [200, 201], f"Comment {i}/20 succeeds", "POST", "/rest/v1/feed_comments", txt)
@@ -3334,7 +3334,7 @@ class E2EContractRunner:
                 "id": f"comm_rl_21_{secrets.token_hex(3)}",
                 "post_id": feed_post_id,
                 "author_id": commenter["uid"],
-                "text": "Comment 21 should fail"
+                "content": "Comment 21 should fail"
             }
         )
         assert st in (400, 429), f"Expected rate limit for 21st comment, got {st}: {txt}"
