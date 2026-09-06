@@ -441,15 +441,10 @@ struct CameraFlowContainerView: View {
             } else if let rawUrl = rawCapturedUrl {
                 StampEditorScreenView(
                     initialImageUrl: rawUrl,
-                    onContinueWithLocation: { photoUrl, moldId, colorHex, loc in
+                    onContinue: { photoUrl, moldId, colorHex, location in
                         self.selectedMoldId = moldId
                         self.selectedColorHex = colorHex
-                        self.selectedLocation = loc ?? ""
-                        self.editedStampUrl = photoUrl
-                    },
-                    onContinue: { photoUrl, moldId, colorHex in
-                        self.selectedMoldId = moldId
-                        self.selectedColorHex = colorHex
+                        self.selectedLocation = location ?? ""
                         self.editedStampUrl = photoUrl
                     },
                     onCancel: {

@@ -16,9 +16,36 @@ struct StampEditorScreenView: View {
 
     var initialImageUrl: String? = nil
     var onStampSaved: ((URL) -> Void)? = nil
-    var onContinue: ((String, String, String) -> Void)? = nil
-    var onContinueWithLocation: ((String, String, String, String?) -> Void)? = nil
+    var onContinue: ((String, String, String, String?) -> Void)? = nil
     var onCancel: (() -> Void)? = nil
+
+    init(
+        initialImageUrl: String? = nil,
+        onStampSaved: ((URL) -> Void)? = nil,
+        onContinue: ((String, String, String, String?) -> Void)? = nil,
+        onCancel: (() -> Void)? = nil
+    ) {
+        self.initialImageUrl = initialImageUrl
+        self.onStampSaved = onStampSaved
+        self.onContinue = onContinue
+        self.onCancel = onCancel
+    }
+
+    init(
+        initialImageUrl: String? = nil,
+        onStampSaved: ((URL) -> Void)? = nil,
+        onContinueLegacy: ((String, String, String) -> Void)? = nil,
+        onCancel: (() -> Void)? = nil
+    ) {
+        self.initialImageUrl = initialImageUrl
+        self.onStampSaved = onStampSaved
+        if let legacy = onContinueLegacy {
+            self.onContinue = { photo, mold, color, _ in legacy(photo, mold, color) }
+        } else {
+            self.onContinue = nil
+        }
+        self.onCancel = onCancel
+    }
 
     @State private var selectedMoldId: String = "classic_perforated"
     @State private var selectedColorHex: String = "#D32F2F"
@@ -85,10 +112,8 @@ struct StampEditorScreenView: View {
                 Button(action: {
                     HapticFeedbackManager.shared.playSuccess()
                     SoundEffectsManager.shared.playStampPressSound()
-                    if let onContinueWithLocation = onContinueWithLocation {
-                        onContinueWithLocation(initialImageUrl ?? "", selectedMoldId, selectedColorHex, stampLocation.isEmpty ? nil : stampLocation)
-                    } else if let onContinue = onContinue {
-                        onContinue(initialImageUrl ?? "", selectedMoldId, selectedColorHex)
+                    if let onContinue = onContinue {
+                        onContinue(initialImageUrl ?? "", selectedMoldId, selectedColorHex, stampLocation.isEmpty ? nil : stampLocation)
                     } else if let callback = onStampSaved, let urlStr = initialImageUrl, let url = URL(string: urlStr) {
                         callback(url)
                     } else {

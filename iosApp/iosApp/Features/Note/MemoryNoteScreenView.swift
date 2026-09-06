@@ -6,13 +6,52 @@ import shared
 
 struct MemoryNoteScreenView: View {
     let imageUrl: String
-    var shape: String = "classic"
-    var stampColorHex: String = "#D32F2F"
-    var replyToPostId: String? = nil
-    var initialLocation: String = ""
+    var shape: String
+    var stampColorHex: String
+    var replyToPostId: String?
+    var initialLocation: String
     let repository: SharedMemoStampRepository
     var onSavedSuccess: () -> Void
     var onCancel: () -> Void
+
+    init(
+        imageUrl: String,
+        shape: String = "classic",
+        stampColorHex: String = "#D32F2F",
+        replyToPostId: String? = nil,
+        initialLocation: String = "",
+        repository: SharedMemoStampRepository,
+        onSavedSuccess: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.imageUrl = imageUrl
+        self.shape = shape
+        self.stampColorHex = stampColorHex
+        self.replyToPostId = replyToPostId
+        self.initialLocation = initialLocation
+        self.repository = repository
+        self.onSavedSuccess = onSavedSuccess
+        self.onCancel = onCancel
+    }
+
+    init(
+        imageUrl: String,
+        shape: String = "classic",
+        stampColorHex: String = "#D32F2F",
+        replyToPostId: String? = nil,
+        repository: SharedMemoStampRepository,
+        onSavedSuccess: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.imageUrl = imageUrl
+        self.shape = shape
+        self.stampColorHex = stampColorHex
+        self.replyToPostId = replyToPostId
+        self.initialLocation = ""
+        self.repository = repository
+        self.onSavedSuccess = onSavedSuccess
+        self.onCancel = onCancel
+    }
 
     @State private var title: String = ""
     @State private var caption: String = ""
