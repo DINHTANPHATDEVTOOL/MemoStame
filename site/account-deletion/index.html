@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Deletion - MemoStamp</title>
+    <style>
+        :root {
+            --primary: #8B2635;
+            --primary-dark: #651A26;
+            --surface: #FDFBF7;
+            --card-bg: #FFFFFF;
+            --text-main: #2C2523;
+            --text-muted: #6B625E;
+            --border: #E8DFD8;
+            --accent: #D4A373;
+            --danger: #DC2626;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--surface);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        }
+        header {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 24px;
+            margin-bottom: 28px;
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 1.9rem;
+            margin-bottom: 6px;
+        }
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        h2 {
+            color: var(--primary-dark);
+            font-size: 1.25rem;
+            margin-top: 28px;
+            margin-bottom: 12px;
+        }
+        p, ul, ol {
+            margin-bottom: 14px;
+        }
+        ul, ol {
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        .step-box {
+            background-color: #FAF5F0;
+            border-left: 4px solid var(--primary);
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        .warning-box {
+            background-color: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            color: #991B1B;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+        .info-table th, .info-table td {
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        .info-table th {
+            background: #FAF5F0;
+            color: var(--primary-dark);
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MemoStamp Account Deletion</h1>
+            <div class="subtitle">Official Data Deletion & Privacy Rights Guide &bull; MemoStamp (by Mipa Studio)</div>
+        </header>
+
+        <section>
+            <h2>Overview</h2>
+            <p>At MemoStamp, we believe you should always be in full control of your personal data. You can delete your account and all associated personal content at any time, either directly within the mobile application or by submitting an external request.</p>
+        </section>
+
+        <section>
+            <h2>Method 1: Direct In-App Deletion (Instant & Recommended)</h2>
+            <p>If you have access to the MemoStamp mobile app, this is the quickest and most direct method:</p>
+            <div class="step-box">
+                <ol>
+                    <li>Open the <strong>MemoStamp</strong> app on your Android or iOS device.</li>
+                    <li>Navigate to your <strong>Passport / Profile</strong> screen.</li>
+                    <li>Tap the <strong>Settings</strong> button (gear icon).</li>
+                    <li>Select <strong>Xóa tài khoản vĩnh viễn / Delete Account Permanently</strong>.</li>
+                    <li>Enter your account password to confirm ownership.</li>
+                    <li>Tap <strong>Xác nhận xóa / Confirm Deletion</strong>.</li>
+                </ol>
+            </div>
+            <p>Upon confirmation, your deletion request is processed immediately by our server.</p>
+        </section>
+
+        <section>
+            <h2>What Data Is Deleted vs Retained</h2>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>Data Category</th>
+                        <th>Action Taken</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Authentication credentials (Email, Password hash)</td>
+                        <td><strong>Permanently deleted immediately</strong> from Supabase Auth.</td>
+                    </tr>
+                    <tr>
+                        <td>User Profile (Display name, bio, avatar)</td>
+                        <td><strong>Permanently deleted</strong> via database cascading delete.</td>
+                    </tr>
+                    <tr>
+                        <td>Stamp Photo Media</td>
+                        <td><strong>Permanently purged</strong> from encrypted cloud storage bucket.</td>
+                    </tr>
+                    <tr>
+                        <td>Stamps, Postmark stories & Geolocation</td>
+                        <td><strong>Permanently deleted</strong> from database.</td>
+                    </tr>
+                    <tr>
+                        <td>Feed Posts, Comments, Replies & Reactions</td>
+                        <td><strong>Permanently deleted</strong>.</td>
+                    </tr>
+                    <tr>
+                        <td>Direct Messages & Chat History</td>
+                        <td><strong>Permanently deleted</strong>.</td>
+                    </tr>
+                    <tr>
+                        <td>Push Device Tokens (FCM & APNs)</td>
+                        <td><strong>Permanently purged</strong>; notification delivery stops immediately.</td>
+                    </tr>
+                    <tr>
+                        <td>Friendships & User Blocks</td>
+                        <td><strong>Permanently dissolved</strong>.</td>
+                    </tr>
+                    <tr>
+                        <td>Accepted Stamp Trades (Recipient Copies)</td>
+                        <td>
+                            <strong>Anonymized:</strong> If you traded a stamp copy to another user, their legitimate copy remains in their album. However, your account linkage is permanently set to NULL (anonymized), removing any trace of your profile.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Method 2: External Deletion Request (Web / Email)</h2>
+            <p>If you have uninstalled the application or can no longer log in, you can request account deletion by emailing our support team:</p>
+            <div class="step-box">
+                <p>Send an email to the support address listed on the official MemoStamp Google Play or Apple App Store listing with the subject line <strong>"Account Deletion Request"</strong>.</p>
+                <p>Please include:</p>
+                <ul>
+                    <li>The registered email address associated with your MemoStamp account.</li>
+                </ul>
+            </div>
+            <div class="warning-box">
+                <strong>Security Notice:</strong>
+                <p>We will <strong>NEVER</strong> ask you for your account password, security tokens, or credit card information. To protect your privacy and prevent unauthorized deletion, we will send a verification confirmation link to your registered email before processing the request.</p>
+            </div>
+            <p>External manual deletion requests are processed within <strong>30 days</strong> of identity verification.</p>
+        </section>
+
+        <footer>
+            <p><a href="../privacy/">View MemoStamp Privacy Policy</a></p>
+            <p>&copy; 2026 MemoStamp &bull; Mipa Studio. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

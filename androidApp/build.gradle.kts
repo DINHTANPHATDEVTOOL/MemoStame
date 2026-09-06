@@ -52,6 +52,11 @@ android {
         versionName = parsedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val envPrivacyUrl = System.getenv("MEMOSTAMP_PRIVACY_POLICY_URL")
+            ?: (project.findProperty("MEMOSTAMP_PRIVACY_POLICY_URL") as? String)
+            ?: "https://memostamp.mipastudio.com/privacy"
+        buildConfigField("String", "PRIVACY_POLICY_URL", "\"$envPrivacyUrl\"")
     }
 
     signingConfigs {
