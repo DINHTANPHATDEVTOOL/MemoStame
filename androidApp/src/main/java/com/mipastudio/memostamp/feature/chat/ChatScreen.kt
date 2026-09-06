@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mipastudio.memostamp.core.processor.MemoImageProcessor
+import com.mipastudio.memostamp.ui.components.BlockUserConfirmationDialog
+import com.mipastudio.memostamp.ui.components.ReportUserDialog
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.data.local.StampEntity
 import com.mipastudio.memostamp.data.repository.UserAuthRepository
@@ -81,6 +83,9 @@ fun ChatScreen(
     val myStamps by stampRepo.observeStamps().collectAsState(initial = emptyList())
 
     var viewingStampMessage by remember { mutableStateOf<DirectMessage?>(null) }
+    var showSafetyMenu by remember { mutableStateOf(false) }
+    var showBlockConfirmDialog by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
 
     var loadError by remember(recipient.userId) { mutableStateOf<String?>(null) }
     var initialLoadFinished by remember(recipient.userId) { mutableStateOf(false) }
@@ -224,6 +229,36 @@ fun ChatScreen(
                 actions = {
                     IconButton(onClick = { showStampPicker = true }) {
                         Icon(Icons.Outlined.LocalPostOffice, contentDescription = "Gửi tem", tint = AccentRed)
+                    }
+                    Box {
+                        IconButton(onClick = { showSafetyMenu = true }) {
+                            Icon(Icons.Outlined.MoreVert, contentDescription = "Tùy chọn", tint = PrimaryText)
+                        }
+                        DropdownMenu(
+                            expanded = showSafetyMenu,
+                            onDismissRequest = { showSafetyMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Báo cáo người dùng") },
+                                onClick = {
+                                    showSafetyMenu = false
+                                    showReportDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Outlined.Flag, contentDescription = null, tint = AccentRed)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Chặn người dùng", color = AccentRed) },
+                                onClick = {
+                                    showSafetyMenu = false
+                                    showBlockConfirmDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Outlined.Block, contentDescription = null, tint = AccentRed)
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = SurfaceWhite)
@@ -544,6 +579,49 @@ fun ChatScreen(
                 }
             }
         }
+    }
+
+    if (showBlockConfirmDialog) {
+        BlockUserConfirmationDialog(
+            targetUserName = recipient.displayName,
+            onConfirm = {
+                showBlockConfirmDialog = false
+                coroutineScope.launch {
+                    val res = authRepo.blockUser(recipient.userId)
+                    if (res.isSuccess) {
+                        Toast.makeText(context, "Đã chặn ${recipient.displayName}", Toast.LENGTH_SHORT).show()
+                        onNavigateBack()
+                    } else {
+                        Toast.makeText(context, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onDismiss = { showBlockConfirmDialog = false }
+        )
+    }
+
+    if (showReportDialog) {
+        ReportUserDialog(
+            targetUserName = recipient.displayName,
+            onSubmit = { category, note ->
+                showReportDialog = false
+                coroutineScope.launch {
+                    val res = authRepo.reportUser(
+                        targetUserId = recipient.userId,
+                        category = category,
+                        note = note,
+                        entityType = "user",
+                        entityId = recipient.userId
+                    )
+                    if (res.isSuccess) {
+                        Toast.makeText(context, "Báo cáo của bạn đã được gửi thành công", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onDismiss = { showReportDialog = false }
+        )
     }
 
     // Stamp Picker BottomSheet Modal

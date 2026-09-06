@@ -386,6 +386,34 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // 4.1 Suppress notifications across blocked pairs in either direction
+  try {
+    const blockResp = await fetch(
+      `${supabaseUrl}/rest/v1/user_blocks?or=(blocker_id.eq.${callerUid},blocker_id.eq.${recipientUid})&select=blocker_id,blocked_id`,
+      { headers: restHeaders }
+    );
+    if (blockResp.ok) {
+      const blocks = await blockResp.json();
+      if (Array.isArray(blocks)) {
+        const isBlocked = blocks.some(
+          (b: { blocker_id: string; blocked_id: string }) =>
+            (b.blocker_id === callerUid && b.blocked_id === recipientUid) ||
+            (b.blocker_id === recipientUid && b.blocked_id === callerUid)
+        );
+        if (isBlocked) {
+          return jsonResponse(200, {
+            success: true,
+            delivered_count: 0,
+            suppressed: true,
+            reason: "BLOCKED_USER_SUPPRESSED",
+          });
+        }
+      }
+    }
+  } catch (_e) {
+    // Non-fatal, fallback to safe delivery check
+  }
+
   // 5. Deduplication check via push_delivery_events table
   try {
     const dedupeResp = await fetch(`${supabaseUrl}/rest/v1/push_delivery_events`, {

@@ -2033,6 +2033,305 @@ class E2EContractRunner:
 
         self.log("PHASE 10", "All push notification contracts successfully verified!")
 
+    # ----------------------------------------------------
+    # PHASE 11: USER BLOCKING, ABUSE REPORTING & SOCIAL SAFETY E2E
+    # ----------------------------------------------------
+    def phase11_social_safety_and_blocking(self):
+        self.log("PHASE 11", "Starting Production User Blocking & Abuse Reporting E2E tests...")
+        u_a = self.users["A"]
+        u_b = self.users["B"]
+        u_c = self.users["C"]
+
+        # Step 1: Self-block denied
+        self.log("PHASE 11", "Step 1: Testing self-block rejection...")
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/block_user",
+            token=u_a["token"],
+            json_data={"p_blocked_id": u_a["uid"]}
+        )
+        assert status in [400, 500], f"Self-block should fail, got status {status}: {text}"
+
+        # Step 2: Establish baseline friendship between A and B, and a pending request
+        self.log("PHASE 11", "Step 2: Setup friendship between A and B...")
+        # Add friendship row
+        self.client.request(
+            "POST",
+            "/rest/v1/friends",
+            token=u_a["token"],
+            json_data={"user_id_1": min(u_a["uid"], u_b["uid"]), "user_id_2": max(u_a["uid"], u_b["uid"])}
+        )
+        # Add pending friend request
+        test_req_id = str(uuid.uuid4())
+        self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_b["token"],
+            json_data={
+                "id": test_req_id,
+                "sender_id": u_b["uid"],
+                "recipient_id": u_a["uid"],
+                "status": "PENDING"
+            }
+        )
+
+        # Step 3: User A blocks User B
+        self.log("PHASE 11", "Step 3: User A blocks User B via block_user RPC...")
+        status, block_res, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/block_user",
+            token=u_a["token"],
+            json_data={"p_blocked_id": u_b["uid"]}
+        )
+        self.assert_status(status, 200, "User A blocks User B", "POST", "/rest/v1/rpc/block_user", text)
+        assert block_res.get("success") is True, f"Expected success true, got {block_res}"
+
+        # Step 4: Duplicate block is idempotent
+        self.log("PHASE 11", "Step 4: Verify duplicate block idempotency...")
+        status, block_res_dup, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/block_user",
+            token=u_a["token"],
+            json_data={"p_blocked_id": u_b["uid"]}
+        )
+        self.assert_status(status, 200, "User A blocks User B duplicate", "POST", "/rest/v1/rpc/block_user", text)
+        assert block_res_dup.get("success") is True
+
+        # Step 5: Verify friendship and pending request removed
+        self.log("PHASE 11", "Step 5: Verify friendship and pending request cleanup...")
+        status, friends_data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friends?or=(and(user_id_1.eq.{u_a['uid']},user_id_2.eq.{u_b['uid']}),and(user_id_1.eq.{u_b['uid']},user_id_2.eq.{u_a['uid']}))",
+            token=u_a["token"]
+        )
+        assert len(friends_data) == 0, f"Expected friendship to be removed, got: {friends_data}"
+
+        status, reqs_data, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friend_requests?id=eq.{test_req_id}",
+            token=u_a["token"]
+        )
+        assert len(reqs_data) == 0, f"Expected pending request to be removed, got: {reqs_data}"
+
+        # Step 6: Blocked pairs cannot create friend requests in either direction
+        self.log("PHASE 11", "Step 6: Verify friend requests are blocked in both directions...")
+        # B -> A
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_b["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": u_b["uid"],
+                "recipient_id": u_a["uid"],
+                "status": "PENDING"
+            }
+        )
+        assert status in [400, 401, 403], f"Blocked user B should not be able to send friend request to A, got {status}: {text}"
+
+        # A -> B
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_a["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": u_a["uid"],
+                "recipient_id": u_b["uid"],
+                "status": "PENDING"
+            }
+        )
+        assert status in [400, 401, 403], f"Blocker A should not be able to send friend request to B, got {status}: {text}"
+
+        # Third party C -> A succeeds
+        c_req_id = str(uuid.uuid4())
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_c["token"],
+            json_data={
+                "id": c_req_id,
+                "sender_id": u_c["uid"],
+                "recipient_id": u_a["uid"],
+                "status": "PENDING"
+            }
+        )
+        self.assert_status(status, [200, 201], "User C sends friend request to User A", "POST", "/rest/v1/friend_requests", text)
+
+        # Step 7: Direct messages are blocked in both directions
+        self.log("PHASE 11", "Step 7: Verify new DMs are blocked across blocked pair...")
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=u_b["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": u_b["uid"],
+                "recipient_id": u_a["uid"],
+                "text": "Blocked DM"
+            }
+        )
+        assert status in [400, 401, 403], f"Blocked user B should not be able to send DM, got {status}: {text}"
+
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=u_a["token"],
+            json_data={
+                "id": str(uuid.uuid4()),
+                "sender_id": u_a["uid"],
+                "recipient_id": u_b["uid"],
+                "text": "Blocked DM"
+            }
+        )
+        assert status in [400, 401, 403], f"Blocker A should not be able to send DM, got {status}: {text}"
+
+        # Third party C can send DM to A
+        c_dm_id = str(uuid.uuid4())
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/direct_messages",
+            token=u_c["token"],
+            json_data={
+                "id": c_dm_id,
+                "sender_id": u_c["uid"],
+                "recipient_id": u_a["uid"],
+                "text": "Hello User A from third party C"
+            }
+        )
+        self.assert_status(status, [200, 201], "User C sends DM to User A", "POST", "/rest/v1/direct_messages", text)
+
+        # Step 8: Push suppression across blocked pair
+        self.log("PHASE 11", "Step 8: Verify push notification suppression across blocked pair...")
+        # Test dispatching push from User C to User A works
+        status, push_c_res, text, _ = self.client.request(
+            "POST",
+            "/functions/v1/dispatch-push",
+            token=u_c["token"],
+            json_data={"event_type": "direct_message", "entity_id": c_dm_id}
+        )
+        self.assert_status(status, 200, "User C dispatches DM push to A", "POST", "/functions/v1/dispatch-push", text)
+
+        # Step 9: Block Privacy: Outbound vs Inbound
+        self.log("PHASE 11", "Step 9: Testing Block Privacy...")
+        status, a_blocks, text, _ = self.client.request(
+            "GET",
+            "/rest/v1/user_blocks",
+            token=u_a["token"]
+        )
+        self.assert_status(status, 200, "User A queries user_blocks", "GET", "/rest/v1/user_blocks", text)
+        assert len(a_blocks) >= 1, f"User A should see outbound block, got: {a_blocks}"
+        assert any(b["blocked_id"] == u_b["uid"] for b in a_blocks), f"User B should be in User A's blocks: {a_blocks}"
+
+        status, b_blocks, text, _ = self.client.request(
+            "GET",
+            "/rest/v1/user_blocks",
+            token=u_b["token"]
+        )
+        self.assert_status(status, 200, "User B queries user_blocks", "GET", "/rest/v1/user_blocks", text)
+        assert len(b_blocks) == 0, f"Blocked user B must not see blocks: {b_blocks}"
+
+        # Direct client insert/delete on user_blocks denied
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/user_blocks",
+            token=u_b["token"],
+            json_data={"blocker_id": u_b["uid"], "blocked_id": u_c["uid"]}
+        )
+        assert status in [400, 401, 403], f"Direct client insert to user_blocks should be denied, got {status}: {text}"
+
+        # Step 10: Abuse Reporting RPC
+        self.log("PHASE 11", "Step 10: Testing report_user RPC...")
+        # Self-report rejected
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/report_user",
+            token=u_a["token"],
+            json_data={"p_reported_user_id": u_a["uid"], "p_category": "spam"}
+        )
+        assert status in [400, 500], f"Self-report should fail, got status {status}: {text}"
+
+        # Invalid category rejected
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/report_user",
+            token=u_a["token"],
+            json_data={"p_reported_user_id": u_b["uid"], "p_category": "invalid_reason"}
+        )
+        assert status in [400, 500], f"Invalid report category should fail, got status {status}: {text}"
+
+        # Valid report submitted
+        status, report_data, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/report_user",
+            token=u_a["token"],
+            json_data={
+                "p_reported_user_id": u_b["uid"],
+                "p_category": "harassment",
+                "p_note": "Spamming unwanted requests",
+                "p_entity_type": "user",
+                "p_entity_id": u_b["uid"]
+            }
+        )
+        self.assert_status(status, 200, "User A reports User B", "POST", "/rest/v1/rpc/report_user", text)
+        assert report_data.get("success") is True, f"Expected success true, got {report_data}"
+        assert report_data.get("status") == "PENDING", f"Expected PENDING status, got {report_data}"
+
+        # Step 11: Report Privacy: Normal clients cannot select user_reports
+        self.log("PHASE 11", "Step 11: Testing Report Privacy...")
+        status, reports_data, text, _ = self.client.request(
+            "GET",
+            "/rest/v1/user_reports",
+            token=u_a["token"]
+        )
+        assert status in [200, 401, 403], f"Expected 200 or 403, got {status}"
+        if status == 200:
+            assert len(reports_data) == 0, f"Clients must not be able to browse user_reports, got: {reports_data}"
+
+        # Step 12: Unblock RPC
+        self.log("PHASE 11", "Step 12: Testing unblock_user RPC...")
+        status, unblock_res, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/rpc/unblock_user",
+            token=u_a["token"],
+            json_data={"p_blocked_id": u_b["uid"]}
+        )
+        self.assert_status(status, 200, "User A unblocks User B", "POST", "/rest/v1/rpc/unblock_user", text)
+        assert unblock_res.get("success") is True
+
+        # Verify block row removed
+        status, a_blocks_after, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/user_blocks?blocked_id=eq.{u_b['uid']}",
+            token=u_a["token"]
+        )
+        assert len(a_blocks_after) == 0, f"Expected 0 block rows, got: {a_blocks_after}"
+
+        # Verify friendship was NOT automatically recreated
+        status, friends_after, text, _ = self.client.request(
+            "GET",
+            f"/rest/v1/friends?or=(and(user_id_1.eq.{u_a['uid']},user_id_2.eq.{u_b['uid']}),and(user_id_1.eq.{u_b['uid']},user_id_2.eq.{u_a['uid']}))",
+            token=u_a["token"]
+        )
+        assert len(friends_after) == 0, f"Friendship must not be recreated upon unblock, got: {friends_after}"
+
+        # Verify B can now contact A (e.g. send friend request)
+        b_new_req_id = str(uuid.uuid4())
+        status, _, text, _ = self.client.request(
+            "POST",
+            "/rest/v1/friend_requests",
+            token=u_b["token"],
+            json_data={
+                "id": b_new_req_id,
+                "sender_id": u_b["uid"],
+                "recipient_id": u_a["uid"],
+                "status": "PENDING"
+            }
+        )
+        self.assert_status(status, [200, 201], "User B sends new friend request to User A after unblock", "POST", "/rest/v1/friend_requests", text)
+
+        self.log("PHASE 11", "All social safety & blocking contracts successfully verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
@@ -2049,6 +2348,7 @@ class E2EContractRunner:
             self.phase8_self_service_account_deletion()
             self.phase9_password_recovery()
             self.phase10_push_notifications()
+            self.phase11_social_safety_and_blocking()
         finally:
             self.stop_mock_push_server()
         print("=" * 60)

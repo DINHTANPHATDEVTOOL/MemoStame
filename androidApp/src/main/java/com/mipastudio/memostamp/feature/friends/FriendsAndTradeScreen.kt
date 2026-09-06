@@ -41,6 +41,8 @@ import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
 import com.mipastudio.memostamp.ui.components.StampGeometry
 import com.mipastudio.memostamp.ui.components.UserProfileDialog
+import com.mipastudio.memostamp.ui.components.BlockUserConfirmationDialog
+import com.mipastudio.memostamp.ui.components.ReportUserDialog
 import com.mipastudio.memostamp.data.local.StampEntity
 import com.mipastudio.memostamp.data.repository.FriendRequest
 import com.mipastudio.memostamp.data.repository.UserAuthRepository
@@ -86,6 +88,8 @@ fun FriendsAndTradeScreen(
     var selectedTradeOffer by remember { mutableStateOf<TradeOfferItem?>(null) }
     var friendToTradeWith by remember { mutableStateOf<UserProfile?>(null) }
     var userToUnfriend by remember { mutableStateOf<UserProfile?>(null) }
+    var userToBlock by remember { mutableStateOf<UserProfile?>(null) }
+    var userToReport by remember { mutableStateOf<UserProfile?>(null) }
     var profilePreviewUser by remember { mutableStateOf<UserProfile?>(null) }
     var showThemeSelector by remember { mutableStateOf(false) }
 
@@ -1241,6 +1245,50 @@ fun FriendsAndTradeScreen(
             )
         }
 
+        userToBlock?.let { targetUser ->
+            BlockUserConfirmationDialog(
+                targetUserName = targetUser.displayName,
+                onConfirm = {
+                    val uid = targetUser.userId
+                    userToBlock = null
+                    coroutineScope.launch {
+                        val res = authRepo.blockUser(uid)
+                        if (res.isSuccess) {
+                            Toast.makeText(context, "Đã chặn @${targetUser.username}", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Lỗi chặn: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                onDismiss = { userToBlock = null }
+            )
+        }
+
+        userToReport?.let { targetUser ->
+            ReportUserDialog(
+                targetUserName = targetUser.displayName,
+                onSubmit = { category, note ->
+                    val uid = targetUser.userId
+                    userToReport = null
+                    coroutineScope.launch {
+                        val res = authRepo.reportUser(
+                            targetUserId = uid,
+                            category = category,
+                            note = note,
+                            entityType = "user",
+                            entityId = uid
+                        )
+                        if (res.isSuccess) {
+                            Toast.makeText(context, "Báo cáo của bạn đã được gửi thành công", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Lỗi báo cáo: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                onDismiss = { userToReport = null }
+            )
+        }
+
         // Trade Detail Modal Dialog
         selectedTradeOffer?.let { offer ->
             AlertDialog(
@@ -1448,6 +1496,12 @@ fun FriendsAndTradeScreen(
                 },
                 onUnfriend = {
                     userToUnfriend = targetUser
+                },
+                onBlock = {
+                    userToBlock = targetUser
+                },
+                onReport = {
+                    userToReport = targetUser
                 }
             )
         }

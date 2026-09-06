@@ -418,6 +418,7 @@ struct ProfileSettingsSheetView: View {
     @State private var isSavingProfile: Bool = false
     @State private var profileSaveMessage: String? = nil
 
+    @State private var showBlockedUsersSheet: Bool = false
     @State private var showDeleteAccountSheet: Bool = false
     @State private var deletePassword: String = ""
     @State private var isDeletingAccount: Bool = false
@@ -669,6 +670,40 @@ struct ProfileSettingsSheetView: View {
 
                     Divider().padding(.horizontal)
 
+                    // Privacy & Safety Section
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "hand.raised.slash.fill")
+                                .foregroundColor(MSColors.stamp)
+                            Text(langManager.string(vi: "QUYỀN RIÊNG TƯ & AN TOÀN", en: "PRIVACY & SAFETY"))
+                                .font(.caption2.bold())
+                                .foregroundColor(MSColors.grey)
+                        }
+
+                        Button(action: {
+                            showBlockedUsersSheet = true
+                        }) {
+                            HStack {
+                                Image(systemName: "person.crop.circle.badge.xmark")
+                                    .foregroundColor(MSColors.stamp)
+                                Text(langManager.string(vi: "Danh sách người dùng đã chặn", en: "Blocked Users List"))
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(MSColors.ink)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(MSColors.grey)
+                            }
+                            .padding(14)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(MSColors.lightGrey, lineWidth: 1))
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    Divider().padding(.horizontal)
+
                     // 4. Save & Logout Action Row
                     VStack(spacing: 10) {
                         if let msg = profileSaveMessage {
@@ -869,6 +904,9 @@ struct ProfileSettingsSheetView: View {
                 }
             }
         }
+        .sheet(isPresented: $showBlockedUsersSheet) {
+            BlockedUsersManagementSheetView()
+        }
         .sheet(isPresented: $showDeleteAccountSheet) {
             NavigationView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -1029,3 +1067,137 @@ struct PhotoLibraryPicker: UIViewControllerRepresentable {
         }
     }
 }
+
+struct BlockedUsersManagementSheetView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @StateObject private var langManager = AppLanguageManager.shared
+    @State private var blockedUsers: [SupabaseBlockedUserRecord] = []
+    @State private var isLoading: Bool = true
+    @State private var unblockingId: String? = nil
+    @State private var message: String? = nil
+
+    var body: some View {
+        NavigationView {
+            VStack {
+                if isLoading {
+                    ProgressView()
+                        .padding(.top, 40)
+                    Spacer()
+                } else if blockedUsers.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "hand.raised.slash")
+                            .font(.system(size: 40))
+                            .foregroundColor(MSColors.grey.opacity(0.6))
+                        Text(langManager.string(vi: "Không có người dùng nào bị chặn", en: "No blocked users"))
+                            .font(.headline)
+                            .foregroundColor(MSColors.ink)
+                        Text(langManager.string(
+                            vi: "Khi bạn chặn người dùng, họ sẽ không thể gửi lời mời kết bạn, nhắn tin hoặc tương tác với bạn.",
+                            en: "When you block someone, they cannot send friend requests, messages, or interact with you."
+                        ))
+                        .font(.caption)
+                        .foregroundColor(MSColors.grey)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                    }
+                    .padding(.top, 60)
+                    Spacer()
+                } else {
+                    List {
+                        ForEach(blockedUsers, id: \.id) { block in
+                            HStack {
+                                Circle()
+                                    .fill(Color.red.opacity(0.12))
+                                    .frame(width: 36, height: 36)
+                                    .overlay(
+                                        Image(systemName: "person.fill.xmark")
+                                            .foregroundColor(.red)
+                                            .font(.caption)
+                                    )
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(langManager.string(vi: "Người dùng đã chặn", en: "Blocked User"))
+                                        .font(.subheadline.bold())
+                                        .foregroundColor(MSColors.ink)
+                                    Text("ID: \(block.blockedId.prefix(12))...")
+                                        .font(.caption2)
+                                        .foregroundColor(MSColors.grey)
+                                }
+
+                                Spacer()
+
+                                Button(action: {
+                                    unblock(block.blockedId)
+                                }) {
+                                    if unblockingId == block.blockedId {
+                                        ProgressView()
+                                    } else {
+                                        Text(langManager.string(vi: "Bỏ chặn", en: "Unblock"))
+                                            .font(.caption.bold())
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(MSColors.stamp.opacity(0.12))
+                                            .foregroundColor(MSColors.stamp)
+                                            .cornerRadius(10)
+                                    }
+                                }
+                                .disabled(unblockingId != nil)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                    .listStyle(PlainListStyle())
+                }
+
+                if let msg = message {
+                    Text(msg)
+                        .font(.caption.bold())
+                        .foregroundColor(MSColors.stamp)
+                        .padding()
+                }
+            }
+            .background(MSColors.paper.ignoresSafeArea())
+            .navigationTitle(langManager.string(vi: "Danh Sách Chặn", en: "Blocked Users"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(langManager.string(vi: "Đóng", en: "Close")) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .foregroundColor(MSColors.stamp)
+                }
+            }
+            .onAppear {
+                loadData()
+            }
+        }
+    }
+
+    private func loadData() {
+        isLoading = true
+        IOSFriendRepository.shared.loadBlockedUsers { result in
+            isLoading = false
+            switch result {
+            case .success(let list):
+                blockedUsers = list
+            case .failure(let err):
+                message = err.localizedDescription
+            }
+        }
+    }
+
+    private func unblock(_ blockedId: String) {
+        unblockingId = blockedId
+        IOSFriendRepository.shared.unblockUser(blockedUserId: blockedId) { result in
+            unblockingId = nil
+            switch result {
+            case .success:
+                blockedUsers.removeAll { $0.blockedId == blockedId }
+                message = langManager.string(vi: "Đã bỏ chặn thành công.", en: "Unblocked successfully.")
+            case .failure(let err):
+                message = "Lỗi: \(err.localizedDescription)"
+            }
+        }
+    }
+}
+

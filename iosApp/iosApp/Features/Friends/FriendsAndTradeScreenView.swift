@@ -17,6 +17,13 @@ struct FriendsAndTradeScreenView: View {
     @State private var toastMessage: String? = nil
     @State private var showToast: Bool = false
     @State private var refreshTrigger: Bool = false
+    @State private var friendToBlock: FriendItem? = nil
+    @State private var showBlockAlert: Bool = false
+    @State private var friendToReport: FriendItem? = nil
+    @State private var showReportSheet: Bool = false
+    @State private var reportCategory: String = "spam"
+    @State private var reportNote: String = ""
+    @State private var isSubmittingSafety: Bool = false
     @StateObject private var langManager = AppLanguageManager.shared
     @ObservedObject private var friendRepo = IOSFriendRepository.shared
     @ObservedObject private var chatRepo = IOSChatRepository.shared
@@ -360,6 +367,86 @@ struct FriendsAndTradeScreenView: View {
         .sheet(isPresented: $showQrCodeModal) {
             FriendQrCodeSheetView(repository: repository)
         }
+        .alert(isPresented: $showBlockAlert) {
+            Alert(
+                title: Text(langManager.string(vi: "Chặn người dùng?", en: "Block user?")),
+                message: Text(langManager.string(
+                    vi: "Bạn có chắc chắn muốn chặn \(friendToBlock?.displayName ?? "người dùng này")? Hành động này sẽ hủy kết bạn, hủy các lời mời đang chờ và ngăn hai bên nhắn tin hay tương tác.",
+                    en: "Are you sure you want to block \(friendToBlock?.displayName ?? "this user")? This will remove friendship, cancel pending requests, and prevent all messaging and interactions."
+                )),
+                primaryButton: .destructive(Text(langManager.string(vi: "Chặn", en: "Block"))) {
+                    if let target = friendToBlock {
+                        isSubmittingSafety = true
+                        friendRepo.blockUser(targetUserId: target.id) { result in
+                            isSubmittingSafety = false
+                            switch result {
+                            case .success:
+                                triggerToast("Đã chặn \(target.displayName).")
+                            case .failure(let err):
+                                triggerToast("Lỗi: \(err.localizedDescription)")
+                            }
+                        }
+                    }
+                },
+                secondaryButton: .cancel(Text(langManager.string(vi: "Hủy", en: "Cancel")))
+            )
+        }
+        .sheet(isPresented: $showReportSheet) {
+            if let target = friendToReport {
+                NavigationView {
+                    Form {
+                        Section(header: Text(langManager.string(vi: "Lý do báo cáo", en: "Report Reason"))) {
+                            Picker(langManager.string(vi: "Danh mục", en: "Category"), selection: $reportCategory) {
+                                Text(langManager.string(vi: "Spam / Quảng cáo rác", en: "Spam")).tag("spam")
+                                Text(langManager.string(vi: "Quấy rối / Đe dọa", en: "Harassment")).tag("harassment")
+                                Text(langManager.string(vi: "Giả mạo danh tính", en: "Impersonation")).tag("impersonation")
+                                Text(langManager.string(vi: "Nội dung không phù hợp", en: "Inappropriate Content")).tag("inappropriate_content")
+                                Text(langManager.string(vi: "Khác", en: "Other")).tag("other")
+                            }
+                        }
+
+                        Section(header: Text(langManager.string(vi: "Chi tiết bổ sung (tùy chọn)", en: "Additional Notes (optional)"))) {
+                            TextEditor(text: $reportNote)
+                                .frame(height: 80)
+                        }
+
+                        Section {
+                            Button(action: {
+                                isSubmittingSafety = true
+                                friendRepo.reportUser(reportedUserId: target.id, category: reportCategory, note: reportNote) { result in
+                                    isSubmittingSafety = false
+                                    showReportSheet = false
+                                    switch result {
+                                    case .success:
+                                        triggerToast("Báo cáo đã được ghi nhận. Cảm ơn đóng góp của bạn.")
+                                    case .failure(let err):
+                                        triggerToast("Lỗi báo cáo: \(err.localizedDescription)")
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    Text(langManager.string(vi: "Gửi Báo Cáo", en: "Submit Report"))
+                                        .font(.headline.bold())
+                                        .foregroundColor(Color.red)
+                                    Spacer()
+                                }
+                            }
+                            .disabled(isSubmittingSafety)
+                        }
+                    }
+                    .navigationTitle(langManager.string(vi: "Báo Cáo Vi Phạm", en: "Report Abuse"))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button(langManager.string(vi: "Đóng", en: "Close")) {
+                                showReportSheet = false
+                            }
+                        }
+                    }
+                }
+            }
+        }
         .onAppear {
             friendRepo.loadCloudData()
             if let uid = authenticatedUid {
@@ -628,19 +715,41 @@ struct FriendsAndTradeScreenView: View {
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(MSColors.gold.opacity(0.4), lineWidth: 1))
                         }
 
-                        Button(action: {
-                            friendRepo.unfriendUser(friendId: friend.id) { result in
-                                switch result {
-                                case .success:
-                                    triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
-                                case .failure(let err):
-                                    triggerToast("Lỗi: \(err.localizedDescription)")
-                                }
+                        Menu {
+                            Button(role: .destructive, action: {
+                                friendToBlock = friend
+                                showBlockAlert = true
+                            }) {
+                                Label(langManager.string(vi: "Chặn người dùng", en: "Block User"), systemImage: "hand.raised.slash")
                             }
-                        }) {
-                            Image(systemName: "person.badge.minus")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray.opacity(0.7))
+
+                            Button(action: {
+                                friendToReport = friend
+                                reportCategory = "spam"
+                                reportNote = ""
+                                showReportSheet = true
+                            }) {
+                                Label(langManager.string(vi: "Báo cáo vi phạm", en: "Report Abuse"), systemImage: "exclamationmark.bubble")
+                            }
+
+                            Divider()
+
+                            Button(role: .destructive, action: {
+                                friendRepo.unfriendUser(friendId: friend.id) { result in
+                                    switch result {
+                                    case .success:
+                                        triggerToast("Đã xóa \(friend.displayName) khỏi danh sách.")
+                                    case .failure(let err):
+                                        triggerToast("Lỗi: \(err.localizedDescription)")
+                                    }
+                                }
+                            }) {
+                                Label(langManager.string(vi: "Hủy kết bạn", en: "Unfriend"), systemImage: "person.badge.minus")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.system(size: 16))
+                                .foregroundColor(MSColors.stamp)
                                 .padding(6)
                         }
                     }

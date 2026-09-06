@@ -64,6 +64,13 @@ data class SupabaseFriendRelation(
     @SerializedName("created_at") val createdAt: Long? = System.currentTimeMillis()
 )
 
+data class SupabaseBlockedUser(
+    @SerializedName("id") val id: String? = null,
+    @SerializedName("blocker_id") val blockerId: String = "",
+    @SerializedName("blocked_id") val blockedId: String = "",
+    @SerializedName("created_at") val createdAt: Any? = null
+)
+
 data class SupabaseDirectMessageRecord(
     @SerializedName("id") val id: String = "",
     @SerializedName("sender_id") val senderId: String = "",
@@ -683,6 +690,53 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         val body = gson.toJson(mapOf("p_friend_id" to friendId.trim()))
         val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to unfriend user via RPC"))
+    }
+
+    suspend fun blockUserRpc(blockedId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/block_user"
+        val body = gson.toJson(mapOf("p_blocked_id" to blockedId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to block user via RPC"))
+    }
+
+    suspend fun unblockUserRpc(blockedId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/unblock_user"
+        val body = gson.toJson(mapOf("p_blocked_id" to blockedId.trim()))
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to unblock user via RPC"))
+    }
+
+    suspend fun reportUserRpc(
+        reportedUserId: String,
+        category: String,
+        note: String? = null,
+        entityType: String? = null,
+        entityId: String? = null
+    ): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/report_user"
+        val payload = mutableMapOf<String, Any>(
+            "p_reported_user_id" to reportedUserId.trim(),
+            "p_category" to category.trim().lowercase()
+        )
+        if (!note.isNullOrBlank()) payload["p_note"] = note.trim()
+        if (!entityType.isNullOrBlank()) payload["p_entity_type"] = entityType.trim()
+        if (!entityId.isNullOrBlank()) payload["p_entity_id"] = entityId.trim()
+        val body = gson.toJson(payload)
+        val res = executeHttp(endpoint, method = "POST", jsonBody = body, requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to report user via RPC"))
+    }
+
+    suspend fun getBlockedUsers(): Result<List<SupabaseBlockedUser>> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/user_blocks?select=id,blocker_id,blocked_id,created_at"
+        val res = executeHttp(endpoint, method = "GET", requireUserAuth = true)
+        if (res.isFailure) return@withContext Result.failure(res.exceptionOrNull() ?: Exception("Failed to query blocked users"))
+        try {
+            val listType = object : TypeToken<List<SupabaseBlockedUser>>() {}.type
+            val list: List<SupabaseBlockedUser> = gson.fromJson(res.getOrNull() ?: "[]", listType) ?: emptyList()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun updateFriendRequestStatus(requestId: String, status: String): Result<Boolean> = withContext(Dispatchers.IO) {
