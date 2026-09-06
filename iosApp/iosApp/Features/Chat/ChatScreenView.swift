@@ -63,6 +63,11 @@ struct ChatScreenView: View {
     @State private var chatLoadError: String? = nil
     @State private var hasCompletedInitialLoad: Bool = false
     @State private var isRetryingLoad: Bool = false
+    @State private var showBlockAlert: Bool = false
+    @State private var showReportSheet: Bool = false
+    @State private var reportCategory: String = "spam"
+    @State private var reportNote: String = ""
+    @State private var isSubmittingReport: Bool = false
 
     private var messages: [ChatMessage] {
         chatRepo.conversationMessages[recipientUserId] ?? []
@@ -137,6 +142,19 @@ struct ChatScreenView: View {
                 }
 
                 Spacer()
+
+                Menu {
+                    Button(action: { showReportSheet = true }) {
+                        Label("Báo cáo người dùng", systemImage: "flag.fill")
+                    }
+                    Button(role: .destructive, action: { showBlockAlert = true }) {
+                        Label("Chặn người dùng", systemImage: "hand.raised.slash.fill")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title2)
+                        .foregroundColor(MSColors.grey)
+                }
 
                 Button(action: {
                     chatRepo.activeRecipientId = nil
@@ -450,6 +468,80 @@ struct ChatScreenView: View {
                 }
             }
             .background(MSColors.paper.ignoresSafeArea())
+        }
+        .alert("Chặn \(recipientName)?", isPresented: $showBlockAlert) {
+            Button("Hủy", role: .cancel) { }
+            Button("Chặn người dùng", role: .destructive) {
+                IOSFriendRepository.shared.blockUser(blockedId: recipientUserId) { result in
+                    switch result {
+                    case .success:
+                        toastMessage = "Đã chặn người dùng"
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                            if let dismiss = onDismiss {
+                                dismiss()
+                            } else {
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                        }
+                    case .failure(let err):
+                        toastMessage = "Lỗi chặn: \(err.localizedDescription)"
+                    }
+                }
+            }
+        } message: {
+            Text("Quan hệ bạn bè và các lời mời kết bạn sẽ bị xóa vĩnh viễn. Cả hai sẽ không thể gửi tin nhắn hoặc tương tác với nhau nữa.")
+        }
+        .sheet(isPresented: $showReportSheet) {
+            NavigationView {
+                Form {
+                    Section(header: Text("Lý do báo cáo")) {
+                        Picker("Danh mục", selection: $reportCategory) {
+                            Text("Tin rác / Spam").tag("spam")
+                            Text("Quấy rối / Đe dọa").tag("harassment")
+                            Text("Mạo danh").tag("impersonation")
+                            Text("Nội dung không phù hợp").tag("inappropriate_content")
+                            Text("Lý do khác").tag("other")
+                        }
+                        .pickerStyle(.inline)
+                    }
+
+                    Section(header: Text("Ghi chú thêm (tùy chọn, tối đa 1000 ký tự)")) {
+                        TextEditor(text: $reportNote)
+                            .frame(height: 100)
+                    }
+                }
+                .navigationTitle("Báo cáo vi phạm")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Hủy") { showReportSheet = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Gửi") {
+                            guard !isSubmittingReport else { return }
+                            isSubmittingReport = true
+                            IOSFriendRepository.shared.reportUser(
+                                reportedUserId: recipientUserId,
+                                category: reportCategory,
+                                note: reportNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : reportNote,
+                                entityType: "user",
+                                entityId: recipientUserId
+                            ) { result in
+                                isSubmittingReport = false
+                                showReportSheet = false
+                                reportNote = ""
+                                switch result {
+                                case .success:
+                                    toastMessage = "Báo cáo của bạn đã được gửi thành công"
+                                case .failure(let err):
+                                    toastMessage = "Lỗi gửi báo cáo: \(err.localizedDescription)"
+                                }
+                            }
+                        }
+                        .disabled(isSubmittingReport)
+                    }
+                }
+            }
         }
     }
 

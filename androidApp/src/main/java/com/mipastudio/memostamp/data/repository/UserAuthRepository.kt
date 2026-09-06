@@ -15,6 +15,7 @@ import com.mipastudio.memostamp.data.local.UserEntity
 import com.mipastudio.memostamp.data.remote.supabase.AndroidAuthSession
 import com.mipastudio.memostamp.data.remote.supabase.AndroidAuthSessionStore
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseAuthService
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseBlockedUser
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseClient
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseRealtimeClient
 import kotlinx.coroutines.CoroutineScope
@@ -610,6 +611,75 @@ class UserAuthRepository internal constructor(
 
         syncWithSupabaseOnce()
         Result.success(Unit)
+    }
+
+    suspend fun blockUser(targetUserId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to block a user"))
+        }
+
+        val previousFriends = _friendIds.value
+        val updatedFriends = previousFriends.toMutableSet().apply { remove(targetUserId) }
+        _friendIds.value = updatedFriends
+        friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), updatedFriends)?.apply()
+
+        val resRpc = supabaseClient.blockUserRpc(targetUserId)
+        if (resRpc.isFailure) {
+            _friendIds.value = previousFriends
+            friendsPrefs?.edit()?.putStringSet(getFriendsPrefKey(authUid), previousFriends)?.apply()
+            return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Chặn người dùng thất bại"))
+        }
+
+        syncWithSupabaseOnce()
+        Result.success(Unit)
+    }
+
+    suspend fun unblockUser(targetUserId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to unblock a user"))
+        }
+
+        val resRpc = supabaseClient.unblockUserRpc(targetUserId)
+        if (resRpc.isFailure) {
+            return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Bỏ chặn người dùng thất bại"))
+        }
+
+        Result.success(Unit)
+    }
+
+    suspend fun reportUser(
+        targetUserId: String,
+        category: String,
+        note: String? = null,
+        entityType: String? = null,
+        entityId: String? = null
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val authUid = _authUserId.value
+        val current = _currentUser.value
+        if (authUid.isNullOrBlank() || !_isLoggedIn.value || current.userId != authUid || authUid.startsWith("guest_")) {
+            return@withContext Result.failure(SecurityException("Unauthorized: Must be logged in to report a user"))
+        }
+
+        val resRpc = supabaseClient.reportUserRpc(
+            reportedUserId = targetUserId,
+            category = category,
+            note = note,
+            entityType = entityType,
+            entityId = entityId
+        )
+        if (resRpc.isFailure) {
+            return@withContext Result.failure(resRpc.exceptionOrNull() ?: Exception("Báo cáo vi phạm thất bại"))
+        }
+
+        Result.success(Unit)
+    }
+
+    suspend fun getBlockedUsers(): Result<List<SupabaseBlockedUser>> = withContext(Dispatchers.IO) {
+        supabaseClient.getBlockedUsers()
     }
 
     suspend fun searchUsers(query: String): List<UserProfile> = withContext(Dispatchers.IO) {

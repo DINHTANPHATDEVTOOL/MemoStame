@@ -121,6 +121,25 @@ struct SupabaseFriendRecord: Codable, Identifiable {
     }
 }
 
+struct SupabaseBlockedUserRecord: Codable, Identifiable {
+    var id: String { "\(blockerId)_\(blockedId)" }
+    let blockerId: String
+    let blockedId: String
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case blockerId = "blocker_id"
+        case blockedId = "blocked_id"
+        case createdAt = "created_at"
+    }
+
+    init(blockerId: String, blockedId: String, createdAt: String? = nil) {
+        self.blockerId = blockerId
+        self.blockedId = blockedId
+        self.createdAt = createdAt
+    }
+}
+
 struct SupabaseDirectMessageRecord: Codable, Identifiable {
     let id: String
     let senderId: String
@@ -668,6 +687,89 @@ class SupabaseSocialClient {
             switch result {
             case .success:
                 completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func blockUserRpc(blockedId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/rpc/block_user"
+        let body: [String: String] = ["p_blocked_id": blockedId.trimmingCharacters(in: .whitespacesAndNewlines)]
+        let jsonBody = try? String(data: JSONEncoder().encode(body), encoding: .utf8)
+
+        executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func unblockUserRpc(blockedId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/rpc/unblock_user"
+        let body: [String: String] = ["p_blocked_id": blockedId.trimmingCharacters(in: .whitespacesAndNewlines)]
+        let jsonBody = try? String(data: JSONEncoder().encode(body), encoding: .utf8)
+
+        executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func reportUserRpc(
+        reportedUserId: String,
+        category: String,
+        note: String? = nil,
+        entityType: String? = nil,
+        entityId: String? = nil,
+        completion: @escaping (Result<Bool, Error>) -> Void
+    ) {
+        let endpoint = "\(supabaseUrl)/rest/v1/rpc/report_user"
+        var body: [String: String] = [
+            "p_reported_user_id": reportedUserId.trimmingCharacters(in: .whitespacesAndNewlines),
+            "p_category": category.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        ]
+        if let n = note, !n.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            body["p_note"] = n.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let et = entityType, !et.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            body["p_entity_type"] = et.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let ei = entityId, !ei.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            body["p_entity_id"] = ei.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        let jsonBody = try? String(data: JSONEncoder().encode(body), encoding: .utf8)
+
+        executeHttp(endpoint: endpoint, method: "POST", jsonBody: jsonBody, requireUserAuth: true) { result in
+            switch result {
+            case .success:
+                completion(.success(true))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+
+    func fetchBlockedUsers(completion: @escaping (Result<[SupabaseBlockedUserRecord], Error>) -> Void) {
+        let endpoint = "\(supabaseUrl)/rest/v1/user_blocks?select=*"
+
+        executeHttp(endpoint: endpoint, method: "GET", requireUserAuth: true) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoder = JSONDecoder()
+                    let records = try decoder.decode([SupabaseBlockedUserRecord].self, from: data)
+                    completion(.success(records))
+                } catch {
+                    completion(.failure(SupabaseSocialError.parseError(error.localizedDescription)))
+                }
             case .failure(let err):
                 completion(.failure(err))
             }

@@ -656,13 +656,357 @@ END $$;
 
 
 -- ===================================================
+-- SOCIAL SAFETY & USER BLOCKING ASSERTIONS (TASK #53)
+-- ===================================================
+
+-- Assertion 45: Self-block is rejected by block_user RPC
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        PERFORM public.block_user('11111111-1111-1111-1111-111111111111');
+        RAISE EXCEPTION 'Self-Block Allowed: RPC should have rejected self-block';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM NOT LIKE '%Cannot block oneself%' THEN
+                RAISE EXCEPTION 'Unexpected error on self-block: %', SQLERRM;
+            END IF;
+    END;
+END $$;
+
+-- Assertion 46: User A blocks User B: removes friendship & pending requests atomically, persists block idempotently
+DO $$
+DECLARE
+    v_f_count INT;
+    v_r_count INT;
+    v_b_count INT;
+BEGIN
+    SET ROLE postgres;
+    -- Setup friendship and pending request
+    INSERT INTO public.friends (user_id_1, user_id_2) VALUES
+        ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO public.friend_requests (id, sender_id, recipient_id, status) VALUES
+        ('aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'PENDING')
+    ON CONFLICT (id) DO NOTHING;
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Execute block_user RPC
+    PERFORM public.block_user('22222222-2222-2222-2222-222222222222');
+
+    -- Verify duplicate call is idempotent
+    PERFORM public.block_user('22222222-2222-2222-2222-222222222222');
+
+    SET ROLE postgres;
+    -- Check friendship removed
+    SELECT COUNT(*) INTO v_f_count FROM public.friends
+    WHERE (user_id_1 = '11111111-1111-1111-1111-111111111111' AND user_id_2 = '22222222-2222-2222-2222-222222222222')
+       OR (user_id_2 = '11111111-1111-1111-1111-111111111111' AND user_id_1 = '22222222-2222-2222-2222-222222222222');
+    IF v_f_count <> 0 THEN RAISE EXCEPTION 'Block Cleanup Failed: Friendship was not removed'; END IF;
+
+    -- Check pending request removed
+    SELECT COUNT(*) INTO v_r_count FROM public.friend_requests
+    WHERE (sender_id = '11111111-1111-1111-1111-111111111111' AND recipient_id = '22222222-2222-2222-2222-222222222222')
+       OR (sender_id = '22222222-2222-2222-2222-222222222222' AND recipient_id = '11111111-1111-1111-1111-111111111111');
+    IF v_r_count <> 0 THEN RAISE EXCEPTION 'Block Cleanup Failed: Pending request was not removed'; END IF;
+
+    -- Check block recorded
+    SELECT COUNT(*) INTO v_b_count FROM public.user_blocks
+    WHERE blocker_id = '11111111-1111-1111-1111-111111111111' AND blocked_id = '22222222-2222-2222-2222-222222222222';
+    IF v_b_count <> 1 THEN RAISE EXCEPTION 'Block Record Failed: user_blocks row missing'; END IF;
+END $$;
+
+-- Assertion 47: Friend request denied across blocked relationship in either direction
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    -- B tries to send friend request to A (who blocked B)
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    BEGIN
+        INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+        VALUES (gen_random_uuid(), '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'PENDING');
+        RAISE EXCEPTION 'RLS Violation Failed: Blocked user B was able to send friend request to A';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- A tries to send friend request to B (whom A blocked)
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+        VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'PENDING');
+        RAISE EXCEPTION 'RLS Violation Failed: Blocker A was able to send friend request to B';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- Third party C can send friend request to A
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+    VALUES ('aaaaaaaa-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'PENDING');
+END $$;
+
+-- Assertion 48: Friend request acceptance denied across blocked relationship
+DO $$
+BEGIN
+    SET ROLE postgres;
+    -- Artificially insert pending request between A and B
+    INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+    VALUES ('aaaaaaaa-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'PENDING')
+    ON CONFLICT (id) DO NOTHING;
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        PERFORM public.accept_friend_request('aaaaaaaa-0000-0000-0000-000000000003');
+        RAISE EXCEPTION 'Accept Across Block Failed: RPC allowed accepting request across block';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM NOT LIKE '%Cannot accept friend request: relationship is blocked%' THEN
+                RAISE EXCEPTION 'Unexpected error on accept friend request: %', SQLERRM;
+            END IF;
+    END;
+
+    SET ROLE postgres;
+    DELETE FROM public.friend_requests WHERE id = 'aaaaaaaa-0000-0000-0000-000000000003';
+END $$;
+
+-- Assertion 49: Direct message denied across blocked relationship in either direction
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    -- B tries to send DM to A
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    BEGIN
+        INSERT INTO public.direct_messages (id, sender_id, recipient_id, text)
+        VALUES (gen_random_uuid(), '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Blocked DM from B');
+        RAISE EXCEPTION 'RLS Violation Failed: Blocked user B was able to send DM to A';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- A tries to send DM to B
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    BEGIN
+        INSERT INTO public.direct_messages (id, sender_id, recipient_id, text)
+        VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Blocked DM from A');
+        RAISE EXCEPTION 'RLS Violation Failed: Blocker A was able to send DM to B';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- Third party C can send DM to A
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    INSERT INTO public.direct_messages (id, sender_id, recipient_id, text)
+    VALUES (gen_random_uuid(), '33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Hello from User C');
+END $$;
+
+-- Assertion 50: Feed interactions (reactions, comments, replies) denied across blocked relationship
+DO $$
+BEGIN
+    SET ROLE postgres;
+    -- Ensure User A has a public post
+    INSERT INTO public.feed_posts (id, author_id, content, audience_type)
+    VALUES ('post_user_a_public', '11111111-1111-1111-1111-111111111111', 'Post by User A', 'EVERYONE')
+    ON CONFLICT (id) DO NOTHING;
+
+    SET LOCAL ROLE authenticated;
+    -- B tries to react to A's post
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    BEGIN
+        INSERT INTO public.feed_reactions (id, post_id, user_id, reaction_type)
+        VALUES ('reaction_b_on_a', 'post_user_a_public', '22222222-2222-2222-2222-222222222222', 'LIKE');
+        RAISE EXCEPTION 'RLS Violation Failed: Blocked user B was able to react to post by A';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- B tries to comment on A's post
+    BEGIN
+        INSERT INTO public.feed_comments (id, post_id, author_id, content)
+        VALUES ('comment_b_on_a', 'post_user_a_public', '22222222-2222-2222-2222-222222222222', 'Comment from B');
+        RAISE EXCEPTION 'RLS Violation Failed: Blocked user B was able to comment on post by A';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- B tries to reply to A's post
+    BEGIN
+        INSERT INTO public.feed_replies (id, post_id, author_id, reply_stamp_url)
+        VALUES ('reply_b_on_a', 'post_user_a_public', '22222222-2222-2222-2222-222222222222', 'https://example.com/stamp.png');
+        RAISE EXCEPTION 'RLS Violation Failed: Blocked user B was able to reply to post by A';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+
+    -- Third party C can react to A's post
+    SET LOCAL request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+    INSERT INTO public.feed_reactions (id, post_id, user_id, reaction_type)
+    VALUES ('reaction_c_on_a', 'post_user_a_public', '33333333-3333-3333-3333-333333333333', 'LIKE');
+END $$;
+
+-- Assertion 51: Block Privacy: Blocker reads own list; blocked user cannot enumerate who blocked them
+DO $$
+DECLARE
+    v_a_sees INT;
+    v_b_sees INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    -- User A sees 1 outbound block
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    SELECT COUNT(*) INTO v_a_sees FROM public.user_blocks;
+    IF v_a_sees <> 1 THEN RAISE EXCEPTION 'Block Privacy Failed: User A cannot see outbound block'; END IF;
+
+    -- User B sees 0 blocks (cannot see that A blocked B)
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    SELECT COUNT(*) INTO v_b_sees FROM public.user_blocks;
+    IF v_b_sees <> 0 THEN RAISE EXCEPTION 'Block Privacy Failed: Blocked user B can see block row'; END IF;
+
+    -- Direct client mutation denied
+    BEGIN
+        INSERT INTO public.user_blocks (blocker_id, blocked_id)
+        VALUES ('22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+        RAISE EXCEPTION 'Direct Block Insert Allowed: Client should not be able to INSERT directly';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+END $$;
+
+-- Assertion 52: Unblock RPC removes block; restores contact permission without restoring friendship
+DO $$
+DECLARE
+    v_blocks INT;
+    v_friends INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- User A unblocks User B
+    PERFORM public.unblock_user('22222222-2222-2222-2222-222222222222');
+
+    SELECT COUNT(*) INTO v_blocks FROM public.user_blocks
+    WHERE blocker_id = '11111111-1111-1111-1111-111111111111' AND blocked_id = '22222222-2222-2222-2222-222222222222';
+    IF v_blocks <> 0 THEN RAISE EXCEPTION 'Unblock Failed: Block row still exists'; END IF;
+
+    -- Verify friendship was NOT recreated
+    SELECT COUNT(*) INTO v_friends FROM public.friends
+    WHERE (user_id_1 = '11111111-1111-1111-1111-111111111111' AND user_id_2 = '22222222-2222-2222-2222-222222222222')
+       OR (user_id_2 = '11111111-1111-1111-1111-111111111111' AND user_id_1 = '22222222-2222-2222-2222-222222222222');
+    IF v_friends <> 0 THEN RAISE EXCEPTION 'Unblock Invariant Failed: Friendship was inappropriately recreated'; END IF;
+
+    -- Now B can send friend request to A
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+    INSERT INTO public.friend_requests (id, sender_id, recipient_id, status)
+    VALUES ('aaaaaaaa-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'PENDING');
+END $$;
+
+-- Assertion 53: Report User RPC derives auth.uid(), rejects self-report, validates category and length
+DO $$
+DECLARE
+    v_report_res JSONB;
+    v_rep_id UUID;
+    v_actual_reporter UUID;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    -- Self-report rejected
+    BEGIN
+        PERFORM public.report_user('11111111-1111-1111-1111-111111111111', 'spam');
+        RAISE EXCEPTION 'Self-Report Allowed: RPC should reject reporting oneself';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM NOT LIKE '%Cannot report oneself%' THEN
+                RAISE EXCEPTION 'Unexpected error on self-report: %', SQLERRM;
+            END IF;
+    END;
+
+    -- Invalid category rejected
+    BEGIN
+        PERFORM public.report_user('22222222-2222-2222-2222-222222222222', 'invalid_cat');
+        RAISE EXCEPTION 'Invalid Category Allowed: RPC should reject unknown category';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLERRM NOT LIKE '%Invalid report category%' THEN
+                RAISE EXCEPTION 'Unexpected error on invalid category: %', SQLERRM;
+            END IF;
+    END;
+
+    -- Valid report submission
+    v_report_res := public.report_user('22222222-2222-2222-2222-222222222222', 'harassment', 'Offensive message sent', 'direct_message', 'msg_123');
+    v_rep_id := (v_report_res->>'report_id')::UUID;
+    IF v_rep_id IS NULL THEN RAISE EXCEPTION 'Report User Failed: report_id missing in result'; END IF;
+
+    SET ROLE postgres;
+    SELECT reporter_id INTO v_actual_reporter FROM public.user_reports WHERE id = v_rep_id;
+    IF v_actual_reporter <> '11111111-1111-1111-1111-111111111111'::UUID THEN
+        RAISE EXCEPTION 'Reporter Identity Mismatch: expected caller auth.uid(), got %', v_actual_reporter;
+    END IF;
+END $$;
+
+-- Assertion 54: Report Privacy: Normal clients cannot SELECT user_reports
+DO $$
+DECLARE
+    v_cnt INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    SELECT COUNT(*) INTO v_cnt FROM public.user_reports;
+    IF v_cnt <> 0 THEN RAISE EXCEPTION 'Report Privacy Failed: Authenticated client was able to select user_reports'; END IF;
+
+    -- Direct client insert denied
+    BEGIN
+        INSERT INTO public.user_reports (reporter_id, reported_user_id, category)
+        VALUES ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'spam');
+        RAISE EXCEPTION 'Direct Report Insert Allowed: Client should not be able to direct insert';
+    EXCEPTION
+        WHEN OTHERS THEN NULL;
+    END;
+END $$;
+
+-- Assertion 55: Account Deletion Cascades user_blocks
+DO $$
+DECLARE
+    v_cnt INT;
+BEGIN
+    -- Insert disposable auth user D and block relationship
+    INSERT INTO auth.users (id, email, role, aud) VALUES
+        ('44444444-4444-4444-4444-444444444444', 'userd@test.local', 'authenticated', 'authenticated')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO public.profiles (id, username, display_name) VALUES
+        ('44444444-4444-4444-4444-444444444444', 'user_d', 'User D')
+    ON CONFLICT (id) DO NOTHING;
+
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+    PERFORM public.block_user('44444444-4444-4444-4444-444444444444');
+
+    SET LOCAL ROLE postgres;
+    DELETE FROM auth.users WHERE id = '44444444-4444-4444-4444-444444444444';
+
+    SELECT COUNT(*) INTO v_cnt FROM public.user_blocks WHERE blocked_id = '44444444-4444-4444-4444-444444444444';
+    IF v_cnt <> 0 THEN RAISE EXCEPTION 'Block Cascade Failed: block row not deleted on user deletion'; END IF;
+END $$;
+
+
+-- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
 
+DELETE FROM public.user_reports WHERE reporter_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444') OR reported_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
+DELETE FROM public.user_blocks WHERE blocker_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444') OR blocked_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 DELETE FROM public.push_delivery_events WHERE recipient_user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 DELETE FROM public.push_device_tokens WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 DELETE FROM public.feed_replies WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+DELETE FROM public.feed_reactions WHERE user_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+DELETE FROM public.feed_comments WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friends WHERE user_id_1 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR user_id_2 IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.friend_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.direct_messages WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');

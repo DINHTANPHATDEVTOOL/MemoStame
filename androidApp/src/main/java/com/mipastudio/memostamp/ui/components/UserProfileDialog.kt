@@ -30,7 +30,9 @@ fun UserProfileDialog(
     onOpenChat: () -> Unit = {},
     onSendTrade: () -> Unit = {},
     onAddFriend: () -> Unit = {},
-    onUnfriend: () -> Unit = {}
+    onUnfriend: () -> Unit = {},
+    onBlock: () -> Unit = {},
+    onReport: () -> Unit = {}
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -262,6 +264,38 @@ fun UserProfileDialog(
                             Icon(Icons.Outlined.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Kết bạn 🤝", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                onReport()
+                                onDismiss()
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(14.dp), tint = SecondaryText)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Báo cáo", fontSize = 11.sp, color = SecondaryText)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                onBlock()
+                                onDismiss()
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentRed),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Outlined.Block, contentDescription = null, modifier = Modifier.size(14.dp), tint = AccentRed)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Chặn", fontSize = 11.sp, color = AccentRed)
                         }
                     }
                 }

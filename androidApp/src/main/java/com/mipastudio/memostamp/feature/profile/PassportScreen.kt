@@ -34,8 +34,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
+import com.mipastudio.memostamp.ui.components.BlockedUsersManagementDialog
 import com.mipastudio.memostamp.data.remote.CloudSyncEngine
 import com.mipastudio.memostamp.data.repository.UserAuthRepository
+import com.mipastudio.memostamp.data.remote.supabase.SupabaseBlockedUser
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig
 import com.mipastudio.memostamp.data.repository.StampRepository
 import com.mipastudio.memostamp.feature.profile.components.SupabaseConfigDialog
@@ -91,6 +93,8 @@ fun PassportScreen(
     var deletePassword by remember { mutableStateOf("") }
     var isDeletingAccount by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+    var showBlockedUsersDialog by remember { mutableStateOf(false) }
+    var blockedUsersList by remember { mutableStateOf<List<SupabaseBlockedUser>>(emptyList()) }
 
     val coverGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -978,6 +982,25 @@ fun PassportScreen(
 
                         HorizontalDivider(color = UIBorder)
 
+                        // 3.5 Blocked Users Action
+                        OutlinedButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val res = authRepo.getBlockedUsers()
+                                    blockedUsersList = res.getOrDefault(emptyList())
+                                    showBlockedUsersDialog = true
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.PersonOff, contentDescription = null, tint = PrimaryText, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Danh sách người dùng đã chặn", color = PrimaryText, fontWeight = FontWeight.SemiBold)
+                        }
+
+                        HorizontalDivider(color = UIBorder)
+
                         // 4. Logout Action
                         Button(
                             onClick = {
@@ -1122,6 +1145,26 @@ fun PassportScreen(
                     }
                 },
                 containerColor = SurfaceWhite
+            )
+        }
+
+        if (showBlockedUsersDialog) {
+            BlockedUsersManagementDialog(
+                blockedUsers = blockedUsersList,
+                allAccounts = allAccounts,
+                onUnblock = { unblockUid ->
+                    coroutineScope.launch {
+                        val res = authRepo.unblockUser(unblockUid)
+                        if (res.isSuccess) {
+                            Toast.makeText(context, "Đã bỏ chặn người dùng", Toast.LENGTH_SHORT).show()
+                            val refreshed = authRepo.getBlockedUsers()
+                            blockedUsersList = refreshed.getOrDefault(emptyList())
+                        } else {
+                            Toast.makeText(context, "Lỗi bỏ chặn: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                onDismiss = { showBlockedUsersDialog = false }
             )
         }
 

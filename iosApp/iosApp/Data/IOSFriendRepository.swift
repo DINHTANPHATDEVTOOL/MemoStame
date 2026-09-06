@@ -349,4 +349,65 @@ class IOSFriendRepository: ObservableObject {
             }
         }
     }
+
+    func blockUser(blockedId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        SupabaseSocialClient.shared.blockUserRpc(blockedId: blockedId) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    self?.loadCloudData()
+                    completion(.success(()))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        }
+    }
+
+    func unblockUser(blockedId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        SupabaseSocialClient.shared.unblockUserRpc(blockedId: blockedId) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    completion(.success(()))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        }
+    }
+
+    func reportUser(
+        reportedUserId: String,
+        category: String,
+        note: String? = nil,
+        entityType: String? = nil,
+        entityId: String? = nil,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        SupabaseSocialClient.shared.reportUserRpc(
+            reportedUserId: reportedUserId,
+            category: category,
+            note: note,
+            entityType: entityType,
+            entityId: entityId
+        ) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    completion(.success(()))
+                case .failure(let err):
+                    completion(.failure(err))
+                }
+            }
+        }
+    }
+
+    func loadBlockedUsers(completion: @escaping (Result<[SupabaseBlockedUserRecord], Error>) -> Void) {
+        SupabaseSocialClient.shared.fetchBlockedUsers { result in
+            DispatchQueue.main.async {
+                completion(result)
+            }
+        }
+    }
 }
