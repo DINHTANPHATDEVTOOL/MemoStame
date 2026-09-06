@@ -102,11 +102,12 @@ def sanitize_text(text: str) -> str:
 
 
 def get_local_config():
-    """Retrieve local Supabase URL and anon key safely."""
+    """Retrieve local Supabase URL, anon key, and service_role key safely."""
     supabase_url = os.environ.get("SUPABASE_URL")
     anon_key = os.environ.get("SUPABASE_ANON_KEY")
+    service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
-    if not supabase_url or not anon_key:
+    if not supabase_url or not anon_key or not service_role_key:
         # Try supabase status -o json
         try:
             proc = subprocess.run(
@@ -119,6 +120,7 @@ def get_local_config():
             data = json.loads(proc.stdout)
             supabase_url = supabase_url or data.get("API_URL") or data.get("api_url")
             anon_key = anon_key or data.get("ANON_KEY") or data.get("anon_key")
+            service_role_key = service_role_key or data.get("SERVICE_ROLE_KEY") or data.get("service_role_key")
         except Exception:
             pass
 
@@ -136,7 +138,7 @@ def get_local_config():
         print("[FATAL] Missing SUPABASE_ANON_KEY from environment or 'supabase status'", file=sys.stderr)
         sys.exit(1)
 
-    return supabase_url.rstrip("/"), anon_key
+    return supabase_url.rstrip("/"), anon_key, service_role_key
 
 
 def discover_mail_catcher_url() -> str:
@@ -296,9 +298,10 @@ def parse_recovery_redirect(location_url: str) -> dict:
 
 
 class SupabaseHttpClient:
-    def __init__(self, base_url: str, anon_key: str):
+    def __init__(self, base_url: str, anon_key: str, service_role_key: str = None):
         self.base_url = base_url
         self.anon_key = anon_key
+        self.service_role_key = service_role_key
 
     def request(self, method: str, path: str, token: str = None, json_data=None, raw_body: bytes = None,
                 content_type: str = None, headers: dict = None):
@@ -309,6 +312,8 @@ class SupabaseHttpClient:
         }
         if token:
             req_headers["Authorization"] = f"Bearer {token}"
+            if self.service_role_key and token == self.service_role_key:
+                req_headers["apikey"] = self.service_role_key
         if headers:
             req_headers.update(headers)
 
@@ -348,8 +353,9 @@ class SupabaseHttpClient:
 
 
 class E2EContractRunner:
-    def __init__(self, client: SupabaseHttpClient):
+    def __init__(self, client: SupabaseHttpClient, service_role_key: str = None):
         self.client = client
+        self.service_role_key = service_role_key
         self.run_id = secrets.token_hex(4)
         self.users = {}  # "A", "B", "C" -> {"email", "password", "uid", "token"}
 
@@ -3436,8 +3442,14 @@ class E2EContractRunner:
         assert "RATE_LIMITED" in txt, f"Expected RATE_LIMITED in 6th report response, got {txt}"
 
         # Case 15: No additional moderation row after limit
-        st, rep_rows, _, _ = self.client.request("GET", f"/rest/v1/user_reports?reporter_id=eq.{reporter['uid']}", token=reporter["token"])
-        assert len(rep_rows) == 5, f"Expected exactly 5 reports recorded, found {len(rep_rows)}"
+        # 1. Normal clients cannot read moderation rows (moderation privacy)
+        st, client_rep_rows, _, _ = self.client.request("GET", f"/rest/v1/user_reports?reporter_id=eq.{reporter['uid']}", token=reporter["token"])
+        assert len(client_rep_rows) == 0, f"Moderation privacy leak: client saw user_reports rows: {client_rep_rows}"
+
+        # 2. Server/moderation ledger contains exactly 5 reports (6th rate-limited report created no row)
+        if self.service_role_key:
+            st, admin_rep_rows, _, _ = self.client.request("GET", f"/rest/v1/user_reports?reporter_id=eq.{reporter['uid']}", token=self.service_role_key)
+            assert len(admin_rep_rows) == 5, f"Expected exactly 5 reports recorded in moderation ledger, found {len(admin_rep_rows)}"
 
         # Cases 16 & 17: Stamp Trade Creation Throttling (10 / hr)
         self.log("PHASE 13", "Cases 16-17: Testing Stamp Trade creation throttle (10 / hr)...")
@@ -3587,9 +3599,9 @@ class E2EContractRunner:
 
 
 def main():
-    base_url, anon_key = get_local_config()
-    client = SupabaseHttpClient(base_url, anon_key)
-    runner = E2EContractRunner(client)
+    base_url, anon_key, service_role_key = get_local_config()
+    client = SupabaseHttpClient(base_url, anon_key, service_role_key=service_role_key)
+    runner = E2EContractRunner(client, service_role_key=service_role_key)
     try:
         runner.run_all()
     except Exception as e:
