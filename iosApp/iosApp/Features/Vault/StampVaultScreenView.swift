@@ -609,7 +609,7 @@ struct CreateAlbumSheetView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var albumName: String = ""
     @State private var albumDesc: String = ""
-    @State private var selectedIconKey: String = MemoStampIconKey.nature.rawValue
+    @State private var selectedIconKey: String = MemoStampIconKey.nature.key
     @State private var selectedPrivacy: String = "FRIENDS"
 
     let albumIcons: [MemoStampIconKey] = [
@@ -661,14 +661,14 @@ struct CreateAlbumSheetView: View {
                             .foregroundColor(MSColors.ink)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
-                                ForEach(albumIcons, id: \.rawValue) { iconKey in
-                                    MemoStampIcon(key: iconKey, size: 22, color: selectedIconKey == iconKey.rawValue ? MSColors.stamp : MSColors.ink)
+                                ForEach(albumIcons, id: \.key) { iconKey in
+                                    MemoStampIcon(key: iconKey.key, size: 22, color: selectedIconKey == iconKey.key ? MSColors.stamp : MSColors.ink)
                                         .padding(10)
-                                        .background(selectedIconKey == iconKey.rawValue ? MSColors.stamp.opacity(0.15) : Color.white)
+                                        .background(selectedIconKey == iconKey.key ? MSColors.stamp.opacity(0.15) : Color.white)
                                         .cornerRadius(10)
-                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedIconKey == iconKey.rawValue ? MSColors.stamp : Color.gray.opacity(0.2), lineWidth: 1.5))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedIconKey == iconKey.key ? MSColors.stamp : Color.gray.opacity(0.2), lineWidth: 1.5))
                                         .onTapGesture {
-                                            selectedIconKey = iconKey.rawValue
+                                            selectedIconKey = iconKey.key
                                         }
                                 }
                             }

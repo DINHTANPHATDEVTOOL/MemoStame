@@ -9,7 +9,8 @@ import SwiftUI
  * - Dark Mode safe and Dynamic Type layout safe
  * - No emoji fallback for first-party controls
  */
-public enum MemoStampIconKey: String, CaseIterable {
+public enum MemoStampIconKey: String, CaseIterable, Identifiable {
+    public var id: String { rawValue }
     // Platform & Actions
     case location = "location"
     case search = "search"
