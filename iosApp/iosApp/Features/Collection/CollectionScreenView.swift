@@ -30,11 +30,10 @@ struct CollectionScreenView: View {
     }
 
     var currentUserName: String {
-        let auth = repository.authRepository.currentUser.value
-        let display = auth.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !display.isEmpty { return display }
-        let username = auth.username.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !username.isEmpty { return username }
+        if let user = repository.currentUser.value as? UserProfile {
+            let name = user.name.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            if !name.isEmpty { return name }
+        }
         return "Collector"
     }
 
@@ -277,7 +276,7 @@ struct BookCoverShape: Shape {
         path.addLine(to: CGPoint(x: 0, y: topLeading))
         path.addQuadCurve(to: CGPoint(x: topLeading, y: 0), control: CGPoint(x: 0, y: 0))
 
-        path.finish()
+        path.closeSubpath()
         return path
     }
 }
