@@ -7146,6 +7146,384 @@
           }
         }
       }
+    },
+    "book_archival_blank_page": {
+      "comment": "Localization key book_archival_blank_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archival Blank Page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang lưu trữ trống"
+          }
+        }
+      }
+    },
+    "book_close": {
+      "comment": "Localization key book_close",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close book"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng sách"
+          }
+        }
+      }
+    },
+    "book_created_date_format": {
+      "comment": "Localization key book_created_date_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngày tạo: %s"
+          }
+        }
+      }
+    },
+    "book_curator_format": {
+      "comment": "Localization key book_curator_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curator: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người lưu giữ: %s"
+          }
+        }
+      }
+    },
+    "book_drag_hint": {
+      "comment": "Localization key book_drag_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag page edge to turn"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuốt mép trang để lật"
+          }
+        }
+      }
+    },
+    "book_empty_page_hint": {
+      "comment": "Localization key book_empty_page_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamps on this page yet"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có con tem nào trên trang này"
+          }
+        }
+      }
+    },
+    "book_end_of_album": {
+      "comment": "Localization key book_end_of_album",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End of Album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hết cuốn album"
+          }
+        }
+      }
+    },
+    "book_inside_cover_title": {
+      "comment": "Localization key book_inside_cover_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CURATED MEMORY COLLECTION"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BỘ SƯU TẬP TEM KỶ NIỆM"
+          }
+        }
+      }
+    },
+    "book_legacy_default_location": {
+      "comment": "Localization key book_legacy_default_location",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General Memories"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kỷ niệm chung"
+          }
+        }
+      }
+    },
+    "book_legacy_desc_format": {
+      "comment": "Localization key book_legacy_desc_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory stamp collection at %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập tem kỷ niệm tại %s"
+          }
+        }
+      }
+    },
+    "book_page_number_format": {
+      "comment": "Localization key book_page_number_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page %d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang %d"
+          }
+        }
+      }
+    },
+    "book_shelf_collected_format": {
+      "comment": "Localization key book_shelf_collected_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%s collected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%s đã sưu tầm"
+          }
+        }
+      }
+    },
+    "book_shelf_empty_desc": {
+      "comment": "Localization key book_shelf_empty_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture and save stamps from camera to curate vintage postal albums!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy chụp và lưu tem từ máy ảnh để tự động lưu giữ album bưu chính!"
+          }
+        }
+      }
+    },
+    "book_shelf_empty_title": {
+      "comment": "Localization key book_shelf_empty_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamp collections yet"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bộ sưu tập tem nào"
+          }
+        }
+      }
+    },
+    "book_shelf_subtitle": {
+      "comment": "Localization key book_shelf_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curated Memory Collections • Tap book to open"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập tem kỷ niệm • Chạm vào sách để mở"
+          }
+        }
+      }
+    },
+    "book_shelf_title": {
+      "comment": "Localization key book_shelf_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STAMP ALBUMS"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ALBUM TEM"
+          }
+        }
+      }
+    },
+    "book_spread_next": {
+      "comment": "Localization key book_spread_next",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next spread"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đôi sau"
+          }
+        }
+      }
+    },
+    "book_spread_page_indicator": {
+      "comment": "Localization key book_spread_page_indicator",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spread %1$d / %2$d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đôi %1$d / %2$d"
+          }
+        }
+      }
+    },
+    "book_spread_prev": {
+      "comment": "Localization key book_spread_prev",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous spread"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đôi trước"
+          }
+        }
+      }
+    },
+    "book_tap_to_open": {
+      "comment": "Localization key book_tap_to_open",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to open album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để mở album"
+          }
+        }
+      }
+    },
+    "book_total_stamps_format": {
+      "comment": "Localization key book_total_stamps_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total stamps: %d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng số tem: %d"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

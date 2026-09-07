@@ -397,4 +397,25 @@
     <string name="vault_tab_collected">Được tặng (%d)</string>
     <string name="vault_tab_created">Đã tạo (%d)</string>
     <string name="vault_title">Kho tem bưu chính</string>
+    <string name="book_shelf_title">ALBUM TEM</string>
+    <string name="book_shelf_subtitle">Bộ sưu tập tem kỷ niệm • Chạm vào sách để mở</string>
+    <string name="book_shelf_empty_title">Chưa có bộ sưu tập tem nào</string>
+    <string name="book_shelf_empty_desc">Hãy chụp và lưu tem từ máy ảnh để tự động lưu giữ album bưu chính!</string>
+    <string name="book_shelf_collected_format">%s đã sưu tầm</string>
+    <string name="book_legacy_default_location">Kỷ niệm chung</string>
+    <string name="book_legacy_desc_format">Bộ sưu tập tem kỷ niệm tại %s</string>
+    <string name="book_spread_page_indicator">Trang đôi %1$d / %2$d</string>
+    <string name="book_spread_prev">Trang đôi trước</string>
+    <string name="book_spread_next">Trang đôi sau</string>
+    <string name="book_close">Đóng sách</string>
+    <string name="book_inside_cover_title">BỘ SƯU TẬP TEM KỶ NIỆM</string>
+    <string name="book_curator_format">Người lưu giữ: %s</string>
+    <string name="book_total_stamps_format">Tổng số tem: %d</string>
+    <string name="book_created_date_format">Ngày tạo: %s</string>
+    <string name="book_archival_blank_page">Trang lưu trữ trống</string>
+    <string name="book_empty_page_hint">Chưa có con tem nào trên trang này</string>
+    <string name="book_tap_to_open">Chạm để mở album</string>
+    <string name="book_end_of_album">Hết cuốn album</string>
+    <string name="book_drag_hint">Vuốt mép trang để lật</string>
+    <string name="book_page_number_format">Trang %d</string>
 </resources>
