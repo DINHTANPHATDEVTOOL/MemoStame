@@ -172,12 +172,13 @@ class ChatRepository internal constructor(
                                 InAppNotificationManager.show(
                                     InAppBanner(
                                         id = "msg_${msg.id}",
-                                        title = "💬 Tin nhắn từ ${msg.senderName}",
+                                        title = "Tin nhắn từ ${msg.senderName}",
                                         message = bannerText,
                                         avatarUrl = msg.senderAvatar,
-                                        iconEmoji = "💬",
+                                        iconEmoji = "chat",
                                         targetRoute = "chat/${msg.senderId}",
-                                        senderName = msg.senderName
+                                        senderName = msg.senderName,
+                                        iconKey = "chat"
                                     )
                                 )
                             } catch (_: Throwable) {
@@ -290,12 +291,13 @@ class ChatRepository internal constructor(
                     InAppNotificationManager.show(
                         InAppBanner(
                             id = "msg_${incoming.id}",
-                            title = "💬 Tin nhắn từ ${incoming.senderName}",
+                            title = "Tin nhắn từ ${incoming.senderName}",
                             message = incoming.text,
                             avatarUrl = incoming.senderAvatar,
-                            iconEmoji = "💬",
+                            iconEmoji = "chat",
                             targetRoute = "chat/${incoming.senderId}",
-                            senderName = incoming.senderName
+                            senderName = incoming.senderName,
+                            iconKey = "chat"
                         )
                     )
                 } catch (e: Throwable) {

@@ -490,7 +490,9 @@ struct CameraScreenView: View {
 
                     if let replyId = replyToPostId {
                         HStack(spacing: 6) {
-                            Text("📮")
+                            MemoStampIcon(key: MemoStampIconKey.replyStamp.key, contentDescription: "Reply")
+                                .frame(width: 14, height: 14)
+                                .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))
                             Text("REPLYING TO POST #\(String(replyId.prefix(4)))")
                                 .font(.caption.bold())
                                 .foregroundColor(Color(red: 0.82, green: 0.65, blue: 0.35))

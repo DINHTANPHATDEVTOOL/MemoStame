@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FeedSeenEntity::class,
         UserEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class MemoStampDatabase : RoomDatabase() {
@@ -423,6 +423,12 @@ abstract class MemoStampDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE collections ADD COLUMN iconKey TEXT DEFAULT NULL")
+            }
+        }
+
         fun getInstance(context: Context): MemoStampDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -434,7 +440,8 @@ abstract class MemoStampDatabase : RoomDatabase() {
                     MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
                     getMigration10To11(context.applicationContext),
                     getMigration11To12(context.applicationContext),
-                    getMigration12To13(context.applicationContext)
+                    getMigration12To13(context.applicationContext),
+                    MIGRATION_13_14
                 )
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }

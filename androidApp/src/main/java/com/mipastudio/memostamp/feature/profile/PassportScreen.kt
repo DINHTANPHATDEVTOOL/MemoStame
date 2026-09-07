@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mipastudio.memostamp.R
+import com.mipastudio.memostamp.domain.model.MemoStampIconKey
+import com.mipastudio.memostamp.ui.icon.MemoStampIcon
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
 import com.mipastudio.memostamp.ui.components.BlockedUsersManagementDialog
@@ -72,16 +74,16 @@ fun PassportScreen(
                 com.mipastudio.memostamp.domain.model.PassportVisa(
                     countryOrCity = stamp.location.orEmpty().ifBlank { stamp.title },
                     date = "Stamp #${stamp.id.take(6).uppercase()}",
-                    category = "✈ Travel",
+                    category = "Travel",
                     stampCode = "#${stamp.id.take(8).uppercase()}"
                 )
             }
         } else {
             listOf(
-                com.mipastudio.memostamp.domain.model.PassportVisa("Đà Lạt", "12 Aug 2026", "✈ Travel", "#DL-2026-00192"),
-                com.mipastudio.memostamp.domain.model.PassportVisa("Sài Gòn", "10 Aug 2026", "☕ Coffee", "#SG-2026-00088"),
-                com.mipastudio.memostamp.domain.model.PassportVisa("Vũng Tàu", "02 Aug 2026", "🏖 Beach", "#VT-2026-00304"),
-                com.mipastudio.memostamp.domain.model.PassportVisa("Đại Học", "15 Jul 2026", "🎓 Graduation", "#GRAD-2026-0001")
+                com.mipastudio.memostamp.domain.model.PassportVisa("Đà Lạt", "12 Aug 2026", "Travel", "#DL-2026-00192"),
+                com.mipastudio.memostamp.domain.model.PassportVisa("Sài Gòn", "10 Aug 2026", "Coffee", "#SG-2026-00088"),
+                com.mipastudio.memostamp.domain.model.PassportVisa("Vũng Tàu", "02 Aug 2026", "Beach", "#VT-2026-00304"),
+                com.mipastudio.memostamp.domain.model.PassportVisa("Đại Học", "15 Jul 2026", "Graduation", "#GRAD-2026-0001")
             )
         }
     }
@@ -261,7 +263,14 @@ fun PassportScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
-                                Text("📮 Passport Cover", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                                MemoStampIcon(
+                                    iconKey = MemoStampIconKey.PASSPORT,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = PrimaryText
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Passport Cover", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                             }
                         }
                     }
@@ -334,13 +343,24 @@ fun PassportScreen(
                     shape = RoundedCornerShape(8.dp),
                     color = AccentBlueSoft
                 ) {
-                    Text(
-                        text = "📍 ${currentUser.city.ifBlank { "Đà Lạt" }}",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AccentBlue,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                    ) {
+                        MemoStampIcon(
+                            iconKey = MemoStampIconKey.LOCATION,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp),
+                            tint = AccentBlue
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = currentUser.city.ifBlank { "Đà Lạt" },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentBlue
+                        )
+                    }
                 }
             }
 
@@ -813,7 +833,12 @@ fun PassportScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("📮", fontSize = 32.sp)
+                                MemoStampIcon(
+                                    iconKey = MemoStampIconKey.POSTMARK,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
+                                    tint = AccentRed
+                                )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text("@${currentUser.username}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                                 Text("ID: ${currentUser.userId.take(8)}", fontSize = 10.sp, color = SecondaryText)
@@ -939,7 +964,11 @@ fun PassportScreen(
                         HorizontalDivider(color = UIBorder)
 
                         // 3. Change Password Section
-                        Text("🔒 " + stringResource(R.string.settings_update_password), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.size(14.dp), tint = PrimaryText)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(stringResource(R.string.settings_update_password), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        }
                         OutlinedTextField(
                             value = currentPassword,
                             onValueChange = { currentPassword = it },
@@ -976,30 +1005,30 @@ fun PassportScreen(
                             onClick = {
                                 if (isPasswordUpdating) return@Button
                                 if (currentPassword.isBlank()) {
-                                    passMessage = "⚠️ " + context.getString(R.string.auth_err_empty_identifier)
+                                    passMessage = context.getString(R.string.auth_err_empty_identifier)
                                     return@Button
                                 }
                                 if (newPassword.length < 6) {
-                                    passMessage = "⚠️ " + context.getString(R.string.auth_err_password_too_short)
+                                    passMessage = context.getString(R.string.auth_err_password_too_short)
                                     return@Button
                                 }
                                 if (newPassword != confirmPassword) {
-                                    passMessage = "⚠️ " + context.getString(R.string.auth_err_password_match)
+                                    passMessage = context.getString(R.string.auth_err_password_match)
                                     return@Button
                                 }
                                 isPasswordUpdating = true
-                                passMessage = "⏳ …"
+                                passMessage = "…"
                                 coroutineScope.launch {
                                     val res = authRepo.updatePassword(currentPassword, newPassword)
                                     isPasswordUpdating = false
                                     if (res.isSuccess) {
-                                        passMessage = "✅ " + context.getString(R.string.settings_password_updated)
+                                        passMessage = context.getString(R.string.settings_password_updated)
                                         currentPassword = ""
                                         newPassword = ""
                                         confirmPassword = ""
                                     } else {
                                         val err = res.exceptionOrNull()?.message ?: context.getString(R.string.common_error)
-                                        passMessage = "⚠️ $err"
+                                        passMessage = err
                                     }
                                 }
                             },
@@ -1150,7 +1179,7 @@ fun PassportScreen(
                         onClick = {
                             if (isDeletingAccount) return@Button
                             if (deletePassword.isBlank()) {
-                                deleteError = "⚠️ " + context.getString(R.string.auth_err_empty_identifier)
+                                deleteError = context.getString(R.string.auth_err_empty_identifier)
                                 return@Button
                             }
                             isDeletingAccount = true
@@ -1165,7 +1194,7 @@ fun PassportScreen(
                                     onLogout()
                                 } else {
                                     val err = result.exceptionOrNull()?.message ?: context.getString(R.string.common_error)
-                                    deleteError = "⚠️ $err"
+                                    deleteError = err
                                 }
                             }
                         },

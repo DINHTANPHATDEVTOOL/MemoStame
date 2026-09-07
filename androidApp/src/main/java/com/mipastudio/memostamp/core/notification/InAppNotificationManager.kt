@@ -14,10 +14,11 @@ data class InAppBanner(
     val title: String,
     val message: String,
     val avatarUrl: String? = null,
-    val iconEmoji: String = "🔔",
+    val iconEmoji: String = "",
     val targetRoute: String,
     val senderName: String? = null,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val iconKey: String = com.mipastudio.memostamp.domain.model.MemoStampLegacyMigration.mapLegacyNotification(iconEmoji)
 )
 
 object InAppNotificationManager {

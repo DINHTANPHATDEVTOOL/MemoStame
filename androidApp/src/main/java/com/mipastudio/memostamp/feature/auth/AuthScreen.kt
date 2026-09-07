@@ -91,7 +91,7 @@ fun AuthScreen(
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300"
     )
 
-    val cities = listOf("Đà Lạt 🌸", "Sài Gòn 🏙️", "Hà Nội 🏛️", "Nha Trang 🌊", "Hội An 🏮")
+    val cities = listOf("Đà Lạt", "Sài Gòn", "Hà Nội", "Nha Trang", "Hội An")
 
     fun handleLogin() {
         if (identifier.isBlank()) {

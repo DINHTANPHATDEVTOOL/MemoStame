@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+import com.mipastudio.memostamp.domain.model.MemoStampIconKey
+
 enum class AppThemeStyle(
     val id: String,
     val title: String,
@@ -19,7 +21,8 @@ enum class AppThemeStyle(
     val emoji: String,
     val previewPrimary: Color,
     val previewBg: Color,
-    val isDark: Boolean
+    val isDark: Boolean,
+    val iconKey: String = MemoStampIconKey.THEME.key
 ) {
     VINTAGE_POSTAL(
         id = "vintage",
@@ -28,7 +31,8 @@ enum class AppThemeStyle(
         emoji = "📜",
         previewPrimary = Color(0xFFE54B4B),
         previewBg = Color(0xFFF9F6F0),
-        isDark = false
+        isDark = false,
+        iconKey = MemoStampIconKey.POSTMARK.key
     ),
     CHERRY_BLOSSOM(
         id = "cherry",
@@ -37,7 +41,8 @@ enum class AppThemeStyle(
         emoji = "🌸",
         previewPrimary = Color(0xFFE86A92),
         previewBg = Color(0xFFFFF5F7),
-        isDark = false
+        isDark = false,
+        iconKey = MemoStampIconKey.SPECIAL.key
     ),
     BOTANICAL_SAGE(
         id = "sage",
@@ -46,7 +51,8 @@ enum class AppThemeStyle(
         emoji = "🌿",
         previewPrimary = Color(0xFF3B7A57),
         previewBg = Color(0xFFF4F6F2),
-        isDark = false
+        isDark = false,
+        iconKey = MemoStampIconKey.PEACEFUL.key
     ),
     MIDNIGHT_VAULT(
         id = "midnight",
@@ -55,7 +61,8 @@ enum class AppThemeStyle(
         emoji = "🌙",
         previewPrimary = Color(0xFFA78BFA),
         previewBg = Color(0xFF0F172A),
-        isDark = true
+        isDark = true,
+        iconKey = MemoStampIconKey.THEME.key
     ),
     OCEAN_BREEZE(
         id = "ocean",
@@ -64,7 +71,8 @@ enum class AppThemeStyle(
         emoji = "🌊",
         previewPrimary = Color(0xFF0284C7),
         previewBg = Color(0xFFF0F9FF),
-        isDark = false
+        isDark = false,
+        iconKey = MemoStampIconKey.TRAVEL.key
     )
 }
 

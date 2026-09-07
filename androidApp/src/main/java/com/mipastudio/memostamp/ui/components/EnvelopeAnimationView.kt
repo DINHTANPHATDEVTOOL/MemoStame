@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MarkEmailRead
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,7 +49,7 @@ fun EnvelopeModal(
             modifier = Modifier.padding(24.dp)
         ) {
             Text(
-                text = if (isOpen) "🎁 MEMORY UNLOCKED!" else "💌 YOU HAVE A NEW MEMORY",
+                text = if (isOpen) "MEMORY UNLOCKED!" else "YOU HAVE A NEW MEMORY",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 color = StampCreamBg,
@@ -94,10 +95,11 @@ fun EnvelopeModal(
                                 .border(2.dp, VintageGold, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "✉",
-                                fontSize = 32.sp,
-                                color = StampCreamBg
+                            Icon(
+                                imageVector = Icons.Outlined.Mail,
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp),
+                                tint = StampCreamBg
                             )
                         }
 

@@ -439,9 +439,14 @@ struct PostCardView: View {
                     }
 
                     if let loc = post.location, !loc.isEmpty {
-                        Text("📍 " + loc)
-                            .font(.caption2.bold())
-                            .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
+                        HStack(spacing: 3) {
+                            MemoStampIcon(key: MemoStampIconKey.location.key, contentDescription: loc)
+                                .frame(width: 10, height: 10)
+                                .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
+                            Text(loc)
+                                .font(.caption2.bold())
+                                .foregroundColor(Color(red: 0.20, green: 0.45, blue: 0.75))
+                        }
                     }
                 }
 
@@ -647,11 +652,15 @@ struct MiniStampReplyCardView: View {
 
                     if let url = reply.replyStampUrl, !url.isEmpty {
                         MemoStampImageView(urlString: url, contentMode: .fit) {
-                            Text("📮").font(.system(size: 24))
+                            MemoStampIcon(key: MemoStampIconKey.stamp.key, contentDescription: "Stamp")
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(MSColors.stamp)
                         }
                         .padding(4)
                     } else {
-                        Text("📮").font(.system(size: 24))
+                        MemoStampIcon(key: MemoStampIconKey.stamp.key, contentDescription: "Stamp")
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(MSColors.stamp)
                     }
                 }
                 .frame(width: 68, height: 76)
@@ -718,12 +727,16 @@ struct ReplyLightboxView: View, Identifiable {
 
                 if let url = reply.replyStampUrl, !url.isEmpty {
                     MemoStampImageView(urlString: url, contentMode: .fit) {
-                        Text("📮").font(.system(size: 60))
+                        MemoStampIcon(key: MemoStampIconKey.stamp.key, contentDescription: "Stamp")
+                            .frame(width: 56, height: 56)
+                            .foregroundColor(MSColors.stamp)
                     }
                     .frame(width: 208, height: 263)
                     .cornerRadius(10)
                 } else {
-                    Text("📮").font(.system(size: 60))
+                    MemoStampIcon(key: MemoStampIconKey.stamp.key, contentDescription: "Stamp")
+                        .frame(width: 56, height: 56)
+                        .foregroundColor(MSColors.stamp)
                 }
             }
 
@@ -858,7 +871,7 @@ class HomeObservableViewModel: ObservableObject {
             username: "user_memostamp",
             displayName: "MemoStamp Collector",
             avatarUrl: nil,
-            bio: "Sưu tầm ký ức qua từng con tem bưu chính 📮",
+            bio: "Sưu tầm ký ức qua từng con tem bưu chính",
             stampsCreatedCount: Int32(0),
             stampsCollectedCount: Int32(0),
             placesVisitedCount: Int32(0)

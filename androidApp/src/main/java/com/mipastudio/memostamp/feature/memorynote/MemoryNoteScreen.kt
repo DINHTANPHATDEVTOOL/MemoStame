@@ -68,14 +68,14 @@ fun MemoryNoteScreen(
     var showAudienceSheet by remember { mutableStateOf(false) }
 
     val moods = listOf(
-        "😊" to "Happy",
-        "❤️" to "Love",
-        "✈️" to "Travel",
-        "☕" to "Chill",
-        "🔥" to "Excited",
-        "📜" to "Nostalgic",
-        "🌿" to "Peaceful",
-        "✨" to "Special"
+        "happy" to "Happy",
+        "love" to "Love",
+        "travel" to "Travel",
+        "chill" to "Chill",
+        "excited" to "Excited",
+        "nostalgic" to "Nostalgic",
+        "peaceful" to "Peaceful",
+        "special" to "Special"
     )
 
     LaunchedEffect(draft.renderedImagePath, draftId) {
@@ -229,10 +229,19 @@ fun MemoryNoteScreen(
                         )
                         HorizontalDivider(color = UIBorder, modifier = Modifier.padding(start = 52.dp))
                     }
+                    val resolvedMoodKey = com.mipastudio.memostamp.domain.model.MemoStampLegacyMigration.mapLegacyMood(uiState.mood)
+                    val moodDisplayName = moods.find { it.first == resolvedMoodKey }?.second ?: "Special"
                     MemoryMetaRow(
-                        icon = { Icon(Icons.Outlined.Mood, null, tint = SecondaryText, modifier = Modifier.size(20.dp)) },
+                        icon = {
+                            com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                iconKey = resolvedMoodKey,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = SecondaryText
+                            )
+                        },
                         title = "Mood",
-                        value = uiState.mood?.takeIf { it.isNotBlank() } ?: "Add",
+                        value = if (!uiState.mood.isNullOrBlank()) moodDisplayName else "Add",
                         accentValue = !uiState.mood.isNullOrBlank(),
                         onClick = { showMoodSheet = true }
                     )
@@ -248,7 +257,7 @@ fun MemoryNoteScreen(
                     MemoryMetaRow(
                         icon = { Icon(Icons.Outlined.Visibility, null, tint = SecondaryText, modifier = Modifier.size(20.dp)) },
                         title = stringResource(R.string.audience_privacy_title),
-                        value = "${uiState.audienceType.icon} ${stringResource(uiState.audienceType.labelRes)}",
+                        value = stringResource(uiState.audienceType.labelRes),
                         accentValue = true,
                         onClick = { showAudienceSheet = true }
                     )
@@ -292,7 +301,12 @@ fun MemoryNoteScreen(
                             modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(audience.icon, fontSize = 24.sp)
+                            com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                iconKey = audience.iconKey,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = if (selected) AccentRed else PrimaryText
+                            )
                             Spacer(modifier = Modifier.width(14.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -339,20 +353,26 @@ fun MemoryNoteScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.heightIn(max = 340.dp)
                 ) {
-                    items(moods) { (emoji, label) ->
-                        val selected = uiState.mood == emoji
+                    items(moods) { (moodKey, label) ->
+                        val resolvedCurrent = com.mipastudio.memostamp.domain.model.MemoStampLegacyMigration.mapLegacyMood(uiState.mood)
+                        val selected = resolvedCurrent == moodKey
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(if (selected) AccentRedSoft else SurfaceSoft)
                                 .clickable {
-                                    viewModel.updateMood(emoji)
+                                    viewModel.updateMood(moodKey)
                                     showMoodSheet = false
                                 }
                                 .padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(emoji, fontSize = 20.sp)
+                            com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                iconKey = moodKey,
+                                contentDescription = label,
+                                modifier = Modifier.size(20.dp),
+                                tint = if (selected) AccentRed else PrimaryText
+                            )
                             Spacer(modifier = Modifier.width(9.dp))
                             Text(label, fontWeight = FontWeight.SemiBold, color = if (selected) AccentRed else PrimaryText)
                         }
@@ -373,7 +393,7 @@ fun MemoryNoteScreen(
                 Text("Choose a collection", style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(14.dp))
                 CollectionChoiceRow(
-                    emoji = "—",
+                    iconKey = null,
                     label = "No collection",
                     selected = uiState.collectionId == null
                 ) {
@@ -382,7 +402,7 @@ fun MemoryNoteScreen(
                 }
                 roomCollections.forEach { col ->
                     CollectionChoiceRow(
-                        emoji = col.iconEmoji ?: "•",
+                        iconKey = col.resolvedIconKey(),
                         label = col.name,
                         selected = uiState.collectionId == col.id
                     ) {
@@ -436,7 +456,7 @@ private fun MemoryMetaRow(
 
 @Composable
 private fun CollectionChoiceRow(
-    emoji: String,
+    iconKey: String?,
     label: String,
     selected: Boolean,
     onClick: () -> Unit
@@ -456,8 +476,16 @@ private fun CollectionChoiceRow(
                 .clip(RoundedCornerShape(11.dp))
                 .background(SurfaceSoft),
             contentAlignment = Alignment.Center
-        ) { Text(emoji) }
+        ) {
+            com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                iconKey = iconKey ?: com.mipastudio.memostamp.domain.model.MemoStampIconKey.COLLECTION.key,
+                contentDescription = label,
+                modifier = Modifier.size(18.dp),
+                tint = if (selected) AccentRed else SecondaryText
+            )
+        }
         Spacer(modifier = Modifier.width(12.dp))
         Text(label, fontWeight = FontWeight.SemiBold, color = if (selected) AccentRed else PrimaryText)
     }
 }
+

@@ -75,7 +75,7 @@ class StampRepository private constructor(
             title = entity.title,
             location = entity.location ?: "",
             memoryDate = entity.memoryDate,
-            mood = entity.mood ?: "✨",
+            mood = entity.mood ?: "special",
             note = entity.note,
             collectionId = entity.collectionId,
             filterId = entity.filterId,
@@ -96,7 +96,7 @@ class StampRepository private constructor(
             title = entity.title,
             location = entity.location ?: "",
             memoryDate = entity.memoryDate,
-            mood = entity.mood ?: "✨",
+            mood = entity.mood ?: "special",
             note = entity.note,
             collectionId = entity.collectionId,
             filterId = entity.filterId,
@@ -285,10 +285,10 @@ class StampRepository private constructor(
         val currentUserId = authRepo.currentUser.value.userId
         if (collectionDao.getCollectionCountByOwner(currentUserId) == 0) {
             val defaults = listOf(
-                CollectionEntity("col_${currentUserId}_travel_default", currentUserId, "Travel & Places", "Destinations, journeys and outdoor adventures", "✈️", null, System.currentTimeMillis(), 0, "SPECIAL", 12),
-                CollectionEntity("col_${currentUserId}_coffee_default", currentUserId, "Coffee & Food", "Cafes, meals and culinary experiences", "☕", null, System.currentTimeMillis(), 1, "NORMAL", 10),
-                CollectionEntity("col_${currentUserId}_daily_default", currentUserId, "Daily Life", "Everyday moments and small joys", "🌿", null, System.currentTimeMillis(), 2, "NORMAL", 15),
-                CollectionEntity("col_${currentUserId}_special_default", currentUserId, "Special Moments", "Anniversaries, celebrations and milestones", "🎉", null, System.currentTimeMillis(), 3, "SERIES", 8)
+                CollectionEntity("col_${currentUserId}_travel_default", currentUserId, "Travel & Places", "Destinations, journeys and outdoor adventures", "travel", null, System.currentTimeMillis(), 0, "SPECIAL", 12, "FRIENDS", "travel"),
+                CollectionEntity("col_${currentUserId}_coffee_default", currentUserId, "Coffee & Food", "Cafes, meals and culinary experiences", "cafe", null, System.currentTimeMillis(), 1, "NORMAL", 10, "FRIENDS", "cafe"),
+                CollectionEntity("col_${currentUserId}_daily_default", currentUserId, "Daily Life", "Everyday moments and small joys", "lifestyle", null, System.currentTimeMillis(), 2, "NORMAL", 15, "FRIENDS", "lifestyle"),
+                CollectionEntity("col_${currentUserId}_special_default", currentUserId, "Special Moments", "Anniversaries, celebrations and milestones", "special", null, System.currentTimeMillis(), 3, "SERIES", 8, "FRIENDS", "special")
             )
             for (col in defaults) {
                 collectionDao.insertCollection(col)
@@ -304,21 +304,25 @@ class StampRepository private constructor(
     suspend fun createCollection(
         name: String,
         description: String? = null,
-        iconEmoji: String? = "📁",
+        iconEmoji: String? = "collection",
         type: String = "NORMAL",
-        targetCount: Int = 12
+        targetCount: Int = 12,
+        iconKey: String? = null
     ): String = withContext(Dispatchers.IO) {
         val id = UUID.randomUUID().toString()
         val currentUserId = authRepo.currentUser.value.userId
+        val resolvedKey = iconKey ?: com.mipastudio.memostamp.domain.model.MemoStampLegacyMigration.mapLegacyCollectionIcon(iconEmoji)
         val entity = CollectionEntity(
             id = id,
             ownerId = currentUserId,
             name = name,
             description = description,
-            iconEmoji = iconEmoji,
+            iconEmoji = resolvedKey,
             createdAt = System.currentTimeMillis(),
             collectionType = type,
-            targetCount = targetCount
+            targetCount = targetCount,
+            privacy = "FRIENDS",
+            iconKey = resolvedKey
         )
         collectionDao.insertCollection(entity)
         id

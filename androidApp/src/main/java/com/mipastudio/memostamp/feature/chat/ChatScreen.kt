@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mipastudio.memostamp.R
+import com.mipastudio.memostamp.domain.model.MemoStampIconKey
+import com.mipastudio.memostamp.ui.icon.MemoStampIcon
 import com.mipastudio.memostamp.core.processor.MemoImageProcessor
 import com.mipastudio.memostamp.ui.components.BlockUserConfirmationDialog
 import com.mipastudio.memostamp.ui.components.ReportUserDialog
@@ -782,12 +784,21 @@ fun ChatScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "📍 ${msg.stampLocation ?: "Vietnam"}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AccentBlue
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MemoStampIcon(
+                            iconKey = MemoStampIconKey.LOCATION,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = AccentBlue
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = msg.stampLocation ?: "Vietnam",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AccentBlue
+                        )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = stringResource(R.string.chat_stamp_sender_label, msg.senderName),

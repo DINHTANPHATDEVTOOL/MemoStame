@@ -257,8 +257,7 @@ struct StampVaultScreenView: View {
                                 ForEach((repository.collections.value as? [CollectionItem]) ?? [], id: \.id) { col in
                                     VStack(alignment: .leading, spacing: 6) {
                                         HStack {
-                                            Text(col.iconEmoji)
-                                                .font(.system(size: 18))
+                                            MemoStampIcon(key: col.iconKey.isEmpty ? col.iconEmoji : col.iconKey, size: 18, color: MSColors.stamp)
                                             Spacer()
                                             Button(action: {
                                                 let authUid = SupabaseAuthService.shared.currentUserId ?? ""
@@ -476,13 +475,17 @@ struct StampDetailModalView: View {
             }
 
             if showExportToast {
-                Text("✓ Đã lưu con tem vào Thư viện ảnh!")
-                    .font(.caption.bold())
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.75))
-                    .cornerRadius(12)
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("Đã lưu con tem vào Thư viện ảnh!")
+                }
+                .font(.caption.bold())
+                .foregroundColor(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(Color.black.opacity(0.75))
+                .cornerRadius(12)
             }
 
             VStack(spacing: 10) {
@@ -606,10 +609,12 @@ struct CreateAlbumSheetView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var albumName: String = ""
     @State private var albumDesc: String = ""
-    @State private var selectedEmoji: String = "🏞️"
+    @State private var selectedIconKey: String = MemoStampIconKey.nature.rawValue
     @State private var selectedPrivacy: String = "FRIENDS"
 
-    let emojis = ["🏞️", "☕", "✈️", "📸", "💖", "🌲", "🎨", "👑", "🌸", "🍔"]
+    let albumIcons: [MemoStampIconKey] = [
+        .nature, .cafe, .travel, .camera, .heart, .art, .special, .flower, .food, .collection
+    ]
 
     private var currentUid: String {
         SupabaseAuthService.shared.currentUserId ?? ""
@@ -651,20 +656,19 @@ struct CreateAlbumSheetView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Biểu tượng Emoji")
+                        Text("Biểu tượng Album")
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
-                                ForEach(emojis, id: \.self) { emoji in
-                                    Text(emoji)
-                                        .font(.title2)
-                                        .padding(8)
-                                        .background(selectedEmoji == emoji ? MSColors.stamp.opacity(0.2) : Color.white)
+                                ForEach(albumIcons, id: \.rawValue) { iconKey in
+                                    MemoStampIcon(key: iconKey, size: 22, color: selectedIconKey == iconKey.rawValue ? MSColors.stamp : MSColors.ink)
+                                        .padding(10)
+                                        .background(selectedIconKey == iconKey.rawValue ? MSColors.stamp.opacity(0.15) : Color.white)
                                         .cornerRadius(10)
-                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedEmoji == emoji ? MSColors.stamp : Color.gray.opacity(0.2), lineWidth: 1.5))
+                                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedIconKey == iconKey.rawValue ? MSColors.stamp : Color.gray.opacity(0.2), lineWidth: 1.5))
                                         .onTapGesture {
-                                            selectedEmoji = emoji
+                                            selectedIconKey = iconKey.rawValue
                                         }
                                 }
                             }
@@ -712,7 +716,7 @@ struct CreateAlbumSheetView: View {
                         let name = albumName.trimmingCharacters(in: .whitespacesAndNewlines)
                         let authUid = SupabaseAuthService.shared.currentUserId ?? ""
                         if !name.isEmpty && IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) {
-                            _ = repository.createCollection(name: name, description: albumDesc, iconEmoji: selectedEmoji, privacy: selectedPrivacy)
+                            _ = repository.createCollection(name: name, description: albumDesc, iconEmoji: selectedIconKey, privacy: selectedPrivacy)
                             IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                             presentationMode.wrappedValue.dismiss()
                         }

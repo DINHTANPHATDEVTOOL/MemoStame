@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.mipastudio.memostamp.R
 import coil.compose.AsyncImage
+import com.mipastudio.memostamp.domain.model.MemoStampIconKey
+import com.mipastudio.memostamp.ui.icon.MemoStampIcon
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.data.repository.UserProfile
 
@@ -139,12 +141,29 @@ fun UserProfileDialog(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("STATUS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = StampSubtleInk, fontFamily = FontFamily.Monospace)
-                            Text(if (isFriend) "🤝 ${stringResource(R.string.profile_status_friend)}" else "👤 ${stringResource(R.string.profile_status_guest)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StampDarkInk)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = if (isFriend) Icons.Outlined.People else Icons.Outlined.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(13.dp),
+                                    tint = StampDarkInk
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (isFriend) stringResource(R.string.profile_status_friend) else stringResource(R.string.profile_status_guest), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StampDarkInk)
+                            }
                         }
                         Divider(modifier = Modifier.height(24.dp).width(1.dp), color = StampBorderDefault)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("SYNC", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = StampSubtleInk, fontFamily = FontFamily.Monospace)
-                            Text("🟢 ONLINE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(SuccessGreen, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("ONLINE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+                            }
                         }
                     }
                 }
@@ -176,10 +195,10 @@ fun UserProfileDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             val friendCollections = listOf(
-                                "✈️ " to user.city,
-                                "📮 " to "${user.totalStampsCount}"
+                                Triple(MemoStampIconKey.TRAVEL, user.city, "City"),
+                                Triple(MemoStampIconKey.STAMP, "${user.totalStampsCount}", "Stamps")
                             )
-                            friendCollections.forEach { (name, count) ->
+                            friendCollections.forEach { (iconKey, label, _) ->
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
                                     color = WarmPaperBg,
@@ -189,8 +208,14 @@ fun UserProfileDialog(
                                         modifier = Modifier.padding(6.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Text(name, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StampDarkInk, maxLines = 1)
-                                        Text(count, fontSize = 9.sp, color = StampSubtleInk)
+                                        MemoStampIcon(
+                                            iconKey = iconKey,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = StampDarkInk
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StampDarkInk, maxLines = 1)
                                         Text(stringResource(R.string.profile_status_friend), fontSize = 8.sp, color = SuccessGreen, fontWeight = FontWeight.SemiBold)
                                     }
                                 }

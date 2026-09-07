@@ -142,10 +142,19 @@ fun PostDetailScreen(
                                 )
                             )
                             if (!post.location.isNullOrBlank()) {
-                                Text(
-                                    text = "📍 ${post.location}",
-                                    style = MaterialTheme.typography.bodySmall.copy(color = AccentBlue, fontSize = 11.sp)
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                        iconKey = "location",
+                                        contentDescription = null,
+                                        modifier = Modifier.size(12.dp),
+                                        tint = AccentBlue
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = post.location,
+                                        style = MaterialTheme.typography.bodySmall.copy(color = AccentBlue, fontSize = 11.sp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -227,7 +236,16 @@ fun PostDetailScreen(
                             shape = RoundedCornerShape(20.dp),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                         ) {
-                            Text(text = "📮 Reply with Stamp", fontSize = 12.sp, color = Color.White)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                    iconKey = "reply_stamp",
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(text = "Reply with Stamp", fontSize = 12.sp, color = Color.White)
+                            }
                         }
                     }
                 }
@@ -377,7 +395,12 @@ fun PostDetailReplyItem(
                         contentScale = ContentScale.Fit
                     )
                 } else {
-                    Text(text = "📮", fontSize = 22.sp)
+                    com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                        iconKey = "stamp",
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = AccentRed
+                    )
                 }
             }
 

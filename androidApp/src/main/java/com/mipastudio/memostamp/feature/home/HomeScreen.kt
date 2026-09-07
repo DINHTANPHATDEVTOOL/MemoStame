@@ -148,7 +148,7 @@ fun HomeScreen(
                                         title = "Khoảnh khắc kỷ niệm",
                                         location = "Việt Nam",
                                         memoryDate = System.currentTimeMillis(),
-                                        note = quickPostCaption.ifBlank { "Mới đăng khoảnh khắc hôm nay ✨" }
+                                        note = quickPostCaption.ifBlank { "Mới đăng khoảnh khắc hôm nay" }
                                     )
                                     val res = stampRepo.saveStamp(newDraft)
                                     if (res.isSuccess) {
@@ -173,7 +173,7 @@ fun HomeScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text("${stringResource(R.string.feed_post_action)} 🚀", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(stringResource(R.string.feed_post_action), fontWeight = FontWeight.Bold, color = Color.White)
                 }
             },
             dismissButton = {
@@ -687,7 +687,12 @@ fun HomeScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("📮", fontSize = 48.sp)
+                            com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                iconKey = "stamp",
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = AccentRed
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = stringResource(R.string.home_feed_empty),
@@ -767,14 +772,23 @@ fun HomeScreen(
                                         )
                                         if (!post.location.isNullOrBlank()) {
                                             Text(" • ", fontSize = 11.sp, color = SecondaryText)
-                                            Text(
-                                                text = "📍 ${post.location}",
-                                                fontSize = 11.sp,
-                                                color = AccentBlue,
-                                                fontWeight = FontWeight.Medium,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                                    iconKey = "location",
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(11.dp),
+                                                    tint = AccentBlue
+                                                )
+                                                Spacer(modifier = Modifier.width(2.dp))
+                                                Text(
+                                                    text = post.location,
+                                                    fontSize = 11.sp,
+                                                    color = AccentBlue,
+                                                    fontWeight = FontWeight.Medium,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
                                         }
                                         Text(" • ", fontSize = 11.sp, color = SecondaryText)
                                         Icon(

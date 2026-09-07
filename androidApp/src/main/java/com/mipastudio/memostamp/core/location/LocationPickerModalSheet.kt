@@ -54,14 +54,14 @@ fun LocationPickerModalSheet(
     var gpsAddressName by remember { mutableStateOf<String?>(null) }
     var searchJob by remember { mutableStateOf<Job?>(null) }
 
-    val cities = listOf("Đà Lạt 🌸", "Sài Gòn 🏙️", "Hà Nội 🏛️", "Hội An 🏮", "Đà Nẵng 🌊", "Phú Quốc 🏖️", "Sapa 🏔️", "Huế 🏯")
+    val cities = listOf("Đà Lạt", "Sài Gòn", "Hà Nội", "Hội An", "Đà Nẵng", "Phú Quốc", "Sapa", "Huế")
     val categories = listOf(
-        "ALL" to "Tất cả",
-        "LANDMARK" to "Biểu tượng 🏛️",
-        "CAFE" to "Cà phê hoài niệm ☕",
-        "NATURE" to "Thiên nhiên 🌲",
-        "HERITAGE" to "Di tích bưu chính 📮",
-        "RESTAURANT" to "Ẩm thực phố 🍜"
+        Triple("ALL", "Tất cả", com.mipastudio.memostamp.domain.model.MemoStampIconKey.FILTER.key),
+        Triple("LANDMARK", "Biểu tượng", com.mipastudio.memostamp.domain.model.MemoStampIconKey.MAP.key),
+        Triple("CAFE", "Cà phê hoài niệm", com.mipastudio.memostamp.domain.model.MemoStampIconKey.CAFE.key),
+        Triple("NATURE", "Thiên nhiên", com.mipastudio.memostamp.domain.model.MemoStampIconKey.NATURE.key),
+        Triple("HERITAGE", "Di tích bưu chính", com.mipastudio.memostamp.domain.model.MemoStampIconKey.STAMP.key),
+        Triple("RESTAURANT", "Ẩm thực phố", com.mipastudio.memostamp.domain.model.MemoStampIconKey.FOOD.key)
     )
 
     // Execute ranking search with Google Maps Algorithm & AI Grounding
@@ -339,7 +339,7 @@ fun LocationPickerModalSheet(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(categories) { (key, label) ->
+                items(categories) { (key, label, iconKey) ->
                     val isSelected = selectedCategoryFilter == key
                     Box(
                         modifier = Modifier
@@ -356,12 +356,21 @@ fun LocationPickerModalSheet(
                             }
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) Color(0xFF8D6E1A) else SecondaryText
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                iconKey = iconKey,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = if (isSelected) Color(0xFF8D6E1A) else SecondaryText
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color(0xFF8D6E1A) else SecondaryText
+                            )
+                        }
                     }
                 }
             }
