@@ -529,7 +529,7 @@ struct FriendsAndTradeScreenView: View {
                             friendRepo.acceptRequest(requestId: req.id) { result in
                                 switch result {
                                 case .success:
-                                    triggerToast("Đã đồng ý kết bạn với \(req.senderName)! 🎉")
+                                    triggerToast("Đã đồng ý kết bạn với \(req.senderName)!")
                                 case .failure(let err):
                                     triggerToast("Lỗi: \(err.localizedDescription)")
                                 }
@@ -932,13 +932,17 @@ struct FriendsAndTradeScreenView: View {
 
                             Spacer()
 
-                            Text("Đã sở hữu ✨")
-                                .font(.caption2.bold())
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(MSColors.stamp.opacity(0.12))
-                                .foregroundColor(MSColors.stamp)
-                                .cornerRadius(8)
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .bold))
+                                Text("Đã sở hữu")
+                            }
+                            .font(.caption2.bold())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(MSColors.stamp.opacity(0.12))
+                            .foregroundColor(MSColors.stamp)
+                            .cornerRadius(8)
                         }
                         .padding(14)
                         .background(Color.white)
@@ -982,7 +986,7 @@ struct FriendsAndTradeScreenView: View {
                                     Text(trade.stampName)
                                         .font(.subheadline.bold())
                                         .foregroundColor(MSColors.ink)
-                                    Text(trade.status == "PENDING" ? "Đang chờ bạn bè xác nhận..." : (trade.status == "ACCEPTED" ? "Đã được chấp nhận ✨" : "Đã kết thúc"))
+                                    Text(trade.status == "PENDING" ? "Đang chờ bạn bè xác nhận..." : (trade.status == "ACCEPTED" ? "Đã được chấp nhận" : "Đã kết thúc"))
                                         .font(.caption)
                                         .foregroundColor(MSColors.grey)
                                 }
@@ -1104,7 +1108,7 @@ struct FriendsAndTradeScreenView: View {
                                     return langManager.localized("chat_tap_to_message")
                                 }
                                 if msg.stamp != nil || isValidRemoteStampUrl(msg.stampUrl) {
-                                    return "📮 [Tem: \(msg.stampTitle ?? "Kỷ niệm")] \(msg.text)"
+                                    return "[Tem: \(msg.stampTitle ?? "Kỷ niệm")] \(msg.text)"
                                 }
                                 return msg.text
                             }()
@@ -1197,13 +1201,17 @@ struct FriendsAndTradeScreenView: View {
 
                                 Spacer()
 
-                                Text("Đã sở hữu ✨")
-                                    .font(.caption2.bold())
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(MSColors.stamp.opacity(0.12))
-                                    .foregroundColor(MSColors.stamp)
-                                    .cornerRadius(8)
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 10, weight: .bold))
+                                    Text("Đã sở hữu")
+                                }
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(MSColors.stamp.opacity(0.12))
+                                .foregroundColor(MSColors.stamp)
+                                .cornerRadius(8)
                             }
                             .padding(14)
                             .background(Color.white)
@@ -1286,13 +1294,16 @@ struct FriendsAndTradeScreenView: View {
 
                 Spacer()
 
-                Text("Tem kỷ niệm 📮")
-                    .font(.caption2.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(MSColors.stamp.opacity(0.12))
-                    .foregroundColor(MSColors.stamp)
-                    .cornerRadius(8)
+                HStack(spacing: 4) {
+                    MemoStampIcon(key: .stamp, size: 12, color: MSColors.stamp)
+                    Text("Tem kỷ niệm")
+                }
+                .font(.caption2.bold())
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(MSColors.stamp.opacity(0.12))
+                .foregroundColor(MSColors.stamp)
+                .cornerRadius(8)
             }
 
             // Card Body: Stamp Preview & Metadata
@@ -1304,7 +1315,7 @@ struct FriendsAndTradeScreenView: View {
                         } else {
                             ZStack {
                                 Color.gray.opacity(0.1)
-                                Text("📮").font(.title2)
+                                MemoStampIcon(key: .stamp, size: 28, color: MSColors.stamp)
                             }
                         }
                     }
@@ -1313,8 +1324,7 @@ struct FriendsAndTradeScreenView: View {
                 } else {
                     ZStack {
                         MSColors.stamp.opacity(0.1)
-                        Text("📮")
-                            .font(.title2)
+                        MemoStampIcon(key: .stamp, size: 28, color: MSColors.stamp)
                     }
                     .frame(width: 64, height: 64)
                     .cornerRadius(8)
@@ -1324,10 +1334,13 @@ struct FriendsAndTradeScreenView: View {
                     Text(msg.stamp?.title.isEmpty == false ? (msg.stamp?.title ?? "") : "Tem thư kỷ niệm")
                         .font(.subheadline.bold())
                         .foregroundColor(MSColors.ink)
-                    Text("📍 \(msg.stamp?.location ?? "Việt Nam")")
-                        .font(.caption.bold())
-                        .foregroundColor(Color.blue)
-                    if !msg.text.isEmpty && !msg.text.hasPrefix("📮 Đã gửi con tem") {
+                    HStack(spacing: 3) {
+                        MemoStampIcon(key: .location, size: 12, color: Color.blue)
+                        Text(msg.stamp?.location ?? "Việt Nam")
+                    }
+                    .font(.caption.bold())
+                    .foregroundColor(Color.blue)
+                    if !msg.text.isEmpty && !msg.text.hasPrefix("📮 Đã gửi con tem") && !msg.text.hasPrefix("Đã gửi con tem") {
                         Text("“\(msg.text)”")
                             .font(.caption)
                             .foregroundColor(MSColors.grey)
@@ -1349,7 +1362,7 @@ struct FriendsAndTradeScreenView: View {
                         return
                     }
                     markInboxItemProcessed(for: currentUid, messageId: msg.id)
-                    triggerToast("Đã từ chối con tem này ❌")
+                    triggerToast("Đã từ chối con tem này")
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "xmark")
@@ -1402,13 +1415,13 @@ struct FriendsAndTradeScreenView: View {
                             shape: "classic",
                             collectionId: nil,
                             audience: AudienceType.friends,
-                            mood: "😊 Happy",
+                            mood: "happy",
                             memoryDate: msg.createdAt
                         )
                         let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: uid)
                         if persisted {
                             markInboxItemProcessed(for: uid, messageId: msg.id)
-                            triggerToast("Đã lưu con tem vào Kho của bạn thành công! 📮")
+                            triggerToast("Đã lưu con tem vào Kho của bạn thành công!")
                         } else {
                             repository.restoreStamps(stamps: previousStamps)
                             if let prev = previousProfile {

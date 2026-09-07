@@ -127,17 +127,25 @@ final class StampRenderEngine {
             let pillBgColor = UIColor.black.withAlphaComponent(0.45)
 
             if let loc = location, !loc.isEmpty {
-                let locText = "📍 \(loc.uppercased())"
+                let cleanLoc = loc.replacingOccurrences(of: "📍", with: "").trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
                 let locAttr: [NSAttributedString.Key: Any] = [
                     .font: badgeFont,
                     .foregroundColor: UIColor.white
                 ]
-                let locSize = (locText as NSString).size(withAttributes: locAttr)
-                let locPillRect = CGRect(x: 32, y: 32, width: locSize.width + 24, height: locSize.height + 12)
+                let locSize = (cleanLoc as NSString).size(withAttributes: locAttr)
+                let pinSize: CGFloat = 16
+                let pinSpacing: CGFloat = 8
+                let totalWidth = locSize.width + pinSize + pinSpacing
+                let locPillRect = CGRect(x: 32, y: 32, width: totalWidth + 24, height: locSize.height + 12)
                 let locPillPath = UIBezierPath(roundedRect: locPillRect, cornerRadius: 10)
                 pillBgColor.setFill()
                 locPillPath.fill()
-                (locText as NSString).draw(at: CGPoint(x: 44, y: 38), withAttributes: locAttr)
+
+                let pinCX = 44 + pinSize * 0.5
+                let pinCY = 38 + locSize.height * 0.5
+                drawLocationPinVector(context: cgContext, cx: pinCX, cy: pinCY, size: pinSize, color: UIColor.white)
+
+                (cleanLoc as NSString).draw(at: CGPoint(x: 44 + pinSize + pinSpacing, y: 38), withAttributes: locAttr)
             }
 
             let dateAttr: [NSAttributedString.Key: Any] = [
@@ -250,6 +258,28 @@ final class StampRenderEngine {
             print("Error saving PNG die-cut stamp: \(error)")
             return nil
         }
+    }
+
+    private func drawLocationPinVector(context: CGContext, cx: CGFloat, cy: CGFloat, size: CGFloat, color: UIColor) {
+        context.saveGState()
+        color.setFill()
+        let r = size * 0.42
+        let topY = cy - size * 0.4
+        let botY = cy + size * 0.5
+
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: cx, y: botY))
+        path.addCurve(to: CGPoint(x: cx, y: topY - r * 0.1), controlPoint1: CGPoint(x: cx - r * 1.3, y: cy), controlPoint2: CGPoint(x: cx - r, y: topY))
+        path.addCurve(to: CGPoint(x: cx, y: botY), controlPoint1: CGPoint(x: cx + r, y: topY), controlPoint2: CGPoint(x: cx + r * 1.3, y: cy))
+        path.close()
+        path.fill()
+
+        let holeR = size * 0.14
+        let holeCenter = CGPoint(x: cx, y: cy - size * 0.12)
+        let holePath = UIBezierPath(arcCenter: holeCenter, radius: holeR, startAngle: 0, endAngle: .pi * 2, clockwise: true)
+        UIColor(red: 0.85, green: 0.31, blue: 0.25, alpha: 1.0).setFill()
+        holePath.fill()
+        context.restoreGState()
     }
     #endif
 }

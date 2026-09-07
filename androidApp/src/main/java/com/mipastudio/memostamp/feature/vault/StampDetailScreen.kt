@@ -238,13 +238,32 @@ fun StampDetailScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(
-                                            text = if (!s.location.isNullOrBlank()) "📍 ${s.location}" else "MEMOSTAMP",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = AccentBlue,
-                                            maxLines = 1
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (!s.location.isNullOrBlank()) {
+                                                com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                                    iconKey = com.mipastudio.memostamp.domain.model.MemoStampIconKey.LOCATION,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(11.dp),
+                                                    tint = AccentBlue
+                                                )
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text(
+                                                    text = s.location,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = AccentBlue,
+                                                    maxLines = 1
+                                                )
+                                            } else {
+                                                Text(
+                                                    text = "MEMOSTAMP",
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = AccentBlue,
+                                                    maxLines = 1
+                                                )
+                                            }
+                                        }
                                         Text("#2026", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = SecondaryText)
                                     }
                                 }

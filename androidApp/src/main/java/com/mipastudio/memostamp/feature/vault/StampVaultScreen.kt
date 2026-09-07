@@ -30,6 +30,9 @@ import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
 import com.mipastudio.memostamp.data.local.StampEntity
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.People
+import com.mipastudio.memostamp.ui.icon.MemoStampIcon
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -241,7 +244,12 @@ fun StampVaultScreen(
                                                 horizontalArrangement = Arrangement.SpaceBetween,
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Text(col.iconEmoji ?: "📁", fontSize = 18.sp)
+                                                MemoStampIcon(
+                                                    iconKey = col.resolvedIconKey(),
+                                                    contentDescription = col.name,
+                                                    modifier = Modifier.size(20.dp),
+                                                    tint = AccentRed
+                                                )
                                                 Surface(
                                                     shape = CircleShape,
                                                     color = if (isPrivate) AccentRedSoft else SurfaceSoft,
@@ -251,13 +259,24 @@ fun StampVaultScreen(
                                                         }
                                                     }
                                                 ) {
-                                                    Text(
-                                                        text = if (isPrivate) "🔒 Mình tôi" else "👥 Bạn bè",
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (isPrivate) AccentRed else SuccessGreen,
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
                                                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
-                                                    )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (isPrivate) Icons.Outlined.Lock else Icons.Outlined.People,
+                                                            contentDescription = null,
+                                                            tint = if (isPrivate) AccentRed else SuccessGreen,
+                                                            modifier = Modifier.size(10.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text(
+                                                            text = if (isPrivate) "Mình tôi" else "Bạn bè",
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = if (isPrivate) AccentRed else SuccessGreen
+                                                        )
+                                                    }
                                                 }
                                             }
                                             Spacer(modifier = Modifier.height(6.dp))

@@ -764,13 +764,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Welcome back, %s! 📮"
+            "value": "Welcome back, %s!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chào mừng trở lại, %s! 📮"
+            "value": "Chào mừng trở lại, %s!"
           }
         }
       }
@@ -872,7 +872,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Account @%s registered successfully! 🎉"
+            "value": "Account @%s registered successfully!"
           }
         },
         "vi": {
@@ -1502,13 +1502,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Stamp to Attach 📮"
+            "value": "Select Stamp to Attach"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chọn tem để đính kèm tin nhắn 📮"
+            "value": "Chọn tem để đính kèm tin nhắn"
           }
         }
       }
@@ -1556,13 +1556,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Commemorative Postal Stamp 📮"
+            "value": "Commemorative Postal Stamp"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dấu ấn tem kỷ niệm 📮"
+            "value": "Dấu ấn tem kỷ niệm"
           }
         }
       }
@@ -1592,13 +1592,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stamp saved to your Vault successfully! 📮"
+            "value": "Stamp saved to your Vault successfully!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã lưu con tem vào Kho của bạn thành công! 📮"
+            "value": "Đã lưu con tem vào Kho của bạn thành công!"
           }
         }
       }
@@ -1664,13 +1664,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send a message or attach a postal stamp to connect! 📮"
+            "value": "Send a message or attach a postal stamp to connect!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm! 📮"
+            "value": "Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm!"
           }
         }
       }
@@ -2642,7 +2642,7 @@
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chưa có tem, bấm để chụp tem mới! 📸"
+            "value": "Chưa có tem, bấm để chụp tem mới!"
           }
         }
       }
@@ -2654,13 +2654,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Share today's stamp memory moment… 📮"
+            "value": "Share today's stamp memory moment…"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay… 📮"
+            "value": "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay…"
           }
         }
       }
@@ -2672,13 +2672,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Create New Post 📮"
+            "value": "Create New Post"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tạo bài viết mới 📮"
+            "value": "Tạo bài viết mới"
           }
         }
       }
@@ -2762,13 +2762,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Memory Feed 📮"
+            "value": "Memory Feed"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bảng tin kỷ niệm 📮"
+            "value": "Bảng tin kỷ niệm"
           }
         }
       }
@@ -2816,13 +2816,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New memory posted to feed! 📮"
+            "value": "New memory posted to feed!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã đăng bài viết mới lên Bảng tin! 📮"
+            "value": "Đã đăng bài viết mới lên Bảng tin!"
           }
         }
       }
@@ -2942,13 +2942,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stamp saved to your vault! 📮"
+            "value": "Stamp saved to your vault!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã lưu con tem vào Kho của bạn! 📮"
+            "value": "Đã lưu con tem vào Kho của bạn!"
           }
         }
       }
@@ -3158,13 +3158,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Copied %s to clipboard! 📋"
+            "value": "Copied %s to clipboard!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã sao chép %s vào bộ nhớ tạm! 📋"
+            "value": "Đã sao chép %s vào bộ nhớ tạm!"
           }
         }
       }
@@ -3356,13 +3356,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No incoming friend requests 📭"
+            "value": "No incoming friend requests"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chưa có lời mời kết bạn nào gửi đến bạn 📭"
+            "value": "Chưa có lời mời kết bạn nào gửi đến bạn"
           }
         }
       }
@@ -3392,13 +3392,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You are now friends with @%s! 🤝"
+            "value": "You are now friends with @%s!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã trở thành bạn bè với @%s! 🤝"
+            "value": "Đã trở thành bạn bè với @%s!"
           }
         }
       }
@@ -3446,13 +3446,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Friend invitation sent to @%s! ✉️"
+            "value": "Friend invitation sent to @%s!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã gửi lời mời kết bạn đến @%s! ✉️"
+            "value": "Đã gửi lời mời kết bạn đến @%s!"
           }
         }
       }
@@ -3878,13 +3878,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Accept Stamp & Save to Vault 🤝"
+            "value": "Accept Stamp & Save to Vault"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nhận Tem & Lưu Vào Kho 🤝"
+            "value": "Nhận Tem & Lưu Vào Kho"
           }
         }
       }
@@ -3896,13 +3896,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Trade Completed! 🤝"
+            "value": "Trade Completed!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Trao đổi thành công! 🤝"
+            "value": "Trao đổi thành công!"
           }
         }
       }
@@ -3914,13 +3914,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gifting you this memory stamp! 📮"
+            "value": "Gifting you this memory stamp!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tặng bạn dấu tem kỷ niệm này nhé! 📮"
+            "value": "Tặng bạn dấu tem kỷ niệm này nhé!"
           }
         }
       }
@@ -3932,7 +3932,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No incoming trade offers 📭"
+            "value": "No incoming trade offers"
           }
         },
         "vi": {
@@ -4040,13 +4040,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Postcard & Stamp from %s 🤝"
+            "value": "Postcard & Stamp from %s"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bưu thiếp & Tem từ %s 🤝"
+            "value": "Bưu thiếp & Tem từ %s"
           }
         }
       }
@@ -4130,13 +4130,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Send Letter & Stamp ✉️"
+            "value": "Send Letter & Stamp"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gửi Thư & Tem ✉️"
+            "value": "Gửi Thư & Tem"
           }
         }
       }
@@ -4418,13 +4418,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Share today's stamp memory moment… 📮"
+            "value": "Share today's stamp memory moment…"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay… 📮"
+            "value": "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay…"
           }
         }
       }
@@ -5246,13 +5246,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Profile updated successfully! ✨"
+            "value": "Profile updated successfully!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã cập nhật hồ sơ thành công! ✨"
+            "value": "Đã cập nhật hồ sơ thành công!"
           }
         }
       }
@@ -6434,13 +6434,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Owned ✨"
+            "value": "Owned"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã sở hữu ✨"
+            "value": "Đã sở hữu"
           }
         }
       }
@@ -6470,13 +6470,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Applied theme %s! ✨"
+            "value": "Applied theme %s!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã áp dụng phong cách %s! ✨"
+            "value": "Đã áp dụng phong cách %s!"
           }
         }
       }
@@ -6506,13 +6506,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select Theme Style 🎨"
+            "value": "Select Theme Style"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chọn Phong Cách Giao Diện 🎨"
+            "value": "Chọn Phong Cách Giao Diện"
           }
         }
       }
@@ -6614,13 +6614,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stamp trade accepted successfully! 📮"
+            "value": "Stamp trade accepted successfully!"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Đã chấp nhận trao đổi tem thành công! 📮"
+            "value": "Đã chấp nhận trao đổi tem thành công!"
           }
         }
       }

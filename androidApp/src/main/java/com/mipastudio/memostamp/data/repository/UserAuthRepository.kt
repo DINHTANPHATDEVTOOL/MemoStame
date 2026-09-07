@@ -228,12 +228,13 @@ class UserAuthRepository internal constructor(
                             InAppNotificationManager.show(
                                 InAppBanner(
                                     id = "req_${req.id}",
-                                    title = "🤝 Lời mời kết bạn mới",
+                                    title = "Lời mời kết bạn mới",
                                     message = "${req.senderDisplayName.ifBlank { req.senderUsername }} muốn kết nối bạn bè với bạn!",
                                     avatarUrl = req.senderAvatar,
-                                    iconEmoji = "🤝",
+                                    iconEmoji = "friends",
                                     targetRoute = "friends",
-                                    senderName = req.senderDisplayName
+                                    senderName = req.senderDisplayName,
+                                    iconKey = "friends"
                                 )
                             )
                         }
@@ -253,12 +254,13 @@ class UserAuthRepository internal constructor(
                             InAppNotificationManager.show(
                                 InAppBanner(
                                     id = "acc_${req.id}",
-                                    title = "🎉 Đã kết nối bạn bè!",
+                                    title = "Đã kết nối bạn bè!",
                                     message = "${req.recipientDisplayName.ifBlank { req.recipientUsername }} đã chấp nhận lời mời kết bạn của bạn!",
                                     avatarUrl = req.recipientAvatar,
-                                    iconEmoji = "🎉",
+                                    iconEmoji = "success",
                                     targetRoute = "chat/${req.recipientId}",
-                                    senderName = req.recipientDisplayName
+                                    senderName = req.recipientDisplayName,
+                                    iconKey = "success"
                                 )
                             )
                         }

@@ -1,9 +1,9 @@
 package com.mipastudio.memostamp.domain.model
 
-enum class AudienceType(val label: String, val icon: String, val description: String) {
-    FRIENDS("Tất cả bạn bè", "👥", "Chỉ tất cả bạn bè xem được"),
-    SPECIFIC_FRIENDS("Bạn bè chọn lọc", "🎯", "Chỉ hiển thị với bạn bè được chọn"),
-    ONLY_ME("Chỉ mình tôi", "🔒", "Chỉ mình tôi xem được");
+enum class AudienceType(val label: String, val icon: String, val description: String, val iconKey: String = MemoStampIconKey.FRIENDS.key) {
+    FRIENDS("Tất cả bạn bè", "👥", "Chỉ tất cả bạn bè xem được", MemoStampIconKey.FRIENDS.key),
+    SPECIFIC_FRIENDS("Bạn bè chọn lọc", "🎯", "Chỉ hiển thị với bạn bè được chọn", MemoStampIconKey.FRIENDS.key),
+    ONLY_ME("Chỉ mình tôi", "🔒", "Chỉ mình tôi xem được", MemoStampIconKey.LOCK.key);
 
     companion object {
         fun fromString(value: String?): AudienceType {
@@ -101,7 +101,7 @@ data class StampItem(
     val createdAt: Long,
     val memoryDate: Long,
     val location: String? = null,
-    val mood: String? = "✨",
+    val mood: String? = "special",
     val collectionId: String? = null,
     val favorite: Boolean = false,
     val filterId: String? = "original",
@@ -117,15 +117,37 @@ data class CollectionItem(
     val collectionType: String = "NORMAL",
     val targetCount: Int = 12,
     val stampsCount: Int = 0,
-    val privacy: String = "FRIENDS" // "FRIENDS" (Công khai cho bạn bè) or "ONLY_ME" (Chỉ mình tôi)
-)
+    val privacy: String = "FRIENDS", // "FRIENDS" (Công khai cho bạn bè) or "ONLY_ME" (Chỉ mình tôi)
+    val iconKey: String = MemoStampLegacyMigration.mapLegacyCollectionIcon(iconEmoji)
+) {
+    constructor(
+        id: String,
+        name: String,
+        description: String?,
+        iconEmoji: String = "📁",
+        collectionType: String = "NORMAL",
+        targetCount: Int = 12,
+        stampsCount: Int = 0,
+        privacy: String = "FRIENDS"
+    ) : this(
+        id = id,
+        name = name,
+        description = description,
+        iconEmoji = iconEmoji,
+        collectionType = collectionType,
+        targetCount = targetCount,
+        stampsCount = stampsCount,
+        privacy = privacy,
+        iconKey = MemoStampLegacyMigration.mapLegacyCollectionIcon(iconEmoji)
+    )
+}
 
 data class UserProfile(
     val uid: String,
     val username: String,
     val displayName: String,
     val avatarUrl: String? = null,
-    val bio: String = "Capturing life, one stamp at a time ✨",
+    val bio: String = "Capturing life, one stamp at a time",
     val stampsCreatedCount: Int = 0,
     val stampsCollectedCount: Int = 0,
     val placesVisitedCount: Int = 0
@@ -188,23 +210,51 @@ data class StampTemplate(
     val id: String,
     val name: String,
     val descriptionText: String,
-    val iconEmoji: String,
+    val iconEmoji: String = "📮",
     val backgroundAsset: String? = null,
     val frameAsset: String? = null,
     val defaultElements: List<StampElement> = emptyList(),
     val photoInsetLeft: Float = 0f,
     val photoInsetTop: Float = 0f,
     val photoInsetRight: Float = 1f,
-    val photoInsetBottom: Float = 1f
-)
+    val photoInsetBottom: Float = 1f,
+    val iconKey: String = MemoStampLegacyMigration.mapLegacyCollectionIcon(iconEmoji)
+) {
+    constructor(
+        id: String,
+        name: String,
+        descriptionText: String,
+        iconEmoji: String,
+        backgroundAsset: String? = null,
+        frameAsset: String? = null,
+        defaultElements: List<StampElement> = emptyList(),
+        photoInsetLeft: Float = 0f,
+        photoInsetTop: Float = 0f,
+        photoInsetRight: Float = 1f,
+        photoInsetBottom: Float = 1f
+    ) : this(
+        id = id,
+        name = name,
+        descriptionText = descriptionText,
+        iconEmoji = iconEmoji,
+        backgroundAsset = backgroundAsset,
+        frameAsset = frameAsset,
+        defaultElements = defaultElements,
+        photoInsetLeft = photoInsetLeft,
+        photoInsetTop = photoInsetTop,
+        photoInsetRight = photoInsetRight,
+        photoInsetBottom = photoInsetBottom,
+        iconKey = MemoStampLegacyMigration.mapLegacyCollectionIcon(iconEmoji)
+    )
+}
 
 object StampTemplates {
-    val PHOTO_STAMP = StampTemplate("classic_post", "Classic Post", "Authentic die-cut postage stamp edge", "📮")
-    val AIRMAIL = StampTemplate("airmail", "Air Mail ✈", "Retro airmail striped border with flight markings", "✈")
-    val POLAROID = StampTemplate("polaroid", "Polaroid 📷", "Classic instant film frame", "📷")
-    val VINTAGE = StampTemplate("vintage", "Vintage 📜", "Aged parchment paper border", "📜")
-    val PASSPORT = StampTemplate("passport", "Passport 🎓", "Travel visa stamp frame", "🎓")
-    val SAKURA = StampTemplate("sakura", "Sakura ✿", "Soft spring cherry blossom frame", "✿")
+    val PHOTO_STAMP = StampTemplate("classic_post", "Classic Post", "Authentic die-cut postage stamp edge", "📮", iconKey = "stamp")
+    val AIRMAIL = StampTemplate("airmail", "Air Mail", "Retro airmail striped border with flight markings", "✈", iconKey = "travel")
+    val POLAROID = StampTemplate("polaroid", "Polaroid", "Classic instant film frame", "📷", iconKey = "camera")
+    val VINTAGE = StampTemplate("vintage", "Vintage", "Aged parchment paper border", "📜", iconKey = "postmark")
+    val PASSPORT = StampTemplate("passport", "Passport", "Travel visa stamp frame", "🎓", iconKey = "passport")
+    val SAKURA = StampTemplate("sakura", "Sakura", "Soft spring cherry blossom frame", "✿", iconKey = "flower")
 
     val ALL = listOf(PHOTO_STAMP, AIRMAIL, POLAROID, VINTAGE, PASSPORT, SAKURA)
 
@@ -252,8 +302,22 @@ data class PassportBadge(
     val title: String,
     val subtitle: String,
     val iconEmoji: String,
-    val isUnlocked: Boolean = false
-)
+    val isUnlocked: Boolean = false,
+    val iconKey: String = iconEmoji
+) {
+    constructor(
+        title: String,
+        subtitle: String,
+        iconEmoji: String,
+        isUnlocked: Boolean = false
+    ) : this(
+        title = title,
+        subtitle = subtitle,
+        iconEmoji = iconEmoji,
+        isUnlocked = isUnlocked,
+        iconKey = iconEmoji
+    )
+}
 
 data class AuthSession(
     val accessToken: String,

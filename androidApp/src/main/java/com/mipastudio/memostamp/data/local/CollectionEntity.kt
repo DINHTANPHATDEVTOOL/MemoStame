@@ -3,6 +3,7 @@ package com.mipastudio.memostamp.data.local
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.mipastudio.memostamp.domain.model.MemoStampLegacyMigration
 
 @Entity(tableName = "collections")
 data class CollectionEntity(
@@ -17,5 +18,11 @@ data class CollectionEntity(
     val sortOrder: Int = 0,
     val collectionType: String = "NORMAL", // NORMAL, CHALLENGE
     val targetCount: Int = 12,
-    val privacy: String = "FRIENDS" // "FRIENDS" or "ONLY_ME"
-)
+    val privacy: String = "FRIENDS", // "FRIENDS" or "ONLY_ME"
+    @ColumnInfo(defaultValue = "NULL")
+    val iconKey: String? = null
+) {
+    fun resolvedIconKey(): String {
+        return iconKey?.takeIf { it.isNotBlank() } ?: MemoStampLegacyMigration.mapLegacyCollectionIcon(iconEmoji)
+    }
+}

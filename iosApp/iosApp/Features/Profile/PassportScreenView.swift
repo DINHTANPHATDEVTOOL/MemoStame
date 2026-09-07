@@ -40,13 +40,14 @@ struct PassportScreenView: View {
     }
 
     private func badgeIconName(_ key: String) -> String {
-        switch key {
-        case "plane", "✈️": return "paperplane.fill"
-        case "coffee", "☕": return "cup.and.saucer.fill"
-        case "palette", "🎨": return "paintpalette.fill"
-        case "crown", "👑": return "crown.fill"
-        case "tree", "🌲": return "leaf.fill"
-        case "heart", "💖": return "heart.fill"
+        switch key.lowercased() {
+        case "travel", "plane", "✈️": return "airplane"
+        case "cafe", "coffee", "☕": return "cup.and.saucer.fill"
+        case "art", "palette", "🎨": return "paintpalette.fill"
+        case "special", "crown", "👑": return "crown.fill"
+        case "nature", "tree", "🌲": return "leaf.fill"
+        case "heart", "love", "💖": return "heart.fill"
+        case "camera", "📸": return "camera.fill"
         default: return "star.fill"
         }
     }
@@ -275,11 +276,15 @@ struct EditProfileSheetView: View {
             .padding(.horizontal, 20)
 
             if let msg = saveMessage {
-                Text(msg)
-                    .font(.caption.bold())
-                    .foregroundColor(Color.red)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red)
+                    Text(msg)
+                        .font(.caption.bold())
+                        .foregroundColor(Color.red)
+                }
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
             }
 
             Spacer()
@@ -290,14 +295,14 @@ struct EditProfileSheetView: View {
                 // 1. get auth UID from Supabase session & 2. validate authenticated UID
                 guard let authUid = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines),
                       IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
-                    saveMessage = "⚠️ Phiên đăng nhập không hợp lệ hoặc đã hết hạn."
+                    saveMessage = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn."
                     return
                 }
 
                 // 3. require repository UID == auth UID & 4. capture previous profile
                 guard let previousProfile = repository.currentUser.value as? UserProfile,
                       previousProfile.uid == authUid else {
-                    saveMessage = "⚠️ Danh tính tài khoản không trùng khớp."
+                    saveMessage = "Danh tính tài khoản không trùng khớp."
                     return
                 }
 
@@ -305,7 +310,7 @@ struct EditProfileSheetView: View {
                 let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                 let candidateDisplayName = trimmedName.isEmpty ? previousProfile.displayName : trimmedName
                 if candidateDisplayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    saveMessage = "⚠️ Tên hiển thị không được để trống."
+                    saveMessage = "Tên hiển thị không được để trống."
                     return
                 }
                 let candidateBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -317,7 +322,7 @@ struct EditProfileSheetView: View {
                 let persisted = IOSLocalPersistenceStore.shared.saveData(repository: repository, userId: authUid)
                 if !persisted {
                     repository.setCurrentUser(profile: previousProfile)
-                    saveMessage = "⚠️ Không thể lưu trữ dữ liệu cục bộ."
+                    saveMessage = "Không thể lưu trữ dữ liệu cục bộ."
                     return
                 }
 
@@ -343,7 +348,7 @@ struct EditProfileSheetView: View {
                             // 10. cloud failure: restore previous profile & local persistence, show visible failure, KEEP SHEET OPEN
                             self.repository.setCurrentUser(profile: previousProfile)
                             _ = IOSLocalPersistenceStore.shared.saveData(repository: self.repository, userId: authUid)
-                            self.saveMessage = "⚠️ \(error.localizedDescription)"
+                            self.saveMessage = error.localizedDescription
                         }
                     }
                 }
@@ -622,28 +627,33 @@ struct ProfileSettingsSheetView: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2), lineWidth: 1))
 
                         if let toast = passwordToastMessage {
-                            Text(toast)
-                                .font(.caption.bold())
-                                .foregroundColor(toast.contains("thành công") || toast.contains("Success") || toast.contains("successfully") ? Color.green : Color.red)
+                            let isSuccess = toast.contains("thành công") || toast.contains("Success") || toast.contains("successfully")
+                            HStack(spacing: 6) {
+                                Image(systemName: isSuccess ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundColor(isSuccess ? Color.green : Color.red)
+                                Text(toast)
+                                    .font(.caption.bold())
+                                    .foregroundColor(isSuccess ? Color.green : Color.red)
+                            }
                         }
 
                         Button(action: {
                             if isUpdatingPassword { return }
                             if currentPassword.isEmpty {
-                                passwordToastMessage = "⚠️ \(langManager.localized("auth_err_empty_identifier"))"
+                                passwordToastMessage = langManager.localized("auth_err_empty_identifier")
                                 return
                             }
                             if newPassword.count < 6 {
-                                passwordToastMessage = "⚠️ \(langManager.localized("auth_err_password_too_short"))"
+                                passwordToastMessage = langManager.localized("auth_err_password_too_short")
                                 return
                             }
                             if newPassword != confirmPassword {
-                                passwordToastMessage = "⚠️ \(langManager.localized("auth_err_password_match"))"
+                                passwordToastMessage = langManager.localized("auth_err_password_match")
                                 return
                             }
 
                             isUpdatingPassword = true
-                            passwordToastMessage = "⏳ \(langManager.localized("common_loading"))"
+                            passwordToastMessage = langManager.localized("common_loading")
 
                             SupabaseAuthService.shared.changePassword(currentPassword: currentPassword, newPassword: newPassword) { result in
                                 DispatchQueue.main.async {
@@ -651,9 +661,9 @@ struct ProfileSettingsSheetView: View {
                                     switch result {
                                     case .failure(let error):
                                         let errMsg = error.localizedDescription
-                                        self.passwordToastMessage = "⚠️ \(errMsg)"
+                                        self.passwordToastMessage = errMsg
                                     case .success:
-                                        self.passwordToastMessage = "✅ \(self.langManager.localized("settings_password_updated"))"
+                                        self.passwordToastMessage = self.langManager.localized("settings_password_updated")
                                         self.currentPassword = ""
                                         self.newPassword = ""
                                         self.confirmPassword = ""
@@ -714,11 +724,13 @@ struct ProfileSettingsSheetView: View {
                     // 4. Save & Logout Action Row
                     VStack(spacing: 10) {
                         if let msg = profileSaveMessage {
-                            Text(msg)
-                                .font(.caption.bold())
-                                .foregroundColor(msg.contains("thành công") || msg.contains("Success") ? Color.green : Color.red)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.red)
+                                Text(msg)
+                                    .font(.caption.bold())
+                                    .foregroundColor(Color.red)
+                            }
                         }
 
                         Button(action: {
@@ -727,14 +739,14 @@ struct ProfileSettingsSheetView: View {
                             // 1. validate authenticated UID
                             guard let authUid = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines),
                                   IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
-                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_session_invalid")
+                                profileSaveMessage = langManager.localized("profile_error_session_invalid")
                                 return
                             }
 
                             // 2. validate repository current user UID == auth UID
                             guard let previousProfile = repository.currentUser.value as? UserProfile,
                                   previousProfile.uid == authUid else {
-                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_identity_mismatch")
+                                profileSaveMessage = langManager.localized("profile_error_identity_mismatch")
                                 return
                             }
 
@@ -744,7 +756,7 @@ struct ProfileSettingsSheetView: View {
                             let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                             let candidateDisplayName = trimmedName.isEmpty ? previousProfile.displayName : trimmedName
                             if candidateDisplayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_display_name_empty")
+                                profileSaveMessage = langManager.localized("profile_error_display_name_empty")
                                 return
                             }
                             let candidateBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -780,7 +792,7 @@ struct ProfileSettingsSheetView: View {
                             )
                             if !persisted {
                                 repository.setCurrentUser(profile: previousProfile)
-                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_local_persist")
+                                profileSaveMessage = langManager.localized("profile_error_local_persist")
                                 return
                             }
 
@@ -810,7 +822,7 @@ struct ProfileSettingsSheetView: View {
                                             userId: authUid
                                         )
                                         let errMsg = error.localizedDescription
-                                        self.profileSaveMessage = "⚠️ \(errMsg)"
+                                        self.profileSaveMessage = errMsg
                                     }
                                 }
                             }
@@ -931,9 +943,13 @@ struct ProfileSettingsSheetView: View {
                         .disabled(isDeletingAccount)
 
                     if let err = deleteAccountError {
-                        Text(err)
-                            .font(.caption.bold())
-                            .foregroundColor(Color.red)
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                            Text(err)
+                                .font(.caption.bold())
+                                .foregroundColor(Color.red)
+                        }
                     }
 
                     Spacer()
@@ -942,7 +958,7 @@ struct ProfileSettingsSheetView: View {
                         if isDeletingAccount { return }
                         let pass = deletePassword.trimmingCharacters(in: .whitespacesAndNewlines)
                         if pass.isEmpty {
-                            deleteAccountError = "⚠️ " + langManager.localized("auth_err_empty_identifier")
+                            deleteAccountError = langManager.localized("auth_err_empty_identifier")
                             return
                         }
 
@@ -954,7 +970,7 @@ struct ProfileSettingsSheetView: View {
                                 self.isDeletingAccount = false
                                 switch result {
                                 case .failure(let error):
-                                    self.deleteAccountError = "⚠️ \(error.localizedDescription)"
+                                    self.deleteAccountError = error.localizedDescription
                                 case .success:
                                     self.showDeleteAccountSheet = false
                                     self.presentationMode.wrappedValue.dismiss()

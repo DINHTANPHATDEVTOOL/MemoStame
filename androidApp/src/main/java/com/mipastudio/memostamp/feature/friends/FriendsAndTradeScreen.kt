@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.mipastudio.memostamp.R
+import com.mipastudio.memostamp.domain.model.MemoStampIconKey
+import com.mipastudio.memostamp.ui.icon.MemoStampIcon
 import com.mipastudio.memostamp.core.processor.MemoImageProcessor
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
@@ -258,13 +260,33 @@ fun FriendsAndTradeScreen(
             ) {
                 val inboxCount = visiblePostcards.size + incomingCloudTrades.size + receivedStamps.size
                 val tabs = listOf(
-                    (if (unreadChatCount > 0) "💬 ${stringResource(R.string.friends_tab_chat)} ($unreadChatCount)" else "💬 ${stringResource(R.string.friends_tab_chat)}") to 4,
-                    "📩 ${stringResource(R.string.friends_tab_requests, incomingRequests.size)}" to 2,
-                    "👥 ${stringResource(R.string.friends_tab_friends, friendsList.size)}" to 0,
-                    "🔍 ${stringResource(R.string.common_search)}" to 1,
-                    "📮 " + (if (inboxCount > 0) stringResource(R.string.friends_tab_inbox, inboxCount) else stringResource(R.string.friends_inbox_empty_title)) to 3
+                    Triple(
+                        MemoStampIconKey.CHAT,
+                        if (unreadChatCount > 0) "${stringResource(R.string.friends_tab_chat)} ($unreadChatCount)" else stringResource(R.string.friends_tab_chat),
+                        4
+                    ),
+                    Triple(
+                        MemoStampIconKey.MAIL,
+                        stringResource(R.string.friends_tab_requests, incomingRequests.size),
+                        2
+                    ),
+                    Triple(
+                        MemoStampIconKey.FRIENDS,
+                        stringResource(R.string.friends_tab_friends, friendsList.size),
+                        0
+                    ),
+                    Triple(
+                        MemoStampIconKey.SEARCH,
+                        stringResource(R.string.common_search),
+                        1
+                    ),
+                    Triple(
+                        MemoStampIconKey.POSTMARK,
+                        if (inboxCount > 0) stringResource(R.string.friends_tab_inbox, inboxCount) else stringResource(R.string.friends_inbox_empty_title),
+                        3
+                    )
                 )
-                tabs.forEach { (label, idx) ->
+                tabs.forEach { (iconKey, label, idx) ->
                     val selected = selectedTab == idx
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -272,15 +294,26 @@ fun FriendsAndTradeScreen(
                         shadowElevation = if (selected) 2.dp else 0.dp,
                         modifier = Modifier.clickable { selectedTab = idx }
                     ) {
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (selected) Color.White else PrimaryText,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                        )
+                        ) {
+                            MemoStampIcon(
+                                iconKey = iconKey,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp),
+                                tint = if (selected) Color.White else PrimaryText
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (selected) Color.White else PrimaryText,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
             }
@@ -297,7 +330,12 @@ fun FriendsAndTradeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("👥", fontSize = 48.sp)
+                                MemoStampIcon(
+                                    iconKey = MemoStampIconKey.FRIENDS,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = SecondaryText
+                                )
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
                                     stringResource(R.string.friends_empty_title),
@@ -375,7 +413,12 @@ fun FriendsAndTradeScreen(
                                     modifier = Modifier.size(42.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Text("📮", fontSize = 22.sp)
+                                        MemoStampIcon(
+                                            iconKey = MemoStampIconKey.POSTMARK,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = AccentRed
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -490,7 +533,12 @@ fun FriendsAndTradeScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text("🔍", fontSize = 36.sp)
+                                            MemoStampIcon(
+                                                iconKey = MemoStampIconKey.SEARCH,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(36.dp),
+                                                tint = SecondaryText
+                                            )
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Text(
                                                 if (cleanQ.isBlank()) stringResource(R.string.friends_no_users_found) else stringResource(R.string.friends_no_users_with_id, cleanQ),
@@ -766,7 +814,12 @@ fun FriendsAndTradeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("📮", fontSize = 48.sp)
+                                MemoStampIcon(
+                                    iconKey = MemoStampIconKey.POSTMARK,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = SecondaryText
+                                )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
                                     stringResource(R.string.friends_inbox_empty_title),
@@ -1095,7 +1148,12 @@ fun FriendsAndTradeScreen(
                                                             .background(WarmPaperBg),
                                                         contentAlignment = Alignment.Center
                                                     ) {
-                                                        Text("📮", fontSize = 28.sp)
+                                                        MemoStampIcon(
+                                                            iconKey = MemoStampIconKey.STAMP,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(28.dp),
+                                                            tint = AccentRed
+                                                        )
                                                     }
                                                 }
                                                 Spacer(modifier = Modifier.width(12.dp))
@@ -1107,12 +1165,21 @@ fun FriendsAndTradeScreen(
                                                         color = PrimaryText
                                                     )
                                                     Spacer(modifier = Modifier.height(2.dp))
-                                                    Text(
-                                                        "📍 ${msg.stampLocation ?: "Việt Nam"}",
-                                                        fontSize = 11.sp,
-                                                        color = AccentBlue,
-                                                        fontWeight = FontWeight.Medium
-                                                    )
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        MemoStampIcon(
+                                                            iconKey = MemoStampIconKey.LOCATION,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(11.dp),
+                                                            tint = AccentBlue
+                                                        )
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text(
+                                                            msg.stampLocation ?: "Việt Nam",
+                                                            fontSize = 11.sp,
+                                                            color = AccentBlue,
+                                                            fontWeight = FontWeight.Medium
+                                                        )
+                                                    }
                                                     if (msg.text.isNotBlank() && !msg.text.startsWith("📮")) {
                                                         Spacer(modifier = Modifier.height(4.dp))
                                                         Text(
@@ -1295,7 +1362,7 @@ fun FriendsAndTradeScreen(
                                                 val isMe = lastMsg?.senderId == currentUser.userId
                                                 val basePreview = when {
                                                     lastMsg == null -> stringResource(R.string.chat_tap_to_message)
-                                                    lastMsg.stampImageUrl != null -> "📮 [${lastMsg.stampTitle ?: stringResource(R.string.chat_stamp_default_title)}] ${lastMsg.text}"
+                                                    lastMsg.stampImageUrl != null -> "[${lastMsg.stampTitle ?: stringResource(R.string.chat_stamp_default_title)}] ${lastMsg.text}"
                                                     else -> lastMsg.text
                                                 }
                                                 val displayText = if (isMe) stringResource(R.string.chat_message_prefix_you, basePreview) else basePreview
@@ -1467,7 +1534,16 @@ fun FriendsAndTradeScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text("“${offer.note}”", fontSize = 13.sp, color = PrimaryText, textAlign = TextAlign.Center)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("📍 ${offer.location}", fontSize = 11.sp, color = SecondaryText)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MemoStampIcon(
+                                iconKey = MemoStampIconKey.LOCATION,
+                                contentDescription = null,
+                                modifier = Modifier.size(11.dp),
+                                tint = SecondaryText
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(offer.location, fontSize = 11.sp, color = SecondaryText)
+                        }
                     }
                 },
                 confirmButton = {
@@ -1637,7 +1713,7 @@ fun FriendsAndTradeScreen(
                     coroutineScope.launch {
                         val result = authRepo.sendFriendRequest(targetUser)
                         result.fold(
-                            onSuccess = { Toast.makeText(context, "Đã gửi lời mời kết bạn đến @${targetUser.username}! 📩", Toast.LENGTH_SHORT).show() },
+                            onSuccess = { Toast.makeText(context, "Đã gửi lời mời kết bạn đến @${targetUser.username}!", Toast.LENGTH_SHORT).show() },
                             onFailure = { err ->
                                 val errMsg = err.message ?: ""
                                 val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
@@ -1718,7 +1794,16 @@ private fun FriendCard(
                         color = PrimaryText
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("📍 ${user.city}", fontSize = 10.sp, color = AccentBlue)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        MemoStampIcon(
+                            iconKey = MemoStampIconKey.LOCATION,
+                            contentDescription = null,
+                            modifier = Modifier.size(10.dp),
+                            tint = AccentBlue
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(user.city, fontSize = 10.sp, color = AccentBlue)
+                    }
                 }
                 Text(
                     "@${user.username}",

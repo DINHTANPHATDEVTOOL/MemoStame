@@ -20,7 +20,7 @@ data class MemoryNoteUiState(
     val draftId: String? = null,
     val title: String = "",
     val note: String = "",
-    val mood: String = "✨",
+    val mood: String = "special",
     val location: String = "",
     val collectionId: String? = null,
     val audienceType: AudienceType = AudienceType.FRIENDS,
@@ -53,7 +53,7 @@ class MemoryNoteViewModel : ViewModel() {
                     draftId = draftId,
                     title = draft.title.ifBlank { "" },
                     note = draft.note,
-                    mood = draft.mood ?: "✨",
+                    mood = com.mipastudio.memostamp.domain.model.MemoStampLegacyMigration.mapLegacyMood(draft.mood),
                     location = loc,
                     collectionId = draft.collectionId
                 )
@@ -72,7 +72,7 @@ class MemoryNoteViewModel : ViewModel() {
             draftId = draftId,
             title = draft.title.ifBlank { "" },
             note = draft.note,
-            mood = draft.mood ?: "✨",
+            mood = com.mipastudio.memostamp.domain.model.MemoStampLegacyMigration.mapLegacyMood(draft.mood),
             location = loc,
             collectionId = draft.collectionId
         )

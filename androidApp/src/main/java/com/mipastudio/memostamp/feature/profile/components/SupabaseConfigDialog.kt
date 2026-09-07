@@ -151,7 +151,7 @@ fun SupabaseConfigDialog(
                 onClick = {
                     val saved = SupabaseConfig.saveConfig(context, url, anonKey)
                     if (saved) {
-                        Toast.makeText(context, "Đã cập nhật cấu hình đám mây thành công! ✨", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Đã cập nhật cấu hình đám mây thành công!", Toast.LENGTH_SHORT).show()
                     }
                     onDismiss()
                 },

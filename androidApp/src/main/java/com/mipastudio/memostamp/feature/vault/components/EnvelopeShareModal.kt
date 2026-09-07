@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MarkEmailRead
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -152,14 +153,21 @@ fun EnvelopeShareModal(
                             modifier = Modifier.size(64.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "💌\nSEAL",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = Color.White,
-                                    fontFamily = FontFamily.Monospace,
-                                    modifier = Modifier.align(Alignment.Center)
-                                )
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Mail,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "SEAL",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
                             }
                         }
                     }
@@ -168,7 +176,7 @@ fun EnvelopeShareModal(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = if (isOpen) "Tap Envelope to Close 📮" else "Tap Wax Seal to Open Envelope ✉️",
+                    text = if (isOpen) "Tap Envelope to Close" else "Tap Wax Seal to Open Envelope",
                     fontSize = 12.sp,
                     color = AirmailBlue,
                     fontWeight = FontWeight.Medium

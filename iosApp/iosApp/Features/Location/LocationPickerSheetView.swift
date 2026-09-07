@@ -7,7 +7,7 @@ public struct LocationPickerSheetView: View {
     public let onLocationSelected: (_ locationName: String, _ suggestedStampTitle: String?, _ story: GroundedPostmarkStory?) -> Void
 
     @State private var searchQuery: String = ""
-    @State private var selectedCityChip: String = "Đà Lạt 🌸"
+    @State private var selectedCityChip: String = "Đà Lạt"
     @State private var selectedCategoryFilter: String = "ALL"
     @State private var placesList: [GroundedPlace] = []
     @State private var groundingState: GroundingState = .idle
@@ -18,16 +18,16 @@ public struct LocationPickerSheetView: View {
     @State private var debounceWorkItem: DispatchWorkItem? = nil
 
     private let cities: [String] = [
-        "Đà Lạt 🌸", "Sài Gòn 🏙️", "Hà Nội 🏛️", "Hội An 🏮", "Đà Nẵng 🌊", "Phú Quốc 🏖️", "Sapa 🏔️", "Huế 🏯"
+        "Đà Lạt", "Sài Gòn", "Hà Nội", "Hội An", "Đà Nẵng", "Phú Quốc", "Sapa", "Huế"
     ]
 
-    private let categories: [(id: String, title: String)] = [
-        ("ALL", "Tất cả"),
-        ("LANDMARK", "Biểu tượng 🏛️"),
-        ("CAFE", "Cà phê hoài niệm ☕"),
-        ("NATURE", "Thiên nhiên 🌲"),
-        ("HERITAGE", "Di tích bưu chính 📮"),
-        ("RESTAURANT", "Ẩm thực phố 🍜")
+    private let categories: [(id: String, title: String, iconKey: MemoStampIconKey)] = [
+        ("ALL", "Tất cả", .filter),
+        ("LANDMARK", "Biểu tượng", .map),
+        ("CAFE", "Cà phê hoài niệm", .cafe),
+        ("NATURE", "Thiên nhiên", .nature),
+        ("HERITAGE", "Di tích bưu chính", .stamp),
+        ("RESTAURANT", "Ẩm thực phố", .food)
     ]
 
     public init(
@@ -109,17 +109,20 @@ public struct LocationPickerSheetView: View {
                                     selectedCategoryFilter = cat.id
                                     performSearch(query: searchQuery, city: cityOnlyName(selectedCityChip))
                                 }) {
-                                    Text(cat.title)
-                                        .font(.caption2.bold())
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 5)
-                                        .background(selectedCategoryFilter == cat.id ? Color(red: 0.20, green: 0.20, blue: 0.25) : Color.white)
-                                        .foregroundColor(selectedCategoryFilter == cat.id ? .white : MSTheme.Colors.textSecondary)
-                                        .cornerRadius(12)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(selectedCategoryFilter == cat.id ? Color.clear : Color.gray.opacity(0.2), lineWidth: 1)
-                                        )
+                                    HStack(spacing: 4) {
+                                        MemoStampIcon(key: cat.iconKey, size: 12, color: selectedCategoryFilter == cat.id ? .white : MSTheme.Colors.textSecondary)
+                                        Text(cat.title)
+                                    }
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(selectedCategoryFilter == cat.id ? Color(red: 0.20, green: 0.20, blue: 0.25) : Color.white)
+                                    .foregroundColor(selectedCategoryFilter == cat.id ? .white : MSTheme.Colors.textSecondary)
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(selectedCategoryFilter == cat.id ? Color.clear : Color.gray.opacity(0.2), lineWidth: 1)
+                                    )
                                 }
                             }
                         }
@@ -349,13 +352,16 @@ public struct LocationPickerSheetView: View {
 
                 HStack(spacing: 8) {
                     // Category Badge
-                    Text(displayCategoryName(place.category))
-                        .font(.system(size: 10, weight: .bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.gray.opacity(0.12))
-                        .foregroundColor(MSTheme.Colors.textSecondary)
-                        .cornerRadius(4)
+                    HStack(spacing: 4) {
+                        MemoStampIcon(key: categoryIconKey(place.category), size: 10, color: MSTheme.Colors.textSecondary)
+                        Text(displayCategoryName(place.category))
+                    }
+                    .font(.system(size: 10, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.gray.opacity(0.12))
+                    .foregroundColor(MSTheme.Colors.textSecondary)
+                    .cornerRadius(4)
 
                     if let rating = place.rating {
                         HStack(spacing: 2) {
@@ -473,17 +479,27 @@ public struct LocationPickerSheetView: View {
     }
 
     private func cityOnlyName(_ chip: String) -> String {
-        return chip.components(separatedBy: " ").first ?? chip
+        return chip.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func categoryIconKey(_ cat: String) -> MemoStampIconKey {
+        switch cat.uppercased() {
+        case "CAFE": return .cafe
+        case "HERITAGE": return .stamp
+        case "NATURE": return .nature
+        case "STREET", "RESTAURANT": return .food
+        default: return .map
+        }
     }
 
     private func displayCategoryName(_ cat: String) -> String {
         switch cat.uppercased() {
-        case "CAFE": return "Cà phê ☕"
-        case "HERITAGE": return "Bưu chính 📮"
-        case "NATURE": return "Thiên nhiên 🌲"
-        case "STREET": return "Phố phường 🍜"
-        case "RESTAURANT": return "Ẩm thực 🍽️"
-        default: return "Biểu tượng 🏛️"
+        case "CAFE": return "Cà phê"
+        case "HERITAGE": return "Bưu chính"
+        case "NATURE": return "Thiên nhiên"
+        case "STREET": return "Phố phường"
+        case "RESTAURANT": return "Ẩm thực"
+        default: return "Biểu tượng"
         }
     }
 }

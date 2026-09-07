@@ -134,7 +134,10 @@ object StampRenderer {
             val colorWithAlpha = (parsedColor and 0x00FFFFFF) or (alphaInt shl 24)
 
             when (el.type) {
-                "badge" -> {
+                "badge", "location" -> {
+                    val isLocation = el.type == "location" || el.value.startsWith("📍")
+                    val cleanText = if (isLocation) el.value.removePrefix("📍").trim() else el.value
+
                     val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         textSize = (10f / 350f) * outputHeight * el.scale
                         color = Color.WHITE
@@ -145,12 +148,27 @@ object StampRenderer {
                         style = Paint.Style.FILL
                     }
                     val fm = textP.fontMetrics
-                    val textWidth = textP.measureText(el.value)
+                    val textWidth = textP.measureText(cleanText)
                     val textHeight = fm.bottom - fm.top
-                    val bgRect = RectF(px - 12f, py - 4f, px + textWidth + 12f, py + textHeight + 4f)
+                    val pinSize = if (isLocation) textHeight * 0.85f else 0f
+                    val pinSpacing = if (isLocation) 8f else 0f
+                    val totalContentWidth = textWidth + pinSize + pinSpacing
+                    val bgRect = RectF(px - 12f, py - 4f, px + totalContentWidth + 12f, py + textHeight + 4f)
                     canvas.drawRoundRect(bgRect, 10f, 10f, badgePaint)
+
                     val baselineY = py - fm.top
-                    canvas.drawText(el.value, px, baselineY, textP)
+                    if (isLocation) {
+                        drawLocationPinVector(
+                            canvas = canvas,
+                            cx = px + pinSize * 0.5f,
+                            cy = py + textHeight * 0.5f,
+                            size = pinSize,
+                            color = Color.WHITE
+                        )
+                        canvas.drawText(cleanText, px + pinSize + pinSpacing, baselineY, textP)
+                    } else {
+                        canvas.drawText(cleanText, px, baselineY, textP)
+                    }
                 }
                 "sticker" -> {
                     val textP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -204,5 +222,33 @@ object StampRenderer {
         }
 
         return outputFile
+    }
+
+    private fun drawLocationPinVector(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        size: Float,
+        color: Int
+    ) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color
+            style = Paint.Style.FILL
+        }
+        val path = Path().apply {
+            val r = size * 0.42f
+            val topY = cy - size * 0.4f
+            val botY = cy + size * 0.5f
+            moveTo(cx, botY)
+            cubicTo(cx - r * 1.3f, cy, cx - r, topY, cx, topY - r * 0.1f)
+            cubicTo(cx + r, topY, cx + r * 1.3f, cy, cx, botY)
+            close()
+        }
+        canvas.drawPath(path, paint)
+        val holePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = Color.parseColor("#D94E41")
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(cx, cy - size * 0.12f, size * 0.14f, holePaint)
     }
 }

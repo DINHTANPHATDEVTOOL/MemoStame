@@ -105,7 +105,12 @@ fun InAppNotificationBannerHost(
                                     .background(Color.White.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(activeBanner.iconEmoji, fontSize = 20.sp)
+                                com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                    iconKey = activeBanner.iconKey,
+                                    contentDescription = activeBanner.title,
+                                    modifier = Modifier.size(22.dp),
+                                    tint = Color.White
+                                )
                             }
                         }
 

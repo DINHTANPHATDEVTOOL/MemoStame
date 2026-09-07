@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.SentimentSatisfied
 import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material.icons.outlined.TextFields
@@ -487,7 +488,15 @@ fun StampEditorScreen(
                                         viewModel.selectTemplate(template.id)
                                         activeToolSheet = null
                                     },
-                                    label = { Text("${template.iconEmoji} ${template.name}") },
+                                    leadingIcon = {
+                                        com.mipastudio.memostamp.ui.icon.MemoStampIcon(
+                                            iconKey = template.iconKey,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (isSelected) Color.White else PrimaryText
+                                        )
+                                    },
+                                    label = { Text(template.name) },
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = AccentRed,
                                         selectedLabelColor = Color.White
@@ -583,7 +592,13 @@ fun StampEditorScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Change Photo 📷")
+                            Icon(
+                                imageVector = Icons.Outlined.PhotoCamera,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Change Photo")
                         }
                     }
                 }
@@ -602,7 +617,7 @@ fun StampEditorScreen(
                     titleText = suggestedStampTitle
                 }
                 // Add a vintage location badge to canvas
-                viewModel.addElement("badge", "📍 " + locationName.take(18), "#D94E41")
+                viewModel.addElement("badge", locationName.take(18), "#D94E41")
                 if (story != null && captionText == "Một khoảnh khắc đáng nhớ.") {
                     captionText = story.poeticNote
                 }

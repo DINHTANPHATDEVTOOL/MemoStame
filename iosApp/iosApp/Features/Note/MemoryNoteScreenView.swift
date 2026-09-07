@@ -59,7 +59,7 @@ struct MemoryNoteScreenView: View {
     @State private var showLocationPickerSheet: Bool = false
     @State private var selectedAudience: String = "Friends"
     @State private var selectedCollectionId: String? = nil
-    @State private var selectedMood: String = "😊 Happy"
+    @State private var selectedMood: String = "happy"
     @State private var memoryDate: Date = Date()
     @State private var isGpsLocating: Bool = false
     @State private var isSaving: Bool = false
@@ -67,7 +67,20 @@ struct MemoryNoteScreenView: View {
     @State private var alertMessage: String? = nil
     @State private var showAlert: Bool = false
 
-    let moodOptions = ["😊 Happy", "❤️ Love", "✈️ Travel", "☕ Chill", "🔥 Excited", "🕰️ Nostalgic", "🌿 Peaceful", "⭐ Special"]
+    struct MoodOption: Hashable {
+        let key: String
+        let label: String
+    }
+    let moodOptions: [MoodOption] = [
+        MoodOption(key: "happy", label: "Happy"),
+        MoodOption(key: "love", label: "Love"),
+        MoodOption(key: "travel", label: "Travel"),
+        MoodOption(key: "chill", label: "Chill"),
+        MoodOption(key: "excited", label: "Excited"),
+        MoodOption(key: "nostalgic", label: "Nostalgic"),
+        MoodOption(key: "peaceful", label: "Peaceful"),
+        MoodOption(key: "special", label: "Special")
+    ]
     let audienceTypes = ["Friends", "Only Me"]
 
     private var currentUid: String {
@@ -248,18 +261,22 @@ struct MemoryNoteScreenView: View {
                                 .foregroundColor(MSColors.grey)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 8) {
-                                    ForEach(moodOptions, id: \.self) { mood in
-                                        Text(mood)
-                                            .font(.caption.bold())
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 8)
-                                            .background(selectedMood == mood ? MSColors.stamp : Color.white)
-                                            .foregroundColor(selectedMood == mood ? .white : MSColors.ink)
-                                            .cornerRadius(16)
-                                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(selectedMood == mood ? Color.clear : MSColors.lightGrey, lineWidth: 1))
-                                            .onTapGesture {
-                                                selectedMood = mood
-                                            }
+                                    ForEach(moodOptions, id: \.key) { mood in
+                                        HStack(spacing: 6) {
+                                            MemoStampIcon(key: mood.key, contentDescription: mood.label)
+                                                .frame(width: 14, height: 14)
+                                            Text(mood.label)
+                                                .font(.caption.bold())
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(selectedMood == mood.key ? MSColors.stamp : Color.white)
+                                        .foregroundColor(selectedMood == mood.key ? .white : MSColors.ink)
+                                        .cornerRadius(16)
+                                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(selectedMood == mood.key ? Color.clear : MSColors.lightGrey, lineWidth: 1))
+                                        .onTapGesture {
+                                            selectedMood = mood.key
+                                        }
                                     }
                                 }
                             }
@@ -309,8 +326,8 @@ struct MemoryNoteScreenView: View {
                                 HStack(spacing: 10) {
                                     ForEach((repository.collections.value as? [CollectionItem]) ?? [], id: \.id) { col in
                                         HStack(spacing: 6) {
-                                            Text(col.iconEmoji)
-                                                .font(.subheadline)
+                                            MemoStampIcon(key: col.iconKey, contentDescription: col.name)
+                                                .frame(width: 16, height: 16)
                                             Text(col.name)
                                                 .font(.caption.bold())
                                         }

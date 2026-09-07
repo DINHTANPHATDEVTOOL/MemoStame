@@ -28,6 +28,47 @@ struct PersistedCollectionData: Codable {
     let targetCount: Int32
     let stampsCount: Int32
     let privacy: String
+    var iconKey: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, iconEmoji, collectionType, targetCount, stampsCount, privacy, iconKey
+    }
+
+    init(
+        id: String,
+        name: String,
+        description: String?,
+        iconEmoji: String,
+        collectionType: String,
+        targetCount: Int32,
+        stampsCount: Int32,
+        privacy: String,
+        iconKey: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.iconEmoji = iconEmoji
+        self.collectionType = collectionType
+        self.targetCount = targetCount
+        self.stampsCount = stampsCount
+        self.privacy = privacy
+        self.iconKey = iconKey ?? MemoStampLegacyMigration.resolveCollectionIcon(keyOrEmoji: iconEmoji)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        iconEmoji = try container.decode(String.self, forKey: .iconEmoji)
+        collectionType = try container.decode(String.self, forKey: .collectionType)
+        targetCount = try container.decode(Int32.self, forKey: .targetCount)
+        stampsCount = try container.decode(Int32.self, forKey: .stampsCount)
+        privacy = try container.decode(String.self, forKey: .privacy)
+        let rawKey = try container.decodeIfPresent(String.self, forKey: .iconKey)
+        iconKey = rawKey ?? MemoStampLegacyMigration.resolveCollectionIcon(keyOrEmoji: iconEmoji)
+    }
 }
 
 struct PersistedUserData: Codable {
@@ -199,7 +240,8 @@ class IOSLocalPersistenceStore {
 
         // Restore Collections
         let loadedCollections = payload.collections.map { c in
-            CollectionItem(
+            let key = c.iconKey ?? MemoStampLegacyMigration.resolveCollectionIcon(keyOrEmoji: c.iconEmoji)
+            return CollectionItem(
                 id: c.id,
                 name: c.name,
                 description: c.description,
@@ -207,7 +249,8 @@ class IOSLocalPersistenceStore {
                 collectionType: c.collectionType,
                 targetCount: c.targetCount,
                 stampsCount: c.stampsCount,
-                privacy: c.privacy
+                privacy: c.privacy,
+                iconKey: key
             )
         }
         repository.restoreCollections(collections: loadedCollections)
@@ -344,7 +387,8 @@ class IOSLocalPersistenceStore {
                 collectionType: c.collectionType,
                 targetCount: c.targetCount,
                 stampsCount: c.stampsCount,
-                privacy: c.privacy
+                privacy: c.privacy,
+                iconKey: c.iconKey
             )
         }
 

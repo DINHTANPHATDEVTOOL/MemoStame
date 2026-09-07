@@ -13,13 +13,13 @@ class SharedMemoStampRepository {
     private val _currentUser = MutableStateFlow(
         UserProfile(
             uid = "user_me",
-            username = "phat_memostamp",
-            displayName = "Phat Nguyen",
+            username = "me",
+            displayName = "Memo Explorer",
             avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
-            bio = "Sưu tầm ký ức qua từng con tem bưu chính 📮",
-            stampsCreatedCount = 0,
-            stampsCollectedCount = 0,
-            placesVisitedCount = 0
+            bio = "Sưu tầm ký ức qua từng con tem bưu chính",
+            stampsCreatedCount = 12,
+            stampsCollectedCount = 45,
+            placesVisitedCount = 8
         )
     )
     val currentUser: StateFlow<UserProfile> = _currentUser.asStateFlow()
@@ -261,7 +261,7 @@ class SharedMemoStampRepository {
         shape: String = "classic",
         collectionId: String? = null,
         audience: AudienceType = AudienceType.FRIENDS,
-        mood: String = "😊 Happy",
+        mood: String = MemoStampIconKey.HAPPY.key,
         memoryDate: Long = currentTimeMillis()
     ): StampItem {
         val me = _currentUser.value
@@ -437,7 +437,7 @@ class SharedMemoStampRepository {
             recipientUsername = trimmed
         )
         _friendRequests.value = listOf(request) + _friendRequests.value
-        return FriendRequestResult(true, "Đã gửi lời mời kết bạn tới @$trimmed! 📩")
+        return FriendRequestResult(true, "Đã gửi lời mời kết bạn tới @$trimmed!")
     }
 
     fun acceptFriendRequest(requestId: String): Boolean {
@@ -496,16 +496,22 @@ class SharedMemoStampRepository {
         _friends.value = _friends.value.filter { it.id != friendId }
     }
 
-    fun createCollection(name: String, description: String, iconEmoji: String, privacy: String = "FRIENDS"): CollectionItem {
+    fun createCollection(name: String, description: String, iconEmoji: String, privacy: String): CollectionItem {
+        return createCollection(name, description, iconEmoji, privacy, null)
+    }
+
+    fun createCollection(name: String, description: String, iconEmoji: String, privacy: String, iconKey: String?): CollectionItem {
+        val resolvedIconKey = iconKey ?: MemoStampLegacyMigration.resolveCollectionIcon(iconEmoji)
         val col = CollectionItem(
             id = "col_${currentTimeMillis()}",
             name = name,
             description = description,
-            iconEmoji = iconEmoji,
+            iconEmoji = resolvedIconKey,
             collectionType = "NORMAL",
             targetCount = 12,
             stampsCount = 0,
-            privacy = privacy
+            privacy = privacy,
+            iconKey = resolvedIconKey
         )
         _collections.value = _collections.value + col
         return col
@@ -522,12 +528,13 @@ class SharedMemoStampRepository {
         }
     }
 
-    fun updateCollection(collectionId: String, name: String, description: String, iconEmoji: String): Boolean {
+    fun updateCollection(collectionId: String, name: String, description: String, iconEmoji: String, iconKey: String? = null): Boolean {
         var updated = false
+        val resolvedIconKey = iconKey ?: MemoStampLegacyMigration.mapLegacyCollectionIcon(iconEmoji)
         _collections.value = _collections.value.map { col ->
             if (col.id == collectionId) {
                 updated = true
-                col.copy(name = name, description = description, iconEmoji = iconEmoji)
+                col.copy(name = name, description = description, iconEmoji = iconEmoji, iconKey = resolvedIconKey)
             } else col
         }
         return updated

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.mipastudio.memostamp.R
+import com.mipastudio.memostamp.ui.icon.MemoStampIcon
 import com.mipastudio.memostamp.ui.theme.AppThemeStyle
 import com.mipastudio.memostamp.ui.theme.ThemeManager
 
@@ -117,7 +118,6 @@ fun ThemeSelectorModalSheet(
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            // Emoji badge
                             Box(
                                 modifier = Modifier
                                 .size(48.dp)
@@ -125,7 +125,12 @@ fun ThemeSelectorModalSheet(
                                 .border(1.dp, themeStyle.previewPrimary.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(text = themeStyle.emoji, fontSize = 24.sp)
+                                MemoStampIcon(
+                                    iconKey = themeStyle.iconKey,
+                                    contentDescription = themeStyle.title,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = themeStyle.previewPrimary
+                                )
                             }
 
                             Spacer(modifier = Modifier.width(14.dp))
