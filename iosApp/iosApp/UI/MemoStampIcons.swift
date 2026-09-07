@@ -127,6 +127,10 @@ public struct MemoStampLegacyMigration {
         }
     }
 
+    public static func resolveCollectionIcon(keyOrEmoji: String?) -> String {
+        return mapLegacyCollectionIcon(keyOrEmoji)
+    }
+
     public static func mapLegacyMood(_ legacy: String?) -> String {
         guard let raw = legacy?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
             return MemoStampIconKey.special.key
