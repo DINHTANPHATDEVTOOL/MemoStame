@@ -14,12 +14,12 @@ class StampBook3DRendererTest {
         val spread0 = spreads[0]
         assertEquals(0, spread0.spreadIndex)
         assertTrue(spread0.leftPage.isInsideCover)
-        assertEquals(0, spread0.leftPage.pageIndex)
+        assertEquals(-1, spread0.leftPage.pageIndex)
         assertEquals(0, spread0.leftPage.stamps.size)
 
         assertFalse(spread0.rightPage.isInsideCover)
         assertFalse(spread0.rightPage.isBlankArchival)
-        assertEquals(1, spread0.rightPage.pageIndex)
+        assertEquals(0, spread0.rightPage.pageIndex)
         assertEquals(0, spread0.rightPage.stamps.size)
     }
 
@@ -46,9 +46,9 @@ class StampBook3DRendererTest {
 
     @Test
     fun oddContentPages_appendsArchivalBlankPageOnRight() {
-        // 6 stamps with 4 per page -> 2 content pages (Page 1 has 4, Page 2 has 2)
-        // Spread 0: Left = Inside Cover, Right = Page 1
-        // Spread 1: Left = Page 2, Right = Archival Blank (odd content pages count = 2)
+        // 6 stamps with 4 per page -> 2 content pages (Page 0 has 4, Page 1 has 2)
+        // Spread 0: Left = Inside Cover, Right = Page 0
+        // Spread 1: Left = Page 1, Right = Archival Blank (odd content pages count = 2)
         val stamps = (1..6).map { AlbumStampData("s$it", "Stamp $it", "path_$it") }
         val spreads = calculateSpreads(albumId = "col_odd", stamps = stamps, stampsPerPage = 4)
 
@@ -56,10 +56,10 @@ class StampBook3DRendererTest {
 
         val spread1 = spreads[1]
         assertEquals(1, spread1.spreadIndex)
-        assertEquals(2, spread1.leftPage.pageIndex)
+        assertEquals(1, spread1.leftPage.pageIndex)
         assertEquals(2, spread1.leftPage.stamps.size)
 
-        assertEquals(3, spread1.rightPage.pageIndex)
+        assertEquals(2, spread1.rightPage.pageIndex)
         assertTrue(spread1.rightPage.isBlankArchival)
         assertEquals(0, spread1.rightPage.stamps.size)
     }

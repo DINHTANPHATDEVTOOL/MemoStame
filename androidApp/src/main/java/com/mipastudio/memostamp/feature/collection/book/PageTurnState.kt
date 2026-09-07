@@ -47,6 +47,7 @@ data class BookPageData(
     val albumId: String,
     val pageIndex: Int,
     val stamps: List<AlbumStampData>,
+    val placements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
     val isBlankArchival: Boolean = false,
     val isInsideCover: Boolean = false
 )
@@ -79,29 +80,93 @@ data class BookSpread(
 /**
  * Calculates deterministic two-page spreads for an album.
  *
- * Spread 0: Left = Inside Front Cover (metadata/curator), Right = Page 1 (or empty title page).
+ * Page Index Authority (Section 2):
+ * pageIndex = 0 means first editable inner page (Spread 0 Right).
+ * Inside Front Cover is non-editable (pageIndex = -1, isInsideCover = true).
+ *
+ * Spread 0: Left = Inside Front Cover, Right = Page 0.
  * Spread S (S >= 1):
- *   Left = Page (2 * S)
- *   Right = Page (2 * S + 1) or Archival Blank Page if odd count.
+ *   Left = Page (2 * S - 1)
+ *   Right = Page (2 * S) or Archival Blank Page if odd count.
  */
 fun calculateSpreads(
     albumId: String,
     stamps: List<AlbumStampData>,
+    placements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
     stampsPerPage: Int = 4
 ): List<BookSpread> {
+    if (placements.isNotEmpty()) {
+        val maxPlacementPage = placements.maxOfOrNull { it.pageIndex } ?: 0
+        val maxPage = maxOf(0, maxPlacementPage)
+        val totalSpreads = (maxPage / 2) + 1
+        val spreads = mutableListOf<BookSpread>()
+
+        for (spreadIdx in 0 until totalSpreads) {
+            if (spreadIdx == 0) {
+                spreads.add(
+                    BookSpread(
+                        spreadIndex = 0,
+                        leftPage = BookPageData(
+                            albumId = albumId,
+                            pageIndex = -1,
+                            stamps = emptyList(),
+                            placements = emptyList(),
+                            isInsideCover = true
+                        ),
+                        rightPage = BookPageData(
+                            albumId = albumId,
+                            pageIndex = 0,
+                            stamps = stamps,
+                            placements = placements.filter { it.pageIndex == 0 },
+                            isBlankArchival = false
+                        )
+                    )
+                )
+            } else {
+                val leftPageIndex = 2 * spreadIdx - 1
+                val rightPageIndex = 2 * spreadIdx
+                val leftPlacements = placements.filter { it.pageIndex == leftPageIndex }
+                val rightPlacements = placements.filter { it.pageIndex == rightPageIndex }
+                val isRightArchival = rightPageIndex > maxPage && rightPlacements.isEmpty()
+
+                spreads.add(
+                    BookSpread(
+                        spreadIndex = spreadIdx,
+                        leftPage = BookPageData(
+                            albumId = albumId,
+                            pageIndex = leftPageIndex,
+                            stamps = stamps,
+                            placements = leftPlacements,
+                            isBlankArchival = false
+                        ),
+                        rightPage = BookPageData(
+                            albumId = albumId,
+                            pageIndex = rightPageIndex,
+                            stamps = stamps,
+                            placements = rightPlacements,
+                            isBlankArchival = isRightArchival
+                        )
+                    )
+                )
+            }
+        }
+        return spreads
+    }
+
+    // Default Fallback when no placements exist
     if (stamps.isEmpty()) {
         return listOf(
             BookSpread(
                 spreadIndex = 0,
                 leftPage = BookPageData(
                     albumId = albumId,
-                    pageIndex = 0,
+                    pageIndex = -1,
                     stamps = emptyList(),
                     isInsideCover = true
                 ),
                 rightPage = BookPageData(
                     albumId = albumId,
-                    pageIndex = 1,
+                    pageIndex = 0,
                     stamps = emptyList(),
                     isBlankArchival = false
                 )
@@ -113,55 +178,55 @@ fun calculateSpreads(
     val totalContentPages = chunks.size
     val spreads = mutableListOf<BookSpread>()
 
-    // Spread 0: Inside cover on left, Page 1 on right
+    // Spread 0: Inside cover on left (pageIndex = -1), Page 0 on right (chunks[0])
     spreads.add(
         BookSpread(
             spreadIndex = 0,
             leftPage = BookPageData(
                 albumId = albumId,
-                pageIndex = 0,
+                pageIndex = -1,
                 stamps = emptyList(),
                 isInsideCover = true
             ),
             rightPage = BookPageData(
                 albumId = albumId,
-                pageIndex = 1,
+                pageIndex = 0,
                 stamps = chunks[0]
             )
         )
     )
 
-    // Subsequent spreads (Spread 1, Spread 2, ...)
-    var currentContentPageIndex = 2
+    // Subsequent spreads (Spread 1: Page 1 & 2, Spread 2: Page 3 & 4...)
+    var contentPageIdx = 1
     var spreadIdx = 1
 
-    while (currentContentPageIndex <= totalContentPages) {
-        val leftStamps = chunks[currentContentPageIndex - 1]
-        val rightStamps = if (currentContentPageIndex < totalContentPages) {
-            chunks[currentContentPageIndex]
+    while (contentPageIdx < totalContentPages) {
+        val leftStamps = chunks[contentPageIdx]
+        val rightStamps = if (contentPageIdx + 1 < totalContentPages) {
+            chunks[contentPageIdx + 1]
         } else {
             emptyList()
         }
-        val isRightArchival = currentContentPageIndex >= totalContentPages
+        val isRightArchival = contentPageIdx + 1 >= totalContentPages
 
         spreads.add(
             BookSpread(
                 spreadIndex = spreadIdx,
                 leftPage = BookPageData(
                     albumId = albumId,
-                    pageIndex = currentContentPageIndex,
+                    pageIndex = contentPageIdx,
                     stamps = leftStamps
                 ),
                 rightPage = BookPageData(
                     albumId = albumId,
-                    pageIndex = currentContentPageIndex + 1,
+                    pageIndex = contentPageIdx + 1,
                     stamps = rightStamps,
                     isBlankArchival = isRightArchival
                 )
             )
         )
 
-        currentContentPageIndex += 2
+        contentPageIdx += 2
         spreadIdx++
     }
 

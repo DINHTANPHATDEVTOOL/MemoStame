@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mipastudio.memostamp.R
+import com.mipastudio.memostamp.data.repository.AlbumLayoutRepository
 import com.mipastudio.memostamp.data.repository.StampRepository
 import com.mipastudio.memostamp.data.repository.UserAuthRepository
 import com.mipastudio.memostamp.feature.collection.book.AlbumStampData
@@ -209,6 +210,12 @@ fun CollectionScreen(
             ?: currentUser.username.takeIf { it.isNotBlank() }
             ?: "Collector"
 
+        val albumLayoutRepo = remember(context) {
+            AlbumLayoutRepository.getInstance(context) { authRepo.authUserId.value ?: currentUser.userId }
+        }
+        val layoutState by albumLayoutRepo.observeLayout(album.id).collectAsState(initial = null)
+        val placements = layoutState?.placements ?: emptyList()
+
         StampBook3DRenderer(
             albumId = album.id,
             albumTitle = album.title,
@@ -217,6 +224,7 @@ fun CollectionScreen(
             coverColor = album.coverColor,
             iconKey = album.iconKey,
             stamps = album.stamps,
+            placements = placements,
             onStampClick = onStampClick,
             onDismiss = { selectedAlbum = null }
         )

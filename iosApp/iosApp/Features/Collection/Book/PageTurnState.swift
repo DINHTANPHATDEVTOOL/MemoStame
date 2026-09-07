@@ -32,10 +32,11 @@ public struct BookStampItem: Identifiable, Equatable {
 
 /// Data represented on an individual book page.
 public struct BookPageData: Identifiable, Equatable {
-    public var id: String { "\(albumId)_page_\(pageIndex)" }
+    public var id: String { "\(albumId)_page_\(pageIndex)_\(isInsideCover ? "cover" : "inner")" }
     public let albumId: String
     public let pageIndex: Int
     public let stamps: [BookStampItem]
+    public let placements: [PersistedStampPlacementData]
     public let isBlankArchival: Bool
     public let isInsideCover: Bool
 
@@ -43,12 +44,14 @@ public struct BookPageData: Identifiable, Equatable {
         albumId: String,
         pageIndex: Int,
         stamps: [BookStampItem],
+        placements: [PersistedStampPlacementData] = [],
         isBlankArchival: Bool = false,
         isInsideCover: Bool = false
     ) {
         self.albumId = albumId
         self.pageIndex = pageIndex
         self.stamps = stamps
+        self.placements = placements
         self.isBlankArchival = isBlankArchival
         self.isInsideCover = isInsideCover
     }
@@ -101,28 +104,92 @@ public struct BookSpread: Identifiable, Equatable {
 
 /// Calculates deterministic two-page spreads for an album.
 ///
-/// Spread 0: Left = Inside Front Cover, Right = Page 1 (or empty title page).
+/// Page Index Authority (Section 2):
+/// pageIndex = 0 means first editable inner page (Spread 0 Right).
+/// Inside Front Cover is non-editable (pageIndex = -1, isInsideCover = true).
+///
+/// Spread 0: Left = Inside Front Cover, Right = Page 0.
 /// Spread S (S >= 1):
-///   Left = Page (2 * S)
-///   Right = Page (2 * S + 1) or Archival Blank Page if odd count.
+///   Left = Page (2 * S - 1)
+///   Right = Page (2 * S) or Archival Blank Page if odd count.
 public func calculateSpreads(
     albumId: String,
     stamps: [BookStampItem],
+    placements: [PersistedStampPlacementData] = [],
     stampsPerPage: Int = 4
 ) -> [BookSpread] {
+    if !placements.isEmpty {
+        let maxPlacementPage = placements.map { Int($0.pageIndex) }.max() ?? 0
+        let maxPage = max(0, maxPlacementPage)
+        let totalSpreads = (maxPage / 2) + 1
+        var spreads: [BookSpread] = []
+
+        for spreadIdx in 0..<totalSpreads {
+            if spreadIdx == 0 {
+                spreads.append(
+                    BookSpread(
+                        spreadIndex: 0,
+                        leftPage: BookPageData(
+                            albumId: albumId,
+                            pageIndex: -1,
+                            stamps: [],
+                            placements: [],
+                            isInsideCover: true
+                        ),
+                        rightPage: BookPageData(
+                            albumId: albumId,
+                            pageIndex: 0,
+                            stamps: stamps,
+                            placements: placements.filter { $0.pageIndex == 0 },
+                            isBlankArchival: false
+                        )
+                    )
+                )
+            } else {
+                let leftPageIndex = 2 * spreadIdx - 1
+                let rightPageIndex = 2 * spreadIdx
+                let leftPlacements = placements.filter { Int($0.pageIndex) == leftPageIndex }
+                let rightPlacements = placements.filter { Int($0.pageIndex) == rightPageIndex }
+                let isRightArchival = rightPageIndex > maxPage && rightPlacements.isEmpty
+
+                spreads.append(
+                    BookSpread(
+                        spreadIndex: spreadIdx,
+                        leftPage: BookPageData(
+                            albumId: albumId,
+                            pageIndex: leftPageIndex,
+                            stamps: stamps,
+                            placements: leftPlacements,
+                            isBlankArchival: false
+                        ),
+                        rightPage: BookPageData(
+                            albumId: albumId,
+                            pageIndex: rightPageIndex,
+                            stamps: stamps,
+                            placements: rightPlacements,
+                            isBlankArchival: isRightArchival
+                        )
+                    )
+                )
+            }
+        }
+        return spreads
+    }
+
+    // Default fallback when no placements exist
     if stamps.isEmpty {
         return [
             BookSpread(
                 spreadIndex: 0,
                 leftPage: BookPageData(
                     albumId: albumId,
-                    pageIndex: 0,
+                    pageIndex: -1,
                     stamps: [],
                     isInsideCover: true
                 ),
                 rightPage: BookPageData(
                     albumId: albumId,
-                    pageIndex: 1,
+                    pageIndex: 0,
                     stamps: [],
                     isBlankArchival: false
                 )
@@ -147,32 +214,32 @@ public func calculateSpreads(
     let totalContentPages = chunks.count
     var spreads: [BookSpread] = []
 
-    // Spread 0: Inside cover on left, Page 1 on right
+    // Spread 0: Inside cover on left (pageIndex = -1), Page 0 on right (chunks[0])
     spreads.append(
         BookSpread(
             spreadIndex: 0,
             leftPage: BookPageData(
                 albumId: albumId,
-                pageIndex: 0,
+                pageIndex: -1,
                 stamps: [],
                 isInsideCover: true
             ),
             rightPage: BookPageData(
                 albumId: albumId,
-                pageIndex: 1,
+                pageIndex: 0,
                 stamps: chunks[0]
             )
         )
     )
 
-    // Subsequent spreads (Spread 1, Spread 2, ...)
-    var currentContentPageIndex = 2
+    // Subsequent spreads (Spread 1: Page 1 & 2, Spread 2: Page 3 & 4...)
+    var contentPageIdx = 1
     var spreadIdx = 1
 
-    while currentContentPageIndex <= totalContentPages {
-        let leftStamps = chunks[currentContentPageIndex - 1]
-        let hasRight = currentContentPageIndex < totalContentPages
-        let rightStamps = hasRight ? chunks[currentContentPageIndex] : []
+    while contentPageIdx < totalContentPages {
+        let leftStamps = chunks[contentPageIdx]
+        let hasRight = contentPageIdx + 1 < totalContentPages
+        let rightStamps = hasRight ? chunks[contentPageIdx + 1] : []
         let isRightArchival = !hasRight
 
         spreads.append(
@@ -180,19 +247,19 @@ public func calculateSpreads(
                 spreadIndex: spreadIdx,
                 leftPage: BookPageData(
                     albumId: albumId,
-                    pageIndex: currentContentPageIndex,
+                    pageIndex: contentPageIdx,
                     stamps: leftStamps
                 ),
                 rightPage: BookPageData(
                     albumId: albumId,
-                    pageIndex: currentContentPageIndex + 1,
+                    pageIndex: contentPageIdx + 1,
                     stamps: rightStamps,
                     isBlankArchival: isRightArchival
                 )
             )
         )
 
-        currentContentPageIndex += 2
+        contentPageIdx += 2
         spreadIdx += 1
     }
 

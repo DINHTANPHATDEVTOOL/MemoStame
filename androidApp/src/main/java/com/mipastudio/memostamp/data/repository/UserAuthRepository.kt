@@ -1303,6 +1303,10 @@ class UserAuthRepository internal constructor(
             // 5. Purge circles owned by this account
             db?.circleDao()?.deleteAllCirclesByOwner(expectedUid)
 
+            // 5b. Purge album layout pages and placements owned by this account (Task #76)
+            db?.albumLayoutDao()?.deleteAllPlacementsForOwner(expectedUid)
+            db?.albumLayoutDao()?.deleteAllPagesForOwner(expectedUid)
+
             // 6. Purge Room user row
             userDao?.deleteUserByUid(expectedUid)
 
@@ -1373,6 +1377,9 @@ class UserAuthRepository internal constructor(
         _receivedStamps.value = emptyList()
 
         _currentUser.value = createGuestUser()
+        try {
+            AlbumLayoutRepository.getInstance(context) { _authUserId.value ?: _currentUser.value.userId }.onSessionChanged()
+        } catch (_: Throwable) {}
     }
 
     internal fun setTestAuthState(
