@@ -31,8 +31,10 @@ struct CollectionScreenView: View {
 
     var currentUserName: String {
         if let user = repository.currentUser.value as? UserProfile {
-            let name = user.name.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            if !name.isEmpty { return name }
+            let display = user.displayName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            if !display.isEmpty { return display }
+            let uname = user.username.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            if !uname.isEmpty { return uname }
         }
         return "Collector"
     }
