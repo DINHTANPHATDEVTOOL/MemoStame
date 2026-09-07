@@ -1,6 +1,28 @@
 -- Migration: 012_album_layout_persistence.sql
 -- Description: Establishes account-scoped persistent layout authority for 3D Stamp Book (Task #76)
 
+-- Helper functions for double precision NaN and Infinity checks
+CREATE OR REPLACE FUNCTION public.isnan(val DOUBLE PRECISION)
+RETURNS BOOLEAN
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+    SELECT COALESCE(val = 'NaN'::DOUBLE PRECISION, false);
+$$;
+
+CREATE OR REPLACE FUNCTION public.isinf(val DOUBLE PRECISION)
+RETURNS BOOLEAN
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+    SELECT COALESCE(val = 'Infinity'::DOUBLE PRECISION OR val = '-Infinity'::DOUBLE PRECISION, false);
+$$;
+
+GRANT EXECUTE ON FUNCTION public.isnan(DOUBLE PRECISION) TO anon, authenticated, service_role, public;
+GRANT EXECUTE ON FUNCTION public.isinf(DOUBLE PRECISION) TO anon, authenticated, service_role, public;
+
 -- 1. Table: public.album_pages
 CREATE TABLE IF NOT EXISTS public.album_pages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
