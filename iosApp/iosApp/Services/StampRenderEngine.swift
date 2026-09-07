@@ -260,7 +260,7 @@ final class StampRenderEngine {
         }
     }
 
-    private static func drawLocationPinVector(context: CGContext, cx: CGFloat, cy: CGFloat, size: CGFloat, color: UIColor) {
+    private func drawLocationPinVector(context: CGContext, cx: CGFloat, cy: CGFloat, size: CGFloat, color: UIColor) {
         context.saveGState()
         color.setFill()
         let r = size * 0.42
