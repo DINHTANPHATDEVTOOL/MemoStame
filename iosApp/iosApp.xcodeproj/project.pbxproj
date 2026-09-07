@@ -57,6 +57,7 @@
 		1D3624D32D00000100000001 /* LocationPickerSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624D22D00000100000001 /* LocationPickerSheetView.swift */; };
 		1D36249F2D00000100000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */; };
 		1D36234B2D00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D36234A2D00000100000001 /* Assets.xcassets */; };
+		707070012D00000100000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 707070022D00000100000001 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -113,6 +114,7 @@
 		1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1D3624C02D00000100000001 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
 		1D36234A2D00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		707070022D00000100000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,6 +151,7 @@
 				1D3623272D00000100000001 /* ContentView.swift */,
 				1D36234A2D00000100000001 /* Assets.xcassets */,
 				1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */,
+				707070022D00000100000001 /* Localizable.xcstrings */,
 				1D3623482D00000100000001 /* ModelExtensions.swift */,
 				1D36248A2D00000100000001 /* IOSLocalPersistenceStore.swift */,
 				1D36248C2D00000100000001 /* KeychainStore.swift */,
@@ -389,6 +392,7 @@
 			files = (
 				1D36234B2D00000100000001 /* Assets.xcassets in Resources */,
 				1D36249F2D00000100000001 /* PrivacyInfo.xcprivacy in Resources */,
+				707070012D00000100000001 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

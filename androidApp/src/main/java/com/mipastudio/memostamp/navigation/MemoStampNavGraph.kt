@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.mipastudio.memostamp.R
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
@@ -50,14 +52,15 @@ import com.mipastudio.memostamp.feature.vault.StampVaultScreen
 
 sealed class NavItem(
     val route: String,
-    val title: String,
-    val icon: ImageVector
+    val titleRes: Int,
+    val icon: ImageVector,
+    val title: String = ""
 ) {
-    object Home : NavItem("home", "Trang chủ", Icons.Outlined.Home)
-    object Vault : NavItem("vault", "Bộ tem", Icons.Outlined.CollectionsBookmark)
-    object Camera : NavItem("camera", "Tạo tem", Icons.Outlined.PhotoCamera)
-    object Friends : NavItem("friends", "Bạn bè", Icons.Outlined.People)
-    object Profile : NavItem("passport", "Hồ sơ", Icons.Outlined.Person)
+    object Home : NavItem("home", R.string.nav_home, Icons.Outlined.Home, "Trang chủ")
+    object Vault : NavItem("vault", R.string.nav_vault, Icons.Outlined.CollectionsBookmark, "Bộ tem")
+    object Camera : NavItem("camera", R.string.nav_camera, Icons.Outlined.PhotoCamera, "Tạo tem")
+    object Friends : NavItem("friends", R.string.nav_trade, Icons.Outlined.People, "Bạn bè")
+    object Profile : NavItem("passport", R.string.nav_passport, Icons.Outlined.Person, "Hồ sơ")
 }
 
 @Composable
@@ -411,7 +414,7 @@ private fun MinimalNavItem(
             )
         }
         Text(
-            text = item.title,
+            text = stringResource(item.titleRes),
             fontSize = 10.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant

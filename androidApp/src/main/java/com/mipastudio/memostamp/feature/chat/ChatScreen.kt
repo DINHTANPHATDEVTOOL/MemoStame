@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.core.processor.MemoImageProcessor
 import com.mipastudio.memostamp.ui.components.BlockUserConfirmationDialog
 import com.mipastudio.memostamp.ui.components.ReportUserDialog
@@ -68,7 +70,7 @@ fun ChatScreen(
         allAccounts.find { it.userId == recipientUserId } ?: UserProfile(
             userId = recipientUserId,
             username = "friend",
-            displayName = "Người bạn bưu chính",
+            displayName = context.getString(R.string.chat_default_recipient_name),
             avatarUrl = ""
         )
     }
@@ -105,7 +107,7 @@ fun ChatScreen(
             initialLoadFinished = true
             isRetryingLoad = false
             if (res.isFailure) {
-                loadError = "Không thể tải cuộc trò chuyện. Kiểm tra kết nối và thử lại."
+                loadError = context.getString(R.string.chat_load_error)
             } else {
                 loadError = null
             }
@@ -149,7 +151,7 @@ fun ChatScreen(
                     val uid = authRepo.authUserId.value?.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
                         ?: currentUser.userId.takeIf { it.isNotBlank() && !it.startsWith("guest_") }
                     if (uid == null) {
-                        Toast.makeText(context, "Cần đăng nhập để chia sẻ tem qua tin nhắn.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.chat_login_required_stamp), Toast.LENGTH_SHORT).show()
                         return@launch
                     }
                     val uploadRes = com.mipastudio.memostamp.data.remote.supabase.SupabaseMediaUploader.getInstance(context)
@@ -159,7 +161,7 @@ fun ChatScreen(
                         )
                     if (uploadRes.isFailure) {
                         val err = uploadRes.exceptionOrNull()?.message ?: "Upload stamp failed"
-                        Toast.makeText(context, "Tải ảnh tem thất bại: $err", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.common_error) + ": $err", Toast.LENGTH_SHORT).show()
                         return@launch
                     }
                     uploadRes.getOrNull()
@@ -183,7 +185,7 @@ fun ChatScreen(
                 val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
                     "You're doing that too quickly. Please try again shortly."
                 } else {
-                    "Gửi tin nhắn thất bại: $errMsg"
+                    context.getString(R.string.chat_failed_to_send) + ": $errMsg"
                 }
                 Toast.makeText(context, displayMsg, Toast.LENGTH_SHORT).show()
             }
@@ -229,23 +231,23 @@ fun ChatScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Trở về", tint = PrimaryText)
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = PrimaryText)
                     }
                 },
                 actions = {
                     IconButton(onClick = { showStampPicker = true }) {
-                        Icon(Icons.Outlined.LocalPostOffice, contentDescription = "Gửi tem", tint = AccentRed)
+                        Icon(Icons.Outlined.LocalPostOffice, contentDescription = stringResource(R.string.chat_send_stamp), tint = AccentRed)
                     }
                     Box {
                         IconButton(onClick = { showSafetyMenu = true }) {
-                            Icon(Icons.Outlined.MoreVert, contentDescription = "Tùy chọn", tint = PrimaryText)
+                            Icon(Icons.Outlined.MoreVert, contentDescription = null, tint = PrimaryText)
                         }
                         DropdownMenu(
                             expanded = showSafetyMenu,
                             onDismissRequest = { showSafetyMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Báo cáo người dùng") },
+                                text = { Text(stringResource(R.string.friends_report_abuse_menu)) },
                                 onClick = {
                                     showSafetyMenu = false
                                     showReportDialog = true
@@ -255,7 +257,7 @@ fun ChatScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Chặn người dùng", color = AccentRed) },
+                                text = { Text(stringResource(R.string.friends_block_user_menu), color = AccentRed) },
                                 onClick = {
                                     showSafetyMenu = false
                                     showBlockConfirmDialog = true
@@ -316,17 +318,10 @@ fun ChatScreen(
                         }
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "Không thể tải cuộc trò chuyện",
+                            text = stringResource(R.string.chat_load_error),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryText,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Kiểm tra kết nối và thử lại.",
-                            fontSize = 12.sp,
-                            color = SecondaryText,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -347,7 +342,7 @@ fun ChatScreen(
                                 Icon(Icons.Outlined.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                             }
-                            Text("Thử lại", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.common_retry), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -376,7 +371,7 @@ fun ChatScreen(
                         }
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "Bắt đầu cuộc trò chuyện với ${recipient.displayName}",
+                            text = stringResource(R.string.chat_start_conversation_title, recipient.displayName),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryText,
@@ -384,7 +379,7 @@ fun ChatScreen(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm! 📮",
+                            text = stringResource(R.string.chat_start_conversation_hint),
                             fontSize = 12.sp,
                             color = SecondaryText,
                             textAlign = TextAlign.Center
@@ -397,7 +392,7 @@ fun ChatScreen(
                         ) {
                             Icon(Icons.Outlined.CardGiftcard, contentDescription = null, tint = AccentRed, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Chọn con tem gửi ngay", color = AccentRed, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.chat_choose_stamp_btn), color = AccentRed, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -426,7 +421,7 @@ fun ChatScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Đang hiển thị tin nhắn đã lưu. Chưa thể đồng bộ.",
+                                    text = stringResource(R.string.chat_offline_cached_notice),
                                     fontSize = 11.sp,
                                     color = PrimaryText,
                                     modifier = Modifier.weight(1f)
@@ -443,7 +438,7 @@ fun ChatScreen(
                                             strokeWidth = 1.5.dp
                                         )
                                     } else {
-                                        Text("Thử lại", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                                        Text(stringResource(R.string.common_retry), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentRed)
                                     }
                                 }
                             }
@@ -493,7 +488,7 @@ fun ChatScreen(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Đính kèm tem thư:", fontSize = 10.sp, color = AccentRedSoft)
+                                Text(stringResource(R.string.chat_attached_stamp_label), fontSize = 10.sp, color = AccentRedSoft)
                                 Text(
                                     stamp.title,
                                     fontSize = 13.sp,
@@ -504,7 +499,7 @@ fun ChatScreen(
                                 )
                             }
                             IconButton(onClick = { selectedStampToSend = null }) {
-                                Icon(Icons.Outlined.Close, contentDescription = "Hủy", tint = Color.White, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.common_cancel), tint = Color.White, modifier = Modifier.size(18.dp))
                             }
                         }
                     }
@@ -530,7 +525,7 @@ fun ChatScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.CardGiftcard,
-                            contentDescription = "Gửi tem",
+                            contentDescription = stringResource(R.string.chat_send_stamp),
                             tint = if (selectedStampToSend != null) AccentRed else SecondaryText,
                             modifier = Modifier.size(22.dp)
                         )
@@ -544,7 +539,7 @@ fun ChatScreen(
                         onValueChange = { textInput = it },
                         placeholder = {
                             Text(
-                                if (selectedStampToSend != null) "Viết lời nhắn kèm con tem..." else "Nhập tin nhắn...",
+                                if (selectedStampToSend != null) stringResource(R.string.chat_input_hint_with_stamp) else stringResource(R.string.chat_input_hint),
                                 fontSize = 13.sp,
                                 color = TertiaryText
                             )
@@ -577,7 +572,7 @@ fun ChatScreen(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Outlined.Send,
-                            contentDescription = "Gửi",
+                            contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier.size(18.dp)
                         )
@@ -595,10 +590,10 @@ fun ChatScreen(
                 coroutineScope.launch {
                     val res = authRepo.blockUser(recipient.userId)
                     if (res.isSuccess) {
-                        Toast.makeText(context, "Đã chặn ${recipient.displayName}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.safety_block_success), Toast.LENGTH_SHORT).show()
                         onNavigateBack()
                     } else {
-                        Toast.makeText(context, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.common_error) + ": ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -620,9 +615,9 @@ fun ChatScreen(
                         entityId = recipient.userId
                     )
                     if (res.isSuccess) {
-                        Toast.makeText(context, "Báo cáo của bạn đã được gửi thành công", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.common_success), Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "Lỗi: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.common_error) + ": ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -643,14 +638,14 @@ fun ChatScreen(
                     .padding(bottom = 30.dp)
             ) {
                 Text(
-                    text = "Chọn tem để đính kèm tin nhắn 📮",
+                    text = stringResource(R.string.chat_picker_title),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryText
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Gửi dấu ấn bưu chính của bạn cho ${recipient.displayName}",
+                    text = stringResource(R.string.chat_picker_subtitle, recipient.displayName),
                     fontSize = 12.sp,
                     color = SecondaryText
                 )
@@ -663,7 +658,7 @@ fun ChatScreen(
                             .padding(vertical = 30.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Kho tem của bạn đang trống. Hãy chụp và tạo tem trước nhé!", fontSize = 12.sp, color = SecondaryText)
+                        Text(stringResource(R.string.chat_picker_empty), fontSize = 12.sp, color = SecondaryText)
                     }
                 } else {
                     LazyColumn(
@@ -696,7 +691,7 @@ fun ChatScreen(
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(stamp.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
-                                        Text(stamp.location ?: "Bưu cục MemoStamp", fontSize = 11.sp, color = SecondaryText)
+                                        Text(stamp.location ?: "MemoStamp", fontSize = 11.sp, color = SecondaryText)
                                     }
                                     Button(
                                         onClick = {
@@ -707,7 +702,7 @@ fun ChatScreen(
                                         shape = RoundedCornerShape(10.dp),
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
-                                        Text("Chọn", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text(stringResource(R.string.common_confirm), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -725,7 +720,7 @@ fun ChatScreen(
             containerColor = SurfaceWhite,
             title = {
                 Text(
-                    text = msg.stampTitle ?: "Dấu ấn tem kỷ niệm 📮",
+                    text = msg.stampTitle ?: stringResource(R.string.chat_stamp_default_title),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = PrimaryText
@@ -769,7 +764,7 @@ fun ChatScreen(
                                     )
                                     Spacer(modifier = Modifier.height(10.dp))
                                     Text(
-                                        text = msg.stampTitle ?: "Tem kỷ niệm",
+                                        text = msg.stampTitle ?: stringResource(R.string.chat_stamp_default_title),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
                                         color = PrimaryText,
@@ -777,7 +772,7 @@ fun ChatScreen(
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = "Ảnh tem chưa được đồng bộ để chia sẻ giữa các thiết bị.",
+                                        text = stringResource(R.string.chat_stamp_unsynced_msg),
                                         fontSize = 11.sp,
                                         color = SecondaryText,
                                         textAlign = TextAlign.Center
@@ -788,18 +783,18 @@ fun ChatScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "📍 ${msg.stampLocation ?: "Việt Nam"}",
+                        text = "📍 ${msg.stampLocation ?: "Vietnam"}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = AccentBlue
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Người gửi: ${msg.senderName}",
+                        text = stringResource(R.string.chat_stamp_sender_label, msg.senderName),
                         fontSize = 11.sp,
                         color = SecondaryText
                     )
-                    if (msg.text.isNotBlank() && !msg.text.startsWith("📮 Đã gửi con tem")) {
+                    if (msg.text.isNotBlank() && !msg.text.startsWith("📮")) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -825,12 +820,12 @@ fun ChatScreen(
                                 originalImagePath = msg.stampImageUrl ?: "",
                                 renderedImagePath = msg.stampImageUrl ?: "",
                                 title = msg.stampTitle ?: "Tem từ ${msg.senderName}",
-                                location = msg.stampLocation ?: "Việt Nam",
+                                location = msg.stampLocation ?: "Vietnam",
                                 memoryDate = msg.createdAt,
                                 note = msg.text
                             )
                             stampRepo.saveStamp(draft)
-                            Toast.makeText(context, "Đã lưu con tem vào Kho của bạn thành công! 📮", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.chat_stamp_saved_toast), Toast.LENGTH_SHORT).show()
                             viewingStampMessage = null
                         }
                     },
@@ -838,12 +833,12 @@ fun ChatScreen(
                 ) {
                     Icon(Icons.Outlined.SaveAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Lưu vào Kho tem")
+                    Text(stringResource(R.string.chat_stamp_save_btn))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewingStampMessage = null }) {
-                    Text("Đóng")
+                    Text(stringResource(R.string.common_close))
                 }
             }
         )
@@ -936,7 +931,7 @@ private fun ChatMessageBubble(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        message.stampTitle ?: "Tem kỷ niệm",
+                                        message.stampTitle ?: stringResource(R.string.chat_stamp_default_title),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isMe) Color.White else PrimaryText,
@@ -944,13 +939,13 @@ private fun ChatMessageBubble(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        message.stampLocation ?: "Việt Nam",
+                                        message.stampLocation ?: "Vietnam",
                                         fontSize = 10.sp,
                                         color = if (isMe) Color.White.copy(alpha = 0.8f) else SecondaryText,
                                         maxLines = 1
                                     )
                                     Text(
-                                        "Chạm để xem chi tiết ↗",
+                                        stringResource(R.string.chat_stamp_tap_detail),
                                         fontSize = 9.sp,
                                         color = if (isMe) AccentRedSoft else AccentRed,
                                         fontWeight = FontWeight.Bold
@@ -987,7 +982,7 @@ private fun ChatMessageBubble(
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text(
-                                        text = "Đã xem",
+                                        text = stringResource(R.string.chat_status_seen),
                                         fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = Color.White.copy(alpha = 0.85f)
@@ -1005,7 +1000,7 @@ private fun ChatMessageBubble(
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     Text(
-                                        text = "Đã gửi",
+                                        text = stringResource(R.string.chat_status_sent),
                                         fontSize = 8.5.sp,
                                         color = Color.White.copy(alpha = 0.65f)
                                     )

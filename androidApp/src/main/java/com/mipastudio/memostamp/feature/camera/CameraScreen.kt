@@ -32,12 +32,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.mipastudio.memostamp.R
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
@@ -345,7 +347,7 @@ fun CameraScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Cho phép truy cập máy ảnh",
+                        text = stringResource(R.string.camera_permission_title),
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
@@ -353,7 +355,7 @@ fun CameraScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "MemoStamp cần camera để bạn chụp và dập khoảnh khắc thành tem.",
+                        text = stringResource(R.string.camera_permission_desc),
                         color = Color.LightGray,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
@@ -371,7 +373,7 @@ fun CameraScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE63946))
                     ) {
-                        Text("Cho phép", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.camera_grant_permission), color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
             }

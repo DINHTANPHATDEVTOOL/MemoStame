@@ -30,12 +30,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.core.processor.MemoImageProcessor
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
@@ -201,7 +203,7 @@ fun FriendsAndTradeScreen(
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, text)
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(context, "Đã sao chép $text vào bộ nhớ tạm! 📋", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.friends_copy_id_success, text), Toast.LENGTH_SHORT).show()
     }
 
     Scaffold(
@@ -210,7 +212,7 @@ fun FriendsAndTradeScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Bạn Bè & Kết Nối",
+                            text = stringResource(R.string.friends_trade_title),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = AppDisplayFontFamily,
@@ -228,12 +230,12 @@ fun FriendsAndTradeScreen(
                 },
                 actions = {
                     IconButton(onClick = { showThemeSelector = true }) {
-                        Icon(Icons.Outlined.Palette, contentDescription = "Chọn giao diện", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Palette, contentDescription = stringResource(R.string.friends_theme_select), tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = {
                         selectedTab = 1
                     }) {
-                        Icon(Icons.Outlined.PersonSearch, contentDescription = "Tìm bạn bằng ID", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(Icons.Outlined.PersonSearch, contentDescription = stringResource(R.string.friends_find_by_id), tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -254,12 +256,13 @@ fun FriendsAndTradeScreen(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                val inboxCount = visiblePostcards.size + incomingCloudTrades.size + receivedStamps.size
                 val tabs = listOf(
-                    (if (unreadChatCount > 0) "💬 Chat ($unreadChatCount)" else "💬 Chat") to 4,
-                    "📩 Lời mời (${incomingRequests.size})" to 2,
-                    "👥 Bạn bè (${friendsList.size})" to 0,
-                    "🔍 Tìm kiếm" to 1,
-                    "📮 Hộp thư" + (if (visiblePostcards.size + incomingCloudTrades.size + receivedStamps.size > 0) " (${visiblePostcards.size + incomingCloudTrades.size + receivedStamps.size})" else "") to 3
+                    (if (unreadChatCount > 0) "💬 ${stringResource(R.string.friends_tab_chat)} ($unreadChatCount)" else "💬 ${stringResource(R.string.friends_tab_chat)}") to 4,
+                    "📩 ${stringResource(R.string.friends_tab_requests, incomingRequests.size)}" to 2,
+                    "👥 ${stringResource(R.string.friends_tab_friends, friendsList.size)}" to 0,
+                    "🔍 ${stringResource(R.string.common_search)}" to 1,
+                    "📮 " + (if (inboxCount > 0) stringResource(R.string.friends_tab_inbox, inboxCount) else stringResource(R.string.friends_inbox_empty_title)) to 3
                 )
                 tabs.forEach { (label, idx) ->
                     val selected = selectedTab == idx
@@ -297,14 +300,14 @@ fun FriendsAndTradeScreen(
                                 Text("👥", fontSize = 48.sp)
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
-                                    "Danh sách bạn bè đang trống",
+                                    stringResource(R.string.friends_empty_title),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
                                     color = PrimaryText
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    "Chia sẻ ID @${currentUser.username} hoặc tìm kiếm ID bạn bè để gửi lời mời!",
+                                    stringResource(R.string.friends_empty_desc, currentUser.username),
                                     fontSize = 12.sp,
                                     color = SecondaryText,
                                     textAlign = TextAlign.Center,
@@ -318,7 +321,7 @@ fun FriendsAndTradeScreen(
                                     ) {
                                         Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Sao chép ID của bạn", fontSize = 12.sp)
+                                        Text(stringResource(R.string.friends_copy_my_id), fontSize = 12.sp)
                                     }
                                     Button(
                                         onClick = { selectedTab = 1 },
@@ -327,7 +330,7 @@ fun FriendsAndTradeScreen(
                                     ) {
                                         Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Tìm bạn mới", fontSize = 12.sp)
+                                        Text(stringResource(R.string.friends_find_new), fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -377,7 +380,7 @@ fun FriendsAndTradeScreen(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("ID MemoStamp của bạn", fontSize = 11.sp, color = SecondaryText)
+                                    Text(stringResource(R.string.friends_my_id_label), fontSize = 11.sp, color = SecondaryText)
                                     Text(
                                         "@${currentUser.username}",
                                         fontSize = 15.sp,
@@ -393,7 +396,7 @@ fun FriendsAndTradeScreen(
                                 ) {
                                     Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = Color.White, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Sao chép", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.common_copy), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -425,7 +428,7 @@ fun FriendsAndTradeScreen(
                                     onValueChange = { searchQuery = it },
                                     placeholder = {
                                         Text(
-                                            "Nhập chính xác ID (ví dụ: @phat_memostamp)",
+                                            stringResource(R.string.friends_search_exact_id_hint),
                                             fontSize = 13.sp,
                                             color = TertiaryText
                                         )
@@ -463,7 +466,7 @@ fun FriendsAndTradeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (cleanQ.isBlank()) "Khám phá người dùng trên Supabase (${liveSearchResults.size})" else "Kết quả tìm kiếm (${liveSearchResults.size})",
+                                text = if (cleanQ.isBlank()) stringResource(R.string.friends_explore_users, liveSearchResults.size) else stringResource(R.string.friends_search_results, liveSearchResults.size),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryText
@@ -490,7 +493,7 @@ fun FriendsAndTradeScreen(
                                             Text("🔍", fontSize = 36.sp)
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Text(
-                                                if (cleanQ.isBlank()) "Chưa tìm thấy người dùng nào trên hệ thống" else "Không tìm thấy người dùng nào với ID \"$cleanQ\"",
+                                                if (cleanQ.isBlank()) stringResource(R.string.friends_no_users_found) else stringResource(R.string.friends_no_users_with_id, cleanQ),
                                                 color = SecondaryText,
                                                 fontSize = 13.sp,
                                                 textAlign = TextAlign.Center
@@ -514,14 +517,14 @@ fun FriendsAndTradeScreen(
                                                 val res = authRepo.sendFriendRequest(user)
                                                 res.fold(
                                                     onSuccess = {
-                                                        Toast.makeText(context, "Đã gửi lời mời kết bạn đến @${user.username}! ✉️", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, context.getString(R.string.friends_invite_sent_to, user.username), Toast.LENGTH_SHORT).show()
                                                     },
                                                     onFailure = { err ->
                                                         val errMsg = err.message ?: ""
                                                         val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
                                                             "You're doing that too quickly. Please try again shortly."
                                                         } else {
-                                                            errMsg.ifBlank { "Không thể gửi lời mời" }
+                                                            errMsg.ifBlank { context.getString(R.string.common_error) }
                                                         }
                                                         Toast.makeText(context, displayMsg, Toast.LENGTH_SHORT).show()
                                                     }
@@ -532,8 +535,8 @@ fun FriendsAndTradeScreen(
                                             coroutineScope.launch {
                                                 val res = authRepo.cancelFriendRequest(user.userId)
                                                 res.fold(
-                                                    onSuccess = { Toast.makeText(context, "Đã thu hồi lời mời kết bạn", Toast.LENGTH_SHORT).show() },
-                                                    onFailure = { err -> Toast.makeText(context, err.message ?: "Thu hồi thất bại", Toast.LENGTH_SHORT).show() }
+                                                    onSuccess = { Toast.makeText(context, context.getString(R.string.friends_invite_cancelled), Toast.LENGTH_SHORT).show() },
+                                                    onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                                                 )
                                             }
                                         },
@@ -543,11 +546,11 @@ fun FriendsAndTradeScreen(
                                                     val res = authRepo.acceptFriendRequest(req.id)
                                                     res.fold(
                                                         onSuccess = {
-                                                            Toast.makeText(context, "Đã chấp nhận lời mời kết bạn từ @${user.username}! 🤝", Toast.LENGTH_SHORT).show()
+                                                            Toast.makeText(context, context.getString(R.string.friends_invite_accepted_with, user.username), Toast.LENGTH_SHORT).show()
                                                             selectedTab = 0
                                                         },
                                                         onFailure = { err ->
-                                                            Toast.makeText(context, err.message ?: "Không thể chấp nhận lời mời", Toast.LENGTH_SHORT).show()
+                                                            Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                                                         }
                                                     )
                                                 }
@@ -558,8 +561,8 @@ fun FriendsAndTradeScreen(
                                                 coroutineScope.launch {
                                                     val res = authRepo.declineFriendRequest(req.id)
                                                     res.fold(
-                                                        onSuccess = { Toast.makeText(context, "Đã từ chối lời mời kết bạn", Toast.LENGTH_SHORT).show() },
-                                                        onFailure = { err -> Toast.makeText(context, err.message ?: "Từ chối thất bại", Toast.LENGTH_SHORT).show() }
+                                                        onSuccess = { Toast.makeText(context, context.getString(R.string.friends_decline_request), Toast.LENGTH_SHORT).show() },
+                                                        onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                                                     )
                                                 }
                                             }
@@ -581,7 +584,7 @@ fun FriendsAndTradeScreen(
                         item {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "Lời mời kết bạn nhận được (${incomingRequests.size})",
+                                    stringResource(R.string.friends_incoming_title, incomingRequests.size),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = PrimaryText
@@ -602,7 +605,7 @@ fun FriendsAndTradeScreen(
                                             .padding(24.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("Chưa có lời mời kết bạn nào gửi đến bạn 📭", fontSize = 12.sp, color = SecondaryText)
+                                        Text(stringResource(R.string.friends_incoming_empty), fontSize = 12.sp, color = SecondaryText)
                                     }
                                 }
                             }
@@ -630,7 +633,7 @@ fun FriendsAndTradeScreen(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(req.senderDisplayName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                                             Text("@${req.senderUsername}", fontSize = 11.sp, color = AccentRed, fontWeight = FontWeight.SemiBold)
-                                            Text("Muốn kết bạn với bạn", fontSize = 11.sp, color = SecondaryText)
+                                            Text(stringResource(R.string.friends_wants_to_be_friends), fontSize = 11.sp, color = SecondaryText)
                                         }
 
                                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -640,11 +643,11 @@ fun FriendsAndTradeScreen(
                                                         val res = authRepo.acceptFriendRequest(req.id)
                                                         res.fold(
                                                             onSuccess = {
-                                                                Toast.makeText(context, "Đã trở thành bạn bè với @${req.senderUsername}! 🤝", Toast.LENGTH_SHORT).show()
+                                                                Toast.makeText(context, context.getString(R.string.friends_invite_accepted_with, req.senderUsername), Toast.LENGTH_SHORT).show()
                                                                 selectedTab = 0
                                                             },
                                                             onFailure = { err ->
-                                                                Toast.makeText(context, err.message ?: "Không thể chấp nhận lời mời", Toast.LENGTH_SHORT).show()
+                                                                Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                                                             }
                                                         )
                                                     }
@@ -653,22 +656,22 @@ fun FriendsAndTradeScreen(
                                                 shape = RoundedCornerShape(12.dp),
                                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                                             ) {
-                                                Text("Chấp nhận", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                Text(stringResource(R.string.friends_accept_request), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             }
                                             OutlinedButton(
                                                 onClick = {
                                                     coroutineScope.launch {
                                                         val res = authRepo.declineFriendRequest(req.id)
                                                         res.fold(
-                                                            onSuccess = { Toast.makeText(context, "Đã từ chối lời mời", Toast.LENGTH_SHORT).show() },
-                                                            onFailure = { err -> Toast.makeText(context, err.message ?: "Từ chối thất bại", Toast.LENGTH_SHORT).show() }
+                                                            onSuccess = { Toast.makeText(context, context.getString(R.string.friends_decline_request), Toast.LENGTH_SHORT).show() },
+                                                            onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                                                         )
                                                     }
                                                 },
                                                 shape = RoundedCornerShape(12.dp),
                                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                                             ) {
-                                                Text("Từ chối", fontSize = 11.sp, color = SecondaryText)
+                                                Text(stringResource(R.string.friends_decline_request), fontSize = 11.sp, color = SecondaryText)
                                             }
                                         }
                                     }
@@ -680,7 +683,7 @@ fun FriendsAndTradeScreen(
                         item {
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                "Lời mời đã gửi đi (${outgoingRequests.size})",
+                                stringResource(R.string.friends_outgoing_title, outgoingRequests.size),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryText
@@ -700,7 +703,7 @@ fun FriendsAndTradeScreen(
                                             .padding(20.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text("Không có lời mời nào đang chờ duyệt", fontSize = 12.sp, color = SecondaryText)
+                                        Text(stringResource(R.string.friends_outgoing_empty), fontSize = 12.sp, color = SecondaryText)
                                     }
                                 }
                             }
@@ -728,7 +731,7 @@ fun FriendsAndTradeScreen(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(req.recipientDisplayName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                                             Text("@${req.recipientUsername}", fontSize = 11.sp, color = SecondaryText)
-                                            Text("Đang chờ đối phương chấp nhận...", fontSize = 10.sp, color = AccentBlue)
+                                            Text(stringResource(R.string.friends_waiting_acceptance), fontSize = 10.sp, color = AccentBlue)
                                         }
 
                                         OutlinedButton(
@@ -736,15 +739,15 @@ fun FriendsAndTradeScreen(
                                                 coroutineScope.launch {
                                                     val res = authRepo.cancelFriendRequest(req.recipientId)
                                                     res.fold(
-                                                        onSuccess = { Toast.makeText(context, "Đã thu hồi lời mời kết bạn", Toast.LENGTH_SHORT).show() },
-                                                        onFailure = { err -> Toast.makeText(context, err.message ?: "Thu hồi thất bại", Toast.LENGTH_SHORT).show() }
+                                                        onSuccess = { Toast.makeText(context, context.getString(R.string.friends_invite_cancelled), Toast.LENGTH_SHORT).show() },
+                                                        onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                                                     )
                                                 }
                                             },
                                             shape = RoundedCornerShape(12.dp),
                                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                                         ) {
-                                            Text("Thu hồi", fontSize = 11.sp, color = AccentRed)
+                                            Text(stringResource(R.string.friends_cancel_request), fontSize = 11.sp, color = AccentRed)
                                         }
                                     }
                                 }
@@ -766,14 +769,14 @@ fun FriendsAndTradeScreen(
                                 Text("📮", fontSize = 48.sp)
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
-                                    "Hộp thư chưa có tem hoặc thiệp nào",
+                                    stringResource(R.string.friends_inbox_empty_title),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = PrimaryText
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Khi bạn bè gửi tặng tem hoặc đính kèm tem trong tin nhắn, con tem sẽ xuất hiện ở đây!",
+                                    stringResource(R.string.friends_inbox_empty_desc),
                                     fontSize = 12.sp,
                                     color = SecondaryText,
                                     textAlign = TextAlign.Center,
@@ -787,7 +790,7 @@ fun FriendsAndTradeScreen(
                                 ) {
                                     Icon(Icons.Outlined.CardGiftcard, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Gửi tặng tem cho bạn bè", fontSize = 12.sp)
+                                    Text(stringResource(R.string.trade_btn), fontSize = 12.sp)
                                 }
                             }
                         }
@@ -797,7 +800,7 @@ fun FriendsAndTradeScreen(
                             if (incomingCloudTrades.isNotEmpty()) {
                                 item {
                                     Text(
-                                        "Lời đề nghị trao đổi nhận được (${incomingCloudTrades.size})",
+                                        stringResource(R.string.friends_trade_incoming_title, incomingCloudTrades.size),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = PrimaryText
@@ -819,7 +822,7 @@ fun FriendsAndTradeScreen(
                                                     color = PrimaryText
                                                 )
                                                 Spacer(modifier = Modifier.width(6.dp))
-                                                Text("gửi lời đề nghị trao đổi tem!", fontSize = 12.sp, color = SecondaryText)
+                                                Text(stringResource(R.string.trade_offer_received), fontSize = 12.sp, color = SecondaryText)
                                             }
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -852,15 +855,15 @@ fun FriendsAndTradeScreen(
                                                         coroutineScope.launch {
                                                             val res = authRepo.declineTradeRequest(trade.id)
                                                             res.fold(
-                                                                onSuccess = { Toast.makeText(context, "Đã từ chối đề nghị trao đổi", Toast.LENGTH_SHORT).show() },
-                                                                onFailure = { err -> Toast.makeText(context, err.message ?: "Từ chối thất bại", Toast.LENGTH_SHORT).show() }
+                                                                onSuccess = { Toast.makeText(context, context.getString(R.string.trade_status_declined), Toast.LENGTH_SHORT).show() },
+                                                                onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                                                             )
                                                         }
                                                     },
                                                     shape = RoundedCornerShape(12.dp),
                                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                                                 ) {
-                                                    Text("Từ chối", fontSize = 11.sp, color = SecondaryText)
+                                                    Text(stringResource(R.string.friends_decline_request), fontSize = 11.sp, color = SecondaryText)
                                                 }
 
                                                 Spacer(modifier = Modifier.width(8.dp))
@@ -871,10 +874,10 @@ fun FriendsAndTradeScreen(
                                                             val res = authRepo.acceptTradeRequest(trade.id)
                                                             res.fold(
                                                                 onSuccess = {
-                                                                    Toast.makeText(context, "Đã chấp nhận trao đổi tem thành công! 📮", Toast.LENGTH_SHORT).show()
+                                                                    Toast.makeText(context, context.getString(R.string.trade_accepted_toast), Toast.LENGTH_SHORT).show()
                                                                 },
                                                                 onFailure = { err ->
-                                                                    Toast.makeText(context, err.message ?: "Chấp nhận thất bại", Toast.LENGTH_SHORT).show()
+                                                                    Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                                                                 }
                                                             )
                                                         }
@@ -885,7 +888,7 @@ fun FriendsAndTradeScreen(
                                                 ) {
                                                     Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(14.dp))
                                                     Spacer(modifier = Modifier.width(4.dp))
-                                                    Text("Chấp nhận", fontSize = 11.sp)
+                                                    Text(stringResource(R.string.friends_accept_request), fontSize = 11.sp)
                                                 }
                                             }
                                         }
@@ -898,7 +901,7 @@ fun FriendsAndTradeScreen(
                                 item {
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        "Tem đã nhận từ bạn bè (${receivedStamps.size})",
+                                        stringResource(R.string.friends_trade_received_title, receivedStamps.size),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = PrimaryText
@@ -927,15 +930,14 @@ fun FriendsAndTradeScreen(
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(rStamp.stampName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
-                                                Text("Đã lưu vĩnh viễn trong Kho tem", fontSize = 11.sp, color = SuccessGreen)
-                                                Text("Độc bản giao lưu qua Supabase Cloud", fontSize = 10.sp, color = TertiaryText)
+                                                Text(stringResource(R.string.stamp_saved_vault_notice), fontSize = 11.sp, color = SuccessGreen)
                                             }
                                             Surface(
                                                 shape = RoundedCornerShape(8.dp),
                                                 color = AccentRed.copy(alpha = 0.1f)
                                             ) {
                                                 Text(
-                                                    "Đã sở hữu ✨",
+                                                    stringResource(R.string.stamp_owned_badge),
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = AccentRed,
@@ -952,7 +954,7 @@ fun FriendsAndTradeScreen(
                                 item {
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        "Đề nghị trao đổi đã gửi đi (${outgoingCloudTrades.size})",
+                                        stringResource(R.string.friends_trade_outgoing_title, outgoingCloudTrades.size),
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = PrimaryText
@@ -980,24 +982,24 @@ fun FriendsAndTradeScreen(
                                             )
                                             Spacer(modifier = Modifier.width(10.dp))
                                             Column(modifier = Modifier.weight(1f)) {
-                                                Text("Gửi tới @${outTrade.recipientUsername}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                                                Text("@${outTrade.recipientUsername}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                                                 Text(outTrade.stampName, fontSize = 11.sp, color = SecondaryText)
-                                                Text("Đang chờ phản hồi...", fontSize = 10.sp, color = AccentBlue)
+                                                Text(stringResource(R.string.friends_waiting_response), fontSize = 10.sp, color = AccentBlue)
                                             }
                                             OutlinedButton(
                                                 onClick = {
                                                     coroutineScope.launch {
                                                         val res = authRepo.cancelTradeRequest(outTrade.id)
                                                         res.fold(
-                                                            onSuccess = { Toast.makeText(context, "Đã thu hồi đề nghị trao đổi", Toast.LENGTH_SHORT).show() },
-                                                            onFailure = { err -> Toast.makeText(context, err.message ?: "Thu hồi thất bại", Toast.LENGTH_SHORT).show() }
+                                                            onSuccess = { Toast.makeText(context, context.getString(R.string.trade_status_cancelled), Toast.LENGTH_SHORT).show() },
+                                                            onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                                                         )
                                                     }
                                                 },
                                                 shape = RoundedCornerShape(10.dp),
                                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                             ) {
-                                                Text("Thu hồi", fontSize = 10.sp, color = AccentRed)
+                                                Text(stringResource(R.string.trade_cancel_button), fontSize = 10.sp, color = AccentRed)
                                             }
                                         }
                                     }
@@ -1052,7 +1054,7 @@ fun FriendsAndTradeScreen(
                                                 color = AccentRed.copy(alpha = 0.1f)
                                             ) {
                                                 Text(
-                                                    "Tem kỷ niệm 📮",
+                                                    stringResource(R.string.chat_stamp_default_title),
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = AccentRed,
@@ -1099,7 +1101,7 @@ fun FriendsAndTradeScreen(
                                                 Spacer(modifier = Modifier.width(12.dp))
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
-                                                        msg.stampTitle ?: "Tem thư kỷ niệm",
+                                                        msg.stampTitle ?: stringResource(R.string.chat_stamp_default_title),
                                                         fontSize = 14.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         color = PrimaryText
@@ -1111,7 +1113,7 @@ fun FriendsAndTradeScreen(
                                                         color = AccentBlue,
                                                         fontWeight = FontWeight.Medium
                                                     )
-                                                    if (msg.text.isNotBlank() && !msg.text.startsWith("📮 Đã gửi con tem")) {
+                                                    if (msg.text.isNotBlank() && !msg.text.startsWith("📮")) {
                                                         Spacer(modifier = Modifier.height(4.dp))
                                                         Text(
                                                             "“${msg.text}”",
@@ -1135,14 +1137,14 @@ fun FriendsAndTradeScreen(
                                             OutlinedButton(
                                                 onClick = {
                                                     dismissInboxItem(msg.id)
-                                                    Toast.makeText(context, "Đã từ chối con tem này ❌", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, context.getString(R.string.trade_status_declined), Toast.LENGTH_SHORT).show()
                                                 },
                                                 shape = RoundedCornerShape(12.dp),
                                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                                             ) {
                                                 Icon(Icons.Outlined.Close, contentDescription = null, modifier = Modifier.size(14.dp), tint = SecondaryText)
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Từ chối", fontSize = 11.sp, color = SecondaryText)
+                                                Text(stringResource(R.string.friends_decline_request), fontSize = 11.sp, color = SecondaryText)
                                             }
 
                                             Spacer(modifier = Modifier.width(6.dp))
@@ -1154,7 +1156,7 @@ fun FriendsAndTradeScreen(
                                             ) {
                                                 Icon(Icons.AutoMirrored.Outlined.Chat, contentDescription = null, modifier = Modifier.size(14.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Nhắn tin", fontSize = 11.sp)
+                                                Text(stringResource(R.string.friends_tab_chat), fontSize = 11.sp)
                                             }
 
                                             Spacer(modifier = Modifier.width(6.dp))
@@ -1166,14 +1168,14 @@ fun FriendsAndTradeScreen(
                                                         val draft = StampDraft(
                                                             originalImagePath = validRemoteUrl,
                                                             renderedImagePath = validRemoteUrl,
-                                                            title = msg.stampTitle?.takeIf { it.isNotBlank() } ?: "Tem từ ${msg.senderName}",
+                                                            title = msg.stampTitle?.takeIf { it.isNotBlank() } ?: msg.senderName,
                                                             location = msg.stampLocation?.takeIf { it.isNotBlank() } ?: "Việt Nam",
                                                             memoryDate = msg.createdAt,
                                                             note = msg.text
                                                         )
                                                         repo.saveStamp(draft)
                                                         dismissInboxItem(msg.id)
-                                                        Toast.makeText(context, "Đã lưu con tem vào Kho của bạn thành công! 📮", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, context.getString(R.string.chat_stamp_saved_toast), Toast.LENGTH_SHORT).show()
                                                     }
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
@@ -1182,7 +1184,7 @@ fun FriendsAndTradeScreen(
                                             ) {
                                                 Icon(Icons.Outlined.SaveAlt, contentDescription = null, modifier = Modifier.size(14.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text("Lưu vào Kho", fontSize = 11.sp)
+                                                Text(stringResource(R.string.chat_stamp_save_btn), fontSize = 11.sp)
                                             }
                                         }
                                     }
@@ -1217,14 +1219,14 @@ fun FriendsAndTradeScreen(
                                 }
                                 Spacer(modifier = Modifier.height(14.dp))
                                 Text(
-                                    "Chưa có cuộc trò chuyện nào",
+                                    stringResource(R.string.chat_conversations_empty_title),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = PrimaryText
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Kết nối với bạn bè để trò chuyện và chia sẻ tem thư kỉ niệm nhé!",
+                                    stringResource(R.string.chat_conversations_empty_desc),
                                     fontSize = 12.sp,
                                     color = SecondaryText,
                                     textAlign = TextAlign.Center,
@@ -1238,7 +1240,7 @@ fun FriendsAndTradeScreen(
                                 ) {
                                     Icon(Icons.Outlined.People, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Xem danh sách bạn bè", fontSize = 12.sp)
+                                    Text(stringResource(R.string.chat_view_friends_btn), fontSize = 12.sp)
                                 }
                             }
                         }
@@ -1292,11 +1294,11 @@ fun FriendsAndTradeScreen(
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 val isMe = lastMsg?.senderId == currentUser.userId
                                                 val basePreview = when {
-                                                    lastMsg == null -> "Chạm để bắt đầu nhắn tin"
-                                                    lastMsg.stampImageUrl != null -> "📮 [Tem: ${lastMsg.stampTitle ?: "Kỷ niệm"}] ${lastMsg.text}"
+                                                    lastMsg == null -> stringResource(R.string.chat_tap_to_message)
+                                                    lastMsg.stampImageUrl != null -> "📮 [${lastMsg.stampTitle ?: stringResource(R.string.chat_stamp_default_title)}] ${lastMsg.text}"
                                                     else -> lastMsg.text
                                                 }
-                                                val displayText = if (isMe) "Bạn: $basePreview" else basePreview
+                                                val displayText = if (isMe) stringResource(R.string.chat_message_prefix_you, basePreview) else basePreview
 
                                                 Text(
                                                     text = displayText,
@@ -1311,14 +1313,14 @@ fun FriendsAndTradeScreen(
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                     if (lastMsg.isRead) {
                                                         Text(
-                                                            text = "Đã xem ✓✓",
+                                                            text = "${stringResource(R.string.chat_status_seen)} ✓✓",
                                                             fontSize = 10.sp,
                                                             color = AccentRed,
                                                             fontWeight = FontWeight.Medium
                                                         )
                                                     } else {
                                                         Text(
-                                                            text = "Đã gửi ✓",
+                                                            text = "${stringResource(R.string.chat_status_sent)} ✓",
                                                             fontSize = 10.sp,
                                                             color = SecondaryText
                                                         )
@@ -1333,7 +1335,7 @@ fun FriendsAndTradeScreen(
                                                         modifier = Modifier.padding(start = 4.dp)
                                                     ) {
                                                         Text(
-                                                            text = "${conv.unreadCount} mới",
+                                                            text = "${conv.unreadCount}",
                                                             fontSize = 10.sp,
                                                             fontWeight = FontWeight.Bold,
                                                             color = Color.White,
@@ -1358,11 +1360,11 @@ fun FriendsAndTradeScreen(
                 onDismissRequest = { userToUnfriend = null },
                 containerColor = SurfaceWhite,
                 title = {
-                    Text("Hủy kết bạn với @${friend.username}?", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryText)
+                    Text(stringResource(R.string.friends_unfriend_confirm_title, "@${friend.username}"), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryText)
                 },
                 text = {
                     Text(
-                        "Bạn có chắc muốn hủy kết bạn với ${friend.displayName}? Sau khi hủy, bạn sẽ cần gửi lại lời mời kết bạn nếu muốn kết nối lại.",
+                        stringResource(R.string.friends_unfriend_confirm_msg, friend.displayName),
                         fontSize = 13.sp,
                         color = SecondaryText
                     )
@@ -1374,19 +1376,19 @@ fun FriendsAndTradeScreen(
                                 val res = authRepo.unfriend(friend.userId)
                                 userToUnfriend = null
                                 res.fold(
-                                    onSuccess = { Toast.makeText(context, "Đã hủy kết bạn với @${friend.username}", Toast.LENGTH_SHORT).show() },
-                                    onFailure = { err -> Toast.makeText(context, err.message ?: "Hủy kết bạn thất bại", Toast.LENGTH_SHORT).show() }
+                                    onSuccess = { Toast.makeText(context, context.getString(R.string.friends_invite_cancelled), Toast.LENGTH_SHORT).show() },
+                                    onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                                 )
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                     ) {
-                        Text("Xác nhận hủy", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.friends_unfriend_btn), fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { userToUnfriend = null }) {
-                        Text("Đóng")
+                        Text(stringResource(R.string.common_close))
                     }
                 }
             )
@@ -1401,9 +1403,9 @@ fun FriendsAndTradeScreen(
                     coroutineScope.launch {
                         val res = authRepo.blockUser(uid)
                         if (res.isSuccess) {
-                            Toast.makeText(context, "Đã chặn @${targetUser.username}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.safety_block_success), Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Lỗi chặn: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, res.exceptionOrNull()?.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
@@ -1426,9 +1428,9 @@ fun FriendsAndTradeScreen(
                             entityId = uid
                         )
                         if (res.isSuccess) {
-                            Toast.makeText(context, "Báo cáo của bạn đã được gửi thành công", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.common_success), Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Lỗi báo cáo: ${res.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, res.exceptionOrNull()?.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
@@ -1442,7 +1444,7 @@ fun FriendsAndTradeScreen(
                 onDismissRequest = { selectedTradeOffer = null },
                 containerColor = SurfaceWhite,
                 title = {
-                    Text("Bưu thiếp & Tem từ ${offer.senderName} 🤝", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryText)
+                    Text(stringResource(R.string.friends_trade_offer_dialog_title, offer.senderName), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryText)
                 },
                 text = {
                     Column(
@@ -1476,7 +1478,7 @@ fun FriendsAndTradeScreen(
                                     val draft = StampDraft(
                                         originalImagePath = offer.imageUrl,
                                         renderedImagePath = offer.imageUrl,
-                                        title = "Tem từ ${offer.senderName}",
+                                        title = offer.senderName,
                                         location = offer.location,
                                         memoryDate = System.currentTimeMillis(),
                                         note = offer.note
@@ -1486,25 +1488,25 @@ fun FriendsAndTradeScreen(
                                         onSuccess = { entity ->
                                             offer.status = "ACCEPTED"
                                             inboxItems = inboxItems.map { if (it.id == offer.id) offer else it }
-                                            Toast.makeText(context, "Đã nhận tem! Đã lưu vào Kho của bạn 📮", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(context, context.getString(R.string.chat_stamp_saved_toast), Toast.LENGTH_LONG).show()
                                             selectedTradeOffer = null
                                             onOpenStampDetail(entity.id)
                                         },
                                         onFailure = { err ->
-                                            Toast.makeText(context, "Lỗi: ${err.message}", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                                         }
                                     )
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
                         ) {
-                            Text("Nhận Tem & Lưu Vào Kho 🤝")
+                            Text(stringResource(R.string.friends_trade_accept_btn))
                         }
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { selectedTradeOffer = null }) {
-                        Text("Đóng")
+                        Text(stringResource(R.string.common_close))
                     }
                 }
             )
@@ -1512,22 +1514,23 @@ fun FriendsAndTradeScreen(
 
         // Send Trade Offer Dialog Modal
         friendToTradeWith?.let { friend ->
+            val defaultTradeNote = stringResource(R.string.friends_trade_default_note)
             var selectedStampId by remember { mutableStateOf<String?>(null) }
-            var tradeNote by remember { mutableStateOf("Tặng bạn dấu tem kỷ niệm này nhé! 📮") }
+            var tradeNote by remember { mutableStateOf(defaultTradeNote) }
 
             AlertDialog(
                 onDismissRequest = { friendToTradeWith = null },
                 containerColor = SurfaceWhite,
                 title = {
-                    Text("Gửi tặng tem cho @${friend.username}", fontWeight = FontWeight.Bold, color = PrimaryText)
+                    Text(stringResource(R.string.friends_trade_send_title, friend.username), fontWeight = FontWeight.Bold, color = PrimaryText)
                 },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Text("Chọn một con tem từ Kho của bạn:", fontSize = 12.sp, color = SecondaryText)
+                        Text(stringResource(R.string.friends_trade_select_stamp), fontSize = 12.sp, color = SecondaryText)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         if (myStamps.isEmpty()) {
-                            Text("Kho tem đang trống! Hãy chụp ảnh hoặc tạo tem trước.", fontSize = 12.sp, color = AccentRed)
+                            Text(stringResource(R.string.friends_trade_empty_vault), fontSize = 12.sp, color = AccentRed)
                         } else {
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(3),
@@ -1568,7 +1571,7 @@ fun FriendsAndTradeScreen(
                         OutlinedTextField(
                             value = tradeNote,
                             onValueChange = { tradeNote = it },
-                            label = { Text("Lời nhắn bưu chính gửi @${friend.username}") },
+                            label = { Text(stringResource(R.string.friends_trade_note_hint, friend.username)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -1579,10 +1582,10 @@ fun FriendsAndTradeScreen(
                         onClick = {
                             val sel = myStamps.find { it.id == selectedStampId }
                             if (sel == null) {
-                                Toast.makeText(context, "Vui lòng chọn con tem để gửi", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.friends_trade_select_stamp), Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
-                            val noteText = tradeNote.ifBlank { "Tặng bạn dấu tem kỷ niệm này nhé! 📮" }
+                            val noteText = tradeNote.ifBlank { defaultTradeNote }
 
                             coroutineScope.launch {
                                 val tradeRes = com.mipastudio.memostamp.data.remote.CloudSyncEngine.getInstance(context)
@@ -1590,14 +1593,14 @@ fun FriendsAndTradeScreen(
                                 tradeRes.fold(
                                     onSuccess = { tradeId ->
                                         friendToTradeWith = null
-                                        Toast.makeText(context, "Đã gửi đề nghị trao đổi tem tới @${friend.username}! 📮", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.friends_invite_sent_to, friend.username), Toast.LENGTH_SHORT).show()
                                     },
                                     onFailure = { err ->
                                         val errMsg = err.message ?: ""
                                         val displayMsg = if (errMsg.contains("RATE_LIMITED", ignoreCase = true) || errMsg.contains("429")) {
                                             "You're doing that too quickly. Please try again shortly."
                                         } else {
-                                            "Lỗi gửi đề nghị: $errMsg"
+                                            errMsg
                                         }
                                         Toast.makeText(context, displayMsg, Toast.LENGTH_LONG).show()
                                     }
@@ -1607,12 +1610,12 @@ fun FriendsAndTradeScreen(
                         enabled = selectedStampId != null,
                         colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                     ) {
-                        Text("Gửi Thư & Tem ✉️")
+                        Text(stringResource(R.string.friends_trade_send_btn))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { friendToTradeWith = null }) {
-                        Text("Hủy")
+                        Text(stringResource(R.string.common_cancel))
                     }
                 }
             )
@@ -1752,7 +1755,7 @@ private fun FriendCard(
                                 ) {
                                     Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = "Chat", tint = Color.White, modifier = Modifier.size(13.dp))
                                     Spacer(modifier = Modifier.width(3.dp))
-                                    Text("Nhắn tin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(stringResource(R.string.friends_tab_chat), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 }
                             }
 
@@ -1767,7 +1770,7 @@ private fun FriendCard(
                                 ) {
                                     Icon(Icons.Outlined.SwapHoriz, contentDescription = "Trade", tint = AccentRed, modifier = Modifier.size(13.dp))
                                     Spacer(modifier = Modifier.width(2.dp))
-                                    Text("Tặng tem", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = PrimaryText)
+                                    Text(stringResource(R.string.trade_btn), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = PrimaryText)
                                 }
                             }
 
@@ -1780,7 +1783,7 @@ private fun FriendCard(
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Outlined.PersonRemove, contentDescription = "Hủy bạn", tint = SecondaryText, modifier = Modifier.size(13.dp))
+                                    Icon(Icons.Outlined.PersonRemove, contentDescription = stringResource(R.string.friends_unfriend_btn), tint = SecondaryText, modifier = Modifier.size(13.dp))
                                 }
                             }
                         }
@@ -1795,7 +1798,7 @@ private fun FriendCard(
                                 modifier = Modifier.clickable { onAcceptRequest() }
                             ) {
                                 Text(
-                                    "Chấp nhận",
+                                    stringResource(R.string.friends_accept_request),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -1808,7 +1811,7 @@ private fun FriendCard(
                                 modifier = Modifier.clickable { onDeclineRequest() }
                             ) {
                                 Text(
-                                    "Từ chối",
+                                    stringResource(R.string.friends_decline_request),
                                     fontSize = 11.sp,
                                     color = SecondaryText,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp)
@@ -1830,7 +1833,7 @@ private fun FriendCard(
                             ) {
                                 Icon(Icons.Outlined.HourglassTop, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(12.dp))
                                 Spacer(modifier = Modifier.width(3.dp))
-                                Text("Đã gửi (Thu hồi)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue)
+                                Text(stringResource(R.string.friends_pending_request), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AccentBlue)
                             }
                         }
                     }
@@ -1848,7 +1851,7 @@ private fun FriendCard(
                             ) {
                                 Icon(Icons.Outlined.PersonAdd, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Gửi lời mời", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text(stringResource(R.string.friends_send_invite), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         }
                     }

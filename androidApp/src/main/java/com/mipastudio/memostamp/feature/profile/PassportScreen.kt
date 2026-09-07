@@ -27,11 +27,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.ui.components.ThemeSelectorModalSheet
 import com.mipastudio.memostamp.ui.components.BlockedUsersManagementDialog
@@ -41,6 +43,8 @@ import com.mipastudio.memostamp.data.remote.supabase.SupabaseBlockedUser
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseConfig
 import com.mipastudio.memostamp.data.repository.StampRepository
 import com.mipastudio.memostamp.feature.profile.components.SupabaseConfigDialog
+import com.mipastudio.memostamp.core.i18n.AppLanguageManager
+import com.mipastudio.memostamp.core.i18n.AppLanguageMode
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,7 +108,7 @@ fun PassportScreen(
                 val localPath = authRepo.saveMediaUriToLocal(uri, "cover") ?: uri.toString()
                 authRepo.updateCoverPhoto(localPath)
                 showCoverOptionsModal = false
-                Toast.makeText(context, "Đã cập nhật hình nền hồ sơ từ thư viện ảnh! 🖼️✨", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.profile_save_success), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -117,7 +121,7 @@ fun PassportScreen(
                 val localPath = authRepo.saveMediaUriToLocal(uri, "avatar") ?: uri.toString()
                 authRepo.updateAvatarPhoto(localPath)
                 showAvatarOptionsModal = false
-                Toast.makeText(context, "Đã cập nhật ảnh đại diện từ thư viện ảnh! 📸✨", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.profile_save_success), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -148,24 +152,24 @@ fun PassportScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Hồ Sơ & Passport", fontSize = 18.sp, fontFamily = AppDisplayFontFamily, fontWeight = FontWeight.Bold, color = PrimaryText)
-                        Text("Hộ chiếu lưu giữ dấu tem ký ức", fontSize = 11.sp, color = SecondaryText)
+                        Text(stringResource(R.string.profile_title), fontSize = 18.sp, fontFamily = AppDisplayFontFamily, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(stringResource(R.string.vault_subtitle), fontSize = 11.sp, color = SecondaryText)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back", tint = PrimaryText)
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = PrimaryText)
                     }
                 },
                 actions = {
                     IconButton(onClick = { showThemeSelector = true }) {
-                        Icon(Icons.Outlined.Palette, contentDescription = "Chọn giao diện", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Outlined.Palette, contentDescription = stringResource(R.string.friends_theme_select), tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = { showQrModal = true }) {
                         Icon(Icons.Outlined.QrCode, contentDescription = "QR Code", tint = MaterialTheme.colorScheme.onBackground)
                     }
                     IconButton(onClick = { showSettingsModal = true }) {
-                        Icon(Icons.Outlined.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.profile_settings_title), tint = MaterialTheme.colorScheme.onBackground)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -231,13 +235,13 @@ fun PassportScreen(
                             ) {
                                 Icon(
                                     Icons.Outlined.PhotoCamera,
-                                    contentDescription = "Đổi hình nền",
+                                    contentDescription = stringResource(R.string.profile_change_cover),
                                     tint = Color.White,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Đổi hình nền",
+                                    text = stringResource(R.string.profile_change_cover),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
@@ -290,7 +294,7 @@ fun PassportScreen(
                                 .clickable { showAvatarOptionsModal = true }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Outlined.CameraAlt, contentDescription = "Đổi Avatar", tint = Color.White, modifier = Modifier.size(15.dp))
+                                Icon(Icons.Outlined.CameraAlt, contentDescription = stringResource(R.string.profile_change_avatar), tint = Color.White, modifier = Modifier.size(15.dp))
                             }
                         }
                     }
@@ -366,7 +370,7 @@ fun PassportScreen(
                 ) {
                     Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Chỉnh sửa hồ sơ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(stringResource(R.string.profile_edit), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
 
                 OutlinedButton(
@@ -376,7 +380,7 @@ fun PassportScreen(
                 ) {
                     Icon(Icons.Outlined.QrCode, contentDescription = null, modifier = Modifier.size(16.dp), tint = PrimaryText)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Chia sẻ Passport", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                    Text(stringResource(R.string.profile_share_passport), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                 }
 
                 IconButton(
@@ -386,7 +390,7 @@ fun PassportScreen(
                         .background(WarmPaperBg, RoundedCornerShape(14.dp))
                         .border(1.dp, UIBorder, RoundedCornerShape(14.dp))
                 ) {
-                    Icon(Icons.Outlined.Settings, contentDescription = "Cài đặt", tint = PrimaryText, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.profile_settings_title), tint = PrimaryText, modifier = Modifier.size(20.dp))
                 }
             }
 
@@ -448,22 +452,22 @@ fun PassportScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("${roomStamps.size}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentRed)
-                        Text("Tem dán", fontSize = 11.sp, color = SecondaryText)
+                        Text(stringResource(R.string.profile_stat_stamps), fontSize = 11.sp, color = SecondaryText)
                     }
                     Box(modifier = Modifier.width(1.dp).height(32.dp).background(UIBorder))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("${friendIds.size}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentBlue)
-                        Text("Bạn bè", fontSize = 11.sp, color = SecondaryText)
+                        Text(stringResource(R.string.profile_stat_friends), fontSize = 11.sp, color = SecondaryText)
                     }
                     Box(modifier = Modifier.width(1.dp).height(32.dp).background(UIBorder))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("${roomStamps.count { it.note.isNotBlank() }}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
-                        Text("Ký ức", fontSize = 11.sp, color = SecondaryText)
+                        Text(stringResource(R.string.profile_stat_memories), fontSize = 11.sp, color = SecondaryText)
                     }
                     Box(modifier = Modifier.width(1.dp).height(32.dp).background(UIBorder))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("${roomCollections.size}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
-                        Text("Bộ sưu tập", fontSize = 11.sp, color = SecondaryText)
+                        Text(stringResource(R.string.profile_stat_collections), fontSize = 11.sp, color = SecondaryText)
                     }
                 }
             }
@@ -477,14 +481,14 @@ fun PassportScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Dấu Thị Thực & Ký Ức Đã Đóng",
+                    text = stringResource(R.string.profile_visas_title),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = AppDisplayFontFamily,
                     color = PrimaryText
                 )
                 Text(
-                    text = "${displayedVisas.size} dấu",
+                    text = stringResource(R.string.profile_visas_count, displayedVisas.size),
                     fontSize = 12.sp,
                     color = SecondaryText
                 )
@@ -587,7 +591,7 @@ fun PassportScreen(
                                             coroutineScope.launch {
                                                 authRepo.updateCoverPhoto(url)
                                                 showCoverOptionsModal = false
-                                                Toast.makeText(context, "Đã đổi sang hình nền: $name! ✨", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.profile_save_success), Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                 ) {
@@ -673,7 +677,7 @@ fun PassportScreen(
                                             coroutineScope.launch {
                                                 authRepo.updateAvatarPhoto(url)
                                                 showAvatarOptionsModal = false
-                                                Toast.makeText(context, "Đã cập nhật ảnh đại diện! ✨", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.profile_save_success), Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                 ) {
@@ -710,7 +714,7 @@ fun PassportScreen(
 
             AlertDialog(
                 onDismissRequest = { showEditProfileModal = false },
-                title = { Text("Chỉnh sửa hồ sơ", fontWeight = FontWeight.Bold, color = PrimaryText) },
+                title = { Text(stringResource(R.string.profile_edit), fontWeight = FontWeight.Bold, color = PrimaryText) },
                 text = {
                     Column(
                         modifier = Modifier
@@ -733,7 +737,7 @@ fun PassportScreen(
                             ) {
                                 Icon(Icons.Outlined.Wallpaper, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Đổi hình nền", fontSize = 11.sp)
+                                Text(stringResource(R.string.profile_change_cover), fontSize = 11.sp)
                             }
                             OutlinedButton(
                                 onClick = {
@@ -745,28 +749,28 @@ fun PassportScreen(
                             ) {
                                 Icon(Icons.Outlined.AccountBox, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Đổi avatar", fontSize = 11.sp)
+                                Text(stringResource(R.string.profile_change_avatar), fontSize = 11.sp)
                             }
                         }
 
                         OutlinedTextField(
                             value = editName,
                             onValueChange = { editName = it },
-                            label = { Text("Tên hiển thị") },
+                            label = { Text(stringResource(R.string.auth_display_name)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = editCity,
                             onValueChange = { editCity = it },
-                            label = { Text("Thành phố") },
+                            label = { Text(stringResource(R.string.auth_city)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = editBio,
                             onValueChange = { editBio = it },
-                            label = { Text("Tiểu sử (Bio)") },
+                            label = { Text(stringResource(R.string.auth_bio)) },
                             maxLines = 3,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -778,16 +782,16 @@ fun PassportScreen(
                             coroutineScope.launch {
                                 authRepo.updateProfile(editName, editBio, null, editCity)
                                 showEditProfileModal = false
-                                Toast.makeText(context, "Đã cập nhật hồ sơ! ✨", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.profile_save_success), Toast.LENGTH_SHORT).show()
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                     ) {
-                        Text("Lưu")
+                        Text(stringResource(R.string.common_save))
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showEditProfileModal = false }) { Text("Hủy") }
+                    TextButton(onClick = { showEditProfileModal = false }) { Text(stringResource(R.string.common_cancel)) }
                 },
                 containerColor = SurfaceWhite
             )
@@ -797,7 +801,7 @@ fun PassportScreen(
         if (showQrModal) {
             AlertDialog(
                 onDismissRequest = { showQrModal = false },
-                title = { Text("Mã QR Passport của bạn", fontWeight = FontWeight.Bold, color = PrimaryText) },
+                title = { Text(stringResource(R.string.friends_my_qr), fontWeight = FontWeight.Bold, color = PrimaryText) },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         Text("Quét mã để kết nối và trao đổi tem bưu chính", fontSize = 13.sp, color = SecondaryText)
@@ -818,7 +822,7 @@ fun PassportScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showQrModal = false }) { Text("Đóng") }
+                    TextButton(onClick = { showQrModal = false }) { Text(stringResource(R.string.common_close)) }
                 },
                 containerColor = SurfaceWhite
             )
@@ -826,9 +830,8 @@ fun PassportScreen(
 
         // Settings & Language Modal
         if (showSettingsModal) {
-            var selectedLanguage by remember {
-                mutableStateOf(context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE).getString("app_lang", "vi") ?: "vi")
-            }
+            val languageManager = remember(context) { AppLanguageManager.getInstance(context) }
+            val currentLanguageMode by languageManager.currentMode.collectAsState()
             var currentPassword by remember { mutableStateOf("") }
             var newPassword by remember { mutableStateOf("") }
             var confirmPassword by remember { mutableStateOf("") }
@@ -863,31 +866,57 @@ fun PassportScreen(
                         HorizontalDivider(color = UIBorder)
 
                         // 1. Language Selection Section
-                        Text("🌐 Ngôn ngữ ứng dụng (App Language)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(
+                            stringResource(R.string.settings_language_section),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryText
+                        )
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             FilterChip(
-                                selected = selectedLanguage == "vi",
+                                selected = currentLanguageMode == AppLanguageMode.SYSTEM,
                                 onClick = {
-                                    selectedLanguage = "vi"
-                                    context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
-                                        .edit().putString("app_lang", "vi").apply()
-                                    Toast.makeText(context, "Đã chuyển sang Tiếng Việt 🇻🇳", Toast.LENGTH_SHORT).show()
+                                    languageManager.setLanguageMode(AppLanguageMode.SYSTEM)
                                 },
-                                label = { Text("Tiếng Việt 🇻🇳", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                                label = {
+                                    val effective = if (languageManager.resolveEffectiveLocale().language == "vi") "Tiếng Việt" else "English"
+                                    Text(
+                                        "${stringResource(R.string.settings_language_system)} ($effective)",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                modifier = Modifier.weight(1.3f)
+                            )
+                            FilterChip(
+                                selected = currentLanguageMode == AppLanguageMode.VIETNAMESE,
+                                onClick = {
+                                    languageManager.setLanguageMode(AppLanguageMode.VIETNAMESE)
+                                },
+                                label = {
+                                    Text(
+                                        stringResource(R.string.settings_language_vi),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                             FilterChip(
-                                selected = selectedLanguage == "en",
+                                selected = currentLanguageMode == AppLanguageMode.ENGLISH,
                                 onClick = {
-                                    selectedLanguage = "en"
-                                    context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
-                                        .edit().putString("app_lang", "en").apply()
-                                    Toast.makeText(context, "Switched to English 🇬🇧", Toast.LENGTH_SHORT).show()
+                                    languageManager.setLanguageMode(AppLanguageMode.ENGLISH)
                                 },
-                                label = { Text("English 🇬🇧", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                                label = {
+                                    Text(
+                                        stringResource(R.string.settings_language_en),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -904,31 +933,31 @@ fun PassportScreen(
                         ) {
                             Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Chỉnh sửa tên hiển thị & tiểu sử")
+                            Text(stringResource(R.string.profile_edit_display_name_bio))
                         }
 
                         HorizontalDivider(color = UIBorder)
 
                         // 3. Change Password Section
-                        Text("🔒 Đổi mật khẩu", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text("🔒 " + stringResource(R.string.settings_update_password), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                         OutlinedTextField(
                             value = currentPassword,
                             onValueChange = { currentPassword = it },
-                            label = { Text("Mật khẩu hiện tại", fontSize = 11.sp) },
+                            label = { Text(stringResource(R.string.auth_password_current), fontSize = 11.sp) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = newPassword,
                             onValueChange = { newPassword = it },
-                            label = { Text("Mật khẩu mới", fontSize = 11.sp) },
+                            label = { Text(stringResource(R.string.auth_password_new), fontSize = 11.sp) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
                         OutlinedTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
-                            label = { Text("Xác nhận mật khẩu mới", fontSize = 11.sp) },
+                            label = { Text(stringResource(R.string.auth_password_confirm), fontSize = 11.sp) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -938,7 +967,7 @@ fun PassportScreen(
                                 passMessage!!,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (passMessage!!.contains("thành công")) Color(0xFF2E7D32) else AccentRed
+                                color = if (passMessage!!.contains("thành công") || passMessage!!.contains("successfully")) Color(0xFF2E7D32) else AccentRed
                             )
                         }
 
@@ -947,29 +976,29 @@ fun PassportScreen(
                             onClick = {
                                 if (isPasswordUpdating) return@Button
                                 if (currentPassword.isBlank()) {
-                                    passMessage = "⚠️ Vui lòng nhập mật khẩu hiện tại"
+                                    passMessage = "⚠️ " + context.getString(R.string.auth_err_empty_identifier)
                                     return@Button
                                 }
                                 if (newPassword.length < 6) {
-                                    passMessage = "⚠️ Mật khẩu mới phải từ 6 ký tự"
+                                    passMessage = "⚠️ " + context.getString(R.string.auth_err_password_too_short)
                                     return@Button
                                 }
                                 if (newPassword != confirmPassword) {
-                                    passMessage = "⚠️ Mật khẩu mới không trùng khớp"
+                                    passMessage = "⚠️ " + context.getString(R.string.auth_err_password_match)
                                     return@Button
                                 }
                                 isPasswordUpdating = true
-                                passMessage = "⏳ Đang cập nhật mật khẩu..."
+                                passMessage = "⏳ …"
                                 coroutineScope.launch {
                                     val res = authRepo.updatePassword(currentPassword, newPassword)
                                     isPasswordUpdating = false
                                     if (res.isSuccess) {
-                                        passMessage = "✅ Đã đổi mật khẩu thành công!"
+                                        passMessage = "✅ " + context.getString(R.string.settings_password_updated)
                                         currentPassword = ""
                                         newPassword = ""
                                         confirmPassword = ""
                                     } else {
-                                        val err = res.exceptionOrNull()?.message ?: "Đổi mật khẩu thất bại"
+                                        val err = res.exceptionOrNull()?.message ?: context.getString(R.string.common_error)
                                         passMessage = "⚠️ $err"
                                     }
                                 }
@@ -977,7 +1006,7 @@ fun PassportScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Cập nhật mật khẩu", color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.settings_update_password), color = MaterialTheme.colorScheme.onPrimaryContainer, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
 
                         HorizontalDivider(color = UIBorder)
@@ -996,7 +1025,7 @@ fun PassportScreen(
                         ) {
                             Icon(Icons.Outlined.PersonOff, contentDescription = null, tint = PrimaryText, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Danh sách người dùng đã chặn", color = PrimaryText, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.settings_blocked_users), color = PrimaryText, fontWeight = FontWeight.SemiBold)
                         }
 
                         HorizontalDivider(color = UIBorder)
@@ -1009,7 +1038,7 @@ fun PassportScreen(
                                     val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
                                     context.startActivity(intent)
                                 } catch (_: Exception) {
-                                    Toast.makeText(context, "Không thể mở trình duyệt", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             shape = RoundedCornerShape(12.dp),
@@ -1017,7 +1046,7 @@ fun PassportScreen(
                         ) {
                             Icon(Icons.Outlined.Policy, contentDescription = null, tint = PrimaryText, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Chính sách quyền riêng tư", color = PrimaryText, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.profile_privacy_policy), color = PrimaryText, fontWeight = FontWeight.SemiBold)
                         }
 
                         HorizontalDivider(color = UIBorder)
@@ -1027,7 +1056,7 @@ fun PassportScreen(
                             onClick = {
                                 authRepo.logout()
                                 showSettingsModal = false
-                                Toast.makeText(context, "Đã đăng xuất tài khoản", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.profile_logout), Toast.LENGTH_SHORT).show()
                                 onLogout()
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = AccentRedSoft),
@@ -1035,7 +1064,7 @@ fun PassportScreen(
                         ) {
                             Icon(Icons.Outlined.Logout, contentDescription = null, tint = AccentRed, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Đăng xuất tài khoản", color = AccentRed, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.profile_logout), color = AccentRed, fontWeight = FontWeight.Bold)
                         }
 
                         HorizontalDivider(color = UIBorder)
@@ -1053,12 +1082,12 @@ fun PassportScreen(
                         ) {
                             Icon(Icons.Outlined.Delete, contentDescription = null, tint = AccentRed, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Xóa tài khoản vĩnh viễn", color = AccentRed, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.profile_delete_account), color = AccentRed, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = { showSettingsModal = false }) { Text("Đóng") }
+                    TextButton(onClick = { showSettingsModal = false }) { Text(stringResource(R.string.common_close)) }
                 },
                 containerColor = SurfaceWhite
             )
@@ -1075,7 +1104,7 @@ fun PassportScreen(
                 },
                 title = {
                     Text(
-                        "Xóa tài khoản vĩnh viễn",
+                        stringResource(R.string.profile_delete_account),
                         fontWeight = FontWeight.Bold,
                         color = AccentRed
                     )
@@ -1083,12 +1112,12 @@ fun PassportScreen(
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
-                            "Hành động này không thể hoàn tác! Toàn bộ tem, bộ sưu tập, tin nhắn và dữ liệu cá nhân của bạn sẽ bị xóa vĩnh viễn trên máy chủ và thiết bị.",
+                            stringResource(R.string.profile_delete_account_warning),
                             fontSize = 13.sp,
                             color = PrimaryText
                         )
                         Text(
-                            "Vui lòng nhập mật khẩu hiện tại để xác nhận quyền sở hữu:",
+                            stringResource(R.string.safety_block_desc),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = SecondaryText
@@ -1099,7 +1128,7 @@ fun PassportScreen(
                                 deletePassword = it
                                 deleteError = null
                             },
-                            label = { Text("Mật khẩu hiện tại", fontSize = 11.sp) },
+                            label = { Text(stringResource(R.string.auth_password_current), fontSize = 11.sp) },
                             visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
                             singleLine = true,
                             enabled = !isDeletingAccount,
@@ -1121,7 +1150,7 @@ fun PassportScreen(
                         onClick = {
                             if (isDeletingAccount) return@Button
                             if (deletePassword.isBlank()) {
-                                deleteError = "⚠️ Vui lòng nhập mật khẩu hiện tại"
+                                deleteError = "⚠️ " + context.getString(R.string.auth_err_empty_identifier)
                                 return@Button
                             }
                             isDeletingAccount = true
@@ -1132,10 +1161,10 @@ fun PassportScreen(
                                 if (result.isSuccess) {
                                     showDeleteAccountDialog = false
                                     showSettingsModal = false
-                                    Toast.makeText(context, "Tài khoản của bạn đã được xóa vĩnh viễn", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, context.getString(R.string.profile_delete_account), Toast.LENGTH_LONG).show()
                                     onLogout()
                                 } else {
-                                    val err = result.exceptionOrNull()?.message ?: "Xóa tài khoản thất bại"
+                                    val err = result.exceptionOrNull()?.message ?: context.getString(R.string.common_error)
                                     deleteError = "⚠️ $err"
                                 }
                             }
@@ -1150,7 +1179,7 @@ fun PassportScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                         }
-                        Text("Xác nhận xóa tài khoản", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.profile_delete_account_confirm), color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
@@ -1162,7 +1191,7 @@ fun PassportScreen(
                             deleteError = null
                         }
                     ) {
-                        Text("Hủy")
+                        Text(stringResource(R.string.common_cancel))
                     }
                 },
                 containerColor = SurfaceWhite
@@ -1177,7 +1206,7 @@ fun PassportScreen(
                     coroutineScope.launch {
                         val res = authRepo.unblockUser(unblockUid)
                         if (res.isSuccess) {
-                            Toast.makeText(context, "Đã bỏ chặn người dùng", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.safety_unblock_success), Toast.LENGTH_SHORT).show()
                             val refreshed = authRepo.getBlockedUsers()
                             blockedUsersList = refreshed.getOrDefault(emptyList())
                         } else {

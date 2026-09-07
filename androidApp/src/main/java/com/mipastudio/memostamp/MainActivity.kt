@@ -11,6 +11,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import com.mipastudio.memostamp.core.i18n.AppLanguageManager
 import com.mipastudio.memostamp.ui.theme.MemoStampTheme
 import com.mipastudio.memostamp.ui.theme.ThemeManager
 import com.mipastudio.memostamp.navigation.MemoStampNavGraph
@@ -25,8 +31,16 @@ class MainActivity : ComponentActivity() {
         // Permission result handled
     }
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val languageManager = AppLanguageManager.getInstance(newBase)
+        val config = languageManager.createLocalizedConfiguration(newBase.resources.configuration)
+        val localizedContext = newBase.createConfigurationContext(config)
+        super.attachBaseContext(localizedContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val languageManager = AppLanguageManager.getInstance(this)
         ThemeManager.init(this)
         enableEdgeToEdge()
 
@@ -34,11 +48,21 @@ class MainActivity : ComponentActivity() {
         extractIntentExtras(intent)
 
         setContent {
-            MemoStampTheme {
-                MemoStampNavGraph(
-                    targetScreen = targetScreenState.value,
-                    onTargetScreenHandled = { targetScreenState.value = null }
-                )
+            val currentMode by languageManager.currentMode.collectAsState()
+            val baseConfiguration = LocalConfiguration.current
+            val localizedConfiguration = remember(currentMode, baseConfiguration) {
+                languageManager.createLocalizedConfiguration(baseConfiguration, currentMode)
+            }
+
+            CompositionLocalProvider(
+                LocalConfiguration provides localizedConfiguration
+            ) {
+                MemoStampTheme {
+                    MemoStampNavGraph(
+                        targetScreen = targetScreenState.value,
+                        onTargetScreenHandled = { targetScreenState.value = null }
+                    )
+                }
             }
         }
     }

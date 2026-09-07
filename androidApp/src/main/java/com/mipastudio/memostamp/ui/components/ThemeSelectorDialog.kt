@@ -25,6 +25,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.ui.theme.AppThemeStyle
 import com.mipastudio.memostamp.ui.theme.ThemeManager
 
@@ -70,13 +72,13 @@ fun ThemeSelectorModalSheet(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Chọn Phong Cách Giao Diện 🎨",
+                        text = stringResource(R.string.theme_selector_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Thay đổi phong cách hiển thị theo sở thích của bạn",
+                        text = stringResource(R.string.theme_selector_desc),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -97,7 +99,7 @@ fun ThemeSelectorModalSheet(
                             ThemeManager.setTheme(context, themeStyle)
                             Toast.makeText(
                                 context,
-                                "Đã áp dụng phong cách ${themeStyle.title}! ✨",
+                                context.getString(R.string.theme_applied, themeStyle.title),
                                 Toast.LENGTH_SHORT
                             ).show()
                         },
@@ -118,9 +120,9 @@ fun ThemeSelectorModalSheet(
                             // Emoji badge
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .background(themeStyle.previewBg, RoundedCornerShape(16.dp))
-                                    .border(1.dp, themeStyle.previewPrimary.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
+                                .size(48.dp)
+                                .background(themeStyle.previewBg, RoundedCornerShape(16.dp))
+                                .border(1.dp, themeStyle.previewPrimary.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(text = themeStyle.emoji, fontSize = 24.sp)
@@ -185,7 +187,7 @@ fun ThemeSelectorModalSheet(
                                     ThemeManager.setTheme(context, themeStyle)
                                     Toast.makeText(
                                         context,
-                                        "Đã áp dụng phong cách ${themeStyle.title}! ✨",
+                                        context.getString(R.string.theme_applied, themeStyle.title),
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 },

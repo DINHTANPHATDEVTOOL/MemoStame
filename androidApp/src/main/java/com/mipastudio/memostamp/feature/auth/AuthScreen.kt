@@ -25,7 +25,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.mipastudio.memostamp.R
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -93,7 +95,7 @@ fun AuthScreen(
 
     fun handleLogin() {
         if (identifier.isBlank()) {
-            Toast.makeText(context, "Vui lòng nhập tên người dùng hoặc email", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.auth_err_empty_identifier), Toast.LENGTH_SHORT).show()
             return
         }
         isLoading = true
@@ -102,11 +104,11 @@ fun AuthScreen(
             isLoading = false
             result.fold(
                 onSuccess = { profile ->
-                    Toast.makeText(context, "Chào mừng trở lại, ${profile.displayName}! 📮", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.auth_login_welcome, profile.displayName), Toast.LENGTH_SHORT).show()
                     onAuthSuccess(profile)
                 },
                 onFailure = { err ->
-                    Toast.makeText(context, err.message ?: "Đăng nhập thất bại", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, err.message ?: context.getString(R.string.auth_login_failed), Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -114,11 +116,11 @@ fun AuthScreen(
 
     fun handleRegister() {
         if (identifier.isBlank()) {
-            Toast.makeText(context, "Vui lòng nhập tên tài khoản (username)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.auth_err_empty_register_id), Toast.LENGTH_SHORT).show()
             return
         }
         if (password.length < 4) {
-            Toast.makeText(context, "Mật khẩu phải từ 4 ký tự", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.auth_err_password_too_short), Toast.LENGTH_SHORT).show()
             return
         }
         isLoading = true
@@ -129,17 +131,17 @@ fun AuthScreen(
                 email = email.ifBlank { "$identifier@memostamp.app" },
                 password = password,
                 city = selectedCity.split(" ").first(),
-                bio = bio.ifBlank { "Người sưu tầm dấu tem bưu chính" },
+                bio = bio.ifBlank { context.getString(R.string.auth_bio_default) },
                 avatarUrl = presetAvatars[selectedAvatarIndex]
             )
             isLoading = false
             result.fold(
                 onSuccess = { profile ->
-                    Toast.makeText(context, "Đăng ký thành công tài khoản @${profile.username}! 🎉", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.auth_register_success, profile.username), Toast.LENGTH_SHORT).show()
                     onAuthSuccess(profile)
                 },
                 onFailure = { err ->
-                    Toast.makeText(context, err.message ?: "Đăng ký thất bại", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, err.message ?: context.getString(R.string.auth_register_failed), Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -150,7 +152,7 @@ fun AuthScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (isRegisterMode) "Đăng ký tài khoản" else "Đăng nhập MemoStamp",
+                        text = if (isRegisterMode) stringResource(R.string.auth_register_title) else stringResource(R.string.auth_sign_in_title),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryText
@@ -200,13 +202,13 @@ fun AuthScreen(
             }
 
             Text(
-                text = "Ký Ức & Dấu Tem Bưu Chính",
+                text = stringResource(R.string.auth_subtitle),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = PrimaryText
             )
             Text(
-                text = "Lưu giữ hành trình và trao đổi bưu thiếp cùng bạn bè",
+                text = stringResource(R.string.auth_brand_tagline),
                 fontSize = 12.sp,
                 color = SecondaryText,
                 modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
@@ -223,13 +225,13 @@ fun AuthScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     TabButton(
-                        text = "Đăng Nhập",
+                        text = stringResource(R.string.auth_tab_login),
                         isSelected = !isRegisterMode,
                         modifier = Modifier.weight(1f),
                         onClick = { isRegisterMode = false }
                     )
                     TabButton(
-                        text = "Đăng Ký Mới",
+                        text = stringResource(R.string.auth_tab_register),
                         isSelected = isRegisterMode,
                         modifier = Modifier.weight(1f),
                         onClick = { isRegisterMode = true }
@@ -243,7 +245,7 @@ fun AuthScreen(
             AnimatedVisibility(visible = isRegisterMode) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     // Avatar Selection Row
-                    Text("Chọn ảnh đại diện:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
+                    Text(stringResource(R.string.auth_select_avatar), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -274,7 +276,7 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = displayName,
                         onValueChange = { displayName = it },
-                        label = { Text("Tên hiển thị") },
+                        label = { Text(stringResource(R.string.auth_display_name)) },
                         singleLine = true,
                         leadingIcon = { Icon(Icons.Outlined.Badge, contentDescription = null, tint = AccentRed) },
                         shape = RoundedCornerShape(16.dp),
@@ -289,7 +291,7 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email liên hệ") },
+                        label = { Text(stringResource(R.string.auth_email)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         singleLine = true,
                         leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null, tint = AccentRed) },
@@ -303,7 +305,7 @@ fun AuthScreen(
                     )
 
                     // City Chips
-                    Text("Thành phố hoạt động:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
+                    Text(stringResource(R.string.auth_city), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -326,7 +328,7 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = bio,
                         onValueChange = { bio = it },
-                        label = { Text("Tiểu sử") },
+                        label = { Text(stringResource(R.string.auth_bio)) },
                         maxLines = 2,
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -345,10 +347,10 @@ fun AuthScreen(
             OutlinedTextField(
                 value = identifier,
                 onValueChange = { identifier = it },
-                label = { Text(if (isRegisterMode) "ID người dùng (@id kết bạn)" else "ID (@username) hoặc Email") },
-                placeholder = { Text(if (isRegisterMode) "vd: phat_memostamp" else "Nhập ID hoặc email") },
+                label = { Text(stringResource(if (isRegisterMode) R.string.auth_identifier_register else R.string.auth_identifier_login)) },
+                placeholder = { Text(stringResource(if (isRegisterMode) R.string.auth_identifier_hint_register else R.string.auth_identifier_hint_login)) },
                 supportingText = if (isRegisterMode) {
-                    { Text("ID này là duy nhất, dùng để bạn bè tìm kiếm và gửi lời mời kết bạn", fontSize = 11.sp, color = SecondaryText) }
+                    { Text(stringResource(R.string.auth_identifier_support_text), fontSize = 11.sp, color = SecondaryText) }
                 } else null,
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Outlined.Person, contentDescription = null, tint = AccentRed) },
@@ -366,7 +368,7 @@ fun AuthScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Mật khẩu") },
+                label = { Text(stringResource(R.string.auth_password)) },
                 singleLine = true,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
@@ -405,7 +407,7 @@ fun AuthScreen(
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                     ) {
                         Text(
-                            text = "Quên mật khẩu?",
+                            text = stringResource(R.string.auth_forgot_password),
                             fontSize = 13.sp,
                             color = AccentRed,
                             fontWeight = FontWeight.Medium
@@ -432,7 +434,7 @@ fun AuthScreen(
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
                     Text(
-                        text = if (isRegisterMode) "Tạo Tài Khoản & Bắt Đầu" else "Đăng Nhập",
+                        text = stringResource(if (isRegisterMode) R.string.auth_button_register else R.string.auth_button_login),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -448,7 +450,7 @@ fun AuthScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = if (isRegisterMode) "Đã có tài khoản? Đăng nhập ngay" else "Chưa có tài khoản? Đăng ký tài khoản mới",
+                    text = stringResource(if (isRegisterMode) R.string.auth_switch_to_login else R.string.auth_switch_to_register),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = AccentRed
@@ -474,7 +476,7 @@ fun AuthScreen(
                     }
                 },
                 title = {
-                    Text("Quên mật khẩu", fontWeight = FontWeight.Bold, color = PrimaryText)
+                    Text(stringResource(R.string.recovery_dialog_title), fontWeight = FontWeight.Bold, color = PrimaryText)
                 },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -486,14 +488,14 @@ fun AuthScreen(
                             )
                         } else {
                             Text(
-                                text = "Nhập email của bạn để nhận liên kết đặt lại mật khẩu an toàn.",
+                                text = stringResource(R.string.recovery_dialog_desc),
                                 fontSize = 14.sp,
                                 color = SecondaryText
                             )
                             OutlinedTextField(
                                 value = recoveryEmailInput,
                                 onValueChange = { recoveryEmailInput = it },
-                                label = { Text("Email đã đăng ký") },
+                                label = { Text(stringResource(R.string.recovery_registered_email)) },
                                 placeholder = { Text("example@domain.com") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                 singleLine = true,
@@ -514,20 +516,20 @@ fun AuthScreen(
                             showForgotPasswordDialog = false
                             recoverySentMessage = null
                         }) {
-                            Text("Đã hiểu", color = AccentRed, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.common_understood), color = AccentRed, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         Button(
                             onClick = {
                                 val trimmedEmail = recoveryEmailInput.trim().lowercase()
                                 if (trimmedEmail.isBlank() || !trimmedEmail.contains("@")) {
-                                    Toast.makeText(context, "Vui lòng nhập email hợp lệ", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.auth_err_invalid_email), Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
                                 val now = System.currentTimeMillis()
                                 if (now - lastRecoverySendTime < 30000) {
                                     val remaining = 30 - ((now - lastRecoverySendTime) / 1000)
-                                    Toast.makeText(context, "Vui lòng chờ $remaining giây trước khi gửi lại", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.recovery_cooldown_wait, remaining), Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
 
@@ -541,10 +543,10 @@ fun AuthScreen(
                                     lastRecoverySendTime = System.currentTimeMillis()
                                     result.fold(
                                         onSuccess = {
-                                            recoverySentMessage = "Nếu tài khoản tồn tại với email này, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu đến hòm thư của bạn."
+                                            recoverySentMessage = context.getString(R.string.recovery_sent_generic_msg)
                                         },
                                         onFailure = { err ->
-                                            Toast.makeText(context, err.message ?: "Không thể gửi yêu cầu đặt lại", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                                         }
                                     )
                                 }
@@ -556,7 +558,7 @@ fun AuthScreen(
                             if (isSendingRecovery) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
                             } else {
-                                Text("Gửi email", color = Color.White)
+                                Text(stringResource(R.string.recovery_send_button), color = Color.White)
                             }
                         }
                     }
@@ -567,7 +569,7 @@ fun AuthScreen(
                             onClick = { showForgotPasswordDialog = false },
                             enabled = !isSendingRecovery
                         ) {
-                            Text("Hủy", color = SecondaryText)
+                            Text(stringResource(R.string.common_cancel), color = SecondaryText)
                         }
                     }
                 }
@@ -580,12 +582,12 @@ fun AuthScreen(
             AlertDialog(
                 onDismissRequest = { /* Modal: require explicit action or cancel */ },
                 title = {
-                    Text("Đặt lại mật khẩu", fontWeight = FontWeight.Bold, color = PrimaryText)
+                    Text(stringResource(R.string.recovery_enter_new_password_title), fontWeight = FontWeight.Bold, color = PrimaryText)
                 },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
-                            text = "Tài khoản: ${currentRecovery.email}",
+                            text = stringResource(R.string.recovery_account_label, currentRecovery.email),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
                             color = PrimaryText
@@ -593,7 +595,7 @@ fun AuthScreen(
                         OutlinedTextField(
                             value = newPasswordInput,
                             onValueChange = { newPasswordInput = it },
-                            label = { Text("Mật khẩu mới (ít nhất 6 ký tự)") },
+                            label = { Text(stringResource(R.string.recovery_new_password_hint)) },
                             singleLine = true,
                             visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -611,7 +613,7 @@ fun AuthScreen(
                         OutlinedTextField(
                             value = confirmPasswordInput,
                             onValueChange = { confirmPasswordInput = it },
-                            label = { Text("Xác nhận mật khẩu mới") },
+                            label = { Text(stringResource(R.string.recovery_confirm_password_hint)) },
                             singleLine = true,
                             visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -635,7 +637,7 @@ fun AuthScreen(
                                 val updateRes = recoveryCoordinator.updatePassword(newPasswordInput, confirmPasswordInput)
                                 updateRes.fold(
                                     onSuccess = {
-                                        Toast.makeText(context, "Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(context, context.getString(R.string.recovery_success_msg), Toast.LENGTH_LONG).show()
                                         identifier = currentRecovery.email
                                         password = ""
                                         newPasswordInput = ""
@@ -643,7 +645,7 @@ fun AuthScreen(
                                         resetPasswordError = null
                                     },
                                     onFailure = { err ->
-                                        resetPasswordError = err.message ?: "Cập nhật mật khẩu thất bại"
+                                        resetPasswordError = err.message ?: "Update password failed"
                                     }
                                 )
                             }
@@ -651,7 +653,7 @@ fun AuthScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Cập nhật", color = Color.White)
+                        Text(stringResource(R.string.recovery_update_button), color = Color.White)
                     }
                 },
                 dismissButton = {
@@ -661,7 +663,7 @@ fun AuthScreen(
                         confirmPasswordInput = ""
                         resetPasswordError = null
                     }) {
-                        Text("Hủy", color = SecondaryText)
+                        Text(stringResource(R.string.common_cancel), color = SecondaryText)
                     }
                 }
             )
@@ -671,7 +673,7 @@ fun AuthScreen(
             AlertDialog(
                 onDismissRequest = { recoveryCoordinator.resetState() },
                 title = {
-                    Text("Liên kết không hợp lệ", fontWeight = FontWeight.Bold, color = PrimaryText)
+                    Text(stringResource(R.string.recovery_invalid_link_title), fontWeight = FontWeight.Bold, color = PrimaryText)
                 },
                 text = {
                     Text(
@@ -682,7 +684,7 @@ fun AuthScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = { recoveryCoordinator.resetState() }) {
-                        Text("Đóng", color = AccentRed, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.common_close), color = AccentRed, fontWeight = FontWeight.Bold)
                     }
                 }
             )

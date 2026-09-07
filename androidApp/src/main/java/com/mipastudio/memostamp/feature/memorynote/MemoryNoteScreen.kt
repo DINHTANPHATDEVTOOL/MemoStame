@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.core.location.LocationHelper
 import com.mipastudio.memostamp.core.location.LocationPickerModalSheet
 import com.mipastudio.memostamp.ui.theme.*
@@ -160,7 +162,7 @@ fun MemoryNoteScreen(
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 if (uiState.title.isBlank()) {
                     Text(
-                        "Name this memory",
+                        stringResource(R.string.note_title_hint),
                         color = TertiaryText,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -187,7 +189,7 @@ fun MemoryNoteScreen(
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 if (uiState.note.isBlank()) {
                     Text(
-                        "Write what you want to remember…",
+                        stringResource(R.string.note_caption_hint),
                         color = TertiaryText,
                         fontSize = 14.sp
                     )
@@ -221,7 +223,7 @@ fun MemoryNoteScreen(
                     if (isLocationAndNetworkReady) {
                         MemoryMetaRow(
                             icon = { Icon(Icons.Outlined.LocationOn, null, tint = SecondaryText, modifier = Modifier.size(20.dp)) },
-                            title = "Location",
+                            title = stringResource(R.string.editor_location_label),
                             value = uiState.location.ifBlank { "Add" },
                             onClick = { showLocationDialog = true }
                         )
@@ -238,15 +240,15 @@ fun MemoryNoteScreen(
                     val selectedCollection = roomCollections.find { it.id == uiState.collectionId }
                     MemoryMetaRow(
                         icon = { Icon(Icons.Outlined.CollectionsBookmark, null, tint = SecondaryText, modifier = Modifier.size(20.dp)) },
-                        title = "Collection",
+                        title = stringResource(R.string.collection_title),
                         value = selectedCollection?.name ?: "None",
                         onClick = { showCollectionSheet = true }
                     )
                     HorizontalDivider(color = UIBorder, modifier = Modifier.padding(start = 52.dp))
                     MemoryMetaRow(
                         icon = { Icon(Icons.Outlined.Visibility, null, tint = SecondaryText, modifier = Modifier.size(20.dp)) },
-                        title = "Quyền riêng tư",
-                        value = "${uiState.audienceType.icon} ${uiState.audienceType.label}",
+                        title = stringResource(R.string.audience_privacy_title),
+                        value = "${uiState.audienceType.icon} ${stringResource(uiState.audienceType.labelRes)}",
                         accentValue = true,
                         onClick = { showAudienceSheet = true }
                     )
@@ -264,10 +266,10 @@ fun MemoryNoteScreen(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Column(modifier = Modifier.padding(horizontal = 22.dp, vertical = 16.dp)) {
-                Text("Ai có thể xem tem này?", style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.audience_sheet_title), style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    "Chọn đối tượng có thể nhìn thấy và tương tác với con tem của bạn",
+                    stringResource(R.string.audience_sheet_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = SecondaryText
                 )
@@ -294,14 +296,14 @@ fun MemoryNoteScreen(
                             Spacer(modifier = Modifier.width(14.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    audience.label,
+                                    stringResource(audience.labelRes),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
                                     color = if (selected) AccentRed else PrimaryText
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    audience.description,
+                                    stringResource(audience.descriptionRes),
                                     fontSize = 12.sp,
                                     color = if (selected) AccentRed.copy(alpha = 0.85f) else SecondaryText
                                 )
