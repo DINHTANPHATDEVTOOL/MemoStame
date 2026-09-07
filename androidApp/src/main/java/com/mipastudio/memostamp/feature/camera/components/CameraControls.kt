@@ -36,6 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.ui.theme.AccentRed
 import com.mipastudio.memostamp.feature.camera.CaptureState
 import kotlin.math.abs
@@ -94,12 +96,12 @@ fun CameraControls(
             ) {
                 Icon(
                     Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = "Quay lại Bảng tin",
+                    contentDescription = stringResource(R.string.nav_home),
                     tint = Color.White,
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = "Bảng tin",
+                    text = stringResource(R.string.nav_home),
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold

@@ -1,9 +1,17 @@
 package com.mipastudio.memostamp.domain.model
 
-enum class AudienceType(val label: String, val icon: String, val description: String) {
-    FRIENDS("Tất cả bạn bè", "👥", "Chỉ tất cả bạn bè xem được"),
-    SPECIFIC_FRIENDS("Bạn bè chọn lọc", "🎯", "Chỉ hiển thị với bạn bè được chọn"),
-    ONLY_ME("Chỉ mình tôi", "🔒", "Chỉ mình tôi xem được");
+import com.mipastudio.memostamp.R
+
+enum class AudienceType(
+    val label: String,
+    val icon: String,
+    val description: String,
+    val labelRes: Int = R.string.audience_friends,
+    val descriptionRes: Int = R.string.audience_friends_desc
+) {
+    FRIENDS("Tất cả bạn bè", "👥", "Chỉ tất cả bạn bè xem được", R.string.audience_friends, R.string.audience_friends_desc),
+    SPECIFIC_FRIENDS("Bạn bè chọn lọc", "🎯", "Chỉ hiển thị với bạn bè được chọn", R.string.audience_specific_friends, R.string.audience_specific_friends_desc),
+    ONLY_ME("Chỉ mình tôi", "🔒", "Chỉ mình tôi xem được", R.string.audience_only_me, R.string.audience_only_me_desc);
 
     companion object {
         fun fromString(value: String?): AudienceType {

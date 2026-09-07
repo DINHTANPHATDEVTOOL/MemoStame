@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mipastudio.memostamp.R
 import coil.compose.AsyncImage
 import com.mipastudio.memostamp.data.remote.supabase.SupabaseBlockedUser
 import com.mipastudio.memostamp.data.repository.UserProfile
@@ -50,7 +52,7 @@ fun BlockUserConfirmationDialog(
         },
         title = {
             Text(
-                text = "Chặn $targetUserName?",
+                text = stringResource(R.string.safety_block_title, targetUserName),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = PrimaryText
@@ -59,15 +61,15 @@ fun BlockUserConfirmationDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Khi chặn người này:",
+                    text = stringResource(R.string.safety_block_desc),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
                     color = PrimaryText
                 )
                 Text(
-                    text = "• Quan hệ bạn bè và các lời mời kết bạn đang chờ sẽ bị hủy ngay lập tức.\n" +
-                           "• Cả hai sẽ không thể gửi tin nhắn hoặc lời mời kết bạn cho nhau.\n" +
-                           "• Không thể tương tác (bình luận, thả cảm xúc) trên bài viết của nhau.",
+                    text = "${stringResource(R.string.safety_block_bullet_1)}\n" +
+                           "${stringResource(R.string.safety_block_bullet_2)}\n" +
+                           stringResource(R.string.safety_block_bullet_3),
                     fontSize = 13.sp,
                     color = SecondaryText,
                     lineHeight = 18.sp
@@ -79,12 +81,12 @@ fun BlockUserConfirmationDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
             ) {
-                Text("Chặn người dùng", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.safety_block_confirm_button), color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Hủy", color = SecondaryText)
+                Text(stringResource(R.string.common_cancel), color = SecondaryText)
             }
         },
         containerColor = SurfaceWhite,
@@ -94,16 +96,18 @@ fun BlockUserConfirmationDialog(
 
 data class ReportCategoryOption(
     val key: String,
-    val label: String,
-    val description: String
+    val labelRes: Int,
+    val descriptionRes: Int,
+    val label: String = "",
+    val description: String = ""
 )
 
 val REPORT_CATEGORIES = listOf(
-    ReportCategoryOption("spam", "Tin rác / Spam", "Gửi tin nhắn hoặc quảng cáo phiền toái lặp lại"),
-    ReportCategoryOption("harassment", "Quấy rối / Đe dọa", "Có hành vi công kích, xúc phạm hoặc đe dọa"),
-    ReportCategoryOption("impersonation", "Mạo danh", "Giả vờ là người khác hoặc tổ chức"),
-    ReportCategoryOption("inappropriate_content", "Nội dung không phù hợp", "Hình ảnh hoặc nội dung phản cảm"),
-    ReportCategoryOption("other", "Lý do khác", "Hành vi vi phạm tiêu chuẩn cộng đồng khác")
+    ReportCategoryOption("spam", R.string.report_category_spam, R.string.report_category_spam_desc, "Tin rác / Spam", "Gửi tin nhắn hoặc quảng cáo phiền toái lặp lại"),
+    ReportCategoryOption("harassment", R.string.report_category_harassment, R.string.report_category_harassment_desc, "Quấy rối / Đe dọa", "Có hành vi công kích, xúc phạm hoặc đe dọa"),
+    ReportCategoryOption("impersonation", R.string.report_category_fraud, R.string.report_category_fraud_desc, "Mạo danh", "Giả vờ là người khác hoặc tổ chức"),
+    ReportCategoryOption("inappropriate_content", R.string.report_category_inappropriate, R.string.report_category_inappropriate_desc, "Nội dung không phù hợp", "Hình ảnh hoặc nội dung phản cảm"),
+    ReportCategoryOption("other", R.string.report_category_other, R.string.report_category_other_desc, "Lý do khác", "Hành vi vi phạm tiêu chuẩn cộng đồng khác")
 )
 
 /**
@@ -132,7 +136,7 @@ fun ReportUserDialog(
         },
         title = {
             Text(
-                text = "Báo cáo $targetUserName",
+                text = stringResource(R.string.report_user_title, targetUserName),
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = PrimaryText
@@ -144,7 +148,7 @@ fun ReportUserDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Chọn lý do báo cáo:",
+                    text = stringResource(R.string.report_reason_prompt),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
                     color = PrimaryText
@@ -167,13 +171,13 @@ fun ReportUserDialog(
                         Spacer(modifier = Modifier.width(6.dp))
                         Column {
                             Text(
-                                text = category.label,
+                                text = stringResource(category.labelRes),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = PrimaryText
                             )
                             Text(
-                                text = category.description,
+                                text = stringResource(category.descriptionRes),
                                 fontSize = 11.sp,
                                 color = SecondaryText
                             )
@@ -188,8 +192,8 @@ fun ReportUserDialog(
                     onValueChange = {
                         if (it.length <= 1000) noteText = it
                     },
-                    label = { Text("Ghi chú thêm (tùy chọn)") },
-                    placeholder = { Text("Mô tả chi tiết sự việc...") },
+                    label = { Text(stringResource(R.string.report_notes_label)) },
+                    placeholder = { Text(stringResource(R.string.report_notes_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3,
                     supportingText = {
@@ -215,12 +219,12 @@ fun ReportUserDialog(
                 enabled = !isSubmitting,
                 colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
             ) {
-                Text("Gửi báo cáo", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.report_submit_button), color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isSubmitting) {
-                Text("Hủy", color = SecondaryText)
+                Text(stringResource(R.string.common_cancel), color = SecondaryText)
             }
         },
         containerColor = SurfaceWhite,

@@ -1,0 +1,7152 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "a11y_back": {
+      "comment": "Localization key a11y_back",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quay lại"
+          }
+        }
+      }
+    },
+    "a11y_camera_shutter": {
+      "comment": "Localization key a11y_camera_shutter",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take picture"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp ảnh"
+          }
+        }
+      }
+    },
+    "a11y_close": {
+      "comment": "Localization key a11y_close",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng"
+          }
+        }
+      }
+    },
+    "a11y_delete": {
+      "comment": "Localization key a11y_delete",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa"
+          }
+        }
+      }
+    },
+    "a11y_edit": {
+      "comment": "Localization key a11y_edit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa"
+          }
+        }
+      }
+    },
+    "a11y_more": {
+      "comment": "Localization key a11y_more",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem thêm"
+          }
+        }
+      }
+    },
+    "a11y_options": {
+      "comment": "Localization key a11y_options",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tùy chọn"
+          }
+        }
+      }
+    },
+    "a11y_profile_avatar": {
+      "comment": "Localization key a11y_profile_avatar",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile avatar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh đại diện"
+          }
+        }
+      }
+    },
+    "a11y_send": {
+      "comment": "Localization key a11y_send",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi"
+          }
+        }
+      }
+    },
+    "a11y_switch_camera": {
+      "comment": "Localization key a11y_switch_camera",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch camera"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi camera"
+          }
+        }
+      }
+    },
+    "app_name": {
+      "comment": "Localization key app_name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMOSTAMP"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMOSTAMP"
+          }
+        }
+      }
+    },
+    "audience_friends": {
+      "comment": "Localization key audience_friends",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tất cả bạn bè"
+          }
+        }
+      }
+    },
+    "audience_friends_desc": {
+      "comment": "Localization key audience_friends_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visible to all friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ tất cả bạn bè xem được"
+          }
+        }
+      }
+    },
+    "audience_only_me": {
+      "comment": "Localization key audience_only_me",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only Me"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ mình tôi"
+          }
+        }
+      }
+    },
+    "audience_only_me_desc": {
+      "comment": "Localization key audience_only_me_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visible only to me"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ mình tôi xem được"
+          }
+        }
+      }
+    },
+    "audience_privacy_title": {
+      "comment": "Localization key audience_privacy_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền riêng tư"
+          }
+        }
+      }
+    },
+    "audience_sheet_subtitle": {
+      "comment": "Localization key audience_sheet_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose who can view and interact with your memory stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn đối tượng có thể nhìn thấy và tương tác với con tem của bạn"
+          }
+        }
+      }
+    },
+    "audience_sheet_title": {
+      "comment": "Localization key audience_sheet_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who can see this stamp?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ai có thể xem tem này?"
+          }
+        }
+      }
+    },
+    "audience_specific_friends": {
+      "comment": "Localization key audience_specific_friends",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected Friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn bè chọn lọc"
+          }
+        }
+      }
+    },
+    "audience_specific_friends_desc": {
+      "comment": "Localization key audience_specific_friends_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visible only to selected friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ hiển thị với bạn bè được chọn"
+          }
+        }
+      }
+    },
+    "auth_bio": {
+      "comment": "Localization key auth_bio",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bio / About note"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiểu sử / Giới thiệu"
+          }
+        }
+      }
+    },
+    "auth_bio_default": {
+      "comment": "Localization key auth_bio_default",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collector of vintage postal stamps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người sưu tầm dấu tem bưu chính"
+          }
+        }
+      }
+    },
+    "auth_brand_tagline": {
+      "comment": "Localization key auth_brand_tagline",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture journeys and exchange postcards with intimate friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu giữ hành trình và trao đổi bưu thiếp cùng bạn bè"
+          }
+        }
+      }
+    },
+    "auth_button_login": {
+      "comment": "Localization key auth_button_login",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign In"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng Nhập"
+          }
+        }
+      }
+    },
+    "auth_button_register": {
+      "comment": "Localization key auth_button_register",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Account & Begin"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo Tài Khoản & Bắt Đầu"
+          }
+        }
+      }
+    },
+    "auth_city": {
+      "comment": "Localization key auth_city",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active city:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thành phố hoạt động:"
+          }
+        }
+      }
+    },
+    "auth_display_name": {
+      "comment": "Localization key auth_display_name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display name"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên hiển thị"
+          }
+        }
+      }
+    },
+    "auth_display_name_hint": {
+      "comment": "Localization key auth_display_name_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Alex Taylor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ví dụ: Nguyễn Văn A"
+          }
+        }
+      }
+    },
+    "auth_email": {
+      "comment": "Localization key auth_email",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact email"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email liên hệ"
+          }
+        }
+      }
+    },
+    "auth_email_hint": {
+      "comment": "Localization key auth_email_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "name@domain.com"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nhap_email@domain.com"
+          }
+        }
+      }
+    },
+    "auth_err_empty_identifier": {
+      "comment": "Localization key auth_err_empty_identifier",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please enter username or email"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng nhập tên người dùng hoặc email"
+          }
+        }
+      }
+    },
+    "auth_err_empty_register_id": {
+      "comment": "Localization key auth_err_empty_register_id",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please enter a username"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng nhập tên tài khoản (username)"
+          }
+        }
+      }
+    },
+    "auth_err_invalid_email": {
+      "comment": "Localization key auth_err_invalid_email",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please enter a valid email address"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng nhập email hợp lệ"
+          }
+        }
+      }
+    },
+    "auth_err_password_match": {
+      "comment": "Localization key auth_err_password_match",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passwords do not match"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu xác nhận không khớp"
+          }
+        }
+      }
+    },
+    "auth_err_password_too_short": {
+      "comment": "Localization key auth_err_password_too_short",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password must be at least 4 characters"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu phải từ 4 ký tự"
+          }
+        }
+      }
+    },
+    "auth_forgot_password": {
+      "comment": "Localization key auth_forgot_password",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot password?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quên mật khẩu?"
+          }
+        }
+      }
+    },
+    "auth_identifier_hint_login": {
+      "comment": "Localization key auth_identifier_hint_login",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter ID or email"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập ID hoặc email"
+          }
+        }
+      }
+    },
+    "auth_identifier_hint_register": {
+      "comment": "Localization key auth_identifier_hint_register",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. alex_memostamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ví dụ: phat_memostamp"
+          }
+        }
+      }
+    },
+    "auth_identifier_login": {
+      "comment": "Localization key auth_identifier_login",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID (@username) or Email"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID (@username) hoặc Email"
+          }
+        }
+      }
+    },
+    "auth_identifier_register": {
+      "comment": "Localization key auth_identifier_register",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User ID (@friend_id)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID người dùng (@id kết bạn)"
+          }
+        }
+      }
+    },
+    "auth_identifier_support_text": {
+      "comment": "Localization key auth_identifier_support_text",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This ID is unique and used by friends to find and connect with you."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID này là duy nhất, dùng để bạn bè tìm kiếm và gửi lời mời kết bạn."
+          }
+        }
+      }
+    },
+    "auth_login_failed": {
+      "comment": "Localization key auth_login_failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in failed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập thất bại"
+          }
+        }
+      }
+    },
+    "auth_login_welcome": {
+      "comment": "Localization key auth_login_welcome",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome back, %s! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chào mừng trở lại, %s! 📮"
+          }
+        }
+      }
+    },
+    "auth_password": {
+      "comment": "Localization key auth_password",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu"
+          }
+        }
+      }
+    },
+    "auth_password_confirm": {
+      "comment": "Localization key auth_password_confirm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm new password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xác nhận mật khẩu mới"
+          }
+        }
+      }
+    },
+    "auth_password_current": {
+      "comment": "Localization key auth_password_current",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu hiện tại"
+          }
+        }
+      }
+    },
+    "auth_password_new": {
+      "comment": "Localization key auth_password_new",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu mới"
+          }
+        }
+      }
+    },
+    "auth_register_failed": {
+      "comment": "Localization key auth_register_failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registration failed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ký thất bại"
+          }
+        }
+      }
+    },
+    "auth_register_success": {
+      "comment": "Localization key auth_register_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account @%s registered successfully! 🎉"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ký thành công tài khoản @%s! 🎉"
+          }
+        }
+      }
+    },
+    "auth_register_title": {
+      "comment": "Localization key auth_register_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create MemoStamp Account"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ký tài khoản MemoStamp"
+          }
+        }
+      }
+    },
+    "auth_select_avatar": {
+      "comment": "Localization key auth_select_avatar",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select avatar:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ảnh đại diện:"
+          }
+        }
+      }
+    },
+    "auth_sign_in_title": {
+      "comment": "Localization key auth_sign_in_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign In to MemoStamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập MemoStamp"
+          }
+        }
+      }
+    },
+    "auth_subtitle": {
+      "comment": "Localization key auth_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intimate Memory Feed & Vintage Stamp Album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tin Kỷ niệm & Sổ Tem Bưu Chính"
+          }
+        }
+      }
+    },
+    "auth_switch_to_login": {
+      "comment": "Localization key auth_switch_to_login",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already have an account? Sign in"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã có tài khoản? Đăng nhập ngay"
+          }
+        }
+      }
+    },
+    "auth_switch_to_register": {
+      "comment": "Localization key auth_switch_to_register",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't have an account? Sign up now"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có tài khoản? Đăng ký tài khoản mới"
+          }
+        }
+      }
+    },
+    "auth_tab_login": {
+      "comment": "Localization key auth_tab_login",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign In"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng Nhập"
+          }
+        }
+      }
+    },
+    "auth_tab_register": {
+      "comment": "Localization key auth_tab_register",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign Up"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng Ký Mới"
+          }
+        }
+      }
+    },
+    "camera_filter_cool": {
+      "comment": "Localization key camera_filter_cool",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cool Cyan"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sắc lạnh"
+          }
+        }
+      }
+    },
+    "camera_filter_monochrome": {
+      "comment": "Localization key camera_filter_monochrome",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B&W"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trắng đen"
+          }
+        }
+      }
+    },
+    "camera_filter_none": {
+      "comment": "Localization key camera_filter_none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Original"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gốc"
+          }
+        }
+      }
+    },
+    "camera_filter_vintage": {
+      "comment": "Localization key camera_filter_vintage",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vintage"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cổ điển"
+          }
+        }
+      }
+    },
+    "camera_filter_warm": {
+      "comment": "Localization key camera_filter_warm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warm Paper"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giấy ấm"
+          }
+        }
+      }
+    },
+    "camera_grant_permission": {
+      "comment": "Localization key camera_grant_permission",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grant Permission"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cấp quyền"
+          }
+        }
+      }
+    },
+    "camera_permission_desc": {
+      "comment": "Localization key camera_permission_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MemoStamp needs camera access to capture moments and mint custom vintage postal stamps."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MemoStamp cần quyền truy cập máy ảnh để chụp khoảnh khắc và tạo những con tem bưu chính độc bản."
+          }
+        }
+      }
+    },
+    "camera_permission_title": {
+      "comment": "Localization key camera_permission_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera Permission Required"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yêu cầu quyền truy cập máy ảnh"
+          }
+        }
+      }
+    },
+    "camera_shutter_hint": {
+      "comment": "Localization key camera_shutter_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take photo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp ảnh"
+          }
+        }
+      }
+    },
+    "camera_switch_lens": {
+      "comment": "Localization key camera_switch_lens",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch camera"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi camera"
+          }
+        }
+      }
+    },
+    "camera_tune_title": {
+      "comment": "Localization key camera_tune_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advanced Tuning"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tùy chỉnh nâng cao"
+          }
+        }
+      }
+    },
+    "chat_attached_stamp_label": {
+      "comment": "Localization key chat_attached_stamp_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attached stamp:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đính kèm tem thư:"
+          }
+        }
+      }
+    },
+    "chat_choose_stamp_btn": {
+      "comment": "Localization key chat_choose_stamp_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Stamp to Send"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn con tem gửi ngay"
+          }
+        }
+      }
+    },
+    "chat_conversations_empty_desc": {
+      "comment": "Localization key chat_conversations_empty_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect with friends to chat and share memory stamps!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối với bạn bè để trò chuyện và chia sẻ tem thư kỷ niệm nhé!"
+          }
+        }
+      }
+    },
+    "chat_conversations_empty_title": {
+      "comment": "Localization key chat_conversations_empty_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No conversations yet"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có cuộc trò chuyện nào"
+          }
+        }
+      }
+    },
+    "chat_default_recipient_name": {
+      "comment": "Localization key chat_default_recipient_name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Postal Friend"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người bạn bưu chính"
+          }
+        }
+      }
+    },
+    "chat_empty": {
+      "comment": "Localization key chat_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a greeting or postcard stamp to start chatting!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi lời chào hoặc con tem bưu thiếp để bắt đầu trò chuyện!"
+          }
+        }
+      }
+    },
+    "chat_failed_to_send": {
+      "comment": "Localization key chat_failed_to_send",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to send message"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi tin nhắn thất bại"
+          }
+        }
+      }
+    },
+    "chat_input_hint": {
+      "comment": "Localization key chat_input_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type a message…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập tin nhắn…"
+          }
+        }
+      }
+    },
+    "chat_input_hint_with_stamp": {
+      "comment": "Localization key chat_input_hint_with_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a note with your stamp…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết lời nhắn kèm con tem…"
+          }
+        }
+      }
+    },
+    "chat_load_error": {
+      "comment": "Localization key chat_load_error",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to load conversation. Check connection and retry."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải cuộc trò chuyện. Kiểm tra kết nối và thử lại."
+          }
+        }
+      }
+    },
+    "chat_login_required_stamp": {
+      "comment": "Localization key chat_login_required_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in required to share stamps via message."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần đăng nhập để chia sẻ tem qua tin nhắn."
+          }
+        }
+      }
+    },
+    "chat_message_prefix_you": {
+      "comment": "Localization key chat_message_prefix_you",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn: %s"
+          }
+        }
+      }
+    },
+    "chat_offline_cached_notice": {
+      "comment": "Localization key chat_offline_cached_notice",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing saved messages. Unable to sync."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang hiển thị tin nhắn đã lưu. Chưa thể đồng bộ."
+          }
+        }
+      }
+    },
+    "chat_picker_empty": {
+      "comment": "Localization key chat_picker_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your stamp vault is empty. Take and create stamps first!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem của bạn đang trống. Hãy chụp và tạo tem trước nhé!"
+          }
+        }
+      }
+    },
+    "chat_picker_subtitle": {
+      "comment": "Localization key chat_picker_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send your postal stamp to %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi dấu ấn bưu chính của bạn cho %s"
+          }
+        }
+      }
+    },
+    "chat_picker_title": {
+      "comment": "Localization key chat_picker_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Stamp to Attach 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn tem để đính kèm tin nhắn 📮"
+          }
+        }
+      }
+    },
+    "chat_resend": {
+      "comment": "Localization key chat_resend",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to retry"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để gửi lại"
+          }
+        }
+      }
+    },
+    "chat_send_stamp": {
+      "comment": "Localization key chat_send_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi tem"
+          }
+        }
+      }
+    },
+    "chat_stamp_default_title": {
+      "comment": "Localization key chat_stamp_default_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commemorative Postal Stamp 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dấu ấn tem kỷ niệm 📮"
+          }
+        }
+      }
+    },
+    "chat_stamp_save_btn": {
+      "comment": "Localization key chat_stamp_save_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu vào Kho tem"
+          }
+        }
+      }
+    },
+    "chat_stamp_saved_toast": {
+      "comment": "Localization key chat_stamp_saved_toast",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp saved to your Vault successfully! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu con tem vào Kho của bạn thành công! 📮"
+          }
+        }
+      }
+    },
+    "chat_stamp_sender_label": {
+      "comment": "Localization key chat_stamp_sender_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sender: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người gửi: %s"
+          }
+        }
+      }
+    },
+    "chat_stamp_tap_detail": {
+      "comment": "Localization key chat_stamp_tap_detail",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to view details ↗"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để xem chi tiết ↗"
+          }
+        }
+      }
+    },
+    "chat_stamp_unsynced_msg": {
+      "comment": "Localization key chat_stamp_unsynced_msg",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp photo is not yet synced across devices."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh tem chưa được đồng bộ để chia sẻ giữa các thiết bị."
+          }
+        }
+      }
+    },
+    "chat_start_conversation_hint": {
+      "comment": "Localization key chat_start_conversation_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a message or attach a postal stamp to connect! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm! 📮"
+          }
+        }
+      }
+    },
+    "chat_start_conversation_title": {
+      "comment": "Localization key chat_start_conversation_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a conversation with %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu cuộc trò chuyện với %s"
+          }
+        }
+      }
+    },
+    "chat_status_seen": {
+      "comment": "Localization key chat_status_seen",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seen"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xem"
+          }
+        }
+      }
+    },
+    "chat_status_sent": {
+      "comment": "Localization key chat_status_sent",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi"
+          }
+        }
+      }
+    },
+    "chat_tap_to_message": {
+      "comment": "Localization key chat_tap_to_message",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to message"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để bắt đầu nhắn tin"
+          }
+        }
+      }
+    },
+    "chat_title": {
+      "comment": "Localization key chat_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Direct Conversation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuộc trò chuyện"
+          }
+        }
+      }
+    },
+    "chat_view_friends_btn": {
+      "comment": "Localization key chat_view_friends_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View friends list"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem danh sách bạn bè"
+          }
+        }
+      }
+    },
+    "collection_completed": {
+      "comment": "Localization key collection_completed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hoàn thành"
+          }
+        }
+      }
+    },
+    "collection_milestones": {
+      "comment": "Localization key collection_milestones",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Milestones"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cột mốc"
+          }
+        }
+      }
+    },
+    "collection_title": {
+      "comment": "Localization key collection_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Albums"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập tem"
+          }
+        }
+      }
+    },
+    "common_back": {
+      "comment": "Localization key common_back",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quay lại"
+          }
+        }
+      }
+    },
+    "common_cancel": {
+      "comment": "Localization key common_cancel",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy"
+          }
+        }
+      }
+    },
+    "common_close": {
+      "comment": "Localization key common_close",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng"
+          }
+        }
+      }
+    },
+    "common_confirm": {
+      "comment": "Localization key common_confirm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xác nhận"
+          }
+        }
+      }
+    },
+    "common_copied": {
+      "comment": "Localization key common_copied",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied to clipboard"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã sao chép vào bộ nhớ tạm"
+          }
+        }
+      }
+    },
+    "common_copy": {
+      "comment": "Localization key common_copy",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép"
+          }
+        }
+      }
+    },
+    "common_delete": {
+      "comment": "Localization key common_delete",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa"
+          }
+        }
+      }
+    },
+    "common_dismiss": {
+      "comment": "Localization key common_dismiss",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ qua"
+          }
+        }
+      }
+    },
+    "common_done": {
+      "comment": "Localization key common_done",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong"
+          }
+        }
+      }
+    },
+    "common_edit": {
+      "comment": "Localization key common_edit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa"
+          }
+        }
+      }
+    },
+    "common_error": {
+      "comment": "Localization key common_error",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lỗi"
+          }
+        }
+      }
+    },
+    "common_loading": {
+      "comment": "Localization key common_loading",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải…"
+          }
+        }
+      }
+    },
+    "common_retry": {
+      "comment": "Localization key common_retry",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử lại"
+          }
+        }
+      }
+    },
+    "common_save": {
+      "comment": "Localization key common_save",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu"
+          }
+        }
+      }
+    },
+    "common_search": {
+      "comment": "Localization key common_search",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm kiếm"
+          }
+        }
+      }
+    },
+    "common_success": {
+      "comment": "Localization key common_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Success"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thành công"
+          }
+        }
+      }
+    },
+    "common_understood": {
+      "comment": "Localization key common_understood",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understood"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hiểu"
+          }
+        }
+      }
+    },
+    "common_unknown": {
+      "comment": "Localization key common_unknown",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không xác định"
+          }
+        }
+      }
+    },
+    "editor_button_save": {
+      "comment": "Localization key editor_button_save",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu tem"
+          }
+        }
+      }
+    },
+    "editor_button_share": {
+      "comment": "Localization key editor_button_share",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ"
+          }
+        }
+      }
+    },
+    "editor_caption_hint": {
+      "comment": "Localization key editor_caption_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What made this moment special?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điều gì làm khoảnh khắc này đáng nhớ?"
+          }
+        }
+      }
+    },
+    "editor_caption_label": {
+      "comment": "Localization key editor_caption_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal note"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi chú kỷ niệm"
+          }
+        }
+      }
+    },
+    "editor_date_label": {
+      "comment": "Localization key editor_date_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date minted"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngày đóng dấu"
+          }
+        }
+      }
+    },
+    "editor_location_hint": {
+      "comment": "Localization key editor_location_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a location or place"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm địa điểm hoặc thành phố"
+          }
+        }
+      }
+    },
+    "editor_location_label": {
+      "comment": "Localization key editor_location_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Địa điểm"
+          }
+        }
+      }
+    },
+    "editor_save_success": {
+      "comment": "Localization key editor_save_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp saved to vault!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu tem vào kho sưu tầm!"
+          }
+        }
+      }
+    },
+    "editor_shape_circle": {
+      "comment": "Localization key editor_shape_circle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Circle"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hình tròn"
+          }
+        }
+      }
+    },
+    "editor_shape_classic": {
+      "comment": "Localization key editor_shape_classic",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classic"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cổ điển"
+          }
+        }
+      }
+    },
+    "editor_shape_diamond": {
+      "comment": "Localization key editor_shape_diamond",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diamond"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hình thoi"
+          }
+        }
+      }
+    },
+    "editor_stamp_title": {
+      "comment": "Localization key editor_stamp_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp title"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề con tem"
+          }
+        }
+      }
+    },
+    "editor_stamp_title_hint": {
+      "comment": "Localization key editor_stamp_title_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Da Lat Sunrise"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ví dụ: Bình minh Đà Lạt"
+          }
+        }
+      }
+    },
+    "editor_title": {
+      "comment": "Localization key editor_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mint Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khắc tem bưu chính"
+          }
+        }
+      }
+    },
+    "feed_action_camera": {
+      "comment": "Localization key feed_action_camera",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp tem mới"
+          }
+        }
+      }
+    },
+    "feed_action_liked": {
+      "comment": "Localization key feed_action_liked",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liked"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thích"
+          }
+        }
+      }
+    },
+    "feed_action_post": {
+      "comment": "Localization key feed_action_post",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post now"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ngay"
+          }
+        }
+      }
+    },
+    "feed_action_reply": {
+      "comment": "Localization key feed_action_reply",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phản hồi"
+          }
+        }
+      }
+    },
+    "feed_action_save_vault": {
+      "comment": "Localization key feed_action_save_vault",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu tem"
+          }
+        }
+      }
+    },
+    "feed_action_vault": {
+      "comment": "Localization key feed_action_vault",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem"
+          }
+        }
+      }
+    },
+    "feed_comment_button": {
+      "comment": "Localization key feed_comment_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận"
+          }
+        }
+      }
+    },
+    "feed_comments_empty": {
+      "comment": "Localization key feed_comments_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Be the first to leave a comment on this memory! 💭"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy là người đầu tiên để lại bình luận cho kỷ niệm này! 💭"
+          }
+        }
+      }
+    },
+    "feed_comments_hint": {
+      "comment": "Localization key feed_comments_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a comment…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết bình luận…"
+          }
+        }
+      }
+    },
+    "feed_comments_title": {
+      "comment": "Localization key feed_comments_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comments (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận (%d)"
+          }
+        }
+      }
+    },
+    "feed_composer_action_camera": {
+      "comment": "Localization key feed_composer_action_camera",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp tem mới"
+          }
+        }
+      }
+    },
+    "feed_composer_action_post": {
+      "comment": "Localization key feed_composer_action_post",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post Now"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ngay"
+          }
+        }
+      }
+    },
+    "feed_composer_no_stamp": {
+      "comment": "Localization key feed_composer_no_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamp selected. Tap to take a photo!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có tem, bấm để chụp tem mới! 📸"
+          }
+        }
+      }
+    },
+    "feed_composer_placeholder": {
+      "comment": "Localization key feed_composer_placeholder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share today's stamp memory moment… 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay… 📮"
+          }
+        }
+      }
+    },
+    "feed_create_post_title": {
+      "comment": "Localization key feed_create_post_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create New Post 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo bài viết mới 📮"
+          }
+        }
+      }
+    },
+    "feed_filter_all_friends": {
+      "comment": "Localization key feed_filter_all_friends",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tất cả bạn bè"
+          }
+        }
+      }
+    },
+    "feed_filter_my_posts": {
+      "comment": "Localization key feed_filter_my_posts",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Posts"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài viết của tôi"
+          }
+        }
+      }
+    },
+    "feed_filter_only_me": {
+      "comment": "Localization key feed_filter_only_me",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only Me"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ mình tôi"
+          }
+        }
+      }
+    },
+    "feed_filter_selected_friends": {
+      "comment": "Localization key feed_filter_selected_friends",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected Friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn bè chọn lọc"
+          }
+        }
+      }
+    },
+    "feed_filter_title": {
+      "comment": "Localization key feed_filter_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory Feed 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tin kỷ niệm 📮"
+          }
+        }
+      }
+    },
+    "feed_like_button": {
+      "comment": "Localization key feed_like_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thích"
+          }
+        }
+      }
+    },
+    "feed_post_action": {
+      "comment": "Localization key feed_post_action",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng bài"
+          }
+        }
+      }
+    },
+    "feed_post_success": {
+      "comment": "Localization key feed_post_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New memory posted to feed! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đăng bài viết mới lên Bảng tin! 📮"
+          }
+        }
+      }
+    },
+    "feed_prompt_subtitle": {
+      "comment": "Localization key feed_prompt_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture something worth keeping."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu giữ ký ức qua từng con tem bưu chính."
+          }
+        }
+      }
+    },
+    "feed_prompt_title": {
+      "comment": "Localization key feed_prompt_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today’s memory"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm nay ghi tem gì?"
+          }
+        }
+      }
+    },
+    "feed_replies_header": {
+      "comment": "Localization key feed_replies_header",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp replies (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem phản hồi (%d)"
+          }
+        }
+      }
+    },
+    "feed_replies_title": {
+      "comment": "Localization key feed_replies_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp replies"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem phản hồi"
+          }
+        }
+      }
+    },
+    "feed_reply_button": {
+      "comment": "Localization key feed_reply_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply %d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phản hồi %d"
+          }
+        }
+      }
+    },
+    "feed_reply_count": {
+      "comment": "Localization key feed_reply_count",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply %d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phản hồi %d"
+          }
+        }
+      }
+    },
+    "feed_save_vault_success": {
+      "comment": "Localization key feed_save_vault_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp saved to your vault! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu con tem vào Kho của bạn! 📮"
+          }
+        }
+      }
+    },
+    "feed_stamp_reply": {
+      "comment": "Localization key feed_stamp_reply",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Reply"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem phản hồi"
+          }
+        }
+      }
+    },
+    "feed_stat_comments": {
+      "comment": "Localization key feed_stat_comments",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d comments"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d bình luận"
+          }
+        }
+      }
+    },
+    "feed_stat_likes": {
+      "comment": "Localization key feed_stat_likes",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d likes"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d lượt thích"
+          }
+        }
+      }
+    },
+    "feed_view_all_comments": {
+      "comment": "Localization key feed_view_all_comments",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View all %d comments"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem tất cả %d bình luận"
+          }
+        }
+      }
+    },
+    "feed_your_stamp": {
+      "comment": "Localization key feed_your_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem của bạn"
+          }
+        }
+      }
+    },
+    "friends_accept_request": {
+      "comment": "Localization key friends_accept_request",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng ý"
+          }
+        }
+      }
+    },
+    "friends_block_btn": {
+      "comment": "Localization key friends_block_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn"
+          }
+        }
+      }
+    },
+    "friends_block_confirm_message": {
+      "comment": "Localization key friends_block_confirm_message",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to block %s? This will remove friendship, cancel pending requests, and prevent all messaging and interactions."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có chắc chắn muốn chặn %s? Hành động này sẽ hủy kết bạn, hủy các lời mời đang chờ và ngăn hai bên nhắn tin hay tương tác."
+          }
+        }
+      }
+    },
+    "friends_block_confirm_title": {
+      "comment": "Localization key friends_block_confirm_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block user?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn người dùng?"
+          }
+        }
+      }
+    },
+    "friends_block_user_menu": {
+      "comment": "Localization key friends_block_user_menu",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block User"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn người dùng"
+          }
+        }
+      }
+    },
+    "friends_cancel_request": {
+      "comment": "Localization key friends_cancel_request",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu hồi"
+          }
+        }
+      }
+    },
+    "friends_copy_id_success": {
+      "comment": "Localization key friends_copy_id_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied %s to clipboard! 📋"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã sao chép %s vào bộ nhớ tạm! 📋"
+          }
+        }
+      }
+    },
+    "friends_copy_my_id": {
+      "comment": "Localization key friends_copy_my_id",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy your ID"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép ID của bạn"
+          }
+        }
+      }
+    },
+    "friends_decline_request": {
+      "comment": "Localization key friends_decline_request",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Từ chối"
+          }
+        }
+      }
+    },
+    "friends_empty_desc": {
+      "comment": "Localization key friends_empty_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share ID @%s or find friends by ID to send invitations!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ ID @%s hoặc tìm kiếm ID bạn bè để gửi lời mời!"
+          }
+        }
+      }
+    },
+    "friends_empty_list": {
+      "comment": "Localization key friends_empty_list",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No friends added yet. Share your friend code to start exchanging!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bạn bè nào. Hãy chia sẻ mã kết bạn để bắt đầu giao lưu!"
+          }
+        }
+      }
+    },
+    "friends_empty_title": {
+      "comment": "Localization key friends_empty_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends list is empty"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danh sách bạn bè đang trống"
+          }
+        }
+      }
+    },
+    "friends_explore_users": {
+      "comment": "Localization key friends_explore_users",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore users (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khám phá người dùng (%d)"
+          }
+        }
+      }
+    },
+    "friends_find_by_id": {
+      "comment": "Localization key friends_find_by_id",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find friend by ID"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm bạn bằng ID"
+          }
+        }
+      }
+    },
+    "friends_find_new": {
+      "comment": "Localization key friends_find_new",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find new friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm bạn mới"
+          }
+        }
+      }
+    },
+    "friends_inbox_empty_desc": {
+      "comment": "Localization key friends_inbox_empty_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When friends gift or attach stamps in messages, they will appear here!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bạn bè gửi tặng tem hoặc đính kèm tem trong tin nhắn, con tem sẽ xuất hiện ở đây!"
+          }
+        }
+      }
+    },
+    "friends_inbox_empty_title": {
+      "comment": "Localization key friends_inbox_empty_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mailbox has no stamps or postcards"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hộp thư chưa có tem hoặc thiệp nào"
+          }
+        }
+      }
+    },
+    "friends_incoming_empty": {
+      "comment": "Localization key friends_incoming_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No incoming friend requests 📭"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có lời mời kết bạn nào gửi đến bạn 📭"
+          }
+        }
+      }
+    },
+    "friends_incoming_title": {
+      "comment": "Localization key friends_incoming_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incoming requests (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời mời kết bạn nhận được (%d)"
+          }
+        }
+      }
+    },
+    "friends_invite_accepted_with": {
+      "comment": "Localization key friends_invite_accepted_with",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are now friends with @%s! 🤝"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã trở thành bạn bè với @%s! 🤝"
+          }
+        }
+      }
+    },
+    "friends_invite_cancelled": {
+      "comment": "Localization key friends_invite_cancelled",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friend request cancelled"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thu hồi lời mời kết bạn"
+          }
+        }
+      }
+    },
+    "friends_invite_sent": {
+      "comment": "Localization key friends_invite_sent",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friend invitation sent!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi lời mời kết bạn!"
+          }
+        }
+      }
+    },
+    "friends_invite_sent_to": {
+      "comment": "Localization key friends_invite_sent_to",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friend invitation sent to @%s! ✉️"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi lời mời kết bạn đến @%s! ✉️"
+          }
+        }
+      }
+    },
+    "friends_my_id_label": {
+      "comment": "Localization key friends_my_id_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your MemoStamp ID"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ID MemoStamp của bạn"
+          }
+        }
+      }
+    },
+    "friends_my_qr": {
+      "comment": "Localization key friends_my_qr",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My QR"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã QR"
+          }
+        }
+      }
+    },
+    "friends_no_users_found": {
+      "comment": "Localization key friends_no_users_found",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No users found"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa tìm thấy người dùng nào trên hệ thống"
+          }
+        }
+      }
+    },
+    "friends_no_users_with_id": {
+      "comment": "Localization key friends_no_users_with_id",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No user found with ID \"%s\""
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy người dùng nào với ID \"%s\""
+          }
+        }
+      }
+    },
+    "friends_outgoing_empty": {
+      "comment": "Localization key friends_outgoing_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pending sent requests"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có lời mời nào đang chờ duyệt"
+          }
+        }
+      }
+    },
+    "friends_outgoing_title": {
+      "comment": "Localization key friends_outgoing_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent requests (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời mời đã gửi đi (%d)"
+          }
+        }
+      }
+    },
+    "friends_pending_request": {
+      "comment": "Localization key friends_pending_request",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request pending"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ phản hồi"
+          }
+        }
+      }
+    },
+    "friends_report_abuse_menu": {
+      "comment": "Localization key friends_report_abuse_menu",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Abuse"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo vi phạm"
+          }
+        }
+      }
+    },
+    "friends_report_category": {
+      "comment": "Localization key friends_report_category",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danh mục"
+          }
+        }
+      }
+    },
+    "friends_report_notes_section": {
+      "comment": "Localization key friends_report_notes_section",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Additional Notes (optional)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết bổ sung (tùy chọn)"
+          }
+        }
+      }
+    },
+    "friends_report_reason_section": {
+      "comment": "Localization key friends_report_reason_section",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Reason"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lý do báo cáo"
+          }
+        }
+      }
+    },
+    "friends_report_submit": {
+      "comment": "Localization key friends_report_submit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submit Report"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi Báo Cáo"
+          }
+        }
+      }
+    },
+    "friends_report_title": {
+      "comment": "Localization key friends_report_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Abuse"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo Cáo Vi Phạm"
+          }
+        }
+      }
+    },
+    "friends_search_exact_id_hint": {
+      "comment": "Localization key friends_search_exact_id_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter exact ID (e.g. @username)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập chính xác ID (ví dụ: @phat_memostamp)"
+          }
+        }
+      }
+    },
+    "friends_search_hint": {
+      "comment": "Localization key friends_search_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter Friend Code (e.g. #STAMP99 or Name)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập mã kết bạn (ví dụ #STAMP99 hoặc Tên)"
+          }
+        }
+      }
+    },
+    "friends_search_results": {
+      "comment": "Localization key friends_search_results",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search results (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết quả tìm kiếm (%d)"
+          }
+        }
+      }
+    },
+    "friends_send_invite": {
+      "comment": "Localization key friends_send_invite",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi mời"
+          }
+        }
+      }
+    },
+    "friends_tab_chat": {
+      "comment": "Localization key friends_tab_chat",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trò chuyện"
+          }
+        }
+      }
+    },
+    "friends_tab_friends": {
+      "comment": "Localization key friends_tab_friends",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn bè (%d)"
+          }
+        }
+      }
+    },
+    "friends_tab_inbox": {
+      "comment": "Localization key friends_tab_inbox",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbox (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hộp thư (%d)"
+          }
+        }
+      }
+    },
+    "friends_tab_requests": {
+      "comment": "Localization key friends_tab_requests",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requests (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời mời (%d)"
+          }
+        }
+      }
+    },
+    "friends_tab_trades": {
+      "comment": "Localization key friends_tab_trades",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trades (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trao đổi (%d)"
+          }
+        }
+      }
+    },
+    "friends_theme_select": {
+      "comment": "Localization key friends_theme_select",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select theme"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn giao diện"
+          }
+        }
+      }
+    },
+    "friends_trade_accept_btn": {
+      "comment": "Localization key friends_trade_accept_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept Stamp & Save to Vault 🤝"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhận Tem & Lưu Vào Kho 🤝"
+          }
+        }
+      }
+    },
+    "friends_trade_complete_title": {
+      "comment": "Localization key friends_trade_complete_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trade Completed! 🤝"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trao đổi thành công! 🤝"
+          }
+        }
+      }
+    },
+    "friends_trade_default_note": {
+      "comment": "Localization key friends_trade_default_note",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gifting you this memory stamp! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tặng bạn dấu tem kỷ niệm này nhé! 📮"
+          }
+        }
+      }
+    },
+    "friends_trade_empty_incoming": {
+      "comment": "Localization key friends_trade_empty_incoming",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No incoming trade offers 📭"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có lời mời trao đổi nào gửi đến bạn"
+          }
+        }
+      }
+    },
+    "friends_trade_empty_outgoing": {
+      "comment": "Localization key friends_trade_empty_outgoing",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pending trade offers sent"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có lời mời trao đổi nào đang chờ"
+          }
+        }
+      }
+    },
+    "friends_trade_empty_vault": {
+      "comment": "Localization key friends_trade_empty_vault",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vault is empty! Please take photos or create stamps first."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem đang trống! Hãy chụp ảnh hoặc tạo tem trước."
+          }
+        }
+      }
+    },
+    "friends_trade_give": {
+      "comment": "Localization key friends_trade_give",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You give"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn gửi tặng"
+          }
+        }
+      }
+    },
+    "friends_trade_incoming_title": {
+      "comment": "Localization key friends_trade_incoming_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incoming Trade Offers (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời mời trao đổi nhận được (%d)"
+          }
+        }
+      }
+    },
+    "friends_trade_note_hint": {
+      "comment": "Localization key friends_trade_note_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Postal message to @%s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời nhắn bưu chính gửi @%s"
+          }
+        }
+      }
+    },
+    "friends_trade_offer_dialog_title": {
+      "comment": "Localization key friends_trade_offer_dialog_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Postcard & Stamp from %s 🤝"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bưu thiếp & Tem từ %s 🤝"
+          }
+        }
+      }
+    },
+    "friends_trade_outgoing_title": {
+      "comment": "Localization key friends_trade_outgoing_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent Trade Offers (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời mời trao đổi đã gửi (%d)"
+          }
+        }
+      }
+    },
+    "friends_trade_receive": {
+      "comment": "Localization key friends_trade_receive",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You receive"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn nhận lại"
+          }
+        }
+      }
+    },
+    "friends_trade_received_title": {
+      "comment": "Localization key friends_trade_received_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamps Received from Friends (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem đã nhận từ bạn bè (%d)"
+          }
+        }
+      }
+    },
+    "friends_trade_select_stamp": {
+      "comment": "Localization key friends_trade_select_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a stamp from your Vault:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn một con tem từ Kho của bạn:"
+          }
+        }
+      }
+    },
+    "friends_trade_send_btn": {
+      "comment": "Localization key friends_trade_send_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Letter & Stamp ✉️"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi Thư & Tem ✉️"
+          }
+        }
+      }
+    },
+    "friends_trade_send_title": {
+      "comment": "Localization key friends_trade_send_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Stamp to @%s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi tặng tem cho @%s"
+          }
+        }
+      }
+    },
+    "friends_trade_subtitle": {
+      "comment": "Localization key friends_trade_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share & exchange vintage stamps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ & giao lưu tem bưu chính độc bản"
+          }
+        }
+      }
+    },
+    "friends_trade_title": {
+      "comment": "Localization key friends_trade_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends & Stamp Trade"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn bè & Trao đổi tem"
+          }
+        }
+      }
+    },
+    "friends_unfriend_btn": {
+      "comment": "Localization key friends_unfriend_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfriend"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy kết bạn"
+          }
+        }
+      }
+    },
+    "friends_unfriend_confirm_msg": {
+      "comment": "Localization key friends_unfriend_confirm_msg",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to unfriend %s? You will need to send another request to connect again."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có chắc muốn hủy kết bạn với %s? Sau khi hủy, bạn sẽ cần gửi lại lời mời kết bạn nếu muốn kết nối lại."
+          }
+        }
+      }
+    },
+    "friends_unfriend_confirm_title": {
+      "comment": "Localization key friends_unfriend_confirm_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfriend %s?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy kết bạn với %s?"
+          }
+        }
+      }
+    },
+    "friends_waiting_acceptance": {
+      "comment": "Localization key friends_waiting_acceptance",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for acceptance…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ đối phương chấp nhận…"
+          }
+        }
+      }
+    },
+    "friends_waiting_response": {
+      "comment": "Localization key friends_waiting_response",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for response…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ phản hồi…"
+          }
+        }
+      }
+    },
+    "friends_wants_to_be_friends": {
+      "comment": "Localization key friends_wants_to_be_friends",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wants to connect with you"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muốn kết bạn với bạn"
+          }
+        }
+      }
+    },
+    "home_action_new_stamp": {
+      "comment": "Localization key home_action_new_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp tem mới"
+          }
+        }
+      }
+    },
+    "home_action_post_now": {
+      "comment": "Localization key home_action_post_now",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post now"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ngay"
+          }
+        }
+      }
+    },
+    "home_action_vault": {
+      "comment": "Localization key home_action_vault",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem"
+          }
+        }
+      }
+    },
+    "home_feed_empty": {
+      "comment": "Localization key home_feed_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No memories yet. Connect with friends or create your first stamp!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bài viết nào. Hãy kết bạn hoặc tạo con tem đầu tiên của bạn!"
+          }
+        }
+      }
+    },
+    "home_hero_subtitle": {
+      "comment": "Localization key home_hero_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture something worth keeping."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu giữ ký ức qua từng con tem bưu chính."
+          }
+        }
+      }
+    },
+    "home_hero_title": {
+      "comment": "Localization key home_hero_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today's memory"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hôm nay ghi tem gì?"
+          }
+        }
+      }
+    },
+    "home_quick_post_hint": {
+      "comment": "Localization key home_quick_post_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share today's stamp memory moment… 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay… 📮"
+          }
+        }
+      }
+    },
+    "inbox_empty_subtitle": {
+      "comment": "Localization key inbox_empty_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new memory stamps received in your inbox."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn chưa có con tem thư kỷ niệm nào mới trong hộp thư."
+          }
+        }
+      }
+    },
+    "inbox_empty_title": {
+      "comment": "Localization key inbox_empty_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inbox is empty"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hộp thư kỷ niệm trống"
+          }
+        }
+      }
+    },
+    "location_detecting": {
+      "comment": "Localization key location_detecting",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detecting current location…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang định vị địa điểm hiện tại…"
+          }
+        }
+      }
+    },
+    "location_distance_km": {
+      "comment": "Localization key location_distance_km",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.1f km away"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cách %.1f km"
+          }
+        }
+      }
+    },
+    "location_distance_meters": {
+      "comment": "Localization key location_distance_meters",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d m away"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cách %d m"
+          }
+        }
+      }
+    },
+    "location_no_results": {
+      "comment": "Localization key location_no_results",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching locations found."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy địa điểm phù hợp."
+          }
+        }
+      }
+    },
+    "location_picker_title": {
+      "comment": "Localization key location_picker_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Location"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn địa điểm"
+          }
+        }
+      }
+    },
+    "location_rate_limited": {
+      "comment": "Localization key location_rate_limited",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location search rate limit reached. Please wait %d seconds."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đạt giới hạn tìm kiếm địa điểm. Vui lòng chờ %d giây."
+          }
+        }
+      }
+    },
+    "location_search_hint": {
+      "comment": "Localization key location_search_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search places, landmarks, cities…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm địa danh, danh lam, thành phố…"
+          }
+        }
+      }
+    },
+    "nav_camera": {
+      "comment": "Localization key nav_camera",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp ảnh"
+          }
+        }
+      }
+    },
+    "nav_home": {
+      "comment": "Localization key nav_home",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bưu ảnh"
+          }
+        }
+      }
+    },
+    "nav_passport": {
+      "comment": "Localization key nav_passport",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồ sơ"
+          }
+        }
+      }
+    },
+    "nav_trade": {
+      "comment": "Localization key nav_trade",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trade"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao lưu"
+          }
+        }
+      }
+    },
+    "nav_vault": {
+      "comment": "Localization key nav_vault",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem"
+          }
+        }
+      }
+    },
+    "note_caption_hint": {
+      "comment": "Localization key note_caption_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a note for this stamp…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết lời nhắn cho con tem này…"
+          }
+        }
+      }
+    },
+    "note_save_button": {
+      "comment": "Localization key note_save_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attach Note"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đính kèm ghi chú"
+          }
+        }
+      }
+    },
+    "note_select_location": {
+      "comment": "Localization key note_select_location",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Location"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn địa điểm"
+          }
+        }
+      }
+    },
+    "note_title": {
+      "comment": "Localization key note_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory Note"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi chú kỷ niệm"
+          }
+        }
+      }
+    },
+    "note_title_hint": {
+      "comment": "Localization key note_title_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name this memory"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt tên cho kỷ niệm"
+          }
+        }
+      }
+    },
+    "offline_toast": {
+      "comment": "Localization key offline_toast",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📡 Offline: Connect to Wi-Fi/Cellular to sync cloud data"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📡 Ngoại Tuyến: Kết nối Wi-Fi/4G để đồng bộ đám mây"
+          }
+        }
+      }
+    },
+    "post_add_comment_placeholder": {
+      "comment": "Localization key post_add_comment_placeholder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a thoughtful comment…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết bình luận chân thành…"
+          }
+        }
+      }
+    },
+    "post_comments_empty": {
+      "comment": "Localization key post_comments_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Be the first to comment on this memory! 💭"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy là người đầu tiên để lại bình luận cho kỷ niệm này! 💭"
+          }
+        }
+      }
+    },
+    "post_comments_title": {
+      "comment": "Localization key post_comments_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comments (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận (%d)"
+          }
+        }
+      }
+    },
+    "post_delete_comment_confirm": {
+      "comment": "Localization key post_delete_comment_confirm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this comment?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa bình luận này?"
+          }
+        }
+      }
+    },
+    "post_detail_title": {
+      "comment": "Localization key post_detail_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory Post"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết kỷ niệm"
+          }
+        }
+      }
+    },
+    "post_reply_lightbox_title": {
+      "comment": "Localization key post_reply_lightbox_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Reply"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem phản hồi"
+          }
+        }
+      }
+    },
+    "post_send_comment": {
+      "comment": "Localization key post_send_comment",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi"
+          }
+        }
+      }
+    },
+    "profile_avatar_title": {
+      "comment": "Localization key profile_avatar_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile Avatar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh đại diện"
+          }
+        }
+      }
+    },
+    "profile_change_avatar": {
+      "comment": "Localization key profile_change_avatar",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Avatar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi avatar"
+          }
+        }
+      }
+    },
+    "profile_change_cover": {
+      "comment": "Localization key profile_change_cover",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Cover"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi hình nền"
+          }
+        }
+      }
+    },
+    "profile_choose_library": {
+      "comment": "Localization key profile_choose_library",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose from Library"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn từ Thư Viện"
+          }
+        }
+      }
+    },
+    "profile_delete_account": {
+      "comment": "Localization key profile_delete_account",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Account Permanently"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa Tài Khoản Vĩnh Viễn"
+          }
+        }
+      }
+    },
+    "profile_delete_account_confirm": {
+      "comment": "Localization key profile_delete_account_confirm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm Account Deletion"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xác Nhận Xóa Tài Khoản"
+          }
+        }
+      }
+    },
+    "profile_delete_account_warning": {
+      "comment": "Localization key profile_delete_account_warning",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action cannot be undone. All your stamps, messages, friends, and data will be permanently purged."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hành động này không thể hoàn tác. Tất cả tem, tin nhắn, bạn bè và dữ liệu cá nhân của bạn sẽ bị xóa vĩnh viễn."
+          }
+        }
+      }
+    },
+    "profile_edit": {
+      "comment": "Localization key profile_edit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Profile"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa hồ sơ"
+          }
+        }
+      }
+    },
+    "profile_edit_display_name_bio": {
+      "comment": "Localization key profile_edit_display_name_bio",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit display name & bio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa tên hiển thị & tiểu sử"
+          }
+        }
+      }
+    },
+    "profile_error_avatar_local_sync": {
+      "comment": "Localization key profile_error_avatar_local_sync",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local avatar cannot be synced to cloud. Please use an https URL or keep current avatar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh đại diện cục bộ chưa thể đồng bộ. Hãy dùng URL https hoặc giữ ảnh hiện tại."
+          }
+        }
+      }
+    },
+    "profile_error_display_name_empty": {
+      "comment": "Localization key profile_error_display_name_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display name cannot be empty."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên hiển thị không được để trống."
+          }
+        }
+      }
+    },
+    "profile_error_identity_mismatch": {
+      "comment": "Localization key profile_error_identity_mismatch",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account identity mismatch."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danh tính tài khoản không trùng khớp."
+          }
+        }
+      }
+    },
+    "profile_error_local_persist": {
+      "comment": "Localization key profile_error_local_persist",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to persist local data."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể lưu trữ dữ liệu cục bộ."
+          }
+        }
+      }
+    },
+    "profile_error_session_invalid": {
+      "comment": "Localization key profile_error_session_invalid",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid or expired session."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên đăng nhập không hợp lệ hoặc đã hết hạn."
+          }
+        }
+      }
+    },
+    "profile_logout": {
+      "comment": "Localization key profile_logout",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logout"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng xuất"
+          }
+        }
+      }
+    },
+    "profile_logout_confirm": {
+      "comment": "Localization key profile_logout_confirm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Are you sure you want to log out of your account?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?"
+          }
+        }
+      }
+    },
+    "profile_privacy_policy": {
+      "comment": "Localization key profile_privacy_policy",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chính Sách Quyền Riêng Tư"
+          }
+        }
+      }
+    },
+    "profile_save_changes": {
+      "comment": "Localization key profile_save_changes",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Settings Changes"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu Cài Đặt Hồ Sơ"
+          }
+        }
+      }
+    },
+    "profile_save_success": {
+      "comment": "Localization key profile_save_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile updated successfully! ✨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã cập nhật hồ sơ thành công! ✨"
+          }
+        }
+      }
+    },
+    "profile_saving": {
+      "comment": "Localization key profile_saving",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang lưu…"
+          }
+        }
+      }
+    },
+    "profile_settings_title": {
+      "comment": "Localization key profile_settings_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings & Account"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài Đặt & Tài Khoản"
+          }
+        }
+      }
+    },
+    "profile_share_passport": {
+      "comment": "Localization key profile_share_passport",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Passport"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ Passport"
+          }
+        }
+      }
+    },
+    "profile_stat_collections": {
+      "comment": "Localization key profile_stat_collections",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "COLLECTIONS"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BỘ SƯU TẬP"
+          }
+        }
+      }
+    },
+    "profile_stat_friends": {
+      "comment": "Localization key profile_stat_friends",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FRIENDS"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BẠN BÈ"
+          }
+        }
+      }
+    },
+    "profile_stat_memories": {
+      "comment": "Localization key profile_stat_memories",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMORIES"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KÝ ỨC"
+          }
+        }
+      }
+    },
+    "profile_stat_stamps": {
+      "comment": "Localization key profile_stat_stamps",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STAMPS"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TEM DÁN"
+          }
+        }
+      }
+    },
+    "profile_status_friend": {
+      "comment": "Localization key profile_status_friend",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FRIEND"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BẠN BÈ"
+          }
+        }
+      }
+    },
+    "profile_status_guest": {
+      "comment": "Localization key profile_status_guest",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GUEST"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KHÁCH"
+          }
+        }
+      }
+    },
+    "profile_title": {
+      "comment": "Localization key profile_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collector Passport"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hộ chiếu sưu tầm"
+          }
+        }
+      }
+    },
+    "profile_visas_count": {
+      "comment": "Localization key profile_visas_count",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d visas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d dấu"
+          }
+        }
+      }
+    },
+    "profile_visas_title": {
+      "comment": "Localization key profile_visas_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visas & Sealed Memories"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dấu Thị Thực & Ký Ức Đã Đóng"
+          }
+        }
+      }
+    },
+    "recovery_account_label": {
+      "comment": "Localization key recovery_account_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản: %s"
+          }
+        }
+      }
+    },
+    "recovery_confirm_password_hint": {
+      "comment": "Localization key recovery_confirm_password_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm new password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xác nhận mật khẩu mới"
+          }
+        }
+      }
+    },
+    "recovery_cooldown_wait": {
+      "comment": "Localization key recovery_cooldown_wait",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please wait %d seconds before requesting again."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng chờ %d giây trước khi gửi lại."
+          }
+        }
+      }
+    },
+    "recovery_dialog_desc": {
+      "comment": "Localization key recovery_dialog_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your email address to receive a secure password reset link."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập email của bạn để nhận liên kết đặt lại mật khẩu an toàn."
+          }
+        }
+      }
+    },
+    "recovery_dialog_title": {
+      "comment": "Localization key recovery_dialog_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục mật khẩu"
+          }
+        }
+      }
+    },
+    "recovery_enter_new_password_title": {
+      "comment": "Localization key recovery_enter_new_password_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter New Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt lại mật khẩu"
+          }
+        }
+      }
+    },
+    "recovery_invalid_link_desc": {
+      "comment": "Localization key recovery_invalid_link_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This password reset link is invalid or has expired."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liên kết đặt lại mật khẩu này không hợp lệ hoặc đã hết hạn."
+          }
+        }
+      }
+    },
+    "recovery_invalid_link_title": {
+      "comment": "Localization key recovery_invalid_link_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid or Expired Link"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liên kết không hợp lệ"
+          }
+        }
+      }
+    },
+    "recovery_new_password_hint": {
+      "comment": "Localization key recovery_new_password_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New password (at least 6 characters)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu mới (ít nhất 6 ký tự)"
+          }
+        }
+      }
+    },
+    "recovery_registered_email": {
+      "comment": "Localization key recovery_registered_email",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registered email"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email đã đăng ký"
+          }
+        }
+      }
+    },
+    "recovery_send_button": {
+      "comment": "Localization key recovery_send_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Email"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi email"
+          }
+        }
+      }
+    },
+    "recovery_sent_generic_msg": {
+      "comment": "Localization key recovery_sent_generic_msg",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If an account exists with this email, password reset instructions have been sent."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nếu tài khoản tồn tại với email này, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu đến hòm thư của bạn."
+          }
+        }
+      }
+    },
+    "recovery_success_message": {
+      "comment": "Localization key recovery_success_message",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your account password has been updated. Please sign in with your new password."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu tài khoản của bạn đã được cập nhật thành công. Vui lòng đăng nhập lại bằng mật khẩu mới."
+          }
+        }
+      }
+    },
+    "recovery_success_msg": {
+      "comment": "Localization key recovery_success_msg",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password reset successfully! Please sign in with your new password."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại."
+          }
+        }
+      }
+    },
+    "recovery_success_title": {
+      "comment": "Localization key recovery_success_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password Reset Successfully"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt lại mật khẩu thành công"
+          }
+        }
+      }
+    },
+    "recovery_update_button": {
+      "comment": "Localization key recovery_update_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cập nhật"
+          }
+        }
+      }
+    },
+    "report_category_fraud": {
+      "comment": "Localization key report_category_fraud",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fraud or Impersonation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gian lận hoặc Giả mạo"
+          }
+        }
+      }
+    },
+    "report_category_fraud_desc": {
+      "comment": "Localization key report_category_fraud_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pretending to be another person or engaging in deceptive acts."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giả mạo danh tính hoặc có dấu hiệu lừa đảo."
+          }
+        }
+      }
+    },
+    "report_category_harassment": {
+      "comment": "Localization key report_category_harassment",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Harassment or Bullying"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quấy rối hoặc Bắt nạt"
+          }
+        }
+      }
+    },
+    "report_category_harassment_desc": {
+      "comment": "Localization key report_category_harassment_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offensive, threatening, or unwanted targeting behavior."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hành vi đe dọa, xúc phạm hoặc công kích cá nhân."
+          }
+        }
+      }
+    },
+    "report_category_inappropriate": {
+      "comment": "Localization key report_category_inappropriate",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inappropriate Content"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung không phù hợp"
+          }
+        }
+      }
+    },
+    "report_category_inappropriate_desc": {
+      "comment": "Localization key report_category_inappropriate_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Violates community standards or contains sensitive material."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vi phạm tiêu chuẩn cộng đồng hoặc chứa hình ảnh nhạy cảm."
+          }
+        }
+      }
+    },
+    "report_category_other": {
+      "comment": "Localization key report_category_other",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other Issue"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vấn đề khác"
+          }
+        }
+      }
+    },
+    "report_category_other_desc": {
+      "comment": "Localization key report_category_other_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any other violation requiring review by our safety team."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các vi phạm khác cần đội ngũ kiểm duyệt xem xét."
+          }
+        }
+      }
+    },
+    "report_category_spam": {
+      "comment": "Localization key report_category_spam",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spam or Commercial Solicitation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spam hoặc Quảng cáo quấy rối"
+          }
+        }
+      }
+    },
+    "report_category_spam_desc": {
+      "comment": "Localization key report_category_spam_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automated, repetitive, or unauthorized promotional messages."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung tự động, lặp lại hoặc quảng cáo không mong muốn."
+          }
+        }
+      }
+    },
+    "report_notes_label": {
+      "comment": "Localization key report_notes_label",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Additional notes (optional)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi chú thêm (tùy chọn)"
+          }
+        }
+      }
+    },
+    "report_notes_placeholder": {
+      "comment": "Localization key report_notes_placeholder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describe what occurred…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô tả chi tiết sự việc…"
+          }
+        }
+      }
+    },
+    "report_reason_prompt": {
+      "comment": "Localization key report_reason_prompt",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a reason for this report:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn lý do báo cáo:"
+          }
+        }
+      }
+    },
+    "report_submit_button": {
+      "comment": "Localization key report_submit_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Submit Report"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi báo cáo"
+          }
+        }
+      }
+    },
+    "report_success_msg": {
+      "comment": "Localization key report_success_msg",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report submitted. Our moderation team will review it promptly."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi báo cáo. Đội ngũ kiểm duyệt sẽ xử lý trong thời gian sớm nhất."
+          }
+        }
+      }
+    },
+    "report_user_title": {
+      "comment": "Localization key report_user_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo %s"
+          }
+        }
+      }
+    },
+    "safety_block_bullet_1": {
+      "comment": "Localization key safety_block_bullet_1",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Friendship and pending friend requests will be removed immediately."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Quan hệ bạn bè và các lời mời kết bạn đang chờ sẽ bị hủy ngay lập tức."
+          }
+        }
+      }
+    },
+    "safety_block_bullet_2": {
+      "comment": "Localization key safety_block_bullet_2",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Neither of you will be able to send messages, trade offers, or friend requests."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Cả hai sẽ không thể gửi tin nhắn, trao đổi tem hoặc gửi lời mời kết bạn cho nhau."
+          }
+        }
+      }
+    },
+    "safety_block_bullet_3": {
+      "comment": "Localization key safety_block_bullet_3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Neither of you can interact with or view each other's posts and comments."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Không thể tương tác hoặc xem bài viết và bình luận của nhau."
+          }
+        }
+      }
+    },
+    "safety_block_confirm_button": {
+      "comment": "Localization key safety_block_confirm_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block User"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn người dùng"
+          }
+        }
+      }
+    },
+    "safety_block_desc": {
+      "comment": "Localization key safety_block_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you block this user:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi chặn người này:"
+          }
+        }
+      }
+    },
+    "safety_block_success": {
+      "comment": "Localization key safety_block_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked user successfully."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chặn người dùng thành công."
+          }
+        }
+      }
+    },
+    "safety_block_title": {
+      "comment": "Localization key safety_block_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block %s?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn %s?"
+          }
+        }
+      }
+    },
+    "safety_blocked_user_item": {
+      "comment": "Localization key safety_blocked_user_item",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked User"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người dùng đã chặn"
+          }
+        }
+      }
+    },
+    "safety_no_blocked_users": {
+      "comment": "Localization key safety_no_blocked_users",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No blocked users."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có người dùng nào bị chặn."
+          }
+        }
+      }
+    },
+    "safety_unblock_button": {
+      "comment": "Localization key safety_unblock_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unblock"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ chặn"
+          }
+        }
+      }
+    },
+    "safety_unblock_confirm": {
+      "comment": "Localization key safety_unblock_confirm",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unblock %s?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ chặn %s?"
+          }
+        }
+      }
+    },
+    "safety_unblock_success": {
+      "comment": "Localization key safety_unblock_success",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unblocked successfully."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bỏ chặn thành công."
+          }
+        }
+      }
+    },
+    "settings_blocked_users": {
+      "comment": "Localization key settings_blocked_users",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked Users List"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danh sách người dùng đã chặn"
+          }
+        }
+      }
+    },
+    "settings_language_en": {
+      "comment": "Localization key settings_language_en",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
+          }
+        }
+      }
+    },
+    "settings_language_section": {
+      "comment": "Localization key settings_language_section",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Language"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ ứng dụng"
+          }
+        }
+      }
+    },
+    "settings_language_system": {
+      "comment": "Localization key settings_language_system",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System default"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mặc định hệ thống"
+          }
+        }
+      }
+    },
+    "settings_language_vi": {
+      "comment": "Localization key settings_language_vi",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Việt"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếng Việt"
+          }
+        }
+      }
+    },
+    "settings_password_section": {
+      "comment": "Localization key settings_password_section",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account & Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản & Mật khẩu"
+          }
+        }
+      }
+    },
+    "settings_password_updated": {
+      "comment": "Localization key settings_password_updated",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password updated successfully!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đổi mật khẩu thành công!"
+          }
+        }
+      }
+    },
+    "settings_safety_section": {
+      "comment": "Localization key settings_safety_section",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy & Safety"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền riêng tư & An toàn"
+          }
+        }
+      }
+    },
+    "settings_update_password": {
+      "comment": "Localization key settings_update_password",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi Mật Khẩu"
+          }
+        }
+      }
+    },
+    "stamp_owned_badge": {
+      "comment": "Localization key stamp_owned_badge",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owned ✨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã sở hữu ✨"
+          }
+        }
+      }
+    },
+    "stamp_saved_vault_notice": {
+      "comment": "Localization key stamp_saved_vault_notice",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved permanently in Stamp Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu vĩnh viễn trong Kho tem"
+          }
+        }
+      }
+    },
+    "theme_applied": {
+      "comment": "Localization key theme_applied",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applied theme %s! ✨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã áp dụng phong cách %s! ✨"
+          }
+        }
+      }
+    },
+    "theme_selector_desc": {
+      "comment": "Localization key theme_selector_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change display style to your preference"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi phong cách hiển thị theo sở thích của bạn"
+          }
+        }
+      }
+    },
+    "theme_selector_title": {
+      "comment": "Localization key theme_selector_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Theme Style 🎨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn Phong Cách Giao Diện 🎨"
+          }
+        }
+      }
+    },
+    "time_days_ago": {
+      "comment": "Localization key time_days_ago",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d days ago"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ngày trước"
+          }
+        }
+      }
+    },
+    "time_hours_ago": {
+      "comment": "Localization key time_hours_ago",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d hours ago"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d giờ trước"
+          }
+        }
+      }
+    },
+    "time_just_now": {
+      "comment": "Localization key time_just_now",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just now"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vừa xong"
+          }
+        }
+      }
+    },
+    "time_minutes_ago": {
+      "comment": "Localization key time_minutes_ago",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d minutes ago"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d phút trước"
+          }
+        }
+      }
+    },
+    "trade_accept_button": {
+      "comment": "Localization key trade_accept_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept Trade"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồng ý trao đổi"
+          }
+        }
+      }
+    },
+    "trade_accepted_toast": {
+      "comment": "Localization key trade_accepted_toast",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp trade accepted successfully! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chấp nhận trao đổi tem thành công! 📮"
+          }
+        }
+      }
+    },
+    "trade_action_accept": {
+      "comment": "Localization key trade_action_accept",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chấp nhận"
+          }
+        }
+      }
+    },
+    "trade_action_decline": {
+      "comment": "Localization key trade_action_decline",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Từ chối"
+          }
+        }
+      }
+    },
+    "trade_btn": {
+      "comment": "Localization key trade_btn",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gift Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tặng tem"
+          }
+        }
+      }
+    },
+    "trade_cancel_button": {
+      "comment": "Localization key trade_cancel_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel Offer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy lời mời"
+          }
+        }
+      }
+    },
+    "trade_create_title": {
+      "comment": "Localization key trade_create_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Stamp Trade Offer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lời mời trao đổi tem mới"
+          }
+        }
+      }
+    },
+    "trade_decline_button": {
+      "comment": "Localization key trade_decline_button",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Từ chối"
+          }
+        }
+      }
+    },
+    "trade_inbox_empty_subtitle": {
+      "comment": "Localization key trade_inbox_empty_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When friends send you stamp trade requests, they will appear here."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bạn bè gửi lời mời trao đổi tem, chúng sẽ xuất hiện tại đây."
+          }
+        }
+      }
+    },
+    "trade_inbox_empty_title": {
+      "comment": "Localization key trade_inbox_empty_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active trade offers"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có lời mời trao đổi nào"
+          }
+        }
+      }
+    },
+    "trade_inbox_title": {
+      "comment": "Localization key trade_inbox_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Trade Inbox"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hộp thư Trao đổi Tem"
+          }
+        }
+      }
+    },
+    "trade_offer_received": {
+      "comment": "Localization key trade_offer_received",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sent a stamp trade proposal!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gửi lời đề nghị trao đổi tem!"
+          }
+        }
+      }
+    },
+    "trade_offer_status_accepted": {
+      "comment": "Localization key trade_offer_status_accepted",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trade Accepted"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chấp nhận trao đổi"
+          }
+        }
+      }
+    },
+    "trade_offer_status_pending": {
+      "comment": "Localization key trade_offer_status_pending",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending Offer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ chấp nhận"
+          }
+        }
+      }
+    },
+    "trade_offered_format": {
+      "comment": "Localization key trade_offered_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offered: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề nghị: %s"
+          }
+        }
+      }
+    },
+    "trade_select_stamp": {
+      "comment": "Localization key trade_select_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a stamp from your vault to offer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn một con tem từ kho để trao đổi"
+          }
+        }
+      }
+    },
+    "trade_status_accepted": {
+      "comment": "Localization key trade_status_accepted",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trade Accepted"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chấp nhận"
+          }
+        }
+      }
+    },
+    "trade_status_cancelled": {
+      "comment": "Localization key trade_status_cancelled",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trade Cancelled"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hủy lời mời"
+          }
+        }
+      }
+    },
+    "trade_status_declined": {
+      "comment": "Localization key trade_status_declined",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trade Declined"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã từ chối"
+          }
+        }
+      }
+    },
+    "trade_status_pending": {
+      "comment": "Localization key trade_status_pending",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending Offer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ"
+          }
+        }
+      }
+    },
+    "trade_status_rejected": {
+      "comment": "Localization key trade_status_rejected",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declined"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã từ chối"
+          }
+        }
+      }
+    },
+    "trade_success_msg": {
+      "comment": "Localization key trade_success_msg",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp traded successfully! Added to your collected stamps."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã trao đổi tem thành công! Tem mới đã được thêm vào kho của bạn."
+          }
+        }
+      }
+    },
+    "vault_empty": {
+      "comment": "Localization key vault_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamps here yet."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có con tem nào ở đây."
+          }
+        }
+      }
+    },
+    "vault_envelope_seal": {
+      "comment": "Localization key vault_envelope_seal",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seal Envelope"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dán niêm phong"
+          }
+        }
+      }
+    },
+    "vault_envelope_title": {
+      "comment": "Localization key vault_envelope_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Postal Envelope"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bì thư bưu chính"
+          }
+        }
+      }
+    },
+    "vault_send_to_friend": {
+      "comment": "Localization key vault_send_to_friend",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send to Friend"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi cho bạn bè"
+          }
+        }
+      }
+    },
+    "vault_stamp_detail_title": {
+      "comment": "Localization key vault_stamp_detail_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Details"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết tem"
+          }
+        }
+      }
+    },
+    "vault_subtitle": {
+      "comment": "Localization key vault_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your minted and collected vintage stamps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Những con tem bạn đã sáng tạo và sưu tầm"
+          }
+        }
+      }
+    },
+    "vault_tab_collected": {
+      "comment": "Localization key vault_tab_collected",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collected (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Được tặng (%d)"
+          }
+        }
+      }
+    },
+    "vault_tab_created": {
+      "comment": "Localization key vault_tab_created",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tạo (%d)"
+          }
+        }
+      }
+    },
+    "vault_title": {
+      "comment": "Localization key vault_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem bưu chính"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

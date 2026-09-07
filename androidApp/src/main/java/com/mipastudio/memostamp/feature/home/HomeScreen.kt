@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -139,7 +140,7 @@ fun HomeScreen(
                                         stampEntity = updatedStamp,
                                         audienceType = quickPostAudience
                                     )
-                                    Toast.makeText(context, "Đã đăng bài viết mới lên Bảng tin! 📮", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.feed_post_success), Toast.LENGTH_SHORT).show()
                                 } else {
                                     val newDraft = StampDraft(
                                         originalImagePath = currentUser.avatarUrl.ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" },
@@ -155,7 +156,7 @@ fun HomeScreen(
                                             stampEntity = res.getOrThrow(),
                                             audienceType = quickPostAudience
                                         )
-                                        Toast.makeText(context, "Đã đăng bài viết mới lên Bảng tin! 📮", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.feed_post_success), Toast.LENGTH_SHORT).show()
                                     } else {
                                         throw res.exceptionOrNull() ?: Exception("Lưu tem thất bại")
                                     }
@@ -172,16 +173,16 @@ fun HomeScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text("Đăng bài 🚀", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("${stringResource(R.string.feed_post_action)} 🚀", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showQuickPostModal = false }) {
-                    Text("Hủy", color = SecondaryText)
+                    Text(stringResource(R.string.common_cancel), color = SecondaryText)
                 }
             },
             title = {
-                Text("Tạo bài viết mới 📮", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                Text(stringResource(R.string.feed_create_post_title), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
             },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -212,7 +213,7 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "${quickPostAudience.icon} ${quickPostAudience.label}",
+                                        text = "${quickPostAudience.icon} ${stringResource(quickPostAudience.labelRes)}",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = PrimaryText
@@ -228,7 +229,7 @@ fun HomeScreen(
                     OutlinedTextField(
                         value = quickPostCaption,
                         onValueChange = { quickPostCaption = it },
-                        placeholder = { Text("Chia sẻ suy nghĩ, con tem hay kỷ niệm của bạn...", fontSize = 13.sp, color = SecondaryText) },
+                        placeholder = { Text(stringResource(R.string.feed_composer_placeholder), fontSize = 13.sp, color = SecondaryText) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(90.dp),
@@ -241,7 +242,7 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text("Chọn con tem đính kèm:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
+                    Text(stringResource(R.string.trade_select_stamp), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
                     Spacer(modifier = Modifier.height(6.dp))
 
                     if (myStamps.isEmpty()) {
@@ -259,7 +260,7 @@ fun HomeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                                 Icon(Icons.Outlined.AddAPhoto, contentDescription = null, tint = AccentRed, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Chưa có tem, bấm để chụp tem mới! 📸", fontSize = 12.sp, color = AccentRed, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.feed_composer_no_stamp), fontSize = 12.sp, color = AccentRed, fontWeight = FontWeight.Bold)
                             }
                         }
                     } else {
@@ -352,8 +353,8 @@ fun HomeScreen(
                 coroutineScope.launch {
                     val res = authRepo.sendFriendRequest(targetUser)
                     res.fold(
-                        onSuccess = { Toast.makeText(context, "Đã gửi lời mời kết bạn! 🤝", Toast.LENGTH_SHORT).show() },
-                        onFailure = { err -> Toast.makeText(context, err.message ?: "Gửi lời mời thất bại", Toast.LENGTH_SHORT).show() }
+                        onSuccess = { Toast.makeText(context, context.getString(R.string.friends_invite_sent), Toast.LENGTH_SHORT).show() },
+                        onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                     )
                 }
             },
@@ -361,8 +362,8 @@ fun HomeScreen(
                 coroutineScope.launch {
                     val res = authRepo.unfriend(targetUser.userId)
                     res.fold(
-                        onSuccess = { Toast.makeText(context, "Đã hủy kết bạn", Toast.LENGTH_SHORT).show() },
-                        onFailure = { err -> Toast.makeText(context, err.message ?: "Hủy kết bạn thất bại", Toast.LENGTH_SHORT).show() }
+                        onSuccess = { Toast.makeText(context, context.getString(R.string.friends_unfriend_btn), Toast.LENGTH_SHORT).show() },
+                        onFailure = { err -> Toast.makeText(context, err.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                     )
                 }
             }
@@ -391,7 +392,7 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "Bảng tin kỷ niệm 📮",
+                                text = stringResource(R.string.feed_filter_title),
                                 fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -402,7 +403,7 @@ fun HomeScreen(
                     IconButton(onClick = { showThemeSelector = true }) {
                         Icon(
                             Icons.Outlined.Palette,
-                            contentDescription = "Chọn giao diện",
+                            contentDescription = stringResource(R.string.friends_theme_select),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -410,12 +411,12 @@ fun HomeScreen(
                     IconButton(onClick = {
                         coroutineScope.launch {
                             feedRepo.syncFeedFromSupabase()
-                            Toast.makeText(context, "Đã làm mới Bảng tin! 🔄", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.feed_post_success), Toast.LENGTH_SHORT).show()
                         }
                     }) {
                         Icon(
                             Icons.Outlined.Refresh,
-                            contentDescription = "Làm mới Bảng tin",
+                            contentDescription = stringResource(R.string.common_retry),
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -425,7 +426,7 @@ fun HomeScreen(
                         IconButton(onClick = onInboxClick) {
                             Icon(
                                 Icons.Outlined.MailOutline,
-                                contentDescription = "Hộp thư",
+                                contentDescription = stringResource(R.string.friends_tab_inbox, 0),
                                 tint = PrimaryText
                             )
                         }
@@ -556,7 +557,7 @@ fun HomeScreen(
                                     .clickable { showQuickPostModal = true }
                             ) {
                                 Text(
-                                    text = "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay... 📮",
+                                    text = stringResource(R.string.home_quick_post_hint),
                                     fontSize = 13.sp,
                                     color = SecondaryText,
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
@@ -591,7 +592,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Chụp tem mới", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
+                                Text(stringResource(R.string.home_action_new_stamp), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
                             }
 
                             Row(
@@ -608,7 +609,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Kho tem", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
+                                Text(stringResource(R.string.home_action_vault), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
                             }
 
                             Row(
@@ -625,7 +626,7 @@ fun HomeScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Đăng ngay", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
+                                Text(stringResource(R.string.home_action_post_now), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PrimaryText)
                             }
                         }
                     }
@@ -634,16 +635,16 @@ fun HomeScreen(
 
             // 2. Filter tabs: Tất cả bài viết | Bạn bè | Của tôi
             item {
+                val filterOptions = listOf(
+                    stringResource(R.string.feed_filter_all_friends) to Icons.Outlined.People,
+                    stringResource(R.string.feed_filter_selected_friends) to Icons.Outlined.CheckCircle,
+                    stringResource(R.string.feed_filter_only_me) to Icons.Outlined.Lock,
+                    stringResource(R.string.feed_filter_my_posts) to Icons.Outlined.Person
+                )
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val filterOptions = listOf(
-                        "Tất cả bạn bè" to Icons.Outlined.People,
-                        "Bạn bè chọn lọc" to Icons.Outlined.CheckCircle,
-                        "Chỉ mình tôi" to Icons.Outlined.Lock,
-                        "Bài viết của tôi" to Icons.Outlined.Person
-                    )
                     items(filterOptions.size) { idx ->
                         val isSelected = selectedFilter == idx
                         val item = filterOptions[idx]
@@ -689,14 +690,14 @@ fun HomeScreen(
                             Text("📮", fontSize = 48.sp)
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Chưa có bài viết nào trên bảng tin",
+                                text = stringResource(R.string.home_feed_empty),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = PrimaryText
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Hãy là người đầu tiên chụp và chia sẻ con tem kỷ niệm hôm nay!",
+                                text = stringResource(R.string.home_hero_subtitle),
                                 fontSize = 12.sp,
                                 color = SecondaryText
                             )
@@ -708,7 +709,7 @@ fun HomeScreen(
                             ) {
                                 Icon(Icons.Outlined.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Tạo tem đầu tiên", fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.home_action_new_stamp), fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -760,7 +761,7 @@ fun HomeScreen(
                                     )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            text = formatTimeAgo(post.createdAt),
+                                            text = formatTimeAgo(context, post.createdAt),
                                             fontSize = 11.sp,
                                             color = SecondaryText
                                         )
@@ -831,8 +832,8 @@ fun HomeScreen(
                                             creatorName = post.authorName,
                                             ownerId = currentUser.userId,
                                             ownerName = currentUser.displayName,
-                                            createdDate = formatTimeAgo(post.createdAt),
-                                            memoryDate = formatTimeAgo(post.createdAt),
+                                            createdDate = formatTimeAgo(context, post.createdAt),
+                                            memoryDate = formatTimeAgo(context, post.createdAt),
                                             location = post.location ?: "Việt Nam",
                                             caption = post.caption ?: ""
                                         )
@@ -873,7 +874,7 @@ fun HomeScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "${post.reactionCount} lượt thích",
+                                        text = stringResource(R.string.feed_stat_likes, post.reactionCount),
                                         fontSize = 12.sp,
                                         color = SecondaryText,
                                         fontWeight = FontWeight.Medium
@@ -881,7 +882,7 @@ fun HomeScreen(
                                 }
 
                                 Text(
-                                    text = "${post.commentCount} bình luận",
+                                    text = stringResource(R.string.feed_stat_comments, post.commentCount),
                                     fontSize = 12.sp,
                                     color = SecondaryText,
                                     fontWeight = FontWeight.Medium,
@@ -922,7 +923,7 @@ fun HomeScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = if (isLiked) "Đã thích" else "Thích",
+                                        text = if (isLiked) stringResource(R.string.feed_action_liked) else stringResource(R.string.feed_like_button),
                                         fontSize = 12.sp,
                                         fontWeight = if (isLiked) FontWeight.Bold else FontWeight.Medium,
                                         color = if (isLiked) AccentRed else SecondaryText
@@ -946,7 +947,7 @@ fun HomeScreen(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Bình luận", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = SecondaryText)
+                                    Text(stringResource(R.string.feed_comment_button), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = SecondaryText)
                                 }
 
                                 // Lưu vào Kho button
@@ -964,7 +965,7 @@ fun HomeScreen(
                                                     note = post.caption ?: ""
                                                 )
                                                 stampRepo.saveStamp(draft)
-                                                Toast.makeText(context, "Đã lưu con tem vào Kho của bạn! 📮", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.feed_save_vault_success), Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                         .padding(horizontal = 8.dp, vertical = 6.dp),
@@ -977,7 +978,7 @@ fun HomeScreen(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Lưu tem", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = AccentBlue)
+                                    Text(stringResource(R.string.feed_action_save_vault), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = AccentBlue)
                                 }
 
                                 // Nhắn tin button
@@ -1018,7 +1019,7 @@ fun HomeScreen(
                                     // Display existing comments
                                     if (post.comments.isEmpty()) {
                                         Text(
-                                            text = "Chưa có bình luận nào. Hãy gửi suy nghĩ đầu tiên!",
+                                            text = stringResource(R.string.feed_comments_empty),
                                             fontSize = 11.sp,
                                             color = SecondaryText,
                                             modifier = Modifier.padding(vertical = 4.dp)
@@ -1084,7 +1085,7 @@ fun HomeScreen(
                                             onValueChange = { text ->
                                                 commentInputs = commentInputs + (post.id to text)
                                             },
-                                            placeholder = { Text("Viết bình luận...", fontSize = 12.sp, color = SecondaryText) },
+                                            placeholder = { Text(stringResource(R.string.feed_comments_hint), fontSize = 12.sp, color = SecondaryText) },
                                             shape = RoundedCornerShape(20.dp),
                                             modifier = Modifier.weight(1f),
                                             singleLine = true,
@@ -1136,7 +1137,7 @@ fun HomeScreen(
                                         ) {
                                             Icon(
                                                 Icons.Outlined.Send,
-                                                contentDescription = "Gửi",
+                                                contentDescription = stringResource(R.string.a11y_send),
                                                 tint = if (currentCommentText.isNotBlank()) AccentRed else SecondaryText,
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -1152,7 +1153,7 @@ fun HomeScreen(
     }
 }
 
-private fun formatTimeAgo(timestamp: Long): String {
+private fun formatTimeAgo(context: android.content.Context, timestamp: Long): String {
     val diff = System.currentTimeMillis() - timestamp
     val seconds = diff / 1000
     val minutes = seconds / 60
@@ -1160,9 +1161,9 @@ private fun formatTimeAgo(timestamp: Long): String {
     val days = hours / 24
 
     return when {
-        days > 0 -> "$days ngày trước"
-        hours > 0 -> "$hours giờ trước"
-        minutes > 0 -> "$minutes phút trước"
-        else -> "Vừa xong"
+        days > 0 -> context.getString(R.string.time_days_ago, days)
+        hours > 0 -> context.getString(R.string.time_hours_ago, hours)
+        minutes > 0 -> context.getString(R.string.time_minutes_ago, minutes)
+        else -> context.getString(R.string.time_just_now)
     }
 }

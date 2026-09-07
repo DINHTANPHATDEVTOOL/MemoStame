@@ -146,10 +146,10 @@ struct FriendsAndTradeScreenView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(langManager.string(vi: "BẠN BÈ & TRAO ĐỔI TEM", en: "FRIENDS & STAMP TRADE"))
+                            Text(langManager.localized("friends_trade_title"))
                                 .font(.title2.bold())
                                 .foregroundColor(MSColors.ink)
-                            Text(langManager.string(vi: "Chia sẻ & giao lưu tem bưu chính độc bản", en: "Share & exchange vintage stamps"))
+                            Text(langManager.localized("friends_trade_subtitle"))
                                 .font(.caption)
                                 .foregroundColor(MSColors.grey)
                         }
@@ -166,7 +166,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "qrcode")
                                     .font(.system(size: 16, weight: .bold))
-                                Text(langManager.string(vi: "Mã QR", en: "My QR"))
+                                Text(langManager.localized("friends_my_qr"))
                                     .font(.caption.bold())
                             }
                             .padding(.horizontal, 10)
@@ -182,7 +182,7 @@ struct FriendsAndTradeScreenView: View {
                         Image(systemName: "person.badge.plus")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(MSColors.stamp)
-                        TextField(langManager.string(vi: "Nhập mã kết bạn (ví dụ #STAMP99 hoặc Tên)", en: "Enter Friend Code (e.g. #STAMP99 or Username)"), text: $friendCode)
+                        TextField(langManager.localized("friends_search_hint"), text: $friendCode)
                             .font(.subheadline)
                             .foregroundColor(MSColors.ink)
                         Button(action: {
@@ -205,7 +205,7 @@ struct FriendsAndTradeScreenView: View {
                                 }
                             }
                         }) {
-                            Text(langManager.string(vi: "Gửi Mời", en: "Invite"))
+                            Text(langManager.localized("friends_send_invite"))
                                 .font(.caption.bold())
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
@@ -228,7 +228,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "person.2.fill")
                                     .font(.caption.bold())
-                                Text("\(langManager.string(vi: "Bạn bè", en: "Friends")) (\(friends.count))")
+                                Text(langManager.localized("friends_tab_friends", friends.count))
                                     .font(.subheadline.bold())
                             }
                             .padding(.vertical, 9)
@@ -244,7 +244,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "arrow.triangle.2.circlepath")
                                     .font(.caption.bold())
-                                Text("\(langManager.string(vi: "Trao đổi", en: "Trades")) (\(incomingTradeRequests.count))")
+                                Text(langManager.localized("friends_tab_trades", incomingTradeRequests.count))
                                     .font(.subheadline.bold())
                             }
                             .padding(.vertical, 9)
@@ -261,7 +261,7 @@ struct FriendsAndTradeScreenView: View {
                                 Image(systemName: "bubble.left.and.bubble.right.fill")
                                     .font(.caption.bold())
                                 let unreadChat = chatRepo.totalUnreadCount
-                                Text(unreadChat > 0 ? "\(langManager.string(vi: "Trò chuyện", en: "Chat")) (\(unreadChat))" : langManager.string(vi: "Trò chuyện", en: "Chat"))
+                                Text(unreadChat > 0 ? "\(langManager.localized("friends_tab_chat")) (\(unreadChat))" : langManager.localized("friends_tab_chat"))
                                     .font(.subheadline.bold())
                             }
                             .padding(.vertical, 9)
@@ -277,7 +277,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "envelope.fill")
                                     .font(.caption.bold())
-                                Text("\(langManager.string(vi: "Hộp thư", en: "Inbox")) (\(visibleReceivedStamps.count + receivedTradeStamps.count))")
+                                Text(langManager.localized("friends_tab_inbox", visibleReceivedStamps.count + receivedTradeStamps.count))
                                     .font(.subheadline.bold())
                             }
                             .padding(.vertical, 9)
@@ -401,12 +401,9 @@ struct FriendsAndTradeScreenView: View {
         }
         .alert(isPresented: $showBlockAlert) {
             Alert(
-                title: Text(langManager.string(vi: "Chặn người dùng?", en: "Block user?")),
-                message: Text(langManager.string(
-                    vi: "Bạn có chắc chắn muốn chặn \(friendToBlock?.displayName ?? "người dùng này")? Hành động này sẽ hủy kết bạn, hủy các lời mời đang chờ và ngăn hai bên nhắn tin hay tương tác.",
-                    en: "Are you sure you want to block \(friendToBlock?.displayName ?? "this user")? This will remove friendship, cancel pending requests, and prevent all messaging and interactions."
-                )),
-                primaryButton: .destructive(Text(langManager.string(vi: "Chặn", en: "Block"))) {
+                title: Text(langManager.localized("friends_block_confirm_title")),
+                message: Text(langManager.localized("friends_block_confirm_message", friendToBlock?.displayName ?? "User")),
+                primaryButton: .destructive(Text(langManager.localized("friends_block_btn"))) {
                     if let target = friendToBlock {
                         isSubmittingSafety = true
                         friendRepo.blockUser(blockedId: target.id) { result in
@@ -420,24 +417,24 @@ struct FriendsAndTradeScreenView: View {
                         }
                     }
                 },
-                secondaryButton: .cancel(Text(langManager.string(vi: "Hủy", en: "Cancel")))
+                secondaryButton: .cancel(Text(langManager.localized("common_cancel")))
             )
         }
         .sheet(isPresented: $showReportSheet) {
             if let target = friendToReport {
                 NavigationView {
                     Form {
-                        Section(header: Text(langManager.string(vi: "Lý do báo cáo", en: "Report Reason"))) {
-                            Picker(langManager.string(vi: "Danh mục", en: "Category"), selection: $reportCategory) {
-                                Text(langManager.string(vi: "Spam / Quảng cáo rác", en: "Spam")).tag("spam")
-                                Text(langManager.string(vi: "Quấy rối / Đe dọa", en: "Harassment")).tag("harassment")
-                                Text(langManager.string(vi: "Giả mạo danh tính", en: "Impersonation")).tag("impersonation")
-                                Text(langManager.string(vi: "Nội dung không phù hợp", en: "Inappropriate Content")).tag("inappropriate_content")
-                                Text(langManager.string(vi: "Khác", en: "Other")).tag("other")
+                        Section(header: Text(langManager.localized("friends_report_reason_section"))) {
+                            Picker(langManager.localized("friends_report_category"), selection: $reportCategory) {
+                                Text(langManager.localized("report_category_spam")).tag("spam")
+                                Text(langManager.localized("report_category_harassment")).tag("harassment")
+                                Text(langManager.localized("report_category_fraud")).tag("impersonation")
+                                Text(langManager.localized("report_category_inappropriate")).tag("inappropriate_content")
+                                Text(langManager.localized("report_category_other")).tag("other")
                             }
                         }
 
-                        Section(header: Text(langManager.string(vi: "Chi tiết bổ sung (tùy chọn)", en: "Additional Notes (optional)"))) {
+                        Section(header: Text(langManager.localized("friends_report_notes_section"))) {
                             TextEditor(text: $reportNote)
                                 .frame(height: 80)
                         }
@@ -458,7 +455,7 @@ struct FriendsAndTradeScreenView: View {
                             }) {
                                 HStack {
                                     Spacer()
-                                    Text(langManager.string(vi: "Gửi Báo Cáo", en: "Submit Report"))
+                                    Text(langManager.localized("friends_report_submit"))
                                         .font(.headline.bold())
                                         .foregroundColor(Color.red)
                                     Spacer()
@@ -467,11 +464,11 @@ struct FriendsAndTradeScreenView: View {
                             .disabled(isSubmittingSafety)
                         }
                     }
-                    .navigationTitle(langManager.string(vi: "Báo Cáo Vi Phạm", en: "Report Abuse"))
+                    .navigationTitle(langManager.localized("friends_report_title"))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
-                            Button(langManager.string(vi: "Đóng", en: "Close")) {
+                            Button(langManager.localized("common_close")) {
                                 showReportSheet = false
                             }
                         }
@@ -752,7 +749,7 @@ struct FriendsAndTradeScreenView: View {
                                 friendToBlock = friend
                                 showBlockAlert = true
                             }) {
-                                Label(langManager.string(vi: "Chặn người dùng", en: "Block User"), systemImage: "hand.raised.slash")
+                                Label(langManager.localized("friends_block_user_menu"), systemImage: "hand.raised.slash")
                             }
 
                             Button(action: {
@@ -761,7 +758,7 @@ struct FriendsAndTradeScreenView: View {
                                 reportNote = ""
                                 showReportSheet = true
                             }) {
-                                Label(langManager.string(vi: "Báo cáo vi phạm", en: "Report Abuse"), systemImage: "exclamationmark.bubble")
+                                Label(langManager.localized("friends_report_abuse_menu"), systemImage: "exclamationmark.bubble")
                             }
 
                             Divider()
@@ -776,7 +773,7 @@ struct FriendsAndTradeScreenView: View {
                                     }
                                 }
                             }) {
-                                Label(langManager.string(vi: "Hủy kết bạn", en: "Unfriend"), systemImage: "person.badge.minus")
+                                Label(langManager.localized("friends_unfriend_btn"), systemImage: "person.badge.minus")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
@@ -1037,10 +1034,10 @@ struct FriendsAndTradeScreenView: View {
                         .font(.system(size: 28))
                         .foregroundColor(MSColors.stamp)
                 }
-                Text(langManager.string(vi: "Chưa có cuộc trò chuyện nào", en: "No conversations yet"))
+                Text(langManager.localized("chat_conversations_empty_title"))
                     .font(.headline.bold())
                     .foregroundColor(MSColors.ink)
-                Text(langManager.string(vi: "Kết nối với bạn bè để trò chuyện và chia sẻ tem thư kỷ niệm nhé!", en: "Connect with friends to chat and share memory stamps!"))
+                Text(langManager.localized("chat_conversations_empty_desc"))
                     .font(.caption)
                     .foregroundColor(MSColors.grey)
                     .multilineTextAlignment(.center)
@@ -1049,7 +1046,7 @@ struct FriendsAndTradeScreenView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "person.2.fill")
                             .font(.caption.bold())
-                        Text(langManager.string(vi: "Xem danh sách bạn bè", en: "View friends list"))
+                        Text(langManager.localized("chat_view_friends_btn"))
                             .font(.caption.bold())
                     }
                     .padding(.horizontal, 16)
@@ -1104,7 +1101,7 @@ struct FriendsAndTradeScreenView: View {
                         HStack {
                             let basePreview: String = {
                                 guard let msg = lastMsg else {
-                                    return langManager.string(vi: "Chạm để bắt đầu nhắn tin", en: "Tap to message")
+                                    return langManager.localized("chat_tap_to_message")
                                 }
                                 if msg.stamp != nil || isValidRemoteStampUrl(msg.stampUrl) {
                                     return "📮 [Tem: \(msg.stampTitle ?? "Kỷ niệm")] \(msg.text)"
@@ -1233,10 +1230,10 @@ struct FriendsAndTradeScreenView: View {
                     .font(.system(size: 28))
                     .foregroundColor(MSColors.stamp)
             }
-            Text(langManager.string(vi: "Hộp thư kỷ niệm trống", en: "Inbox is empty"))
+            Text(langManager.localized("inbox_empty_title"))
                 .font(.headline.bold())
                 .foregroundColor(MSColors.ink)
-            Text(langManager.string(vi: "Bạn chưa có con tem thư kỷ niệm nào mới trong hộp thư.", en: "No new memory stamps received in your inbox."))
+            Text(langManager.localized("inbox_empty_subtitle"))
                 .font(.caption)
                 .foregroundColor(MSColors.grey)
                 .multilineTextAlignment(.center)

@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.mipastudio.memostamp.R
 import coil.compose.AsyncImage
 import com.mipastudio.memostamp.ui.theme.*
 import com.mipastudio.memostamp.data.repository.UserProfile
@@ -137,7 +139,7 @@ fun UserProfileDialog(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("STATUS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = StampSubtleInk, fontFamily = FontFamily.Monospace)
-                            Text(if (isFriend) "🤝 BẠN BÈ" else "👤 KHÁCH", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StampDarkInk)
+                            Text(if (isFriend) "🤝 ${stringResource(R.string.profile_status_friend)}" else "👤 ${stringResource(R.string.profile_status_guest)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StampDarkInk)
                         }
                         Divider(modifier = Modifier.height(24.dp).width(1.dp), color = StampBorderDefault)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -162,7 +164,7 @@ fun UserProfileDialog(
                             Icon(Icons.Outlined.CollectionsBookmark, contentDescription = null, tint = PostalRed, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Kho Tem & Album (${user.displayName})",
+                                text = "${stringResource(R.string.vault_title)} (${user.displayName})",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = StampDarkInk
@@ -174,8 +176,8 @@ fun UserProfileDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             val friendCollections = listOf(
-                                "✈️ Vị trí" to user.city,
-                                "📮 Tổng số tem" to "${user.totalStampsCount} tem"
+                                "✈️ " to user.city,
+                                "📮 " to "${user.totalStampsCount}"
                             )
                             friendCollections.forEach { (name, count) ->
                                 Surface(
@@ -189,7 +191,7 @@ fun UserProfileDialog(
                                     ) {
                                         Text(name, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = StampDarkInk, maxLines = 1)
                                         Text(count, fontSize = 9.sp, color = StampSubtleInk)
-                                        Text("👥 Bạn bè", fontSize = 8.sp, color = SuccessGreen, fontWeight = FontWeight.SemiBold)
+                                        Text(stringResource(R.string.profile_status_friend), fontSize = 8.sp, color = SuccessGreen, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -219,7 +221,7 @@ fun UserProfileDialog(
                         ) {
                             Icon(Icons.Outlined.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Nhắn tin 💬", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.friends_tab_chat), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
 
                         Button(
@@ -233,7 +235,7 @@ fun UserProfileDialog(
                         ) {
                             Icon(Icons.Outlined.CardGiftcard, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Tặng tem 📮", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.trade_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -249,7 +251,7 @@ fun UserProfileDialog(
                         ) {
                             Icon(Icons.Outlined.PersonRemove, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Hủy kết bạn", fontSize = 12.sp)
+                            Text(stringResource(R.string.friends_unfriend_btn), fontSize = 12.sp)
                         }
                     } else {
                         Button(
@@ -263,7 +265,7 @@ fun UserProfileDialog(
                         ) {
                             Icon(Icons.Outlined.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Kết bạn 🤝", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.friends_send_invite), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -281,7 +283,7 @@ fun UserProfileDialog(
                         ) {
                             Icon(Icons.Outlined.Flag, contentDescription = null, modifier = Modifier.size(14.dp), tint = SecondaryText)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Báo cáo", fontSize = 11.sp, color = SecondaryText)
+                            Text(stringResource(R.string.friends_report_title), fontSize = 11.sp, color = SecondaryText)
                         }
 
                         OutlinedButton(
@@ -295,7 +297,7 @@ fun UserProfileDialog(
                         ) {
                             Icon(Icons.Outlined.Block, contentDescription = null, modifier = Modifier.size(14.dp), tint = AccentRed)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Chặn", fontSize = 11.sp, color = AccentRed)
+                            Text(stringResource(R.string.friends_block_btn), fontSize = 11.sp, color = AccentRed)
                         }
                     }
                 }
@@ -303,7 +305,7 @@ fun UserProfileDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Đóng", color = StampSubtleInk)
+                Text(stringResource(R.string.common_close), color = StampSubtleInk)
             }
         }
     )

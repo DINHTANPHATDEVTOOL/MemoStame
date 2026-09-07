@@ -5,13 +5,38 @@ import UIKit
 import Combine
 import shared
 
+enum FeedFilterCircle: String, CaseIterable {
+    case allFriends = "all_friends"
+    case selectedFriends = "selected_friends"
+    case onlyMe = "only_me"
+    case myPosts = "my_posts"
+
+    var localizationKey: String {
+        switch self {
+        case .allFriends: return "feed_filter_all_friends"
+        case .selectedFriends: return "feed_filter_selected_friends"
+        case .onlyMe: return "feed_filter_only_me"
+        case .myPosts: return "feed_filter_my_posts"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .allFriends: return "person.2.fill"
+        case .selectedFriends: return "target"
+        case .onlyMe: return "lock.fill"
+        case .myPosts: return "person.fill"
+        }
+    }
+}
+
 struct HomeScreenView: View {
     @ObservedObject var viewModel: HomeObservableViewModel
     var onNavigateToCamera: (String?) -> Void
 
     @StateObject private var langManager = AppLanguageManager.shared
     @State private var activeTab: String = "Friends"
-    @State private var activeCircle: String = "Tất cả bạn bè"
+    @State private var activeCircle: FeedFilterCircle = .allFriends
     @State private var showCommentSheet: Bool = false
     @State private var showTradeInboxSheet: Bool = false
     @State private var selectedPostForComments: FeedPost? = nil
@@ -21,7 +46,7 @@ struct HomeScreenView: View {
         let friendItems = (viewModel.repository.friends.value as? [FriendItem]) ?? []
         let friendIds = friendItems.map { $0.id }
         switch activeCircle {
-        case "Tất cả bạn bè", "All Friends":
+        case .allFriends:
             return viewModel.posts.filter { post in
                 if post.audienceType == AudienceType.friends {
                     return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
@@ -33,20 +58,18 @@ struct HomeScreenView: View {
                     return post.authorId == viewModel.currentUser.uid || friendIds.contains(post.authorId)
                 }
             }
-        case "Bạn bè chọn lọc", "Selected Friends":
+        case .selectedFriends:
             return viewModel.posts.filter { post in
                 post.audienceType == AudienceType.specificFriends && (post.authorId == viewModel.currentUser.uid || post.targetFriendIds.contains(viewModel.currentUser.uid))
             }
-        case "Chỉ mình tôi", "Only Me":
+        case .onlyMe:
             return viewModel.posts.filter { post in
                 post.audienceType == AudienceType.onlyMe && post.authorId == viewModel.currentUser.uid
             }
-        case "Bài viết của tôi", "My Posts":
+        case .myPosts:
             return viewModel.posts.filter { post in
                 post.authorId == viewModel.currentUser.uid
             }
-        default:
-            return viewModel.posts
         }
     }
 
@@ -134,19 +157,13 @@ struct HomeScreenView: View {
             // Feed Filter Options (Designed Custom SF Symbol Vector Icons)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    let filterItems: [(id: String, key: String, title: String, icon: String)] = [
-                        ("Tất cả bạn bè", "Tất cả bạn bè", langManager.string(vi: "Tất cả bạn bè", en: "All Friends"), "person.2.fill"),
-                        ("Bạn bè chọn lọc", "Bạn bè chọn lọc", langManager.string(vi: "Bạn bè chọn lọc", en: "Selected Friends"), "target"),
-                        ("Chỉ mình tôi", "Chỉ mình tôi", langManager.string(vi: "Chỉ mình tôi", en: "Only Me"), "lock.fill"),
-                        ("Bài viết của tôi", "Bài viết của tôi", langManager.string(vi: "Bài viết của tôi", en: "My Posts"), "person.fill")
-                    ]
-                    ForEach(filterItems, id: \.id) { item in
-                        let isActive = (activeCircle == item.key || activeCircle == item.title)
-                        Button(action: { activeCircle = item.title }) {
+                    ForEach(FeedFilterCircle.allCases, id: \.self) { filter in
+                        let isActive = (activeCircle == filter)
+                        Button(action: { activeCircle = filter }) {
                             HStack(spacing: 6) {
-                                Image(systemName: item.icon)
+                                Image(systemName: filter.icon)
                                     .font(.system(size: 12, weight: .bold))
-                                Text(item.title)
+                                Text(langManager.localized(filter.localizationKey))
                                     .font(.caption.bold())
                             }
                             .padding(.horizontal, 14)
@@ -255,11 +272,11 @@ struct DailyMemoryChainBanner: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(langManager.string(vi: "Hôm nay ghi tem gì?", en: "Today’s memory"))
+                    Text(langManager.localized("feed_prompt_title"))
                         .font(.system(size: 20, weight: .black))
                         .foregroundColor(MSColors.ink)
 
-                    Text(langManager.string(vi: "Lưu giữ ký ức qua từng con tem bưu chính.", en: "Capture something worth keeping."))
+                    Text(langManager.localized("feed_prompt_subtitle"))
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(MSColors.grey)
                 }
@@ -304,7 +321,7 @@ struct QuickPostCreationBoxView: View {
 
                 Button(action: onOpenCamera) {
                     HStack {
-                        Text(langManager.string(vi: "Chia sẻ khoảnh khắc tem kỷ niệm hôm nay... 📮", en: "Share today's stamp memory moment... 📮"))
+                        Text(langManager.localized("feed_composer_placeholder"))
                             .font(.system(size: 13, weight: .regular))
                             .foregroundColor(MSColors.grey)
                         Spacer()
@@ -325,7 +342,7 @@ struct QuickPostCreationBoxView: View {
                         Image(systemName: "camera.fill")
                             .font(.caption.bold())
                             .foregroundColor(MSColors.stamp)
-                        Text(langManager.string(vi: "Chụp tem mới", en: "New stamp"))
+                        Text(langManager.localized("feed_action_camera"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                     }
@@ -338,7 +355,7 @@ struct QuickPostCreationBoxView: View {
                         Image(systemName: "bookmark.fill")
                             .font(.caption.bold())
                             .foregroundColor(Color.blue)
-                        Text(langManager.string(vi: "Kho tem", en: "Stamp vault"))
+                        Text(langManager.localized("feed_action_vault"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                     }
@@ -351,7 +368,7 @@ struct QuickPostCreationBoxView: View {
                         Image(systemName: "globe")
                             .font(.caption.bold())
                             .foregroundColor(Color.green)
-                        Text(langManager.string(vi: "Đăng ngay", en: "Post now"))
+                        Text(langManager.localized("feed_action_post"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                     }
@@ -518,7 +535,7 @@ struct PostCardView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "seal.fill")
                             .font(.system(size: 11))
-                        Text(langManager.string(vi: "Phản hồi \(post.replyCount)", en: "Reply \(post.replyCount)"))
+                        Text(langManager.localized("feed_reply_count", post.replyCount))
                             .font(.caption.bold())
                     }
                     .foregroundColor(MSColors.stamp)
@@ -537,7 +554,7 @@ struct PostCardView: View {
             if !post.replies.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text(langManager.string(vi: "Tem phản hồi", en: "Stamp replies"))
+                        Text(langManager.localized("feed_replies_title"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.grey)
                         Spacer()
@@ -563,12 +580,12 @@ struct PostCardView: View {
                                         VStack(spacing: 2) {
                                             Image(systemName: "plus")
                                                 .foregroundColor(MSColors.stamp)
-                                            Text(langManager.string(vi: "Phản hồi", en: "Reply"))
+                                            Text(langManager.localized("feed_action_reply"))
                                                 .font(.system(size: 10, weight: .bold))
                                                 .foregroundColor(MSColors.stamp)
                                         }
                                     }
-                                    Text(langManager.string(vi: "Tem của bạn", en: "Your stamp"))
+                                    Text(langManager.localized("feed_your_stamp"))
                                         .font(.system(size: 10))
                                         .foregroundColor(.secondary)
                                 }
@@ -599,7 +616,7 @@ struct PostCardView: View {
 
                     if post.commentCount > 2 {
                         Button(action: onComment) {
-                            Text("View all \(post.commentCount) comments")
+                            Text(langManager.localized("feed_view_all_comments", post.commentCount))
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                                 .padding(.top, 2)
@@ -653,6 +670,7 @@ struct ReplyLightboxView: View, Identifiable {
     var id: String { reply.id }
     let reply: FeedReply
     @Environment(\.presentationMode) var presentationMode
+    @StateObject private var langManager = AppLanguageManager.shared
 
     var body: some View {
         VStack(spacing: 20) {
@@ -671,7 +689,7 @@ struct ReplyLightboxView: View, Identifiable {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(reply.authorName)
                         .font(.headline.bold())
-                    Text("Stamp Reply")
+                    Text(langManager.localized("feed_stamp_reply"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -721,7 +739,7 @@ struct ReplyLightboxView: View, Identifiable {
             Spacer()
 
             Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                Text("Close")
+                Text(langManager.localized("common_close"))
                     .font(.subheadline.bold())
                     .foregroundColor(.secondary)
                     .padding(.bottom, 20)
@@ -738,6 +756,7 @@ struct CommentSheetView: View {
     @Binding var commentText: String
     let onAddComment: () -> Void
     let onDeleteComment: (String) -> Void
+    @StateObject private var langManager = AppLanguageManager.shared
 
     var isInputValid: Bool {
         let trimmed = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -751,7 +770,7 @@ struct CommentSheetView: View {
                 .frame(width: 36, height: 4)
                 .padding(.top, 8)
 
-            Text("Comments (\(post.comments.count))")
+            Text(langManager.localized("feed_comments_title", post.comments.count))
                 .font(.headline.bold())
                 .padding(.top, 4)
 
@@ -760,7 +779,7 @@ struct CommentSheetView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     if post.comments.isEmpty {
-                        Text("Be the first to leave a comment on this memory! 💭")
+                        Text(langManager.localized("feed_comments_empty"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity)
@@ -799,7 +818,7 @@ struct CommentSheetView: View {
 
             // Input Row (Clears input upon send, keeps sheet open)
             HStack(spacing: 10) {
-                TextField("Add a comment...", text: $commentText)
+                TextField(langManager.localized("feed_comments_hint"), text: $commentText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
 
                 Button(action: {
@@ -898,6 +917,7 @@ class HomeObservableViewModel: ObservableObject {
 struct TradeInboxSheetView: View {
     let repository: SharedMemoStampRepository
     @Environment(\.presentationMode) var presentationMode
+    @StateObject private var langManager = AppLanguageManager.shared
     @State private var trades: [TradeRequest] = []
 
     var body: some View {
@@ -911,11 +931,11 @@ struct TradeInboxSheetView: View {
                 Image(systemName: "envelope.badge.fill")
                     .font(.headline)
                     .foregroundColor(MSColors.stamp)
-                Text("Stamp Trade Inbox")
+                Text(langManager.localized("trade_inbox_title"))
                     .font(.headline.bold())
                     .foregroundColor(MSColors.ink)
                 Spacer()
-                Button("Done") { presentationMode.wrappedValue.dismiss() }
+                Button(langManager.localized("common_done")) { presentationMode.wrappedValue.dismiss() }
                     .font(.subheadline.bold())
                     .foregroundColor(MSColors.stamp)
             }
@@ -931,10 +951,10 @@ struct TradeInboxSheetView: View {
                             Image(systemName: "tray.fill")
                                 .font(.system(size: 38))
                                 .foregroundColor(MSColors.stamp.opacity(0.6))
-                            Text("No active trade offers")
+                            Text(langManager.localized("trade_inbox_empty_title"))
                                 .font(.headline)
                                 .foregroundColor(.secondary)
-                            Text("When friends send you stamp trade requests, they will appear here.")
+                            Text(langManager.localized("trade_inbox_empty_subtitle"))
                                 .font(.caption)
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
@@ -958,7 +978,7 @@ struct TradeInboxSheetView: View {
                                     Text(trade.senderName)
                                         .font(.subheadline.bold())
                                         .foregroundColor(MSColors.ink)
-                                    Text("Offered: \(trade.stampTitle)")
+                                    Text(langManager.localized("trade_offered_format", trade.stampTitle))
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -972,7 +992,7 @@ struct TradeInboxSheetView: View {
                                             trades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
                                             HapticFeedbackManager.shared.playNotification(type: .success)
                                         }) {
-                                            Text("Accept")
+                                            Text(langManager.localized("trade_action_accept"))
                                                 .font(.caption.bold())
                                                 .foregroundColor(.white)
                                                 .padding(.horizontal, 10)
@@ -986,7 +1006,7 @@ struct TradeInboxSheetView: View {
                                             trades = (repository.tradeRequests.value as? [TradeRequest]) ?? []
                                             HapticFeedbackManager.shared.playImpact(style: .light)
                                         }) {
-                                            Text("Decline")
+                                            Text(langManager.localized("trade_action_decline"))
                                                 .font(.caption.bold())
                                                 .foregroundColor(.gray)
                                                 .padding(.horizontal, 8)
@@ -996,7 +1016,15 @@ struct TradeInboxSheetView: View {
                                         }
                                     }
                                 } else {
-                                    Text(trade.status)
+                                    let statusText: String = {
+                                        switch trade.status {
+                                        case "PENDING": return langManager.localized("trade_status_pending")
+                                        case "ACCEPTED": return langManager.localized("trade_status_accepted")
+                                        case "REJECTED": return langManager.localized("trade_status_rejected")
+                                        default: return trade.status
+                                        }
+                                    }()
+                                    Text(statusText)
                                         .font(.caption.bold())
                                         .foregroundColor(trade.status == "ACCEPTED" ? .green : .red)
                                 }

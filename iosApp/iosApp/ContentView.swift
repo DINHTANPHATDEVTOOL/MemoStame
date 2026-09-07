@@ -32,6 +32,7 @@ enum ActiveTab {
 
 struct ContentView: View {
     @StateObject private var homeViewModel: HomeObservableViewModel
+    @StateObject private var langManager = AppLanguageManager.shared
     private let repository: SharedMemoStampRepository
     
     @State private var authGateState: IOSAuthGateState = .checking
@@ -94,7 +95,7 @@ struct ContentView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "wifi.slash")
                                         .foregroundColor(.white)
-                                    Text("📡 Ngoại Tuyến: Kết nối Wi-Fi/4G để đồng bộ đám mây Supabase")
+                                    Text(langManager.localized("offline_toast"))
                                         .font(.caption.bold())
                                         .foregroundColor(.white)
                                 }
@@ -156,7 +157,7 @@ struct ContentView: View {
                             // Home Tab Button
                             BottomNavItem(
                                 iconName: "house.fill",
-                                label: "Home",
+                                label: langManager.localized("nav_home"),
                                 isSelected: selectedTab == .home
                             ) {
                                 selectedTab = .home
@@ -167,7 +168,7 @@ struct ContentView: View {
                             // Vault Tab Button
                             BottomNavItem(
                                 iconName: "square.grid.2x2.fill",
-                                label: "Vault",
+                                label: langManager.localized("nav_vault"),
                                 isSelected: selectedTab == .vault
                             ) {
                                 selectedTab = .vault
@@ -198,7 +199,7 @@ struct ContentView: View {
                             // Friends & Trade Tab Button
                             BottomNavItem(
                                 iconName: "person.2.fill",
-                                label: "Trade",
+                                label: langManager.localized("nav_trade"),
                                 isSelected: selectedTab == .friends
                             ) {
                                 selectedTab = .friends
@@ -209,7 +210,7 @@ struct ContentView: View {
                             // Passport Profile Tab Button
                             BottomNavItem(
                                 iconName: "person.crop.square.fill",
-                                label: "Profile",
+                                label: langManager.localized("nav_passport"),
                                 isSelected: selectedTab == .profile
                             ) {
                                 selectedTab = .profile
@@ -296,17 +297,17 @@ struct ContentView: View {
             switch item {
             case .error(let msg):
                 return Alert(
-                    title: Text("Khôi phục mật khẩu"),
+                    title: Text(langManager.localized("recovery_dialog_title")),
                     message: Text(msg),
-                    dismissButton: .default(Text("Đóng")) {
+                    dismissButton: .default(Text(langManager.localized("common_close"))) {
                         recoveryCoordinator.resetState()
                     }
                 )
             case .success:
                 return Alert(
-                    title: Text("Đặt lại mật khẩu thành công"),
-                    message: Text("Mật khẩu tài khoản của bạn đã được cập nhật thành công. Vui lòng đăng nhập lại bằng mật khẩu mới."),
-                    dismissButton: .default(Text("Đăng nhập")) {
+                    title: Text(langManager.localized("recovery_success_title")),
+                    message: Text(langManager.localized("recovery_success_message")),
+                    dismissButton: .default(Text(langManager.localized("auth_tab_login"))) {
                         recoveryCoordinator.resetState()
                         if authGateState == .authenticated {
                             repository.resetUserScopedState()
@@ -318,6 +319,7 @@ struct ContentView: View {
                 )
             }
         }
+        .environment(\.locale, langManager.activeLocale)
     }
 
     private func bootstrapSessionIfNeeded() {

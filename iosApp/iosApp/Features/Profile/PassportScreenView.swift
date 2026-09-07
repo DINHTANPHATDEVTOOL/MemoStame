@@ -131,15 +131,15 @@ struct PassportScreenView: View {
 
                     // Stats Counters Row (Tem dán, Bạn bè, Bộ sưu tập)
                     HStack(spacing: 14) {
-                        StatBox(title: langManager.string(vi: "TEM DÁN", en: "STAMPS"), value: "\(max(actualStampsCount, Int(user.stampsCreatedCount)))")
-                        StatBox(title: langManager.string(vi: "BẠN BÈ", en: "FRIENDS"), value: "\(friendsCount)")
-                        StatBox(title: langManager.string(vi: "BỘ SƯU TẬP", en: "COLLECTIONS"), value: "\(collectionsCount)")
+                        StatBox(title: langManager.localized("profile_stat_stamps"), value: "\(max(actualStampsCount, Int(user.stampsCreatedCount)))")
+                        StatBox(title: langManager.localized("profile_stat_friends"), value: "\(friendsCount)")
+                        StatBox(title: langManager.localized("profile_stat_collections"), value: "\(collectionsCount)")
                     }
                     .padding(.horizontal)
 
                     // Passport Badges & Stamps
                     VStack(alignment: .leading, spacing: 14) {
-                        Text(langManager.string(vi: "PASSPORT STAMPS & BADGES", en: "PASSPORT STAMPS & BADGES"))
+                        Text(langManager.localized("profile_title"))
                             .font(.caption2.bold())
                             .foregroundColor(MSColors.grey)
                             .padding(.horizontal)
@@ -177,7 +177,7 @@ struct PassportScreenView: View {
                             Button(action: { showSettingsModal = true }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "gearshape.fill")
-                                    Text(langManager.string(vi: "Cài Đặt", en: "Settings"))
+                                    Text(langManager.localized("profile_settings_title"))
                                 }
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(MSColors.ink)
@@ -203,7 +203,7 @@ struct PassportScreenView: View {
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    Text(langManager.string(vi: "Đăng Xuất", en: "Logout"))
+                                    Text(langManager.localized("profile_logout"))
                                 }
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(Color.red)
@@ -439,29 +439,36 @@ struct ProfileSettingsSheetView: View {
                         HStack {
                             Image(systemName: "globe")
                                 .foregroundColor(MSColors.stamp)
-                            Text(langManager.string(vi: "NGÔN NGỮ ỨNG DỤNG", en: "APP LANGUAGE"))
+                            Text(langManager.localized("settings_language_section"))
                                 .font(.caption2.bold())
                                 .foregroundColor(MSColors.grey)
                         }
 
-                        HStack(spacing: 12) {
-                            ForEach(AppLanguage.allCases) { lang in
+                        HStack(spacing: 8) {
+                            ForEach(AppLanguageMode.allCases) { mode in
                                 Button(action: {
-                                    langManager.setLanguage(lang)
+                                    langManager.setLanguageMode(mode)
                                 }) {
-                                    HStack(spacing: 6) {
-                                        Text(lang.displayName)
-                                            .font(.system(size: 13, weight: .bold))
-                                        if langManager.currentLanguage == lang {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .font(.system(size: 14))
+                                    VStack(spacing: 2) {
+                                        HStack(spacing: 4) {
+                                            Text(mode.displayName)
+                                                .font(.system(size: 12, weight: .bold))
+                                            if langManager.currentMode == mode {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .font(.system(size: 12))
+                                            }
+                                        }
+                                        if mode == .system && langManager.currentMode == .system {
+                                            Text("(\(langManager.effectiveLanguageCode == "vi" ? "Tiếng Việt" : "English"))")
+                                                .font(.system(size: 10))
+                                                .opacity(0.8)
                                         }
                                     }
-                                    .foregroundColor(langManager.currentLanguage == lang ? .white : MSColors.ink)
-                                    .padding(.vertical, 10)
-                                    .padding(.horizontal, 14)
+                                    .foregroundColor(langManager.currentMode == mode ? .white : MSColors.ink)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 6)
                                     .frame(maxWidth: .infinity)
-                                    .background(langManager.currentLanguage == lang ? MSColors.stamp : Color.white)
+                                    .background(langManager.currentMode == mode ? MSColors.stamp : Color.white)
                                     .cornerRadius(12)
                                     .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
                                 }
@@ -477,30 +484,30 @@ struct ProfileSettingsSheetView: View {
                         HStack {
                             Image(systemName: "person.text.rectangle")
                                 .foregroundColor(MSColors.stamp)
-                            Text(langManager.string(vi: "THÔNG TIN HỒ SƠ", en: "PROFILE DETAILS"))
+                            Text(langManager.localized("profile_edit"))
                                 .font(.caption2.bold())
                                 .foregroundColor(MSColors.grey)
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(langManager.string(vi: "Tên hiển thị", en: "Display Name"))
+                            Text(langManager.localized("auth_display_name"))
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
-                            TextField(langManager.string(vi: "Nhập tên hiển thị", en: "Enter display name"), text: $displayName)
-                                .font(.subheadline)
+                            TextField(langManager.localized("auth_display_name_hint"), text: $displayName)
+                                .font(.body)
                                 .foregroundColor(MSColors.ink)
                                 .padding(12)
                                 .background(Color.white)
-                                .cornerRadius(10)
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                                .cornerRadius(12)
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2), lineWidth: 1))
                         }
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(langManager.string(vi: "Ảnh Đại Diện", en: "Profile Avatar"))
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(langManager.localized("profile_avatar_title"))
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
 
-                            HStack(spacing: 14) {
+                            HStack(spacing: 16) {
                                 ZStack {
                                     if let img = selectedAvatarImage {
                                         Image(uiImage: img)
@@ -529,7 +536,7 @@ struct ProfileSettingsSheetView: View {
                                     HStack(spacing: 6) {
                                         Image(systemName: "photo.on.rectangle.angled")
                                             .font(.subheadline)
-                                        Text(langManager.string(vi: "Chọn từ Thư Viện", en: "Choose from Library"))
+                                        Text(langManager.localized("profile_choose_library"))
                                             .font(.caption.bold())
                                     }
                                     .padding(.horizontal, 14)
@@ -563,11 +570,11 @@ struct ProfileSettingsSheetView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(langManager.string(vi: "Tiểu sử / Giới thiệu", en: "Bio Note"))
+                            Text(langManager.localized("auth_bio"))
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
                             TextEditor(text: $bio)
-                                .font(.subheadline)
+                                .font(.body)
                                 .foregroundColor(MSColors.ink)
                                 .frame(height: 70)
                                 .padding(4)
@@ -580,63 +587,63 @@ struct ProfileSettingsSheetView: View {
 
                     Divider().padding(.horizontal)
 
-                    // 3. Security & Password Change Section
+                    // 3. Password & Security Section
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Image(systemName: "lock.shield")
                                 .foregroundColor(MSColors.stamp)
-                            Text(langManager.string(vi: "TÀI KHOẢN & MẬT KHẨU", en: "ACCOUNT & PASSWORD"))
+                            Text(langManager.localized("settings_password_section"))
                                 .font(.caption2.bold())
                                 .foregroundColor(MSColors.grey)
                         }
 
-                        SecureField(langManager.string(vi: "Mật khẩu hiện tại", en: "Current Password"), text: $currentPassword)
-                            .font(.subheadline)
+                        SecureField(langManager.localized("auth_password_current"), text: $currentPassword)
+                            .font(.body)
                             .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
-                            .cornerRadius(10)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2), lineWidth: 1))
 
-                        SecureField(langManager.string(vi: "Mật khẩu mới", en: "New Password"), text: $newPassword)
-                            .font(.subheadline)
+                        SecureField(langManager.localized("auth_password_new"), text: $newPassword)
+                            .font(.body)
                             .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
-                            .cornerRadius(10)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2), lineWidth: 1))
 
-                        SecureField(langManager.string(vi: "Xác nhận mật khẩu mới", en: "Confirm New Password"), text: $confirmPassword)
-                            .font(.subheadline)
+                        SecureField(langManager.localized("auth_password_confirm"), text: $confirmPassword)
+                            .font(.body)
                             .foregroundColor(MSColors.ink)
                             .padding(12)
                             .background(Color.white)
-                            .cornerRadius(10)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.25), lineWidth: 1))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.gray.opacity(0.2), lineWidth: 1))
 
                         if let toast = passwordToastMessage {
                             Text(toast)
                                 .font(.caption.bold())
-                                .foregroundColor(toast.contains("thành công") || toast.contains("Success") ? Color.green : Color.red)
+                                .foregroundColor(toast.contains("thành công") || toast.contains("Success") || toast.contains("successfully") ? Color.green : Color.red)
                         }
 
                         Button(action: {
                             if isUpdatingPassword { return }
                             if currentPassword.isEmpty {
-                                passwordToastMessage = langManager.string(vi: "⚠️ Vui lòng nhập mật khẩu hiện tại", en: "⚠️ Please enter current password")
+                                passwordToastMessage = "⚠️ \(langManager.localized("auth_err_empty_identifier"))"
                                 return
                             }
                             if newPassword.count < 6 {
-                                passwordToastMessage = langManager.string(vi: "⚠️ Mật khẩu mới phải có ít nhất 6 ký tự", en: "⚠️ New password must be at least 6 characters")
+                                passwordToastMessage = "⚠️ \(langManager.localized("auth_err_password_too_short"))"
                                 return
                             }
                             if newPassword != confirmPassword {
-                                passwordToastMessage = langManager.string(vi: "⚠️ Mật khẩu xác nhận không khớp", en: "⚠️ Passwords do not match")
+                                passwordToastMessage = "⚠️ \(langManager.localized("auth_err_password_match"))"
                                 return
                             }
 
                             isUpdatingPassword = true
-                            passwordToastMessage = langManager.string(vi: "⏳ Đang cập nhật mật khẩu...", en: "⏳ Updating password...")
+                            passwordToastMessage = "⏳ \(langManager.localized("common_loading"))"
 
                             SupabaseAuthService.shared.changePassword(currentPassword: currentPassword, newPassword: newPassword) { result in
                                 DispatchQueue.main.async {
@@ -646,7 +653,7 @@ struct ProfileSettingsSheetView: View {
                                         let errMsg = error.localizedDescription
                                         self.passwordToastMessage = "⚠️ \(errMsg)"
                                     case .success:
-                                        self.passwordToastMessage = self.langManager.string(vi: "✅ Đã đổi mật khẩu thành công!", en: "✅ Password updated successfully!")
+                                        self.passwordToastMessage = "✅ \(self.langManager.localized("settings_password_updated"))"
                                         self.currentPassword = ""
                                         self.newPassword = ""
                                         self.confirmPassword = ""
@@ -656,7 +663,7 @@ struct ProfileSettingsSheetView: View {
                         }) {
                             HStack {
                                 Image(systemName: "key.fill")
-                                Text(langManager.string(vi: "Đổi Mật Khẩu", en: "Update Password"))
+                                Text(langManager.localized("settings_update_password"))
                             }
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(MSColors.stamp)
@@ -675,7 +682,7 @@ struct ProfileSettingsSheetView: View {
                         HStack {
                             Image(systemName: "hand.raised.slash.fill")
                                 .foregroundColor(MSColors.stamp)
-                            Text(langManager.string(vi: "QUYỀN RIÊNG TƯ & AN TOÀN", en: "PRIVACY & SAFETY"))
+                            Text(langManager.localized("settings_safety_section"))
                                 .font(.caption2.bold())
                                 .foregroundColor(MSColors.grey)
                         }
@@ -686,7 +693,7 @@ struct ProfileSettingsSheetView: View {
                             HStack {
                                 Image(systemName: "person.crop.circle.badge.xmark")
                                     .foregroundColor(MSColors.stamp)
-                                Text(langManager.string(vi: "Danh sách người dùng đã chặn", en: "Blocked Users List"))
+                                Text(langManager.localized("settings_blocked_users"))
                                     .font(.subheadline.bold())
                                     .foregroundColor(MSColors.ink)
                                 Spacer()
@@ -720,20 +727,14 @@ struct ProfileSettingsSheetView: View {
                             // 1. validate authenticated UID
                             guard let authUid = SupabaseAuthService.shared.currentUserId?.trimmingCharacters(in: .whitespacesAndNewlines),
                                   IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else {
-                                profileSaveMessage = langManager.string(
-                                    vi: "⚠️ Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
-                                    en: "⚠️ Invalid or expired session."
-                                )
+                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_session_invalid")
                                 return
                             }
 
                             // 2. validate repository current user UID == auth UID
                             guard let previousProfile = repository.currentUser.value as? UserProfile,
                                   previousProfile.uid == authUid else {
-                                profileSaveMessage = langManager.string(
-                                    vi: "⚠️ Danh tính tài khoản không trùng khớp.",
-                                    en: "⚠️ Account identity mismatch."
-                                )
+                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_identity_mismatch")
                                 return
                             }
 
@@ -743,10 +744,7 @@ struct ProfileSettingsSheetView: View {
                             let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                             let candidateDisplayName = trimmedName.isEmpty ? previousProfile.displayName : trimmedName
                             if candidateDisplayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                profileSaveMessage = langManager.string(
-                                    vi: "⚠️ Tên hiển thị không được để trống.",
-                                    en: "⚠️ Display name cannot be empty."
-                                )
+                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_display_name_empty")
                                 return
                             }
                             let candidateBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -755,29 +753,20 @@ struct ProfileSettingsSheetView: View {
                             if selectedAvatarImage != nil {
                                 let lower = avatarUrl.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
                                 if lower.hasPrefix("file:") || lower.hasPrefix("/") || !SupabaseAuthService.isSafeRemoteAvatarUrl(avatarUrl) {
-                                    profileSaveMessage = langManager.string(
-                                        vi: "Ảnh đại diện cục bộ chưa thể đồng bộ. Hãy dùng URL https hoặc giữ ảnh hiện tại.",
-                                        en: "Local avatar cannot be synced to cloud. Please use an https URL or keep current avatar."
-                                    )
+                                    profileSaveMessage = langManager.localized("profile_error_avatar_local_sync")
                                     return
                                 }
                             }
 
                             let trimmedAvatarInput = avatarUrl.trimmingCharacters(in: .whitespacesAndNewlines)
                             if !trimmedAvatarInput.isEmpty && !SupabaseAuthService.isSafeRemoteAvatarUrl(trimmedAvatarInput) {
-                                profileSaveMessage = langManager.string(
-                                    vi: "Ảnh đại diện cục bộ chưa thể đồng bộ. Hãy dùng URL https hoặc giữ ảnh hiện tại.",
-                                    en: "Local avatar cannot be synced to cloud. Please use an https URL or keep current avatar."
-                                )
+                                profileSaveMessage = langManager.localized("profile_error_avatar_local_sync")
                                 return
                             }
 
                             let candidateAvatarUrl: String? = trimmedAvatarInput.isEmpty ? previousProfile.avatarUrl : trimmedAvatarInput
                             if let candidate = candidateAvatarUrl, !candidate.isEmpty && !SupabaseAuthService.isSafeRemoteAvatarUrl(candidate) {
-                                profileSaveMessage = langManager.string(
-                                    vi: "Ảnh đại diện cục bộ chưa thể đồng bộ. Hãy dùng URL https hoặc giữ ảnh hiện tại.",
-                                    en: "Local avatar cannot be synced to cloud. Please use an https URL or keep current avatar."
-                                )
+                                profileSaveMessage = langManager.localized("profile_error_avatar_local_sync")
                                 return
                             }
 
@@ -791,10 +780,7 @@ struct ProfileSettingsSheetView: View {
                             )
                             if !persisted {
                                 repository.setCurrentUser(profile: previousProfile)
-                                profileSaveMessage = langManager.string(
-                                    vi: "⚠️ Không thể lưu trữ dữ liệu cục bộ.",
-                                    en: "⚠️ Failed to persist local data."
-                                )
+                                profileSaveMessage = "⚠️ " + langManager.localized("profile_error_local_persist")
                                 return
                             }
 
@@ -835,7 +821,7 @@ struct ProfileSettingsSheetView: View {
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                         .padding(.trailing, 4)
                                 }
-                                Text(isSavingProfile ? langManager.string(vi: "Đang lưu...", en: "Saving...") : langManager.string(vi: "Lưu Cài Đặt Hồ Sơ", en: "Save Settings Changes"))
+                                Text(isSavingProfile ? langManager.localized("profile_saving") : langManager.localized("profile_save_changes"))
                                     .font(.body.bold())
                                     .foregroundColor(.white)
                             }
@@ -853,7 +839,7 @@ struct ProfileSettingsSheetView: View {
                         }) {
                             HStack {
                                 Image(systemName: "hand.raised.fill")
-                                Text(langManager.string(vi: "Chính Sách Quyền Riêng Tư", en: "Privacy Policy"))
+                                Text(langManager.localized("profile_privacy_policy"))
                             }
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(MSColors.stamp)
@@ -878,7 +864,7 @@ struct ProfileSettingsSheetView: View {
                         }) {
                             HStack {
                                 Image(systemName: "rectangle.portrait.and.arrow.right")
-                                Text(langManager.string(vi: "Đăng Xuất Tài Khoản", en: "Logout Account"))
+                                Text(langManager.localized("profile_logout"))
                             }
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(Color.red)
@@ -895,7 +881,7 @@ struct ProfileSettingsSheetView: View {
                         }) {
                             HStack {
                                 Image(systemName: "trash.fill")
-                                Text(langManager.string(vi: "Xóa Tài Khoản Vĩnh Viễn", en: "Delete Account Permanently"))
+                                Text(langManager.localized("profile_delete_account"))
                             }
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(Color.red)
@@ -910,11 +896,11 @@ struct ProfileSettingsSheetView: View {
                 }
             }
             .background(MSColors.paper.ignoresSafeArea())
-            .navigationTitle(langManager.string(vi: "Cài Đặt & Tài Khoản", en: "Settings & Account"))
+            .navigationTitle(langManager.localized("profile_settings_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(langManager.string(vi: "Đóng", en: "Close")) {
+                    Button(langManager.localized("common_close")) {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .foregroundColor(MSColors.stamp)
@@ -927,21 +913,15 @@ struct ProfileSettingsSheetView: View {
         .sheet(isPresented: $showDeleteAccountSheet) {
             NavigationView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(langManager.string(
-                        vi: "Hành động này không thể hoàn tác! Toàn bộ tem, bộ sưu tập, tin nhắn và dữ liệu cá nhân của bạn sẽ bị xóa vĩnh viễn trên máy chủ và thiết bị.",
-                        en: "This action cannot be undone! All your stamps, collections, messages, and personal data will be permanently deleted from the server and device."
-                    ))
+                    Text(langManager.localized("profile_delete_account_warning"))
                     .font(.subheadline)
                     .foregroundColor(MSColors.ink)
 
-                    Text(langManager.string(
-                        vi: "Vui lòng nhập mật khẩu hiện tại để xác nhận quyền sở hữu:",
-                        en: "Please enter your current password to confirm ownership:"
-                    ))
+                    Text(langManager.localized("auth_password_current") + ":")
                     .font(.caption.bold())
                     .foregroundColor(MSColors.grey)
 
-                    SecureField(langManager.string(vi: "Mật khẩu hiện tại", en: "Current password"), text: $deletePassword)
+                    SecureField(langManager.localized("auth_password_current"), text: $deletePassword)
                         .font(.subheadline)
                         .foregroundColor(MSColors.ink)
                         .padding(12)
@@ -962,10 +942,7 @@ struct ProfileSettingsSheetView: View {
                         if isDeletingAccount { return }
                         let pass = deletePassword.trimmingCharacters(in: .whitespacesAndNewlines)
                         if pass.isEmpty {
-                            deleteAccountError = langManager.string(
-                                vi: "⚠️ Vui lòng nhập mật khẩu hiện tại",
-                                en: "⚠️ Please enter your current password"
-                            )
+                            deleteAccountError = "⚠️ " + langManager.localized("auth_err_empty_identifier")
                             return
                         }
 
@@ -998,7 +975,7 @@ struct ProfileSettingsSheetView: View {
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     .padding(.trailing, 4)
                             }
-                            Text(isDeletingAccount ? langManager.string(vi: "Đang xóa tài khoản...", en: "Deleting account...") : langManager.string(vi: "Xác Nhận Xóa Tài Khoản", en: "Confirm Account Deletion"))
+                            Text(isDeletingAccount ? langManager.localized("common_loading") : langManager.localized("profile_delete_account_confirm"))
                                 .font(.body.bold())
                                 .foregroundColor(.white)
                         }
@@ -1011,11 +988,11 @@ struct ProfileSettingsSheetView: View {
                 }
                 .padding()
                 .background(MSColors.paper.ignoresSafeArea())
-                .navigationTitle(langManager.string(vi: "Xóa Tài Khoản", en: "Delete Account"))
+                .navigationTitle(langManager.localized("profile_delete_account"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button(langManager.string(vi: "Hủy", en: "Cancel")) {
+                        Button(langManager.localized("common_cancel")) {
                             if !isDeletingAccount {
                                 showDeleteAccountSheet = false
                                 deletePassword = ""
@@ -1105,17 +1082,14 @@ struct BlockedUsersManagementSheetView: View {
                         Image(systemName: "hand.raised.slash")
                             .font(.system(size: 40))
                             .foregroundColor(MSColors.grey.opacity(0.6))
-                        Text(langManager.string(vi: "Không có người dùng nào bị chặn", en: "No blocked users"))
+                        Text(langManager.localized("safety_no_blocked_users"))
                             .font(.headline)
                             .foregroundColor(MSColors.ink)
-                        Text(langManager.string(
-                            vi: "Khi bạn chặn người dùng, họ sẽ không thể gửi lời mời kết bạn, nhắn tin hoặc tương tác với bạn.",
-                            en: "When you block someone, they cannot send friend requests, messages, or interact with you."
-                        ))
-                        .font(.caption)
-                        .foregroundColor(MSColors.grey)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
+                        Text(langManager.localized("safety_block_desc"))
+                            .font(.caption)
+                            .foregroundColor(MSColors.grey)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
                     }
                     .padding(.top, 60)
                     Spacer()
@@ -1133,7 +1107,7 @@ struct BlockedUsersManagementSheetView: View {
                                     )
 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(langManager.string(vi: "Người dùng đã chặn", en: "Blocked User"))
+                                    Text(langManager.localized("safety_blocked_user_item"))
                                         .font(.subheadline.bold())
                                         .foregroundColor(MSColors.ink)
                                     Text("ID: \(block.blockedId.prefix(12))...")
@@ -1149,7 +1123,7 @@ struct BlockedUsersManagementSheetView: View {
                                     if unblockingId == block.blockedId {
                                         ProgressView()
                                     } else {
-                                        Text(langManager.string(vi: "Bỏ chặn", en: "Unblock"))
+                                        Text(langManager.localized("safety_unblock_button"))
                                             .font(.caption.bold())
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
@@ -1174,11 +1148,11 @@ struct BlockedUsersManagementSheetView: View {
                 }
             }
             .background(MSColors.paper.ignoresSafeArea())
-            .navigationTitle(langManager.string(vi: "Danh Sách Chặn", en: "Blocked Users"))
+            .navigationTitle(langManager.localized("settings_blocked_users"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(langManager.string(vi: "Đóng", en: "Close")) {
+                    Button(langManager.localized("common_close")) {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .foregroundColor(MSColors.stamp)
@@ -1210,7 +1184,7 @@ struct BlockedUsersManagementSheetView: View {
             switch result {
             case .success:
                 blockedUsers.removeAll { $0.blockedId == blockedId }
-                message = langManager.string(vi: "Đã bỏ chặn thành công.", en: "Unblocked successfully.")
+                message = langManager.localized("safety_unblock_success")
             case .failure(let err):
                 message = "Lỗi: \(err.localizedDescription)"
             }
