@@ -117,26 +117,60 @@ struct PersistedTradeRequestData: Codable {
     let stampId: String?
 }
 
-struct PersistedAlbumPageData: Codable, Equatable {
-    let id: String
-    let albumId: String
-    let pageIndex: Int32
-    let createdAt: Int64
-    let updatedAt: Int64
+public struct PersistedAlbumPageData: Codable, Equatable {
+    public let id: String
+    public let albumId: String
+    public let pageIndex: Int32
+    public let createdAt: Int64
+    public let updatedAt: Int64
+
+    public init(id: String, albumId: String, pageIndex: Int32, createdAt: Int64 = 0, updatedAt: Int64 = 0) {
+        self.id = id
+        self.albumId = albumId
+        self.pageIndex = pageIndex
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
-struct PersistedStampPlacementData: Codable, Equatable {
-    let id: String
-    let albumId: String
-    let pageIndex: Int32
-    let stampId: String
-    let x: Double
-    let y: Double
-    let scale: Double
-    let rotationDegrees: Double
-    let zIndex: Int32
-    let createdAt: Int64
-    let updatedAt: Int64
+public struct PersistedStampPlacementData: Codable, Equatable {
+    public let id: String
+    public let albumId: String
+    public let pageIndex: Int32
+    public let stampId: String
+    public let x: Double
+    public let y: Double
+    public let scale: Double
+    public let rotationDegrees: Double
+    public let zIndex: Int32
+    public let createdAt: Int64
+    public let updatedAt: Int64
+
+    public init(
+        id: String,
+        albumId: String,
+        pageIndex: Int32,
+        stampId: String,
+        x: Double,
+        y: Double,
+        scale: Double = 1.0,
+        rotationDegrees: Double = 0.0,
+        zIndex: Int32 = 1,
+        createdAt: Int64 = 0,
+        updatedAt: Int64 = 0
+    ) {
+        self.id = id
+        self.albumId = albumId
+        self.pageIndex = pageIndex
+        self.stampId = stampId
+        self.x = x
+        self.y = y
+        self.scale = scale
+        self.rotationDegrees = rotationDegrees
+        self.zIndex = zIndex
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 struct PersistedPayload: Codable {
