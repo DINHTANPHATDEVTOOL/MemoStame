@@ -418,3 +418,24 @@
 "book_spread_prev" = "Trang đôi trước";
 "book_tap_to_open" = "Chạm để mở album";
 "book_total_stamps_format" = "Tổng số tem: %d";
+
+/* Issue #78: Interactive Album Stamp Editor */
+"album_editor_edit" = "Chỉnh sửa";
+"album_editor_done" = "Xong";
+"album_editor_add_stamp" = "Thêm tem";
+"album_editor_remove_placement" = "Xóa khỏi trang";
+"album_editor_bring_forward" = "Đưa lên trước";
+"album_editor_send_backward" = "Đưa về sau";
+"album_editor_move_page" = "Chuyển sang trang";
+"album_editor_move_prev_page" = "Trang trước";
+"album_editor_move_next_page" = "Trang sau";
+"album_editor_undo" = "Hoàn tác";
+"album_editor_retry_save" = "Thử lưu lại";
+"album_editor_virtual_readonly" = "Bộ sưu tập tự động chỉ xem, không thể sửa";
+"album_editor_vault_title" = "Kho tem";
+"album_editor_vault_subtitle" = "Chọn con tem để đặt vào trang sách";
+"album_editor_vault_placed" = "Đã đặt";
+"album_editor_vault_empty" = "Kho tem trống";
+"album_editor_editing_title" = "Chỉnh sửa album";
+"album_editor_saving" = "Đang lưu bố cục…";
+"album_editor_save_failed" = "Lỗi đồng bộ bố cục. Bản lưu ngoại tuyến đã được giữ.";

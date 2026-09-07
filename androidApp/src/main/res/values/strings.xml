@@ -418,4 +418,25 @@
     <string name="book_end_of_album">End of Album</string>
     <string name="book_drag_hint">Drag page edge to turn</string>
     <string name="book_page_number_format">Page %d</string>
+
+    <!-- Issue #78: Interactive Album Stamp Editor -->
+    <string name="album_editor_edit">Edit</string>
+    <string name="album_editor_done">Done</string>
+    <string name="album_editor_add_stamp">Add Stamp</string>
+    <string name="album_editor_remove_placement">Remove from page</string>
+    <string name="album_editor_bring_forward">Bring Forward</string>
+    <string name="album_editor_send_backward">Send Backward</string>
+    <string name="album_editor_move_page">Move to page</string>
+    <string name="album_editor_move_prev_page">Previous page</string>
+    <string name="album_editor_move_next_page">Next page</string>
+    <string name="album_editor_undo">Undo</string>
+    <string name="album_editor_retry_save">Retry saving</string>
+    <string name="album_editor_virtual_readonly">Synthetic albums are read-only</string>
+    <string name="album_editor_vault_title">Stamp Vault</string>
+    <string name="album_editor_vault_subtitle">Select a stamp to place on page</string>
+    <string name="album_editor_vault_placed">Placed</string>
+    <string name="album_editor_vault_empty">No stamps in vault</string>
+    <string name="album_editor_editing_title">Editing Album</string>
+    <string name="album_editor_saving">Saving layout…</string>
+    <string name="album_editor_save_failed">Failed to sync layout. Offline copy preserved.</string>
 </resources>

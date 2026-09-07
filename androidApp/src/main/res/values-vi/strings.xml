@@ -418,4 +418,25 @@
     <string name="book_end_of_album">Hết cuốn album</string>
     <string name="book_drag_hint">Vuốt mép trang để lật</string>
     <string name="book_page_number_format">Trang %d</string>
+
+    <!-- Issue #78: Interactive Album Stamp Editor -->
+    <string name="album_editor_edit">Chỉnh sửa</string>
+    <string name="album_editor_done">Xong</string>
+    <string name="album_editor_add_stamp">Thêm tem</string>
+    <string name="album_editor_remove_placement">Xóa khỏi trang</string>
+    <string name="album_editor_bring_forward">Đưa lên trước</string>
+    <string name="album_editor_send_backward">Đưa về sau</string>
+    <string name="album_editor_move_page">Chuyển sang trang</string>
+    <string name="album_editor_move_prev_page">Trang trước</string>
+    <string name="album_editor_move_next_page">Trang sau</string>
+    <string name="album_editor_undo">Hoàn tác</string>
+    <string name="album_editor_retry_save">Thử lưu lại</string>
+    <string name="album_editor_virtual_readonly">Bộ sưu tập tự động chỉ xem, không thể sửa</string>
+    <string name="album_editor_vault_title">Kho tem</string>
+    <string name="album_editor_vault_subtitle">Chọn con tem để đặt vào trang sách</string>
+    <string name="album_editor_vault_placed">Đã đặt</string>
+    <string name="album_editor_vault_empty">Kho tem trống</string>
+    <string name="album_editor_editing_title">Chỉnh sửa album</string>
+    <string name="album_editor_saving">Đang lưu bố cục…</string>
+    <string name="album_editor_save_failed">Lỗi đồng bộ bố cục. Bản lưu ngoại tuyến đã được giữ.</string>
 </resources>
