@@ -2228,12 +2228,508 @@ BEGIN
     DELETE FROM app_private.rate_limit_buckets WHERE actor_id = '11111111-1111-1111-1111-111111111111';
 END $$;
 
+-- ===================================================
+-- TASK #76: 3D STAMP BOOK LAYOUT PERSISTENCE & RLS
+-- ===================================================
+
+-- Assertion 91: ANON CANNOT SELECT ALBUM PAGES: PASS
+DO $$
+DECLARE
+    v_count INT;
+BEGIN
+    SET LOCAL ROLE anon;
+    BEGIN
+        SELECT COUNT(*) INTO v_count FROM public.album_pages;
+        IF v_count <> 0 THEN
+            RAISE EXCEPTION 'ANON CANNOT SELECT ALBUM PAGES Failed: anon saw % pages', v_count;
+        END IF;
+    EXCEPTION
+        WHEN insufficient_privilege THEN
+            NULL; -- Expected
+    END;
+END $$;
+
+-- Assertion 92: ANON CANNOT SELECT PLACEMENTS: PASS
+DO $$
+DECLARE
+    v_count INT;
+BEGIN
+    SET LOCAL ROLE anon;
+    BEGIN
+        SELECT COUNT(*) INTO v_count FROM public.album_stamp_placements;
+        IF v_count <> 0 THEN
+            RAISE EXCEPTION 'ANON CANNOT SELECT PLACEMENTS Failed: anon saw % placements', v_count;
+        END IF;
+    EXCEPTION
+        WHEN insufficient_privilege THEN
+            NULL; -- Expected
+    END;
+END $$;
+
+-- Assertion 93: ANON CANNOT WRITE: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE anon;
+    BEGIN
+        INSERT INTO public.album_pages (id, owner_id, album_id, page_index)
+        VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 'album_anon_test', 0);
+    EXCEPTION
+        WHEN OTHERS THEN
+            v_threw := true;
+    END;
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'ANON CANNOT WRITE Failed: anon insert into album_pages succeeded';
+    END IF;
+END $$;
+
+-- Assertion 94: USER A CAN CREATE OWN PAGE: PASS
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    INSERT INTO public.album_pages (id, owner_id, album_id, page_index)
+    VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'col_a_1', 0)
+    ON CONFLICT (owner_id, album_id, page_index) DO NOTHING;
+END $$;
+
+-- Assertion 95: USER A CAN CREATE OWN PLACEMENT: PASS
+DO $$
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    INSERT INTO public.album_stamp_placements (
+        id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+    ) VALUES (
+        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111',
+        'col_a_1', 0, 'stamp_a_1', 0.25, 0.5, 1.2, 15.0, 1
+    )
+    ON CONFLICT (owner_id, album_id, stamp_id) DO NOTHING;
+END $$;
+
+-- Assertion 96: USER A CAN READ OWN PLACEMENT: PASS
+DO $$
+DECLARE
+    v_found INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    SELECT COUNT(*) INTO v_found FROM public.album_stamp_placements
+    WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    IF v_found <> 1 THEN
+        RAISE EXCEPTION 'USER A CAN READ OWN PLACEMENT Failed: expected 1, found %', v_found;
+    END IF;
+END $$;
+
+-- Assertion 97: USER A CAN UPDATE OWN PLACEMENT: PASS
+DO $$
+DECLARE
+    v_updated_x DOUBLE PRECISION;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    UPDATE public.album_stamp_placements
+    SET x = 0.75, rotation_degrees = -30.0
+    WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    SELECT x INTO v_updated_x FROM public.album_stamp_placements
+    WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    IF v_updated_x <> 0.75 THEN
+        RAISE EXCEPTION 'USER A CAN UPDATE OWN PLACEMENT Failed: expected x=0.75, got %', v_updated_x;
+    END IF;
+END $$;
+
+-- Assertion 98: USER A CAN DELETE OWN PLACEMENT: PASS
+DO $$
+DECLARE
+    v_count INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    DELETE FROM public.album_stamp_placements WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    SELECT COUNT(*) INTO v_count FROM public.album_stamp_placements
+    WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    IF v_count <> 0 THEN
+        RAISE EXCEPTION 'USER A CAN DELETE OWN PLACEMENT Failed: expected 0, found %', v_count;
+    END IF;
+
+    -- Re-insert for subsequent cross-user negative tests
+    INSERT INTO public.album_stamp_placements (
+        id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+    ) VALUES (
+        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111',
+        'col_a_1', 0, 'stamp_a_1', 0.25, 0.5, 1.2, 15.0, 1
+    );
+END $$;
+
+-- Assertion 99: USER B CANNOT SELECT USER A PAGE: PASS
+DO $$
+DECLARE
+    v_found INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    SELECT COUNT(*) INTO v_found FROM public.album_pages
+    WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+    IF v_found <> 0 THEN
+        RAISE EXCEPTION 'USER B CANNOT SELECT USER A PAGE Failed: User B saw % rows', v_found;
+    END IF;
+END $$;
+
+-- Assertion 100: USER B CANNOT SELECT USER A PLACEMENT: PASS
+DO $$
+DECLARE
+    v_found INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    SELECT COUNT(*) INTO v_found FROM public.album_stamp_placements
+    WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    IF v_found <> 0 THEN
+        RAISE EXCEPTION 'USER B CANNOT SELECT USER A PLACEMENT Failed: User B saw % rows', v_found;
+    END IF;
+END $$;
+
+-- Assertion 101: USER B CANNOT UPDATE USER A PLACEMENT: PASS
+DO $$
+DECLARE
+    v_rows_affected INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    UPDATE public.album_stamp_placements
+    SET x = 0.99
+    WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+    IF v_rows_affected <> 0 THEN
+        RAISE EXCEPTION 'USER B CANNOT UPDATE USER A PLACEMENT Failed: % rows updated', v_rows_affected;
+    END IF;
+END $$;
+
+-- Assertion 102: USER B CANNOT DELETE USER A PLACEMENT: PASS
+DO $$
+DECLARE
+    v_rows_affected INT;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    DELETE FROM public.album_stamp_placements
+    WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+    IF v_rows_affected <> 0 THEN
+        RAISE EXCEPTION 'USER B CANNOT DELETE USER A PLACEMENT Failed: % rows deleted', v_rows_affected;
+    END IF;
+END $$;
+
+-- Assertion 103: USER B CANNOT ATTACH PLACEMENT TO USER A PAGE: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    BEGIN
+        -- User B tries to insert a placement pointing to User A's album/page (col_a_1, page 0)
+        -- FK constraint fails because (owner_id='222...', 'col_a_1', 0) does not exist in album_pages
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '22222222-2222-2222-2222-222222222222',
+            'col_a_1', 0, 'stamp_b_hijack', 0.5, 0.5, 1.0, 0.0, 1
+        );
+    EXCEPTION
+        WHEN foreign_key_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'USER B CANNOT ATTACH PLACEMENT TO USER A PAGE Failed: expected FK violation';
+    END IF;
+END $$;
+
+-- Assertion 104: OWNER SPOOF REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    -- Authenticated as User A, but attempts to set owner_id = User B
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_pages (id, owner_id, album_id, page_index)
+        VALUES (gen_random_uuid(), '22222222-2222-2222-2222-222222222222', 'col_spoof', 0);
+    EXCEPTION
+        WHEN OTHERS THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'OWNER SPOOF REJECTED Failed: expected RLS policy violation';
+    END IF;
+END $$;
+
+-- Assertion 105: NEGATIVE PAGE_INDEX REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_pages (id, owner_id, album_id, page_index)
+        VALUES (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', 'col_neg_page', -1);
+    EXCEPTION
+        WHEN check_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'NEGATIVE PAGE_INDEX REJECTED Failed: expected check constraint error';
+    END IF;
+END $$;
+
+-- Assertion 106: PLACEMENT X < 0 REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '11111111-1111-1111-1111-111111111111',
+            'col_a_1', 0, 'stamp_neg_x', -0.01, 0.5, 1.0, 0.0, 1
+        );
+    EXCEPTION
+        WHEN check_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'PLACEMENT X < 0 REJECTED Failed: expected check constraint error';
+    END IF;
+END $$;
+
+-- Assertion 107: PLACEMENT X > 1 REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '11111111-1111-1111-1111-111111111111',
+            'col_a_1', 0, 'stamp_overflow_x', 1.05, 0.5, 1.0, 0.0, 1
+        );
+    EXCEPTION
+        WHEN check_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'PLACEMENT X > 1 REJECTED Failed: expected check constraint error';
+    END IF;
+END $$;
+
+-- Assertion 108: PLACEMENT Y INVALID REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '11111111-1111-1111-1111-111111111111',
+            'col_a_1', 0, 'stamp_invalid_y', 0.5, 1.2, 1.0, 0.0, 1
+        );
+    EXCEPTION
+        WHEN check_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'PLACEMENT Y INVALID REJECTED Failed: expected check constraint error';
+    END IF;
+END $$;
+
+-- Assertion 109: PLACEMENT SCALE INVALID REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '11111111-1111-1111-1111-111111111111',
+            'col_a_1', 0, 'stamp_invalid_scale', 0.5, 0.5, 0.01, 0.0, 1
+        );
+    EXCEPTION
+        WHEN check_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'PLACEMENT SCALE INVALID REJECTED Failed: expected check constraint error';
+    END IF;
+END $$;
+
+-- Assertion 110: PLACEMENT ROTATION INVALID REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '11111111-1111-1111-1111-111111111111',
+            'col_a_1', 0, 'stamp_invalid_rot', 0.5, 0.5, 1.0, 450.0, 1
+        );
+    EXCEPTION
+        WHEN check_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'PLACEMENT ROTATION INVALID REJECTED Failed: expected check constraint error';
+    END IF;
+END $$;
+
+-- Assertion 111: PLACEMENT ZINDEX ABUSE REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '11111111-1111-1111-1111-111111111111',
+            'col_a_1', 0, 'stamp_invalid_z', 0.5, 0.5, 1.0, 0.0, 99999
+        );
+    EXCEPTION
+        WHEN check_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'PLACEMENT ZINDEX ABUSE REJECTED Failed: expected check constraint error';
+    END IF;
+END $$;
+
+-- Assertion 112: DUPLICATE STAMP IN ALBUM REJECTED: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    BEGIN
+        -- stamp_a_1 is already placed in col_a_1 (from assertion 98)
+        INSERT INTO public.album_stamp_placements (
+            id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+        ) VALUES (
+            gen_random_uuid(), '11111111-1111-1111-1111-111111111111',
+            'col_a_1', 0, 'stamp_a_1', 0.8, 0.8, 1.0, 0.0, 2
+        );
+    EXCEPTION
+        WHEN unique_violation THEN
+            v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'DUPLICATE STAMP IN ALBUM REJECTED Failed: expected unique violation';
+    END IF;
+END $$;
+
+-- Assertion 113: ACCOUNT DELETION CASCADES LAYOUT: PASS
+DO $$
+DECLARE
+    v_temp_user_id UUID := gen_random_uuid();
+    v_page_count INT;
+    v_placement_count INT;
+BEGIN
+    SET ROLE postgres;
+
+    -- Create disposable user
+    INSERT INTO auth.users (id, email) VALUES (v_temp_user_id, 'layout_cascade_user@memostamp.local');
+    INSERT INTO public.profiles (id, username, display_name) VALUES (v_temp_user_id, 'cascade_u', 'Cascade User');
+
+    -- Create layout for disposable user
+    INSERT INTO public.album_pages (id, owner_id, album_id, page_index)
+    VALUES (gen_random_uuid(), v_temp_user_id, 'col_cascade', 0);
+
+    INSERT INTO public.album_stamp_placements (
+        id, owner_id, album_id, page_index, stamp_id, x, y, scale, rotation_degrees, z_index
+    ) VALUES (
+        gen_random_uuid(), v_temp_user_id, 'col_cascade', 0, 'stamp_cascade', 0.5, 0.5, 1.0, 0.0, 1
+    );
+
+    -- Delete user profile
+    DELETE FROM public.profiles WHERE id = v_temp_user_id;
+
+    -- Verify CASCADE removed pages and placements
+    SELECT COUNT(*) INTO v_page_count FROM public.album_pages WHERE owner_id = v_temp_user_id;
+    SELECT COUNT(*) INTO v_placement_count FROM public.album_stamp_placements WHERE owner_id = v_temp_user_id;
+
+    IF v_page_count <> 0 OR v_placement_count <> 0 THEN
+        RAISE EXCEPTION 'ACCOUNT DELETION CASCADES LAYOUT Failed: pages=%, placements=%', v_page_count, v_placement_count;
+    END IF;
+
+    DELETE FROM auth.users WHERE id = v_temp_user_id;
+END $$;
+
 
 -- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)
 -- ===================================================
 SET ROLE postgres;
 
+DELETE FROM public.album_stamp_placements WHERE owner_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
+DELETE FROM public.album_pages WHERE owner_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
 DELETE FROM app_private.rate_limit_buckets WHERE actor_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
 DELETE FROM public.received_trade_stamps WHERE owner_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
 DELETE FROM public.stamp_trade_requests WHERE sender_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555') OR recipient_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444', '55555555-5555-5555-5555-555555555555');
@@ -2250,4 +2746,5 @@ DELETE FROM public.direct_messages WHERE sender_id IN ('11111111-1111-1111-1111-
 DELETE FROM public.feed_posts WHERE author_id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM public.profiles WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
 DELETE FROM auth.users WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333');
+
 

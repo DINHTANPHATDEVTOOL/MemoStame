@@ -217,6 +217,31 @@ data class SupabaseFeedReplyRecord(
     @SerializedName("created_at") val createdAt: Long? = null
 )
 
+data class SupabaseAlbumPageRecord(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("owner_id") val ownerId: String = "",
+    @SerializedName("album_id") val albumId: String = "",
+    @SerializedName("page_index") val pageIndex: Int = 0,
+    @SerializedName("created_at") val createdAt: Any? = null,
+    @SerializedName("updated_at") val updatedAt: Any? = null
+)
+
+data class SupabaseStampPlacementRecord(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("owner_id") val ownerId: String = "",
+    @SerializedName("album_id") val albumId: String = "",
+    @SerializedName("page_index") val pageIndex: Int = 0,
+    @SerializedName("stamp_id") val stampId: String = "",
+    @SerializedName("x") val x: Double = 0.0,
+    @SerializedName("y") val y: Double = 0.0,
+    @SerializedName("scale") val scale: Double = 1.0,
+    @SerializedName("rotation_degrees") val rotationDegrees: Double = 0.0,
+    @SerializedName("z_index") val zIndex: Int = 1,
+    @SerializedName("created_at") val createdAt: Any? = null,
+    @SerializedName("updated_at") val updatedAt: Any? = null
+)
+
+
 interface SupabaseHttpTransport {
     fun executeHttp(
         client: SupabaseClient,
@@ -1388,5 +1413,80 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
     suspend fun deleteStamp(stampId: String, ownerId: String): Result<Boolean> = withContext(Dispatchers.IO) {
         // Vault stamps are client-local; legacy /stamps endpoint is removed from schema
         Result.success(true)
+    }
+
+    // ==========================================
+    // 3D STAMP BOOK ALBUM LAYOUT (TASK #76)
+    // ==========================================
+
+    suspend fun getAlbumPages(userId: String, albumId: String): List<SupabaseAlbumPageRecord> = withContext(Dispatchers.IO) {
+        val encUser = URLEncoder.encode(userId.trim(), "UTF-8")
+        val encAlbum = URLEncoder.encode(albumId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/album_pages?owner_id=eq.$encUser&album_id=eq.$encAlbum&select=*&order=page_index.asc"
+        val res = executeHttp(endpoint, method = "GET", requireUserAuth = true)
+        res.getOrNull()?.let { json ->
+            try {
+                val listType = object : TypeToken<List<SupabaseAlbumPageRecord>>() {}.type
+                gson.fromJson(json, listType) ?: emptyList()
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } ?: emptyList()
+    }
+
+    suspend fun getStampPlacements(userId: String, albumId: String): List<SupabaseStampPlacementRecord> = withContext(Dispatchers.IO) {
+        val encUser = URLEncoder.encode(userId.trim(), "UTF-8")
+        val encAlbum = URLEncoder.encode(albumId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/album_stamp_placements?owner_id=eq.$encUser&album_id=eq.$encAlbum&select=*&order=page_index.asc,z_index.asc,id.asc"
+        val res = executeHttp(endpoint, method = "GET", requireUserAuth = true)
+        res.getOrNull()?.let { json ->
+            try {
+                val listType = object : TypeToken<List<SupabaseStampPlacementRecord>>() {}.type
+                gson.fromJson(json, listType) ?: emptyList()
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } ?: emptyList()
+    }
+
+    suspend fun upsertAlbumPages(pages: List<com.mipastudio.memostamp.domain.model.AlbumPage>): Result<Boolean> = withContext(Dispatchers.IO) {
+        if (pages.isEmpty()) return@withContext Result.success(true)
+        val endpoint = "${getBaseUrl()}/rest/v1/album_pages?on_conflict=owner_id,album_id,page_index"
+        val jsonList = pages.map { p ->
+            mapOf(
+                "owner_id" to p.ownerId,
+                "album_id" to p.albumId,
+                "page_index" to p.pageIndex
+            )
+        }
+        val res = executeHttp(endpoint, method = "POST", jsonBody = gson.toJson(jsonList), prefer = "resolution=merge-duplicates", requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to upsert album pages"))
+    }
+
+    suspend fun upsertStampPlacements(placements: List<com.mipastudio.memostamp.domain.model.StampPlacement>): Result<Boolean> = withContext(Dispatchers.IO) {
+        if (placements.isEmpty()) return@withContext Result.success(true)
+        val endpoint = "${getBaseUrl()}/rest/v1/album_stamp_placements?on_conflict=owner_id,album_id,stamp_id"
+        val jsonList = placements.map { pl ->
+            mapOf(
+                "owner_id" to pl.ownerId,
+                "album_id" to pl.albumId,
+                "page_index" to pl.pageIndex,
+                "stamp_id" to pl.stampId,
+                "x" to pl.x,
+                "y" to pl.y,
+                "scale" to pl.scale,
+                "rotation_degrees" to pl.rotationDegrees,
+                "z_index" to pl.zIndex
+            )
+        }
+        val res = executeHttp(endpoint, method = "POST", jsonBody = gson.toJson(jsonList), prefer = "resolution=merge-duplicates", requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to upsert stamp placements"))
+    }
+
+    suspend fun deleteStampPlacement(placementId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val enc = URLEncoder.encode(placementId.trim(), "UTF-8")
+        val endpoint = "${getBaseUrl()}/rest/v1/album_stamp_placements?id=eq.$enc"
+        val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to delete placement"))
     }
 }

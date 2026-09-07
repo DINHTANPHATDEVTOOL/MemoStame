@@ -4020,6 +4020,207 @@ class E2EContractRunner:
 
         self.log("PHASE 14", "All 24 Server-Side Gemini Grounding contract cases successfully verified!")
 
+    def phase15_album_layout_persistence(self):
+        print("\n--- PHASE 15: 3D STAMP BOOK LAYOUT PERSISTENCE (TASK #76) ---")
+        u_a = self.users["A"]
+        u_b = self.users["B"]
+        album_id = f"col_persist_{secrets.token_hex(4)}"
+        stamp_id = f"stamp_test_{secrets.token_hex(4)}"
+
+        # 1. User A creates page 0
+        self.log("PHASE 15", "Case 1: User A creating album page 0...")
+        st, d, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/album_pages",
+            token=u_a["token"],
+            headers={"Prefer": "return=representation"},
+            json_data={
+                "owner_id": u_a["uid"],
+                "album_id": album_id,
+                "page_index": 0
+            }
+        )
+        self.assert_status(st, 201, "User A create album page 0", "POST", "/rest/v1/album_pages", txt)
+        page_a_id = d[0]["id"] if isinstance(d, list) and len(d) > 0 else None
+        assert page_a_id, f"Expected page id, got: {d}"
+
+        # 2. User A creates placement
+        self.log("PHASE 15", "Case 2: User A creating stamp placement on page 0...")
+        st, d, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/album_stamp_placements",
+            token=u_a["token"],
+            headers={"Prefer": "return=representation"},
+            json_data={
+                "owner_id": u_a["uid"],
+                "album_id": album_id,
+                "page_index": 0,
+                "stamp_id": stamp_id,
+                "x": 0.35,
+                "y": 0.45,
+                "scale": 1.25,
+                "rotation_degrees": 15.0,
+                "z_index": 2
+            }
+        )
+        self.assert_status(st, 201, "User A create stamp placement", "POST", "/rest/v1/album_stamp_placements", txt)
+        placement_id = d[0]["id"] if isinstance(d, list) and len(d) > 0 else None
+        assert placement_id, f"Expected placement id, got: {d}"
+
+        # 3. User A reads own placement
+        self.log("PHASE 15", "Case 3: User A fetching own placements...")
+        st, d, txt, _ = self.client.request(
+            "GET",
+            f"/rest/v1/album_stamp_placements?id=eq.{placement_id}",
+            token=u_a["token"]
+        )
+        self.assert_status(st, 200, "User A fetch placement", "GET", "/rest/v1/album_stamp_placements", txt)
+        assert len(d) == 1, f"Expected 1 placement, got: {d}"
+        assert abs(d[0]["x"] - 0.35) < 0.001, f"Expected x=0.35, got {d[0]['x']}"
+        assert abs(d[0]["rotation_degrees"] - 15.0) < 0.001, f"Expected rot=15.0, got {d[0]['rotation_degrees']}"
+
+        # 4. User A updates placement transforms
+        self.log("PHASE 15", "Case 4: User A updating placement transform...")
+        st, d, txt, _ = self.client.request(
+            "PATCH",
+            f"/rest/v1/album_stamp_placements?id=eq.{placement_id}",
+            token=u_a["token"],
+            headers={"Prefer": "return=representation"},
+            json_data={"x": 0.70, "y": 0.80, "rotation_degrees": -30.0}
+        )
+        self.assert_status(st, 200, "User A update placement", "PATCH", "/rest/v1/album_stamp_placements", txt)
+        assert abs(d[0]["x"] - 0.70) < 0.001
+
+        # 5. User A creates page 1 and moves placement
+        self.log("PHASE 15", "Case 5: User A creating page 1 and moving placement...")
+        st, _, txt, _ = self.client.request(
+            "POST",
+            "/rest/v1/album_pages",
+            token=u_a["token"],
+            json_data={"owner_id": u_a["uid"], "album_id": album_id, "page_index": 1}
+        )
+        self.assert_status(st, 201, "User A create page 1", "POST", "/rest/v1/album_pages", txt)
+
+        st, d, txt, _ = self.client.request(
+            "PATCH",
+            f"/rest/v1/album_stamp_placements?id=eq.{placement_id}",
+            token=u_a["token"],
+            headers={"Prefer": "return=representation"},
+            json_data={"page_index": 1}
+        )
+        self.assert_status(st, 200, "User A move placement to page 1", "PATCH", "/rest/v1/album_stamp_placements", txt)
+        assert d[0]["page_index"] == 1
+
+        # 6. Malformed geometry rejected
+        self.log("PHASE 15", "Case 6: Testing server-side geometry validation rejection...")
+        st_neg, _, txt_neg, _ = self.client.request(
+            "POST",
+            "/rest/v1/album_pages",
+            token=u_a["token"],
+            json_data={"owner_id": u_a["uid"], "album_id": album_id, "page_index": -1}
+        )
+        assert st_neg in (400, 500), f"Expected negative page_index rejection, got {st_neg}: {txt_neg}"
+
+        st_x, _, txt_x, _ = self.client.request(
+            "POST",
+            "/rest/v1/album_stamp_placements",
+            token=u_a["token"],
+            json_data={
+                "owner_id": u_a["uid"],
+                "album_id": album_id,
+                "page_index": 0,
+                "stamp_id": f"stamp_bad_{secrets.token_hex(2)}",
+                "x": 1.5,
+                "y": 0.5
+            }
+        )
+        assert st_x in (400, 500), f"Expected x > 1.0 rejection, got {st_x}: {txt_x}"
+
+        st_scale, _, txt_scale, _ = self.client.request(
+            "POST",
+            "/rest/v1/album_stamp_placements",
+            token=u_a["token"],
+            json_data={
+                "owner_id": u_a["uid"],
+                "album_id": album_id,
+                "page_index": 0,
+                "stamp_id": f"stamp_bad_{secrets.token_hex(2)}",
+                "x": 0.5,
+                "y": 0.5,
+                "scale": 0.01
+            }
+        )
+        assert st_scale in (400, 500), f"Expected scale <= 0.05 rejection, got {st_scale}: {txt_scale}"
+
+        # 7. Cross-user isolation: User B cannot read User A page or placement
+        self.log("PHASE 15", "Case 7: Testing cross-user read isolation (User B -> User A)...")
+        st_b_page, d_b_page, txt_b_page, _ = self.client.request(
+            "GET",
+            f"/rest/v1/album_pages?id=eq.{page_a_id}",
+            token=u_b["token"]
+        )
+        self.assert_status(st_b_page, 200, "User B query page", "GET", "/rest/v1/album_pages", txt_b_page)
+        assert len(d_b_page) == 0, f"Cross-user leakage: User B saw page {d_b_page}"
+
+        st_b_pl, d_b_pl, txt_b_pl, _ = self.client.request(
+            "GET",
+            f"/rest/v1/album_stamp_placements?id=eq.{placement_id}",
+            token=u_b["token"]
+        )
+        self.assert_status(st_b_pl, 200, "User B query placement", "GET", "/rest/v1/album_stamp_placements", txt_b_pl)
+        assert len(d_b_pl) == 0, f"Cross-user leakage: User B saw placement {d_b_pl}"
+
+        # 8. Cross-user write blocked: User B cannot update or delete User A placement
+        self.log("PHASE 15", "Case 8: Testing cross-user write isolation (User B modifying User A placement)...")
+        st_b_up, d_b_up, txt_b_up, _ = self.client.request(
+            "PATCH",
+            f"/rest/v1/album_stamp_placements?id=eq.{placement_id}",
+            token=u_b["token"],
+            headers={"Prefer": "return=representation"},
+            json_data={"x": 0.99}
+        )
+        self.assert_status(st_b_up, 200, "User B update User A placement", "PATCH", "/rest/v1/album_stamp_placements", txt_b_up)
+        assert len(d_b_up) == 0, f"User B successfully modified User A placement! {d_b_up}"
+
+        st_b_del, d_b_del, txt_b_del, _ = self.client.request(
+            "DELETE",
+            f"/rest/v1/album_stamp_placements?id=eq.{placement_id}",
+            token=u_b["token"],
+            headers={"Prefer": "return=representation"}
+        )
+        self.assert_status(st_b_del, 200, "User B delete User A placement", "DELETE", "/rest/v1/album_stamp_placements", txt_b_del)
+        assert len(d_b_del) == 0, f"User B successfully deleted User A placement! {d_b_del}"
+
+        # 9. User B cannot attach placement to User A page
+        self.log("PHASE 15", "Case 9: Testing User B attaching placement to User A album page...")
+        st_b_attach, _, txt_b_attach, _ = self.client.request(
+            "POST",
+            "/rest/v1/album_stamp_placements",
+            token=u_b["token"],
+            json_data={
+                "owner_id": u_b["uid"],
+                "album_id": album_id,
+                "page_index": 0,
+                "stamp_id": f"stamp_b_hijack_{secrets.token_hex(2)}",
+                "x": 0.5,
+                "y": 0.5
+            }
+        )
+        assert st_b_attach in (400, 409, 500), f"Expected FK violation for attaching to other user page, got {st_b_attach}: {txt_b_attach}"
+
+        # 10. Anon zero access
+        self.log("PHASE 15", "Case 10: Verifying anon zero access to album layout...")
+        st_anon_get, _, _, _ = self.client.request("GET", "/rest/v1/album_pages")
+        assert st_anon_get in (401, 403), f"Expected anon access denied, got {st_anon_get}"
+
+        st_anon_pl, _, _, _ = self.client.request("GET", "/rest/v1/album_stamp_placements")
+        assert st_anon_pl in (401, 403), f"Expected anon access denied, got {st_anon_pl}"
+
+        # 11. Cleanup
+        self.client.request("DELETE", f"/rest/v1/album_stamp_placements?owner_id=eq.{u_a['uid']}", token=u_a["token"])
+        self.client.request("DELETE", f"/rest/v1/album_pages?owner_id=eq.{u_a['uid']}", token=u_a["token"])
+        self.log("PHASE 15", "All Phase 15 3D Stamp Book Layout Persistence cases successfully verified!")
+
     def run_all(self):
         print("=" * 60)
         print("MEMOSTAMP BLACK-BOX E2E CONTRACT GATE SUITE")
@@ -4041,12 +4242,14 @@ class E2EContractRunner:
             self.phase12_cloud_stamp_trade()
             self.phase13_abuse_rate_limits()
             self.phase14_server_side_gemini_grounding()
+            self.phase15_album_layout_persistence()
         finally:
             self.stop_mock_gemini_server()
             self.stop_mock_push_server()
         print("=" * 60)
         print("ALL BLACK-BOX E2E CONTRACT TESTS PASSED")
         print("=" * 60)
+
 
 
 def main():

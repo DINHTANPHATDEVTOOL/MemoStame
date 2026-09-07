@@ -331,3 +331,35 @@ data class AuthSession(
     }
 }
 
+/**
+ * Account-scoped album page representation (Task #76).
+ * pageIndex = 0 denotes the first editable inner page (Spread 0 Right Page).
+ */
+data class AlbumPage(
+    val id: String = "",
+    val ownerId: String = "",
+    val albumId: String,
+    val pageIndex: Int,
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L
+)
+
+/**
+ * Normalized 2D placement of a stamp on a specific album page (Task #76).
+ * x, y are strictly normalized in [0.0..1.0] relative to editable page bounds.
+ */
+data class StampPlacement(
+    val id: String,
+    val ownerId: String = "",
+    val albumId: String,
+    val pageIndex: Int,
+    val stampId: String,
+    val x: Double,
+    val y: Double,
+    val scale: Double = 1.0,
+    val rotationDegrees: Double = 0.0,
+    val zIndex: Int = 1,
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L
+)
+

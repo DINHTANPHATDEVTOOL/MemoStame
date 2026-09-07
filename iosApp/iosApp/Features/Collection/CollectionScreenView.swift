@@ -20,6 +20,7 @@ struct CollectionScreenView: View {
     let repository: SharedMemoStampRepository
     @State private var selectedAlbum: AlbumItem? = nil
     @ObservedObject private var langManager = AppLanguageManager.shared
+    @ObservedObject private var albumLayoutRepo = IOSAlbumLayoutRepository.shared
 
     var cloudStamps: [StampItem] {
         (repository.stamps.value as? [StampItem]) ?? []
@@ -157,6 +158,7 @@ struct CollectionScreenView: View {
         .background(MSColors.paper.ignoresSafeArea())
         .fullScreenCover(item: $selectedAlbum) { album in
             // 📖 Production 2.5D Two-Page Stamp Book Renderer (replaces old flat TabView)
+            let placements = albumLayoutRepo.layoutPlacements[album.id] ?? []
             StampBook3DRenderer(
                 albumId: album.id,
                 albumTitle: album.title,
@@ -165,9 +167,13 @@ struct CollectionScreenView: View {
                 coverColor: album.coverColor,
                 iconKey: album.iconName,
                 stamps: album.stamps,
+                placements: placements,
                 onStampClick: { _ in },
                 onDismiss: { selectedAlbum = nil }
             )
+            .onAppear {
+                albumLayoutRepo.syncLayout(albumId: album.id)
+            }
         }
     }
 }

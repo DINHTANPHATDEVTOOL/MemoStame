@@ -58,6 +58,7 @@
 		1D3624A22D00000100000001 /* IOSPasswordRecoveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624A12D00000100000001 /* IOSPasswordRecoveryCoordinator.swift */; };
 		1D3624D12D00000100000001 /* IOSMapsGroundingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624D02D00000100000001 /* IOSMapsGroundingClient.swift */; };
 		1D3624D32D00000100000001 /* LocationPickerSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3624D22D00000100000001 /* LocationPickerSheetView.swift */; };
+		767676022D00000100000001 /* IOSAlbumLayoutRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767676012D00000100000001 /* IOSAlbumLayoutRepository.swift */; };
 		1D36249F2D00000100000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */; };
 		1D36234B2D00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D36234A2D00000100000001 /* Assets.xcassets */; };
 		707070012D00000100000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 707070022D00000100000001 /* Localizable.xcstrings */; };
@@ -115,6 +116,7 @@
 		1D36249C2D00000100000001 /* IOSFeedRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSFeedRepository.swift; sourceTree = "<group>"; };
 		1D3624A12D00000100000001 /* IOSPasswordRecoveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSPasswordRecoveryCoordinator.swift; sourceTree = "<group>"; };
 		1D3624D02D00000100000001 /* IOSMapsGroundingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSMapsGroundingClient.swift; sourceTree = "<group>"; };
+		767676012D00000100000001 /* IOSAlbumLayoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data/IOSAlbumLayoutRepository.swift; sourceTree = "<group>"; };
 		1D3624D22D00000100000001 /* LocationPickerSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPickerSheetView.swift; sourceTree = "<group>"; };
 		1D3624A32D00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1D36249E2D00000100000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -171,6 +173,7 @@
 				1D36249C2D00000100000001 /* IOSFeedRepository.swift */,
 				1D3624A12D00000100000001 /* IOSPasswordRecoveryCoordinator.swift */,
 				1D3624D02D00000100000001 /* IOSMapsGroundingClient.swift */,
+				767676012D00000100000001 /* IOSAlbumLayoutRepository.swift */,
 				1D3624A32D00000100000001 /* Info.plist */,
 				1D3624C02D00000100000001 /* iosApp.entitlements */,
 				1D3623502D00000100000001 /* UI */,
@@ -484,6 +487,7 @@
 				1D3624B12D00000100000001 /* IOSPushNotificationManager.swift in Sources */,
 				1D3624B32D00000100000001 /* IOSPushEventDeduper.swift in Sources */,
 				1D3624D12D00000100000001 /* IOSMapsGroundingClient.swift in Sources */,
+				767676022D00000100000001 /* IOSAlbumLayoutRepository.swift in Sources */,
 				1D3624D32D00000100000001 /* LocationPickerSheetView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

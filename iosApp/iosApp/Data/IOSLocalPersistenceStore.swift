@@ -117,6 +117,28 @@ struct PersistedTradeRequestData: Codable {
     let stampId: String?
 }
 
+struct PersistedAlbumPageData: Codable, Equatable {
+    let id: String
+    let albumId: String
+    let pageIndex: Int32
+    let createdAt: Int64
+    let updatedAt: Int64
+}
+
+struct PersistedStampPlacementData: Codable, Equatable {
+    let id: String
+    let albumId: String
+    let pageIndex: Int32
+    let stampId: String
+    let x: Double
+    let y: Double
+    let scale: Double
+    let rotationDegrees: Double
+    let zIndex: Int32
+    let createdAt: Int64
+    let updatedAt: Int64
+}
+
 struct PersistedPayload: Codable {
     let user: PersistedUserData?
     let stamps: [PersistedStampData]
@@ -124,6 +146,8 @@ struct PersistedPayload: Codable {
     let friends: [PersistedFriendData]?
     let friendRequests: [PersistedFriendRequestData]?
     let tradeRequests: [PersistedTradeRequestData]?
+    let albumPages: [PersistedAlbumPageData]?
+    let albumPlacements: [PersistedStampPlacementData]?
 }
 
 class IOSLocalPersistenceStore {
@@ -436,13 +460,24 @@ class IOSLocalPersistenceStore {
             )
         }
 
+        var existingPages: [PersistedAlbumPageData]? = nil
+        var existingPlacements: [PersistedStampPlacementData]? = nil
+        if fileManager.fileExists(atPath: targetUrl.path),
+           let data = try? Data(contentsOf: targetUrl),
+           let oldPayload = try? JSONDecoder().decode(PersistedPayload.self, from: data) {
+            existingPages = oldPayload.albumPages
+            existingPlacements = oldPayload.albumPlacements
+        }
+
         let payload = PersistedPayload(
             user: userData,
             stamps: stampDatas,
             collections: collectionDatas,
             friends: friendDatas,
             friendRequests: friendRequestDatas,
-            tradeRequests: tradeRequestDatas
+            tradeRequests: tradeRequestDatas,
+            albumPages: existingPages,
+            albumPlacements: existingPlacements
         )
 
         if let encoded = try? JSONEncoder().encode(payload) {
@@ -452,6 +487,119 @@ class IOSLocalPersistenceStore {
             } catch {
                 return false
             }
+        }
+        return false
+    }
+
+    func getAlbumPages(userId: String, albumId: String) -> [PersistedAlbumPageData] {
+        guard isValidAuthenticatedUserId(userId) else { return [] }
+        let targetUrl = storageUrl(userId: userId)
+        guard fileManager.fileExists(atPath: targetUrl.path),
+              let data = try? Data(contentsOf: targetUrl),
+              let payload = try? JSONDecoder().decode(PersistedPayload.self, from: data),
+              let pages = payload.albumPages else {
+            return []
+        }
+        return pages.filter { $0.albumId == albumId }.sorted { $0.pageIndex < $1.pageIndex }
+    }
+
+    func getStampPlacements(userId: String, albumId: String) -> [PersistedStampPlacementData] {
+        guard isValidAuthenticatedUserId(userId) else { return [] }
+        let targetUrl = storageUrl(userId: userId)
+        guard fileManager.fileExists(atPath: targetUrl.path),
+              let data = try? Data(contentsOf: targetUrl),
+              let payload = try? JSONDecoder().decode(PersistedPayload.self, from: data),
+              let placements = payload.albumPlacements else {
+            return []
+        }
+        return placements.filter { $0.albumId == albumId }.sorted {
+            if $0.pageIndex != $1.pageIndex { return $0.pageIndex < $1.pageIndex }
+            if $0.zIndex != $1.zIndex { return $0.zIndex < $1.zIndex }
+            return $0.id < $1.id
+        }
+    }
+
+    @discardableResult
+    func saveAlbumLayout(
+        userId: String,
+        albumId: String,
+        pages: [PersistedAlbumPageData],
+        placements: [PersistedStampPlacementData]
+    ) -> Bool {
+        guard isValidAuthenticatedUserId(userId) else { return false }
+        let targetUrl = storageUrl(userId: userId)
+
+        var currentPayload: PersistedPayload
+        if fileManager.fileExists(atPath: targetUrl.path),
+           let data = try? Data(contentsOf: targetUrl),
+           let payload = try? JSONDecoder().decode(PersistedPayload.self, from: data) {
+            currentPayload = payload
+        } else {
+            currentPayload = PersistedPayload(
+                user: nil,
+                stamps: [],
+                collections: [],
+                friends: nil,
+                friendRequests: nil,
+                tradeRequests: nil,
+                albumPages: nil,
+                albumPlacements: nil
+            )
+        }
+
+        var remainingPages = (currentPayload.albumPages ?? []).filter { $0.albumId != albumId }
+        remainingPages.append(contentsOf: pages)
+
+        var remainingPlacements = (currentPayload.albumPlacements ?? []).filter { $0.albumId != albumId }
+        remainingPlacements.append(contentsOf: placements)
+
+        let updatedPayload = PersistedPayload(
+            user: currentPayload.user,
+            stamps: currentPayload.stamps,
+            collections: currentPayload.collections,
+            friends: currentPayload.friends,
+            friendRequests: currentPayload.friendRequests,
+            tradeRequests: currentPayload.tradeRequests,
+            albumPages: remainingPages,
+            albumPlacements: remainingPlacements
+        )
+
+        if let encoded = try? JSONEncoder().encode(updatedPayload) {
+            do {
+                try encoded.write(to: targetUrl, options: .atomic)
+                return true
+            } catch {
+                return false
+            }
+        }
+        return false
+    }
+
+    @discardableResult
+    func deletePlacement(userId: String, placementId: String) -> Bool {
+        guard isValidAuthenticatedUserId(userId) else { return false }
+        let targetUrl = storageUrl(userId: userId)
+        guard fileManager.fileExists(atPath: targetUrl.path),
+              let data = try? Data(contentsOf: targetUrl),
+              let payload = try? JSONDecoder().decode(PersistedPayload.self, from: data) else {
+            return false
+        }
+
+        let remainingPlacements = (payload.albumPlacements ?? []).filter { $0.id != placementId }
+        let updatedPayload = PersistedPayload(
+            user: payload.user,
+            stamps: payload.stamps,
+            collections: payload.collections,
+            friends: payload.friends,
+            friendRequests: payload.friendRequests,
+            tradeRequests: payload.tradeRequests,
+            albumPages: payload.albumPages,
+            albumPlacements: remainingPlacements
+        )
+
+        if let encoded = try? JSONEncoder().encode(updatedPayload) {
+            try? encoded.write(to: targetUrl, options: .atomic)
+            return true
         }
         return false
     }

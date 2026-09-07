@@ -23,7 +23,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -66,6 +68,7 @@ fun StampBook3DRenderer(
     coverColor: Color,
     iconKey: String?,
     stamps: List<AlbumStampData>,
+    placements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
     onStampClick: (String) -> Unit = {},
     onDismiss: () -> Unit
 ) {
@@ -85,8 +88,8 @@ fun StampBook3DRenderer(
     }
 
     // Spreads calculation (pure & deterministic)
-    val spreads = remember(albumId, stamps) {
-        calculateSpreads(albumId = albumId, stamps = stamps)
+    val spreads = remember(albumId, stamps, placements) {
+        calculateSpreads(albumId = albumId, stamps = stamps, placements = placements)
     }
     val totalSpreads = spreads.size
 
@@ -745,8 +748,59 @@ fun BookPageSurface(
                     )
                 }
             }
+        } else if (pageData.placements.isNotEmpty()) {
+            // Persisted Placement Layout (Custom Physical Stamp Placement)
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val pageWidth = maxWidth
+                val pageHeight = maxHeight
+                val stampMap = remember(pageData.stamps) { pageData.stamps.associateBy { it.id } }
+
+                val sortedPlacements = remember(pageData.placements) {
+                    pageData.placements.sortedWith(
+                        compareBy<com.mipastudio.memostamp.domain.model.StampPlacement> { it.zIndex }
+                            .thenBy { it.id }
+                    )
+                }
+
+                for (placement in sortedPlacements) {
+                    val stamp = stampMap[placement.stampId]
+                    if (stamp != null) {
+                        val baseWidth = 84.dp * placement.scale.toFloat()
+                        val baseHeight = 104.dp * placement.scale.toFloat()
+                        val posX = (pageWidth * placement.x.toFloat()) - (baseWidth / 2f)
+                        val posY = (pageHeight * placement.y.toFloat()) - (baseHeight / 2f)
+
+                        Box(
+                            modifier = Modifier
+                                .offset(x = posX, y = posY)
+                                .size(width = baseWidth, height = baseHeight)
+                                .rotate(placement.rotationDegrees.toFloat())
+                                .zIndex(placement.zIndex.toFloat())
+                        ) {
+                            BookStampCell(
+                                stamp = stamp,
+                                onClick = { onStampClick(stamp.id) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+                }
+
+                // Page Number (display pageData.pageIndex + 1 as user-facing 1-based page number)
+                Text(
+                    text = stringResource(R.string.book_page_number_format, pageData.pageIndex + 1),
+                    color = SecondaryText,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 2.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
         } else {
-            // Normal Page with Stamps
+            // Normal Page with Stamps (2x2 grid fallback)
             Column(modifier = Modifier.fillMaxSize()) {
                 // 2x2 stamp layout
                 Column(

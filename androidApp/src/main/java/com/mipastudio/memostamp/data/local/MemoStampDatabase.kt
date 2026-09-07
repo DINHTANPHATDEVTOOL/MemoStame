@@ -18,9 +18,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FeedReplyEntity::class,
         CircleEntity::class,
         FeedSeenEntity::class,
-        UserEntity::class
+        UserEntity::class,
+        AlbumPageEntity::class,
+        StampPlacementEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = false
 )
 abstract class MemoStampDatabase : RoomDatabase() {
@@ -31,6 +33,7 @@ abstract class MemoStampDatabase : RoomDatabase() {
     abstract fun feedDao(): FeedDao
     abstract fun circleDao(): CircleDao
     abstract fun userDao(): UserDao
+    abstract fun albumLayoutDao(): AlbumLayoutDao
 
     companion object {
         @Volatile
@@ -429,6 +432,47 @@ abstract class MemoStampDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS album_pages (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        ownerId TEXT NOT NULL,
+                        albumId TEXT NOT NULL,
+                        pageIndex INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_album_pages_ownerId_albumId_pageIndex ON album_pages (ownerId, albumId, pageIndex)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_album_pages_ownerId_albumId ON album_pages (ownerId, albumId)")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS album_stamp_placements (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        ownerId TEXT NOT NULL,
+                        albumId TEXT NOT NULL,
+                        pageIndex INTEGER NOT NULL,
+                        stampId TEXT NOT NULL,
+                        x REAL NOT NULL,
+                        y REAL NOT NULL,
+                        scale REAL NOT NULL,
+                        rotationDegrees REAL NOT NULL,
+                        zIndex INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_album_stamp_placements_ownerId_albumId_stampId ON album_stamp_placements (ownerId, albumId, stampId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_album_stamp_placements_ownerId_albumId_pageIndex ON album_stamp_placements (ownerId, albumId, pageIndex)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_album_stamp_placements_ownerId_albumId ON album_stamp_placements (ownerId, albumId)")
+            }
+        }
+
         fun getInstance(context: Context): MemoStampDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -441,9 +485,9 @@ abstract class MemoStampDatabase : RoomDatabase() {
                     getMigration10To11(context.applicationContext),
                     getMigration11To12(context.applicationContext),
                     getMigration12To13(context.applicationContext),
-                    MIGRATION_13_14
+                    MIGRATION_13_14,
+                    MIGRATION_14_15
                 )
-                .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
             }
         }

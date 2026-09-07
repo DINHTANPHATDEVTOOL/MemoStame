@@ -36,6 +36,7 @@ class SupabaseAuthService {
             IOSFriendRepository.shared.onUserChanged(newUserId: uid)
             IOSChatRepository.shared.onSessionChanged(userId: uid, accessToken: token)
             IOSFeedRepository.shared.syncUserSession()
+            IOSAlbumLayoutRepository.shared.onSessionChanged(userId: uid, accessToken: token)
         }
     }
 
@@ -45,6 +46,7 @@ class SupabaseAuthService {
         let token = activeSession?.accessToken
         IOSFriendRepository.shared.onUserChanged(newUserId: uid)
         IOSChatRepository.shared.onSessionChanged(userId: uid, accessToken: token)
+        IOSAlbumLayoutRepository.shared.onSessionChanged(userId: uid, accessToken: token)
     }
 
     var currentUserId: String? {
@@ -153,6 +155,7 @@ class SupabaseAuthService {
         IOSFriendRepository.shared.onUserChanged(newUserId: "")
         IOSChatRepository.shared.onSessionChanged(userId: "", accessToken: nil)
         IOSFeedRepository.shared.clear()
+        IOSAlbumLayoutRepository.shared.onSessionChanged(userId: "", accessToken: nil)
     }
 
     func requestPasswordRecovery(email: String, redirectTo: String, completion: @escaping (Result<Void, Error>) -> Void) {

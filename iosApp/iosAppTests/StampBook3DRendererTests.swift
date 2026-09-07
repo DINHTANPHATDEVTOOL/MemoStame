@@ -11,12 +11,12 @@ final class StampBook3DRendererTests: XCTestCase {
         let spread0 = spreads[0]
         XCTAssertEqual(spread0.spreadIndex, 0)
         XCTAssertTrue(spread0.leftPage.isInsideCover)
-        XCTAssertEqual(spread0.leftPage.pageIndex, 0)
+        XCTAssertEqual(spread0.leftPage.pageIndex, -1)
         XCTAssertTrue(spread0.leftPage.stamps.isEmpty)
 
         XCTAssertFalse(spread0.rightPage.isInsideCover)
         XCTAssertFalse(spread0.rightPage.isBlankArchival)
-        XCTAssertEqual(spread0.rightPage.pageIndex, 1)
+        XCTAssertEqual(spread0.rightPage.pageIndex, 0)
         XCTAssertTrue(spread0.rightPage.stamps.isEmpty)
     }
 
@@ -40,17 +40,17 @@ final class StampBook3DRendererTests: XCTestCase {
 
     func testOddContentPages_appendsArchivalBlankPageOnRight() {
         // 6 stamps / 4 per page -> 2 content pages
-        // Spread 0: Left = Inside Cover, Right = Page 1 (4 stamps)
-        // Spread 1: Left = Page 2 (2 stamps), Right = Archival Blank Page
+        // Spread 0: Left = Inside Cover, Right = Page 0 (4 stamps)
+        // Spread 1: Left = Page 1 (2 stamps), Right = Archival Blank Page
         let stamps = (1...6).map { BookStampItem(id: "s\($0)", name: "Stamp \($0)", imageUrl: "url\($0)") }
         let spreads = calculateSpreads(albumId: "col_odd", stamps: stamps, stampsPerPage: 4)
 
         XCTAssertEqual(spreads.count, 2)
         XCTAssertEqual(spreads[1].spreadIndex, 1)
-        XCTAssertEqual(spreads[1].leftPage.pageIndex, 2)
+        XCTAssertEqual(spreads[1].leftPage.pageIndex, 1)
         XCTAssertEqual(spreads[1].leftPage.stamps.count, 2)
 
-        XCTAssertEqual(spreads[1].rightPage.pageIndex, 3)
+        XCTAssertEqual(spreads[1].rightPage.pageIndex, 2)
         XCTAssertTrue(spreads[1].rightPage.isBlankArchival)
         XCTAssertTrue(spreads[1].rightPage.stamps.isEmpty)
     }

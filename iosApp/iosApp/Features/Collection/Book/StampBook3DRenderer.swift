@@ -14,6 +14,7 @@ public struct StampBook3DRenderer: View {
     public let coverColor: Color
     public let iconKey: String?
     public let stamps: [BookStampItem]
+    public let placements: [PersistedStampPlacementData]
     public var onStampClick: (String) -> Void
     public var onDismiss: () -> Void
 
@@ -26,7 +27,7 @@ public struct StampBook3DRenderer: View {
     @State private var isAnimating: Bool = false
 
     private var spreads: [BookSpread] {
-        calculateSpreads(albumId: albumId, stamps: stamps)
+        calculateSpreads(albumId: albumId, stamps: stamps, placements: placements)
     }
 
     private var totalSpreads: Int {
@@ -41,6 +42,7 @@ public struct StampBook3DRenderer: View {
         coverColor: Color,
         iconKey: String?,
         stamps: [BookStampItem],
+        placements: [PersistedStampPlacementData] = [],
         onStampClick: @escaping (String) -> Void = { _ in },
         onDismiss: @escaping () -> Void = {}
     ) {
@@ -51,6 +53,7 @@ public struct StampBook3DRenderer: View {
         self.coverColor = coverColor
         self.iconKey = iconKey
         self.stamps = stamps
+        self.placements = placements
         self.onStampClick = onStampClick
         self.onDismiss = onDismiss
         _stateMachine = StateObject(wrappedValue: PageTurnStateMachine(albumId: albumId))
@@ -568,6 +571,43 @@ public struct BookPageSurfaceView: View {
                         .font(.caption2)
                         .foregroundColor(MSColors.grey.opacity(0.3))
                 }
+            } else if !pageData.placements.isEmpty {
+                // Persisted Placement Layout (Custom Physical Stamp Placement)
+                GeometryReader { geo in
+                    let pageWidth = geo.size.width
+                    let pageHeight = geo.size.height
+                    let stampDict = Dictionary(pageData.stamps.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+                    let sortedPlacements = pageData.placements.sorted {
+                        if $0.zIndex != $1.zIndex { return $0.zIndex < $1.zIndex }
+                        return $0.id < $1.id
+                    }
+
+                    ForEach(sortedPlacements, id: \.id) { placement in
+                        if let stamp = stampDict[placement.stampId] {
+                            let baseWidth: CGFloat = 84 * CGFloat(placement.scale)
+                            let baseHeight: CGFloat = 104 * CGFloat(placement.scale)
+                            let posX = pageWidth * CGFloat(placement.x)
+                            let posY = pageHeight * CGFloat(placement.y)
+
+                            BookStampCellView(stamp: stamp, onClick: { onStampClick(stamp.id) })
+                                .frame(width: baseWidth, height: baseHeight)
+                                .rotationEffect(.degrees(placement.rotationDegrees))
+                                .position(x: posX, y: posY)
+                                .zIndex(Double(placement.zIndex))
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay(
+                    VStack {
+                        Spacer()
+                        let pageNumText = String(format: langManager.localized("book_page_number_format"), pageData.pageIndex + 1)
+                        Text(pageNumText)
+                            .font(.caption2.bold())
+                            .foregroundColor(MSColors.grey)
+                            .padding(.bottom, 4)
+                    }
+                )
             } else if pageData.stamps.isEmpty {
                 // Empty Album Page
                 Text(langManager.localized("book_empty_page_hint"))
@@ -576,7 +616,7 @@ public struct BookPageSurfaceView: View {
                     .multilineTextAlignment(.center)
                     .padding(16)
             } else {
-                // Stamps Grid
+                // Stamps Grid (2x2 grid fallback)
                 VStack(spacing: 6) {
                     VStack(spacing: 8) {
                         let rows = pageData.stamps.chunked(into: 2)
@@ -593,7 +633,7 @@ public struct BookPageSurfaceView: View {
                     }
                     .frame(maxHeight: .infinity)
 
-                    let pageNumText = String(format: langManager.localized("book_page_number_format"), pageData.pageIndex)
+                    let pageNumText = String(format: langManager.localized("book_page_number_format"), pageData.pageIndex + 1)
                     Text(pageNumText)
                         .font(.caption2.bold())
                         .foregroundColor(MSColors.grey)
