@@ -4,7 +4,7 @@ import UIKit
 #endif
 import shared
 
-// Sample album data model matching user's spec
+// Album data model with canonical identity
 struct AlbumItem: Identifiable {
     let id: String
     let title: String
@@ -12,20 +12,14 @@ struct AlbumItem: Identifiable {
     let progress: String
     let iconName: String
     let coverColor: Color
-    let stamps: [AlbumStampItem]
+    let stamps: [BookStampItem]
+    let curatorName: String
 }
-
-struct AlbumStampItem: Identifiable {
-    let id: String
-    let name: String
-    let imageUrl: String
-}
-
-
 
 struct CollectionScreenView: View {
     let repository: SharedMemoStampRepository
     @State private var selectedAlbum: AlbumItem? = nil
+    @ObservedObject private var langManager = AppLanguageManager.shared
 
     var cloudStamps: [StampItem] {
         (repository.stamps.value as? [StampItem]) ?? []
@@ -35,6 +29,16 @@ struct CollectionScreenView: View {
         (repository.collections.value as? [CollectionItem]) ?? []
     }
 
+    var currentUserName: String {
+        if let user = repository.currentUser.value as? UserProfile {
+            let display = user.displayName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            if !display.isEmpty { return display }
+            let uname = user.username.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            if !uname.isEmpty { return uname }
+        }
+        return "Collector"
+    }
+
     var albums: [AlbumItem] {
         let coverColors: [Color] = [
             Color(red: 0.62, green: 0.24, blue: 0.18),
@@ -42,21 +46,24 @@ struct CollectionScreenView: View {
             Color(red: 0.55, green: 0.43, blue: 0.39),
             Color(red: 0.22, green: 0.38, blue: 0.35)
         ]
-        let icons = ["airplane", "cup.and.saucer.fill", "building.columns.fill", "map.fill", "sparkles"]
+        let defaultIcons = ["travel", "cafe", "lifestyle", "special", "art"]
 
         if !roomCollections.isEmpty {
+            // Priority 1: Real Persisted Collections with Stable Canonical IDs
             return roomCollections.indices.map { index in
                 let col = roomCollections[index]
                 let matchingStamps = cloudStamps.filter { $0.collectionId == col.id }
                 let target = max(Int(col.targetCount), matchingStamps.count)
+                let icon = col.iconKey ?? defaultIcons[index % defaultIcons.count]
                 return AlbumItem(
                     id: col.id,
                     title: col.name,
-                    desc: col.description_ ?? "Bộ sưu tập tem kỷ niệm \(col.name)",
+                    desc: col.description_ ?? col.name,
                     progress: "\(matchingStamps.count)/\(target)",
-                    iconName: icons[index % icons.count],
+                    iconName: icon,
                     coverColor: coverColors[index % coverColors.count],
-                    stamps: matchingStamps.map { AlbumStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
+                    stamps: matchingStamps.map { BookStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) },
+                    curatorName: currentUserName
                 )
             }
         }
@@ -64,22 +71,30 @@ struct CollectionScreenView: View {
         if cloudStamps.isEmpty {
             return []
         }
+
+        // Fallback: Group by location ONLY when 0 persisted collections exist
+        // Deterministic fallback IDs across launches (no unstable album_0, album_1)
+        let defaultLoc = langManager.localized("book_legacy_default_location")
+        let descFormat = langManager.localized("book_legacy_desc_format")
+
         let grouped = Dictionary(grouping: cloudStamps) { stamp -> String in
             let loc = stamp.location ?? ""
-            return loc.isEmpty ? "Kỷ niệm chung" : loc
+            return loc.isEmpty ? defaultLoc : loc
         }
         let sortedKeys = grouped.keys.sorted()
         return sortedKeys.indices.map { index in
             let key = sortedKeys[index]
             let stampList = grouped[key] ?? []
+            let locHash = String(abs(key.hashValue), radix: 16)
             return AlbumItem(
-                id: "album_\(index)",
+                id: "loc_\(locHash)",
                 title: key,
-                desc: "Bộ sưu tập tem kỷ niệm tại \(key)",
+                desc: String(format: descFormat, key),
                 progress: "\(stampList.count)/\(stampList.count)",
-                iconName: icons[index % icons.count],
+                iconName: defaultIcons[index % defaultIcons.count],
                 coverColor: coverColors[index % coverColors.count],
-                stamps: stampList.map { AlbumStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
+                stamps: stampList.map { BookStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) },
+                curatorName: currentUserName
             )
         }
     }
@@ -89,10 +104,10 @@ struct CollectionScreenView: View {
             // Top App Bar
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("STAMP ALBUMS")
+                    Text(langManager.localized("book_shelf_title"))
                         .font(.title2.bold())
                         .foregroundColor(MSColors.ink)
-                    Text("Curated Memory Collections • Chạm để mở sách")
+                    Text(langManager.localized("book_shelf_subtitle"))
                         .font(.caption)
                         .foregroundColor(MSColors.grey)
                 }
@@ -110,10 +125,10 @@ struct CollectionScreenView: View {
                     Image(systemName: "books.vertical.fill")
                         .font(.system(size: 54))
                         .foregroundColor(MSColors.stamp.opacity(0.6))
-                    Text("Chưa có bộ sưu tập tem nào")
+                    Text(langManager.localized("book_shelf_empty_title"))
                         .font(.headline.bold())
                         .foregroundColor(MSColors.ink)
-                    Text("Tất cả tem dán từ cloud sẽ tự động nhóm thành album theo địa điểm tại đây!")
+                    Text(langManager.localized("book_shelf_empty_desc"))
                         .font(.subheadline)
                         .foregroundColor(MSColors.grey)
                         .multilineTextAlignment(.center)
@@ -121,7 +136,7 @@ struct CollectionScreenView: View {
                     Spacer()
                 }
             } else {
-                // PageView Carousel of Book Covers
+                // Carousel of Book Covers on Shelf
                 GeometryReader { geo in
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 20) {
@@ -141,7 +156,18 @@ struct CollectionScreenView: View {
         }
         .background(MSColors.paper.ignoresSafeArea())
         .fullScreenCover(item: $selectedAlbum) { album in
-            StampBookViewerModalView(album: album, onDismiss: { selectedAlbum = nil })
+            // 📖 Production 2.5D Two-Page Stamp Book Renderer (replaces old flat TabView)
+            StampBook3DRenderer(
+                albumId: album.id,
+                albumTitle: album.title,
+                albumDescription: album.desc,
+                curatorName: album.curatorName,
+                coverColor: album.coverColor,
+                iconKey: album.iconName,
+                stamps: album.stamps,
+                onStampClick: { _ in },
+                onDismiss: { selectedAlbum = nil }
+            )
         }
     }
 }
@@ -151,6 +177,7 @@ struct CollectionScreenView: View {
 // ==========================================
 struct BookCoverPreviewView: View {
     let album: AlbumItem
+    @ObservedObject private var langManager = AppLanguageManager.shared
 
     var body: some View {
         ZStack {
@@ -181,26 +208,27 @@ struct BookCoverPreviewView: View {
 
             // Gold Foil Border & Content
             VStack(spacing: 16) {
-                Image(systemName: album.iconName)
-                    .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(MSColors.gold)
+                MemoStampIcon(key: album.iconName, size: 48, color: MSColors.gold)
                     .padding(.top, 24)
 
                 Text(album.title)
                     .font(.system(size: 20, weight: .bold, design: .serif))
                     .foregroundColor(MSColors.gold)
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
 
                 Text(album.desc)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Color.white.opacity(0.85))
                     .multilineTextAlignment(.center)
+                    .lineLimit(3)
                     .padding(.horizontal, 8)
 
                 Spacer()
 
                 // Progress Badge Pill
-                Text("\(album.progress) collected")
+                let collectedText = String(format: langManager.localized("book_shelf_collected_format"), album.progress)
+                Text(collectedText)
                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                     .foregroundColor(MSColors.gold)
                     .padding(.horizontal, 14)
@@ -221,270 +249,6 @@ struct BookCoverPreviewView: View {
                     .padding(.trailing, 16)
                     .padding(.vertical, 16)
             )
-        }
-    }
-}
-
-// ==========================================
-// 📖 MÀN HÌNH MỞ SÁCH LẬT TỪNG TRANG TEM (STAMP BOOK VIEWER)
-// ==========================================
-struct StampBookViewerModalView: View {
-    let album: AlbumItem
-    let onDismiss: () -> Void
-
-    @State private var currentPage: Int = 0
-
-    var totalPages: Int {
-        let stampPages = Int(ceil(Double(album.stamps.count) / 4.0))
-        return max(1, stampPages) + 1 // +1 for Intro Page
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: onDismiss) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .font(.headline.bold())
-                    .foregroundColor(MSColors.gold)
-                }
-
-                Spacer()
-
-                Text(album.title)
-                    .font(.headline.bold())
-                    .foregroundColor(MSColors.gold)
-
-                Spacer()
-
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(MSColors.gold.opacity(0.7))
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 12)
-
-            // Book Canvas
-            GeometryReader { geo in
-                TabView(selection: $currentPage) {
-                    ForEach(0..<totalPages, id: \.self) { pageIndex in
-                        BookPageView(pageIndex: pageIndex, totalPages: totalPages, album: album)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .tag(pageIndex)
-                    }
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            }
-
-            // Bottom Navigation Bar
-            SafeAreaView {
-                HStack(spacing: 24) {
-                    Button(action: {
-                        if currentPage > 0 {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                currentPage -= 1
-                            }
-                        }
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(currentPage > 0 ? MSColors.gold : Color.gray.opacity(0.4))
-                            .padding(10)
-                            .background(Color.white.opacity(0.08))
-                            .clipShape(Circle())
-                    }
-                    .disabled(currentPage == 0)
-
-                    Text("Trang \(currentPage + 1) / \(totalPages)")
-                        .font(.system(size: 14, weight: .bold, design: .serif))
-                        .foregroundColor(MSColors.gold)
-
-                    Button(action: {
-                        if currentPage < totalPages - 1 {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                currentPage += 1
-                            }
-                        }
-                    }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(currentPage < totalPages - 1 ? MSColors.gold : Color.gray.opacity(0.4))
-                            .padding(10)
-                            .background(Color.white.opacity(0.08))
-                            .clipShape(Circle())
-                    }
-                    .disabled(currentPage == totalPages - 1)
-                }
-                .padding(.vertical, 12)
-            }
-        }
-        .background(Color(red: 0.17, green: 0.14, blue: 0.13).ignoresSafeArea()) // Dark Wood #2C2421
-    }
-}
-
-// Single Book Page
-struct BookPageView: View {
-    let pageIndex: Int
-    let totalPages: Int
-    let album: AlbumItem
-
-    var body: some View {
-        ZStack {
-            // Book Page Cream Paper Base
-            RoundedRectangle(cornerRadius: 12)
-                .fill(MSColors.creamCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(MSColors.gold.opacity(0.4), lineWidth: 1.5)
-                )
-                .shadow(color: Color.black.opacity(0.45), radius: 16, x: 0, y: 8)
-
-            // Book Spine Fold Shadow on Left
-            HStack {
-                LinearGradient(
-                    colors: [Color.black.opacity(0.22), Color.clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: 18)
-                Spacer()
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-
-            // Page Content
-            VStack {
-                if pageIndex == 0 {
-                    // Page 1: Intro Page
-                    VStack(spacing: 16) {
-                        Spacer()
-                        Image(systemName: album.iconName)
-                            .font(.system(size: 44, weight: .bold))
-                            .foregroundColor(MSColors.stamp)
-
-                        Text(album.title)
-                            .font(.system(size: 22, weight: .bold, design: .serif))
-                            .foregroundColor(MSColors.ink)
-
-                        Text(album.desc)
-                            .font(.system(size: 12, weight: .medium))
-                            .italic()
-                            .foregroundColor(MSColors.grey)
-                            .multilineTextAlignment(.center)
-
-                        Divider()
-                            .padding(.horizontal, 32)
-                            .padding(.vertical, 8)
-
-                        Text("“Từng con tem lưu giữ một mảnh ký ức nguyên vẹn theo dòng thời gian.”")
-                            .font(.system(size: 12, weight: .medium, design: .serif))
-                            .foregroundColor(MSColors.ink)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 24)
-
-                        Spacer()
-
-                        HStack(spacing: 6) {
-                            Text("Vuốt sang phải để mở tem")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(MSColors.grey)
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(MSColors.grey)
-                        }
-                        .padding(.bottom, 20)
-                    }
-                    .padding(24)
-                } else {
-                    // Page 2+: 2x2 Stamp Grid
-                    let startIndex = (pageIndex - 1) * 4
-                    let pageStamps = Array(album.stamps.dropFirst(startIndex).prefix(4))
-
-                    let columns = [
-                        GridItem(.flexible(), spacing: 14),
-                        GridItem(.flexible(), spacing: 14)
-                    ]
-
-                    LazyVGrid(columns: columns, spacing: 14) {
-                        ForEach(0..<4, id: \.self) { slotIndex in
-                            if slotIndex < pageStamps.count {
-                                let stamp = pageStamps[slotIndex]
-                                StampBookSlotView(stamp: stamp)
-                            } else {
-                                EmptyStampSlotView()
-                            }
-                        }
-                    }
-                    .padding(20)
-                }
-            }
-        }
-    }
-}
-
-// Unlocked Stamp Slot
-struct StampBookSlotView: View {
-    let stamp: AlbumStampItem
-
-    var body: some View {
-        VStack(spacing: 6) {
-            MemoStampImageView(urlString: stamp.imageUrl, contentMode: .fill) {
-                Color.gray.opacity(0.2)
-            }
-            .frame(height: 100)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-            )
-
-            Text(stamp.name)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(MSColors.ink)
-                .lineLimit(1)
-        }
-        .padding(8)
-        .background(Color.white)
-        .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-    }
-}
-
-// Locked Stamp Slot
-struct EmptyStampSlotView: View {
-    var body: some View {
-        VStack {
-            Spacer()
-            Image(systemName: "lock")
-                .font(.system(size: 22))
-                .foregroundColor(MSColors.gold.opacity(0.7))
-            Spacer()
-        }
-        .frame(height: 126)
-        .frame(maxWidth: .infinity)
-        .background(MSColors.creamCard.opacity(0.6))
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(MSColors.gold.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [4]))
-        )
-    }
-}
-
-// Safe Area Helper View
-struct SafeAreaView<Content: View>: View {
-    let content: () -> Content
-    init(@ViewBuilder content: @escaping () -> Content) {
-        self.content = content
-    }
-    var body: some View {
-        VStack(spacing: 0) {
-            content()
         }
     }
 }
@@ -514,7 +278,7 @@ struct BookCoverShape: Shape {
         path.addLine(to: CGPoint(x: 0, y: topLeading))
         path.addQuadCurve(to: CGPoint(x: topLeading, y: 0), control: CGPoint(x: 0, y: 0))
 
+        path.closeSubpath()
         return path
     }
 }
-

@@ -1,75 +1,56 @@
 package com.mipastudio.memostamp.feature.collection
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.AccountBalance
-import androidx.compose.material.icons.outlined.FlightTakeoff
-import androidx.compose.material.icons.outlined.LocalCafe
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import coil.compose.rememberAsyncImagePainter
-import com.mipastudio.memostamp.ui.theme.*
-import com.mipastudio.memostamp.data.local.StampEntity
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.data.repository.StampRepository
-import kotlinx.coroutines.launch
-import kotlin.math.ceil
+import com.mipastudio.memostamp.data.repository.UserAuthRepository
+import com.mipastudio.memostamp.feature.collection.book.AlbumStampData
+import com.mipastudio.memostamp.feature.collection.book.StampBook3DRenderer
+import com.mipastudio.memostamp.ui.icon.MemoStampIcons
+import com.mipastudio.memostamp.ui.theme.*
 
 // Color system for book covers
-val AccentGold = Color(0xFFD1A559)
 val VintageLeatherRed = Color(0xFF9E3E2F)
 val ClassicCoffeeBrown = Color(0xFF6D4C41)
 val ThangLongEarth = Color(0xFF8D6E63)
+val PineForestGreen = Color(0xFF385750)
 val DarkWoodBg = Color(0xFF2C2421)
 val BorderColor = Color(0xFFE8E2D9)
 val CreamCardColor = Color(0xFFF4EBDD)
 
-data class AlbumStampData(
-    val id: String,
-    val name: String,
-    val imageUrl: String
-)
-
 data class AlbumData(
     val id: String,
+    val ownerId: String,
     val title: String,
     val desc: String,
     val progress: String,
-    val icon: ImageVector,
+    val iconKey: String?,
     val coverColor: Color,
-    val stamps: List<AlbumStampData>
+    val stamps: List<AlbumStampData>,
+    val privacy: String = "FRIENDS",
+    val targetCount: Int = 12
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,28 +62,75 @@ fun CollectionScreen(
     var selectedAlbum by remember { mutableStateOf<AlbumData?>(null) }
     val context = LocalContext.current
     val stampRepo = remember(context) { StampRepository.getInstance(context) }
+    val authRepo = remember(context) { UserAuthRepository.getInstance(context) }
+    val currentUser by authRepo.currentUser.collectAsState()
+
     val cloudStamps by stampRepo.observeStamps().collectAsState(initial = emptyList())
+    val persistedCollections by stampRepo.observeCollections().collectAsState(initial = emptyList())
 
-    val albumsList: List<AlbumData> = remember(cloudStamps) {
-        if (cloudStamps.isEmpty()) {
-            emptyList()
-        } else {
-            val grouped: Map<String, List<StampEntity>> = cloudStamps.groupBy { stamp ->
-                if (stamp.location.isNullOrEmpty()) "Kỷ niệm chung" else stamp.location!!
-            }
-            val coverColors = listOf(VintageLeatherRed, ClassicCoffeeBrown, ThangLongEarth)
-            val icons = listOf(Icons.Outlined.FlightTakeoff, Icons.Outlined.LocalCafe, Icons.Outlined.AccountBalance)
+    // Ensure defaults exist for current user
+    LaunchedEffect(currentUser.userId) {
+        if (currentUser.userId.isNotBlank()) {
+            stampRepo.ensureDefaultCollections()
+        }
+    }
 
-            grouped.entries.mapIndexed { index, entry ->
+    val defaultLocationName = stringResource(R.string.book_legacy_default_location)
+    val legacyDescTemplate = stringResource(R.string.book_legacy_desc_format)
+    val coverColors = listOf(VintageLeatherRed, ClassicCoffeeBrown, ThangLongEarth, PineForestGreen)
+
+    val albumsList: List<AlbumData> = remember(persistedCollections, cloudStamps, defaultLocationName, legacyDescTemplate) {
+        if (persistedCollections.isNotEmpty()) {
+            // Priority 1: Real Persisted Collections with Stable Canonical IDs
+            persistedCollections.mapIndexed { index, col ->
+                val matchingStamps = cloudStamps.filter { it.collectionId == col.id }
+                val target = maxOf(col.targetCount, matchingStamps.size)
                 AlbumData(
-                    id = "album_$index",
-                    title = entry.key,
-                    desc = "Bộ sưu tập tem kỷ niệm tại ${entry.key}",
-                    progress = "${entry.value.size}/${entry.value.size}",
-                    icon = icons[index % icons.size],
+                    id = col.id,
+                    ownerId = col.ownerId,
+                    title = col.name,
+                    desc = col.description ?: col.name,
+                    progress = "${matchingStamps.size}/$target",
+                    iconKey = col.resolvedIconKey(),
                     coverColor = coverColors[index % coverColors.size],
-                    stamps = entry.value.map { stamp -> AlbumStampData(stamp.id, stamp.title, stamp.stampImagePath) }
+                    stamps = matchingStamps.map { AlbumStampData(it.id, it.title, it.stampImagePath) },
+                    privacy = col.privacy,
+                    targetCount = col.targetCount
                 )
+            }
+        } else if (cloudStamps.isNotEmpty()) {
+            // Fallback: Group by location ONLY when 0 persisted collections exist
+            // Fallback IDs are deterministic across launches (no unstable album_0, album_1)
+            val grouped = cloudStamps.groupBy { stamp ->
+                if (stamp.location.isNullOrBlank()) defaultLocationName else stamp.location!!
+            }
+            val sortedKeys = grouped.keys.sorted()
+            sortedKeys.mapIndexed { index, key ->
+                val stampsForLocation = grouped[key] ?: emptyList()
+                val locHash = (key.hashCode().toLong() and 0xFFFFFFFFL).toString(16)
+                AlbumData(
+                    id = "loc_$locHash",
+                    ownerId = currentUser.userId,
+                    title = key,
+                    desc = String.format(legacyDescTemplate, key),
+                    progress = "${stampsForLocation.size}/${stampsForLocation.size}",
+                    iconKey = "travel",
+                    coverColor = coverColors[index % coverColors.size],
+                    stamps = stampsForLocation.map { AlbumStampData(it.id, it.title, it.stampImagePath) },
+                    privacy = "FRIENDS",
+                    targetCount = stampsForLocation.size
+                )
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    LaunchedEffect(initialCollectionId, albumsList) {
+        if (initialCollectionId != null && selectedAlbum == null) {
+            val found = albumsList.find { it.id == initialCollectionId }
+            if (found != null) {
+                selectedAlbum = found
             }
         }
     }
@@ -116,13 +144,13 @@ fun CollectionScreen(
                 title = {
                     Column {
                         Text(
-                            "STAMP ALBUMS",
+                            text = stringResource(R.string.book_shelf_title),
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryText
                         )
                         Text(
-                            "Curated Memory Collections • Chạm để mở sách",
+                            text = stringResource(R.string.book_shelf_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = SecondaryText
                         )
@@ -145,14 +173,14 @@ fun CollectionScreen(
                     modifier = Modifier.padding(24.dp)
                 ) {
                     Text(
-                        text = "Chưa có bộ sưu tập tem nào",
+                        text = stringResource(R.string.book_shelf_empty_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryText
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Hãy chụp và lưu tem từ máy ảnh để tự động tạo bộ sưu tập theo địa điểm!",
+                        text = stringResource(R.string.book_shelf_empty_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = SecondaryText,
                         textAlign = TextAlign.Center
@@ -175,16 +203,28 @@ fun CollectionScreen(
         }
     }
 
+    // 📖 Production 3D Stamp Book Renderer (replaces old flat viewer)
     selectedAlbum?.let { album ->
-        StampBookViewerModal(
-            album = album,
+        val curator = currentUser.displayName.takeIf { it.isNotBlank() }
+            ?: currentUser.username.takeIf { it.isNotBlank() }
+            ?: "Collector"
+
+        StampBook3DRenderer(
+            albumId = album.id,
+            albumTitle = album.title,
+            albumDescription = album.desc,
+            curatorName = curator,
+            coverColor = album.coverColor,
+            iconKey = album.iconKey,
+            stamps = album.stamps,
+            onStampClick = onStampClick,
             onDismiss = { selectedAlbum = null }
         )
     }
 }
 
 // ==========================================
-// 📕 BÌA CUỐN SÁCH NGOÀI DANH SÁCH (COVER PREVIEW)
+// 📕 BÌA CUỐN SÁCH NGOÀI GIÁ SÁCH (COVER PREVIEW)
 // ==========================================
 @Composable
 fun BookCoverPreview(
@@ -217,7 +257,7 @@ fun BookCoverPreview(
                 )
         )
 
-        // Họa tiết dập nổi mạ vàng (Gold Foil Border)
+        // Họa tiết dập nổi viền mạ vàng (Gold Foil Border)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -232,7 +272,7 @@ fun BookCoverPreview(
                 modifier = Modifier.fillMaxSize()
             ) {
                 Icon(
-                    item.icon,
+                    imageVector = MemoStampIcons.resolve(item.iconKey),
                     contentDescription = null,
                     tint = AccentGold,
                     modifier = Modifier.size(52.dp)
@@ -244,14 +284,18 @@ fun BookCoverPreview(
                     color = AccentGold,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp
+                    letterSpacing = 1.2.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = item.desc,
                     textAlign = TextAlign.Center,
                     color = Color.White.copy(alpha = 0.85f),
-                    fontSize = 11.sp
+                    fontSize = 11.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Box(
@@ -262,7 +306,7 @@ fun BookCoverPreview(
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "${item.progress} collected",
+                        text = stringResource(R.string.book_shelf_collected_format, item.progress),
                         color = AccentGold,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
@@ -270,242 +314,5 @@ fun BookCoverPreview(
                 }
             }
         }
-    }
-}
-
-// ==========================================
-// 📖 MÀN HÌNH MỞ SÁCH LẬT TỪNG TRANG TEM (STAMP BOOK VIEWER)
-// ==========================================
-@Composable
-fun StampBookViewerModal(
-    album: AlbumData,
-    onDismiss: () -> Unit
-) {
-    val totalPages = maxOf(1, ceil(album.stamps.size / 4f).toInt()) + 1
-    val pagerState = rememberPagerState(pageCount = { totalPages })
-    val scope = rememberCoroutineScope()
-
-    Dialog(
-        onDismissRequest = { onDismiss() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = DarkWoodBg
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .systemBarsPadding()
-            ) {
-                // Transparent Top Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = album.title,
-                        color = AccentGold,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
-                    IconButton(onClick = { onDismiss() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = AccentGold)
-                    }
-                }
-
-                // PageView Book Content
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxSize()
-                    ) { pageIndex ->
-                        BookPageContent(pageIndex = pageIndex, album = album)
-                    }
-                }
-
-                // Bottom Navigation Bar
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = {
-                            if (pagerState.currentPage > 0) {
-                                scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
-                            }
-                        },
-                        enabled = pagerState.currentPage > 0
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = "Previous",
-                            tint = if (pagerState.currentPage > 0) AccentGold else AccentGold.copy(alpha = 0.3f)
-                        )
-                    }
-                    Text(
-                        text = "Trang ${pagerState.currentPage + 1} / $totalPages",
-                        color = AccentGold,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    IconButton(
-                        onClick = {
-                            if (pagerState.currentPage < totalPages - 1) {
-                                scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                            }
-                        },
-                        enabled = pagerState.currentPage < totalPages - 1
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.ArrowForward,
-                            contentDescription = "Next",
-                            tint = if (pagerState.currentPage < totalPages - 1) AccentGold else AccentGold.copy(alpha = 0.3f)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun BookPageContent(
-    pageIndex: Int,
-    album: AlbumData
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .shadow(16.dp, RoundedCornerShape(12.dp))
-            .background(WarmPaperBg, RoundedCornerShape(12.dp))
-            .border(1.5.dp, BorderColor, RoundedCornerShape(12.dp))
-    ) {
-        // Spine Fold Gradient on Left
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(18.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.18f), Color.Transparent)
-                    )
-                )
-        )
-
-        if (pageIndex == 0) {
-            // Page 1: Intro Page
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = 24.dp, top = 20.dp, end = 20.dp, bottom = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(album.icon, contentDescription = null, tint = AccentRed, modifier = Modifier.size(48.dp))
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(album.title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = PrimaryText)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(album.desc, color = SecondaryText, fontStyle = FontStyle.Italic, fontSize = 12.sp)
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider(color = BorderColor, modifier = Modifier.padding(horizontal = 24.dp))
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "“Từng con tem lưu giữ một mảnh ký ức nguyên vẹn theo dòng thời gian.”",
-                    textAlign = TextAlign.Center,
-                    color = PrimaryText,
-                    fontSize = 12.sp,
-                    fontStyle = FontStyle.Italic,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Vuốt sang phải để mở tem", color = SecondaryText, fontSize = 11.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null, tint = SecondaryText, modifier = Modifier.size(12.dp))
-                }
-            }
-        } else {
-            // Page 2+: 2x2 Grid
-            val startIndex = (pageIndex - 1) * 4
-            val pageStamps = album.stamps.drop(startIndex).take(4)
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(start = 28.dp, top = 20.dp, end = 20.dp, bottom = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items((0..3).toList()) { slotIndex ->
-                    if (slotIndex < pageStamps.size) {
-                        val stamp = pageStamps[slotIndex]
-                        StampSlotItem(stamp = stamp)
-                    } else {
-                        EmptySlotItem()
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StampSlotItem(stamp: AlbumStampData) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(0.82f)
-            .shadow(4.dp, RoundedCornerShape(6.dp))
-            .background(Color.White, RoundedCornerShape(6.dp))
-            .border(1.dp, BorderColor, RoundedCornerShape(6.dp))
-            .padding(6.dp)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = rememberAsyncImagePainter(stamp.imageUrl),
-                contentDescription = stamp.name,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                stamp.name,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryText,
-                maxLines = 1
-            )
-        }
-    }
-}
-
-@Composable
-fun EmptySlotItem() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(0.82f)
-            .background(CreamCardColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-            .border(1.dp, BorderColor, RoundedCornerShape(8.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(Icons.Outlined.Lock, contentDescription = "Locked", tint = BorderColor, modifier = Modifier.size(24.dp))
     }
 }
