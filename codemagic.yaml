@@ -41,6 +41,7 @@ workflows:
         XCODE_PROJECT: "iosApp/iosApp.xcodeproj"
         XCODE_SCHEME: "iosApp"
         BUNDLE_ID: "com.mipastudio.memostamp"
+        DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM:-${APNS_TEAM_ID:-${APPLE_TEAM_ID:-""}}}
       xcode: latest
       cocoapods: default
     scripts:
@@ -54,24 +55,60 @@ workflows:
           # Initialize temporary build keychain
           keychain initialize
 
-          # If App Store Connect API credentials are present, fetch or generate signing files
+          # 1. Decode provisioning profile if provided via Codemagic environment (CM_PROVISIONING_PROFILE)
+          if [ -n "${CM_PROVISIONING_PROFILE:-}" ]; then
+            echo "Installing provisioning profile from CM_PROVISIONING_PROFILE..."
+            PROFILES_HOME="$HOME/Library/MobileDevice/Provisioning Profiles"
+            mkdir -p "$PROFILES_HOME"
+            echo "$CM_PROVISIONING_PROFILE" | base64 --decode > "$PROFILES_HOME/$(uuidgen).mobileprovision"
+          fi
+
+          # 2. Decode & import certificate if provided via Codemagic environment (CM_CERTIFICATE)
+          if [ -n "${CM_CERTIFICATE:-}" ]; then
+            echo "Importing certificate from CM_CERTIFICATE into keychain..."
+            echo "$CM_CERTIFICATE" | base64 --decode > /tmp/certificate.p12
+            keychain add-certificates --certificate /tmp/certificate.p12 ${CM_CERTIFICATE_PASSWORD:+--certificate-password "$CM_CERTIFICATE_PASSWORD"} || true
+          fi
+
+          # 3. If App Store Connect API credentials are present, fetch or generate signing files
           if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ] && [ -n "${APP_STORE_CONNECT_KEY_IDENTIFIER:-}" ] && [ -n "${APP_STORE_CONNECT_ISSUER_ID:-}" ]; then
             echo "Fetching signing files via App Store Connect API..."
-            app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create || true
+            app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create || {
+              echo "[WARNING] app-store-connect fetch-signing-files returned non-zero exit code. Checking if manual profiles exist..."
+            }
           fi
 
           # Add certificates to keychain from environment (CM_CERTIFICATE / downloaded certs)
           keychain add-certificates || true
 
-          # Apply matching profiles and certificates to Xcode project
-          xcode-project use-profiles
+          # Apply matching profiles and certificates to Xcode project and export options plist
+          xcode-project use-profiles --project "$XCODE_PROJECT" --export-options-plist /tmp/export_options.plist --warn-only || true
 
       - name: Build iOS App Store Archive (.xcarchive)
         script: |
           # Overrides MARKETING_VERSION and CURRENT_PROJECT_VERSION externally without source edits
           TARGET_VERSION="${MEMOSTAMP_VERSION_NAME:-1.0}"
           TARGET_BUILD="${MEMOSTAMP_VERSION_CODE:-1}"
+          DEV_TEAM="${DEVELOPMENT_TEAM:-${APNS_TEAM_ID:-${APPLE_TEAM_ID:-}}}"
           echo "Archiving Release for generic/platform=iOS with version $TARGET_VERSION ($TARGET_BUILD)..."
+
+          # Inspect runner for available signing identities and provisioning profiles
+          VALID_IDENTITIES=$(security find-identity -v -p codesigning 2>/dev/null | grep -E "^[[:space:]]*[0-9]+\)" | wc -l || echo "0")
+          VALID_PROFILES=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" -name "*.mobileprovision" -o -name "*.provisionprofile" 2>/dev/null | wc -l || echo "0")
+
+          EXTRA_ARCHIVE_ARGS=()
+          if [ -n "$DEV_TEAM" ]; then
+            EXTRA_ARCHIVE_ARGS+=("DEVELOPMENT_TEAM=$DEV_TEAM")
+          fi
+
+          if [ "$VALID_IDENTITIES" -gt 0 ] && [ "$VALID_PROFILES" -gt 0 ]; then
+            echo "Found $VALID_IDENTITIES signing identities and $VALID_PROFILES provisioning profiles. Archiving with Manual code signing..."
+            EXTRA_ARCHIVE_ARGS+=("CODE_SIGN_STYLE=Manual")
+          else
+            echo "[WARNING] No code signing identity or provisioning profile found in runner environment."
+            echo "Archiving with CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_STYLE=Manual (signing will occur during exportArchive when credentials are present)."
+            EXTRA_ARCHIVE_ARGS+=("CODE_SIGNING_ALLOWED=NO" "CODE_SIGNING_REQUIRED=NO" "CODE_SIGN_STYLE=Manual")
+          fi
 
           xcodebuild archive \
             -project "$XCODE_PROJECT" \
@@ -79,21 +116,31 @@ workflows:
             -destination "generic/platform=iOS" \
             -archivePath build/ios/xcarchive/iosApp.xcarchive \
             MARKETING_VERSION="$TARGET_VERSION" \
-            CURRENT_PROJECT_VERSION="$TARGET_BUILD"
+            CURRENT_PROJECT_VERSION="$TARGET_BUILD" \
+            "${EXTRA_ARCHIVE_ARGS[@]}"
 
       - name: Export Signed IPA for App Store / TestFlight
         script: |
+          EXPORT_OPTIONS="iosApp/ExportOptions-AppStore.plist"
+          if [ -f "/tmp/export_options.plist" ]; then
+            echo "Using dynamic export options generated by xcode-project use-profiles (/tmp/export_options.plist)"
+            EXPORT_OPTIONS="/tmp/export_options.plist"
+          fi
+
           xcodebuild -exportArchive \
             -archivePath build/ios/xcarchive/iosApp.xcarchive \
-            -exportOptionsPlist iosApp/ExportOptions-AppStore.plist \
+            -exportOptionsPlist "$EXPORT_OPTIONS" \
             -exportPath build/ios/ipa
 
       - name: Verify Signed IPA & APNs Production Entitlement
         script: |
           set -euo pipefail
-          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -n 1)
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" 2>/dev/null | head -n 1 || true)
           if [ -z "$IPA_PATH" ]; then
             echo "[ERROR] No exported IPA found in build/ios/ipa!"
+            echo "To produce a signed release candidate IPA, provide Apple distribution signing credentials:"
+            echo "  - Codemagic secret group 'app_store_credentials': APP_STORE_CONNECT_PRIVATE_KEY, APP_STORE_CONNECT_KEY_IDENTIFIER, APP_STORE_CONNECT_ISSUER_ID"
+            echo "  - OR Codemagic UI identities: CM_CERTIFICATE, CM_CERTIFICATE_PASSWORD, CM_PROVISIONING_PROFILE"
             exit 1
           fi
           echo "Inspecting exported IPA: $IPA_PATH"
