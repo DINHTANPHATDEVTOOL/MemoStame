@@ -148,10 +148,18 @@ class ReleaseCandidateWiringStaticTest {
             yamlContent.contains("xcodebuild -exportArchive"))
         assertTrue("Must verify aps-environment production in signed IPA",
             yamlContent.contains("aps-environment"))
+        assertTrue("Must configure App Store Connect API publishing with api_key",
+            yamlContent.contains("api_key: \$APP_STORE_CONNECT_PRIVATE_KEY"))
+        assertTrue("Must configure App Store Connect API publishing with key_id",
+            yamlContent.contains("key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER"))
+        assertTrue("Must configure App Store Connect API publishing with issuer_id",
+            yamlContent.contains("issuer_id: \$APP_STORE_CONNECT_ISSUER_ID"))
+        assertFalse("Must not use mixed auth: integration without integrations section",
+            yamlContent.contains("auth: integration"))
     }
 
     @Test
-    fun testBackendMigrationsComplete001To011() {
+    fun testBackendMigrationsComplete001To013() {
         val migrationsDir = File(workspaceRoot, "supabase/migrations")
         assertTrue("supabase/migrations directory must exist", migrationsDir.exists())
 
@@ -166,7 +174,9 @@ class ReleaseCandidateWiringStaticTest {
             "008_block_privacy_oracle_hotfix.sql",
             "009_cloud_stamp_trade.sql",
             "010_social_abuse_rate_limits.sql",
-            "011_maps_grounding_rate_limits.sql"
+            "011_maps_grounding_rate_limits.sql",
+            "012_album_layout_persistence.sql",
+            "013_album_page_lifecycle.sql"
         )
 
         for (m in expectedMigrations) {

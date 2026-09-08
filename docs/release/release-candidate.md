@@ -89,6 +89,15 @@ MemoStamp uses **Codemagic CI/CD** (or direct Xcode execution) for production iO
      ```bash
      codesign -d --entitlements :- /path/to/extracted/iosApp.app | grep -A 1 'aps-environment' | grep 'production'
      ```
+   - Publishes to TestFlight via App Store Connect API keys configured in `app_store_credentials` secret group:
+     ```yaml
+     publishing:
+       app_store_connect:
+         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+         submit_to_testflight: true
+     ```
 
 ---
 
@@ -101,8 +110,8 @@ MemoStamp uses **Codemagic CI/CD** (or direct Xcode execution) for production iO
 | Supabase URL & Anon Key | **Client-Safe** | Hardcoded or injected via `.env` / BuildConfig |
 | Google Services config (`google-services.json`) | **External Deployment** | Placed in `androidApp/` on release machine (git-ignored) |
 | Android Upload Keystore (`.jks`) & Passwords | **STRICT SECRET** | Secret manager / CI environment variables |
-| Apple Distribution Certificate (`.p12`) & Provisioning Profile | **STRICT SECRET** | Codemagic secret groups |
-| App Store Connect API Key | **STRICT SECRET** | Codemagic secret groups |
+| Apple Distribution Certificate (`.p12`) & Provisioning Profile | **STRICT SECRET** | Codemagic secret group `app_store_credentials` |
+| App Store Connect API Key (`APP_STORE_CONNECT_PRIVATE_KEY`, `APP_STORE_CONNECT_KEY_IDENTIFIER`, `APP_STORE_CONNECT_ISSUER_ID`) | **STRICT SECRET** | Codemagic secret group `app_store_credentials` (Protected) |
 | FCM Service Account JSON | **STRICT SECRET** | Supabase Edge Functions secret (`FCM_SERVICE_ACCOUNT_JSON`) |
 | APNs Auth Key (`.p8`) | **STRICT SECRET** | Supabase Edge Functions secrets (`APNS_PRIVATE_KEY`, `APNS_KEY_ID`, `APNS_TEAM_ID`) |
 | Supabase `service_role` key | **STRICT SECRET** | Never in mobile code; hosted Supabase internal only |

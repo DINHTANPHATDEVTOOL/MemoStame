@@ -51,7 +51,19 @@ workflows:
 
       - name: Set up code signing settings on Xcode project
         script: |
-          # Use Codemagic automatic code signing or external profile management
+          # Initialize temporary build keychain
+          keychain initialize
+
+          # If App Store Connect API credentials are present, fetch or generate signing files
+          if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ] && [ -n "${APP_STORE_CONNECT_KEY_IDENTIFIER:-}" ] && [ -n "${APP_STORE_CONNECT_ISSUER_ID:-}" ]; then
+            echo "Fetching signing files via App Store Connect API..."
+            app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create || true
+          fi
+
+          # Add certificates to keychain from environment (CM_CERTIFICATE / downloaded certs)
+          keychain add-certificates || true
+
+          # Apply matching profiles and certificates to Xcode project
           xcode-project use-profiles
 
       - name: Build iOS App Store Archive (.xcarchive)
@@ -110,5 +122,7 @@ workflows:
       - build/ios/xcarchive/*.xcarchive
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true

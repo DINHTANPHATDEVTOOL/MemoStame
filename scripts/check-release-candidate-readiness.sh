@@ -178,6 +178,17 @@ else
     EXIT_CODE=1
 fi
 
+# Codemagic App Store Connect Publishing & Authentication Consistency (#86)
+if grep -q 'api_key: \$APP_STORE_CONNECT_PRIVATE_KEY' codemagic.yaml && \
+   grep -q 'key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER' codemagic.yaml && \
+   grep -q 'issuer_id: \$APP_STORE_CONNECT_ISSUER_ID' codemagic.yaml && \
+   ! grep -q 'auth: integration' codemagic.yaml; then
+    echo "  [PASS] Codemagic App Store Connect publishing configured with consistent secret group variables (no mixed auth)"
+else
+    echo "  [FAIL] Codemagic App Store Connect publishing configuration invalid or uses mixed auth mode"
+    EXIT_CODE=1
+fi
+
 # iOS External Apple Distribution Credentials Check
 if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ] || [ -n "${CERTIFICATE_PRIVATE_KEY:-}" ]; then
     echo "  [PASS] iOS distribution signing credentials provided in environment"
