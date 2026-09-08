@@ -189,6 +189,16 @@ else
     EXIT_CODE=1
 fi
 
+# ExportOptions.plist Dynamic Resolution & Dictionary Contract (#89)
+if [ -f "scripts/resolve_ios_export_options.py" ] && \
+   grep -q "resolve_ios_export_options.py" codemagic.yaml && \
+   python3 scripts/tests/test_resolve_ios_export_options.py >/dev/null 2>&1; then
+    echo "  [PASS] ExportOptions dynamic resolution & provisioningProfiles dictionary contract verified (#89)"
+else
+    echo "  [FAIL] ExportOptions dynamic resolution or provisioningProfiles dictionary contract invalid"
+    EXIT_CODE=1
+fi
+
 # iOS External Apple Distribution Credentials Check
 if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ] || [ -n "${CERTIFICATE_PRIVATE_KEY:-}" ]; then
     echo "  [PASS] iOS distribution signing credentials provided in environment"
