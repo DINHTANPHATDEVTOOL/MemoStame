@@ -453,6 +453,13 @@ public class PageTurnStateMachine: ObservableObject {
         interactionLocked = false
     }
 
+    public func goToSpread(_ spreadIndex: Int) {
+        currentSpreadIndex = max(0, spreadIndex)
+        turnProgress = 0.0
+        turnDirection = .none
+        interactionLocked = false
+    }
+
     public func reset() {
         bookState = .closed
         currentSpreadIndex = 0
