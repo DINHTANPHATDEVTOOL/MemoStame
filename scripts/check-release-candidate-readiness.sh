@@ -201,7 +201,7 @@ fi
 echo ""
 echo "[CHECK 4] Verifying hosted Supabase backend migrations & Edge Functions contracts..."
 
-# Migrations 001 through 011
+# Migrations 001 through 013
 MIGRATIONS=(
     "001_auth_social_rls.sql"
     "002_schema_contract_and_rls_hardening.sql"
@@ -214,6 +214,8 @@ MIGRATIONS=(
     "009_cloud_stamp_trade.sql"
     "010_social_abuse_rate_limits.sql"
     "011_maps_grounding_rate_limits.sql"
+    "012_album_layout_persistence.sql"
+    "013_album_page_lifecycle.sql"
 )
 MISSING_MIGRATIONS=0
 for MIG in "${MIGRATIONS[@]}"; do
@@ -223,7 +225,7 @@ for MIG in "${MIGRATIONS[@]}"; do
     fi
 done
 if [ "$MISSING_MIGRATIONS" -eq 0 ]; then
-    echo "  [PASS] All 11 required database migrations present (001 through 011)"
+    echo "  [PASS] All 13 required database migrations present (001 through 013)"
 else
     EXIT_CODE=1
 fi
