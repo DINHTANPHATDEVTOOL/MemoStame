@@ -230,9 +230,9 @@ class AlbumLayoutRepository(
 
         // Ensure page exists locally
         val existingPages = albumLayoutDao.getPages(ownerId, albumId)
-        if (existingPages.none { it.pageIndex == pageIndex }) {
-            upsertPage(albumId, pageIndex)
-        }
+        val targetPage = existingPages.find { it.pageIndex == pageIndex }?.toDomain()
+            ?: upsertPage(albumId, pageIndex).getOrNull()
+        val assignedPageId = targetPage?.id.orEmpty()
 
         val placement = StampPlacement(
             id = UUID.randomUUID().toString(),
@@ -245,6 +245,7 @@ class AlbumLayoutRepository(
             scale = scale,
             rotationDegrees = rotationDegrees,
             zIndex = zIndex,
+            pageId = assignedPageId,
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis()
         )
@@ -304,7 +305,8 @@ class AlbumLayoutRepository(
     suspend fun movePlacementToPage(
         placementId: String,
         albumId: String,
-        newPageIndex: Int
+        newPageIndex: Int,
+        targetPageId: String? = null
     ): Result<Unit> = withContext(Dispatchers.IO) {
         if (newPageIndex < 0) return@withContext Result.failure(IllegalArgumentException("newPageIndex must be >= 0"))
         val ownerId = getCurrentUserId()?.trim().orEmpty()
@@ -314,11 +316,19 @@ class AlbumLayoutRepository(
 
         // Ensure target page exists
         val existingPages = albumLayoutDao.getPages(ownerId, albumId)
-        if (existingPages.none { it.pageIndex == newPageIndex }) {
-            upsertPage(albumId, newPageIndex)
-        }
+        val targetPage = if (!targetPageId.isNullOrBlank()) {
+            existingPages.find { it.id == targetPageId }?.toDomain()
+        } else {
+            existingPages.find { it.pageIndex == newPageIndex }?.toDomain()
+        } ?: upsertPage(albumId, newPageIndex).getOrNull()
+        val newPageId = targetPage?.id ?: targetPageId ?: existing.pageId
+        val finalPageIndex = targetPage?.pageIndex ?: newPageIndex
 
-        val updated = existing.copy(pageIndex = newPageIndex, updatedAt = System.currentTimeMillis())
+        val updated = existing.copy(
+            pageIndex = finalPageIndex,
+            pageId = newPageId,
+            updatedAt = System.currentTimeMillis()
+        )
         albumLayoutDao.upsertPlacements(listOf(updated))
 
         if (ownerId.isNotBlank() && !isVirtualAlbum(albumId)) {
@@ -347,5 +357,212 @@ class AlbumLayoutRepository(
             }
         }
         Result.success(Unit)
+    }
+
+    // ==========================================
+    // CANONICAL PAGE LIFECYCLE MANAGEMENT (TASK #80)
+    // ==========================================
+
+    suspend fun appendPage(albumId: String): Result<AlbumPage> = withContext(Dispatchers.IO) {
+        if (isVirtualAlbum(albumId)) {
+            return@withContext Result.failure(IllegalStateException("Virtual albums are read-only"))
+        }
+        val ownerId = getCurrentUserId()?.trim().orEmpty()
+        if (ownerId.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Unauthenticated"))
+        }
+
+        val currentPages = albumLayoutDao.getPages(ownerId, albumId)
+        if (currentPages.size >= 50) {
+            return@withContext Result.failure(IllegalStateException("Maximum pages limit reached (50)"))
+        }
+
+        val nextIndex = (currentPages.maxOfOrNull { it.pageIndex } ?: -1) + 1
+        val newPage = AlbumPage(
+            id = UUID.randomUUID().toString(),
+            ownerId = ownerId,
+            albumId = albumId,
+            pageIndex = nextIndex,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        albumLayoutDao.upsertPages(listOf(AlbumPageEntity.fromDomain(newPage)))
+
+        repositoryScope.launch {
+            try {
+                supabaseClient.appendAlbumPage(albumId)
+            } catch (e: Exception) {
+                Log.w(TAG, "Cloud appendPage error: ${e.message}")
+            }
+        }
+
+        Result.success(newPage)
+    }
+
+    suspend fun removePage(pageId: String, albumId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        if (isVirtualAlbum(albumId)) {
+            return@withContext Result.failure(IllegalStateException("Virtual albums are read-only"))
+        }
+        val ownerId = getCurrentUserId()?.trim().orEmpty()
+        if (ownerId.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Unauthenticated"))
+        }
+
+        val currentPages = albumLayoutDao.getPages(ownerId, albumId).sortedBy { it.pageIndex }
+        val targetPage = currentPages.find { it.id == pageId }
+            ?: return@withContext Result.failure(NoSuchElementException("Page not found"))
+
+        if (currentPages.size <= 1) {
+            return@withContext Result.failure(IllegalStateException("Cannot remove the only page of an album"))
+        }
+
+        // Safety Invariant: cannot remove non-empty page
+        val allPlacements = albumLayoutDao.getPlacements(ownerId, albumId)
+        val hasPlacements = allPlacements.any { it.pageId == pageId || it.pageIndex == targetPage.pageIndex }
+        if (hasPlacements) {
+            return@withContext Result.failure(IllegalStateException("Page contains stamp placements and cannot be removed"))
+        }
+
+        // Delete page locally
+        albumLayoutDao.deletePage(pageId, ownerId)
+
+        // Reindex remaining pages so pageIndex is contiguous (0, 1, 2...)
+        val remainingPages = currentPages.filter { it.id != pageId }
+        val updatedPages = remainingPages.mapIndexed { idx, p ->
+            p.copy(pageIndex = idx, updatedAt = System.currentTimeMillis())
+        }
+        albumLayoutDao.upsertPages(updatedPages)
+
+        // Also shift placements whose page was reindexed
+        val updatedPlacements = allPlacements.mapNotNull { pl ->
+            val matchingNewPage = updatedPages.find { it.id == pl.pageId }
+            if (matchingNewPage != null && matchingNewPage.pageIndex != pl.pageIndex) {
+                pl.copy(pageIndex = matchingNewPage.pageIndex, updatedAt = System.currentTimeMillis())
+            } else null
+        }
+        if (updatedPlacements.isNotEmpty()) {
+            albumLayoutDao.upsertPlacements(updatedPlacements)
+        }
+
+        repositoryScope.launch {
+            try {
+                supabaseClient.removeAlbumPage(albumId, pageId)
+            } catch (e: Exception) {
+                Log.w(TAG, "Cloud removePage error: ${e.message}")
+            }
+        }
+
+        Result.success(Unit)
+    }
+
+    suspend fun reorderPages(albumId: String, pageIds: List<String>): Result<Unit> = withContext(Dispatchers.IO) {
+        if (isVirtualAlbum(albumId)) {
+            return@withContext Result.failure(IllegalStateException("Virtual albums are read-only"))
+        }
+        val ownerId = getCurrentUserId()?.trim().orEmpty()
+        if (ownerId.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Unauthenticated"))
+        }
+
+        val currentPages = albumLayoutDao.getPages(ownerId, albumId)
+        if (currentPages.size != pageIds.size) {
+            return@withContext Result.failure(IllegalArgumentException("Page IDs count mismatch"))
+        }
+
+        val allPlacements = albumLayoutDao.getPlacements(ownerId, albumId)
+
+        // Create mapping from pageId to new index
+        val pageMap = currentPages.associateBy { it.id }
+        val updatedPages = pageIds.mapIndexedNotNull { newIndex, id ->
+            pageMap[id]?.copy(pageIndex = newIndex, updatedAt = System.currentTimeMillis())
+        }
+
+        if (updatedPages.size != pageIds.size) {
+            return@withContext Result.failure(IllegalArgumentException("Unknown page ID in reorder list"))
+        }
+
+        // Optimistically update Room
+        albumLayoutDao.upsertPages(updatedPages)
+
+        // Update placements to follow their page's new pageIndex
+        val pageIndexByPageId = updatedPages.associate { it.id to it.pageIndex }
+        val updatedPlacements = allPlacements.map { pl ->
+            val newIdx = pageIndexByPageId[pl.pageId]
+            if (newIdx != null && newIdx != pl.pageIndex) {
+                pl.copy(pageIndex = newIdx, updatedAt = System.currentTimeMillis())
+            } else pl
+        }
+        albumLayoutDao.upsertPlacements(updatedPlacements)
+
+        repositoryScope.launch {
+            try {
+                supabaseClient.reorderAlbumPages(albumId, pageIds)
+            } catch (e: Exception) {
+                Log.w(TAG, "Cloud reorderAlbumPages error: ${e.message}")
+            }
+        }
+
+        Result.success(Unit)
+    }
+
+    suspend fun ensurePageStructure(
+        albumId: String,
+        currentPlacements: List<StampPlacement> = emptyList()
+    ): Result<List<AlbumPage>> = withContext(Dispatchers.IO) {
+        if (isVirtualAlbum(albumId)) {
+            return@withContext Result.success(emptyList())
+        }
+        val ownerId = getCurrentUserId()?.trim().orEmpty()
+        if (ownerId.isBlank()) {
+            return@withContext Result.failure(IllegalStateException("Unauthenticated"))
+        }
+
+        val existingPages = albumLayoutDao.getPages(ownerId, albumId)
+        if (existingPages.isNotEmpty()) {
+            return@withContext Result.success(existingPages.map { it.toDomain() })
+        }
+
+        val placements = if (currentPlacements.isNotEmpty()) {
+            currentPlacements
+        } else {
+            albumLayoutDao.getPlacements(ownerId, albumId).map { it.toDomain() }
+        }
+
+        // Bootstrap: at least page 0, and up to max placement pageIndex
+        val maxPageNeeded = maxOf(0, placements.maxOfOrNull { it.pageIndex } ?: 0)
+        val created = (0..maxPageNeeded).map { pIdx ->
+            AlbumPage(
+                id = UUID.randomUUID().toString(),
+                ownerId = ownerId,
+                albumId = albumId,
+                pageIndex = pIdx,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()
+            )
+        }
+        albumLayoutDao.upsertPages(created.map { AlbumPageEntity.fromDomain(it) })
+
+        // Backfill placements with pageId if needed
+        val pageIdByIndex = created.associate { it.pageIndex to it.id }
+        val placementsWithPageId = placements.map { pl ->
+            val assignedId = pageIdByIndex[pl.pageIndex].orEmpty()
+            pl.copy(pageId = assignedId)
+        }
+        if (placementsWithPageId.isNotEmpty()) {
+            albumLayoutDao.upsertPlacements(placementsWithPageId.map { StampPlacementEntity.fromDomain(it) })
+        }
+
+        repositoryScope.launch {
+            try {
+                supabaseClient.upsertAlbumPages(created)
+                if (placementsWithPageId.isNotEmpty()) {
+                    supabaseClient.upsertStampPlacements(placementsWithPageId)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Cloud ensurePageStructure error: ${e.message}")
+            }
+        }
+
+        Result.success(created)
     }
 }

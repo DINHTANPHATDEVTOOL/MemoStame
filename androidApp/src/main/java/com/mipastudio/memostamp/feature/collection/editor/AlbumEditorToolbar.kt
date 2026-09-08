@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.data.repository.AlbumLayoutRepository
+import com.mipastudio.memostamp.domain.model.AlbumPage
 import com.mipastudio.memostamp.domain.model.StampPlacement
 
 private val BookGold = Color(0xFFD1A559)
@@ -114,6 +116,7 @@ fun AlbumEditorTopControls(
 fun AlbumEditorBottomBar(
     placements: List<StampPlacement>,
     totalPagesCount: Int,
+    pages: List<AlbumPage> = emptyList(),
     editState: AlbumEditState,
     albumLayoutRepo: AlbumLayoutRepository,
     modifier: Modifier = Modifier
@@ -139,7 +142,7 @@ fun AlbumEditorBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Left Group: Add Stamp & Undo
+                // Left Group: Add Stamp, Manage Pages & Undo
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -162,6 +165,16 @@ fun AlbumEditorBottomBar(
                             text = stringResource(R.string.album_editor_add_stamp),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { editState.openPageManagement() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MenuBook,
+                            contentDescription = stringResource(R.string.album_editor_manage_pages),
+                            tint = BookGold
                         )
                     }
 
@@ -257,9 +270,9 @@ fun AlbumEditorBottomBar(
         }
     }
 
-    // Move to Page Dialog
+    // Move to Page Dialog (Canonical Pages Authority)
     if (editState.isMovePageMenuOpen && selectedPlacement != null) {
-        val candidatePages = (0 until maxOf(totalPagesCount, selectedPlacement.pageIndex + 2)).toList()
+        val sortedPages = pages.sortedBy { it.pageIndex }
 
         AlertDialog(
             onDismissRequest = { editState.isMovePageMenuOpen = false },
@@ -272,30 +285,133 @@ fun AlbumEditorBottomBar(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (p in candidatePages) {
-                        val isCurrent = p == selectedPlacement.pageIndex
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isCurrent) BookGold.copy(alpha = 0.25f) else Color.Transparent,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = !isCurrent) {
-                                    editState.movePlacementToPage(
-                                        placementId = selectedPlacement.id,
-                                        targetPageIndex = p,
-                                        currentPlacement = selectedPlacement,
-                                        repository = albumLayoutRepo,
-                                        coroutineScope = coroutineScope
+                    if (sortedPages.isNotEmpty()) {
+                        for (p in sortedPages) {
+                            val isCurrent = (selectedPlacement.pageId.isNotBlank() && p.id == selectedPlacement.pageId) ||
+                                (selectedPlacement.pageId.isBlank() && p.pageIndex == selectedPlacement.pageIndex)
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isCurrent) BookGold.copy(alpha = 0.25f) else Color.Transparent,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !isCurrent) {
+                                        editState.movePlacementToPage(
+                                            placementId = selectedPlacement.id,
+                                            targetPageIndex = p.pageIndex,
+                                            targetPageId = p.id,
+                                            currentPlacement = selectedPlacement,
+                                            repository = albumLayoutRepo,
+                                            coroutineScope = coroutineScope
+                                        )
+                                        editState.isMovePageMenuOpen = false
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.book_page_number_format, p.pageIndex + 1),
+                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                        color = Color(0xFF2C2421)
                                     )
-                                    editState.isMovePageMenuOpen = false
+                                    if (isCurrent) {
+                                        Text(
+                                            text = stringResource(R.string.album_editor_page_current),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF8D6E63)
+                                        )
+                                    }
                                 }
-                                .padding(vertical = 10.dp, horizontal = 12.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.book_page_number_format, p + 1) + if (isCurrent) " (Current)" else "",
-                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                                color = Color(0xFF2C2421)
-                            )
+                            }
+                        }
+
+                        // Add Page Option
+                        if (sortedPages.size < 50) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = BookGold.copy(alpha = 0.15f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        editState.appendPage(albumLayoutRepo, coroutineScope) { newPage ->
+                                            editState.movePlacementToPage(
+                                                placementId = selectedPlacement.id,
+                                                targetPageIndex = newPage.pageIndex,
+                                                targetPageId = newPage.id,
+                                                currentPlacement = selectedPlacement,
+                                                repository = albumLayoutRepo,
+                                                coroutineScope = coroutineScope
+                                            )
+                                            editState.isMovePageMenuOpen = false
+                                        }
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Add,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2C2421),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.album_editor_add_page),
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF2C2421)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        // Fallback only if no pages defined
+                        val candidatePages = (0 until maxOf(totalPagesCount, selectedPlacement.pageIndex + 2)).toList()
+                        for (p in candidatePages) {
+                            val isCurrent = p == selectedPlacement.pageIndex
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isCurrent) BookGold.copy(alpha = 0.25f) else Color.Transparent,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !isCurrent) {
+                                        editState.movePlacementToPage(
+                                            placementId = selectedPlacement.id,
+                                            targetPageIndex = p,
+                                            targetPageId = null,
+                                            currentPlacement = selectedPlacement,
+                                            repository = albumLayoutRepo,
+                                            coroutineScope = coroutineScope
+                                        )
+                                        editState.isMovePageMenuOpen = false
+                                    }
+                                    .padding(vertical = 10.dp, horizontal = 12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.book_page_number_format, p + 1),
+                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                        color = Color(0xFF2C2421)
+                                    )
+                                    if (isCurrent) {
+                                        Text(
+                                            text = stringResource(R.string.album_editor_page_current),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF8D6E63)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

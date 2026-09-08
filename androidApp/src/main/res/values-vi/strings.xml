@@ -439,4 +439,18 @@
     <string name="album_editor_editing_title">Chỉnh sửa album</string>
     <string name="album_editor_saving">Đang lưu bố cục…</string>
     <string name="album_editor_save_failed">Lỗi đồng bộ bố cục. Bản lưu ngoại tuyến đã được giữ.</string>
+
+    <!-- Issue #80: 3D Stamp Book Page Lifecycle Management -->
+    <string name="album_editor_manage_pages">Quản lý trang</string>
+    <string name="album_editor_pages_title">Quản lý trang</string>
+    <string name="album_editor_add_page">Thêm trang</string>
+    <string name="album_editor_remove_page">Xóa trang</string>
+    <string name="album_editor_move_earlier">Chuyển lên trước</string>
+    <string name="album_editor_move_later">Chuyển về sau</string>
+    <string name="album_editor_page_current">Hiện tại</string>
+    <string name="album_editor_page_has_stamps_error">Hãy di chuyển hoặc xóa tem trước khi xóa trang này</string>
+    <string name="album_editor_max_pages_reached">Đã đạt số trang tối đa</string>
+    <string name="album_editor_empty_page">Trang trống</string>
+    <string name="album_editor_stamps_count">%d con tem</string>
+    <string name="album_editor_cannot_remove_only_page">Không thể xóa trang duy nhất</string>
 </resources>

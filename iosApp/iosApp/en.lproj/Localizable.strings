@@ -439,3 +439,17 @@
 "album_editor_editing_title" = "Editing Album";
 "album_editor_saving" = "Saving layout…";
 "album_editor_save_failed" = "Failed to sync layout. Offline copy preserved.";
+
+/* Issue #80: 3D Stamp Book Page Lifecycle Management */
+"album_editor_manage_pages" = "Manage Pages";
+"album_editor_pages_title" = "Page Management";
+"album_editor_add_page" = "Add Page";
+"album_editor_remove_page" = "Remove Page";
+"album_editor_move_earlier" = "Move Earlier";
+"album_editor_move_later" = "Move Later";
+"album_editor_page_current" = "Current";
+"album_editor_page_has_stamps_error" = "Move stamps before removing this page";
+"album_editor_max_pages_reached" = "Maximum pages reached";
+"album_editor_empty_page" = "Empty page";
+"album_editor_stamps_count" = "%d stamps";
+"album_editor_cannot_remove_only_page" = "Cannot remove the only page";
