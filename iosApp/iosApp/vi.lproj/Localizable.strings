@@ -439,3 +439,17 @@
 "album_editor_editing_title" = "Chỉnh sửa album";
 "album_editor_saving" = "Đang lưu bố cục…";
 "album_editor_save_failed" = "Lỗi đồng bộ bố cục. Bản lưu ngoại tuyến đã được giữ.";
+
+/* Issue #80: 3D Stamp Book Page Lifecycle Management */
+"album_editor_manage_pages" = "Quản lý trang";
+"album_editor_pages_title" = "Quản lý trang";
+"album_editor_add_page" = "Thêm trang";
+"album_editor_remove_page" = "Xóa trang";
+"album_editor_move_earlier" = "Chuyển lên trước";
+"album_editor_move_later" = "Chuyển về sau";
+"album_editor_page_current" = "Hiện tại";
+"album_editor_page_has_stamps_error" = "Hãy di chuyển hoặc xóa tem trước khi xóa trang này";
+"album_editor_max_pages_reached" = "Đã đạt số trang tối đa";
+"album_editor_empty_page" = "Trang trống";
+"album_editor_stamps_count" = "%d con tem";
+"album_editor_cannot_remove_only_page" = "Không thể xóa trang duy nhất";

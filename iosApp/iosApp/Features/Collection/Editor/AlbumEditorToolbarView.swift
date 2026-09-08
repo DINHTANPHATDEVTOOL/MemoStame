@@ -62,16 +62,19 @@ public struct AlbumEditorTopControlsView: View {
 public struct AlbumEditorBottomBarView: View {
     public let placements: [PersistedStampPlacementData]
     public let totalPagesCount: Int
+    public let pages: [PersistedAlbumPageData]
     @ObservedObject public var editState: AlbumEditState
     @ObservedObject private var langManager = AppLanguageManager.shared
 
     public init(
         placements: [PersistedStampPlacementData],
         totalPagesCount: Int,
+        pages: [PersistedAlbumPageData] = [],
         editState: AlbumEditState
     ) {
         self.placements = placements
         self.totalPagesCount = totalPagesCount
+        self.pages = pages
         self.editState = editState
     }
 
@@ -82,7 +85,7 @@ public struct AlbumEditorBottomBarView: View {
     public var body: some View {
         VStack(spacing: 0) {
             HStack {
-                // Left Group: Add Stamp & Undo
+                // Left Group: Add Stamp, Manage Pages & Undo
                 HStack(spacing: 8) {
                     Button(action: { editState.isVaultPickerOpen = true }) {
                         HStack(spacing: 4) {
@@ -97,6 +100,14 @@ public struct AlbumEditorBottomBarView: View {
                         .background(BookGold)
                         .cornerRadius(6)
                     }
+
+                    Button(action: { editState.openPageManagement() }) {
+                        Image(systemName: "books.vertical")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(BookGold)
+                            .padding(6)
+                    }
+                    .accessibilityLabel(langManager.localized("album_editor_manage_pages"))
 
                     Button(action: { editState.undo() }) {
                         Image(systemName: "arrow.uturn.backward")
@@ -167,30 +178,96 @@ public struct AlbumEditorBottomBarView: View {
     @ViewBuilder
     private func movePageSheet(selected: PersistedStampPlacementData?) -> some View {
         if let selected = selected {
-            let maxPage = max(totalPagesCount, Int(selected.pageIndex) + 2)
+            let sortedPages = pages.sorted { $0.pageIndex < $1.pageIndex }
             NavigationView {
-                List(0..<maxPage, id: \.self) { p in
-                    let isCurrent = p == Int(selected.pageIndex)
-                    Button(action: {
-                        editState.movePlacementToPage(
-                            placementId: selected.id,
-                            targetPageIndex: Int32(p),
-                            currentPlacement: selected
-                        )
-                        editState.isMovePageMenuOpen = false
-                    }) {
-                        HStack {
-                            Text(String(format: langManager.localized("book_page_number_format"), p + 1))
-                                .foregroundColor(isCurrent ? BookGold : MSColors.ink)
-                                .fontWeight(isCurrent ? .bold : .regular)
-                            Spacer()
-                            if isCurrent {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(BookGold)
+                List {
+                    if !sortedPages.isEmpty {
+                        ForEach(sortedPages, id: \.id) { page in
+                            let isCurrent = (selected.pageId != nil && page.id == selected.pageId) ||
+                                (selected.pageId == nil && page.pageIndex == selected.pageIndex)
+                            Button(action: {
+                                editState.movePlacementToPage(
+                                    placementId: selected.id,
+                                    targetPageIndex: page.pageIndex,
+                                    targetPageId: page.id,
+                                    currentPlacement: selected
+                                )
+                                editState.isMovePageMenuOpen = false
+                            }) {
+                                HStack {
+                                    Text(String(format: langManager.localized("book_page_number_format"), page.pageIndex + 1))
+                                        .foregroundColor(isCurrent ? BookGold : MSColors.ink)
+                                        .fontWeight(isCurrent ? .bold : .regular)
+                                    Spacer()
+                                    if isCurrent {
+                                        Text(langManager.localized("album_editor_page_current"))
+                                            .font(.caption2.bold())
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(BookGold.opacity(0.3))
+                                            .foregroundColor(.primary)
+                                            .cornerRadius(4)
+                                    }
+                                }
+                            }
+                            .disabled(isCurrent)
+                        }
+
+                        if sortedPages.count < 50 {
+                            Button(action: {
+                                editState.appendPage { result in
+                                    if case .success(let newPage) = result {
+                                        editState.movePlacementToPage(
+                                            placementId: selected.id,
+                                            targetPageIndex: newPage.pageIndex,
+                                            targetPageId: newPage.id,
+                                            currentPlacement: selected
+                                        )
+                                        editState.isMovePageMenuOpen = false
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus")
+                                    Text(langManager.localized("album_editor_add_page"))
+                                        .fontWeight(.semibold)
+                                }
+                                .foregroundColor(BookGold)
                             }
                         }
+                    } else {
+                        // Fallback
+                        let maxPage = max(totalPagesCount, Int(selected.pageIndex) + 2)
+                        ForEach(0..<maxPage, id: \.self) { p in
+                            let isCurrent = p == Int(selected.pageIndex)
+                            Button(action: {
+                                editState.movePlacementToPage(
+                                    placementId: selected.id,
+                                    targetPageIndex: Int32(p),
+                                    targetPageId: nil,
+                                    currentPlacement: selected
+                                )
+                                editState.isMovePageMenuOpen = false
+                            }) {
+                                HStack {
+                                    Text(String(format: langManager.localized("book_page_number_format"), p + 1))
+                                        .foregroundColor(isCurrent ? BookGold : MSColors.ink)
+                                        .fontWeight(isCurrent ? .bold : .regular)
+                                    Spacer()
+                                    if isCurrent {
+                                        Text(langManager.localized("album_editor_page_current"))
+                                            .font(.caption2.bold())
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(BookGold.opacity(0.3))
+                                            .foregroundColor(.primary)
+                                            .cornerRadius(4)
+                                    }
+                                }
+                            }
+                            .disabled(isCurrent)
+                        }
                     }
-                    .disabled(isCurrent)
                 }
                 .navigationTitle(langManager.localized("album_editor_move_page"))
                 .navigationBarTitleDisplayMode(.inline)

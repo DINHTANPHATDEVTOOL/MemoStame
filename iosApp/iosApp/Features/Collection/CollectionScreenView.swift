@@ -158,6 +158,7 @@ struct CollectionScreenView: View {
         .background(MSColors.paper.ignoresSafeArea())
         .fullScreenCover(item: $selectedAlbum) { album in
             // 📖 Production 2.5D Two-Page Stamp Book Renderer (replaces old flat TabView)
+            let pages = albumLayoutRepo.layoutPages[album.id] ?? []
             let placements = albumLayoutRepo.layoutPlacements[album.id] ?? []
             let vaultStamps = cloudStamps.map { BookStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
             StampBook3DRenderer(
@@ -168,6 +169,7 @@ struct CollectionScreenView: View {
                 coverColor: album.coverColor,
                 iconKey: album.iconName,
                 stamps: album.stamps,
+                pages: pages,
                 placements: placements,
                 availableVaultStamps: vaultStamps,
                 onStampClick: { _ in },
@@ -175,6 +177,7 @@ struct CollectionScreenView: View {
             )
             .onAppear {
                 albumLayoutRepo.syncLayout(albumId: album.id)
+                albumLayoutRepo.ensurePageStructure(albumId: album.id)
             }
         }
     }

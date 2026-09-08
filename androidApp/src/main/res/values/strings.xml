@@ -439,4 +439,18 @@
     <string name="album_editor_editing_title">Editing Album</string>
     <string name="album_editor_saving">Saving layout…</string>
     <string name="album_editor_save_failed">Failed to sync layout. Offline copy preserved.</string>
+
+    <!-- Issue #80: 3D Stamp Book Page Lifecycle Management -->
+    <string name="album_editor_manage_pages">Manage Pages</string>
+    <string name="album_editor_pages_title">Page Management</string>
+    <string name="album_editor_add_page">Add Page</string>
+    <string name="album_editor_remove_page">Remove Page</string>
+    <string name="album_editor_move_earlier">Move Earlier</string>
+    <string name="album_editor_move_later">Move Later</string>
+    <string name="album_editor_page_current">Current</string>
+    <string name="album_editor_page_has_stamps_error">Move stamps before removing this page</string>
+    <string name="album_editor_max_pages_reached">Maximum pages reached</string>
+    <string name="album_editor_empty_page">Empty page</string>
+    <string name="album_editor_stamps_count">%d stamps</string>
+    <string name="album_editor_cannot_remove_only_page">Cannot remove the only page</string>
 </resources>

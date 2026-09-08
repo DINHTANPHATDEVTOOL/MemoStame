@@ -2722,6 +2722,192 @@ BEGIN
     DELETE FROM auth.users WHERE id = v_temp_user_id;
 END $$;
 
+-- ===================================================
+-- TASK #80: ALBUM PAGE LIFECYCLE SECURITY TESTS
+-- ===================================================
+
+-- Assertion 116: ANON CANNOT CALL PAGE LIFECYCLE RPCS: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE anon;
+    BEGIN
+        PERFORM public.append_album_page('col_a_1');
+    EXCEPTION WHEN insufficient_privilege THEN
+        v_threw := true;
+    END;
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'ANON CANNOT CALL append_album_page Failed: expected insufficient_privilege';
+    END IF;
+END $$;
+
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE anon;
+    BEGIN
+        PERFORM public.reorder_album_pages('col_a_1', ARRAY[gen_random_uuid()]);
+    EXCEPTION WHEN insufficient_privilege THEN
+        v_threw := true;
+    END;
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'ANON CANNOT CALL reorder_album_pages Failed: expected insufficient_privilege';
+    END IF;
+END $$;
+
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+BEGIN
+    SET LOCAL ROLE anon;
+    BEGIN
+        PERFORM public.remove_album_page('col_a_1', gen_random_uuid());
+    EXCEPTION WHEN insufficient_privilege THEN
+        v_threw := true;
+    END;
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'ANON CANNOT CALL remove_album_page Failed: expected insufficient_privilege';
+    END IF;
+END $$;
+
+-- Assertion 117: USER B CANNOT REORDER USER A ALBUM PAGES: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+    v_p0 UUID;
+    v_p1 UUID;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    SELECT id INTO v_p0 FROM public.album_pages WHERE owner_id = '11111111-1111-1111-1111-111111111111' AND album_id = 'col_a_1' AND page_index = 0;
+
+    BEGIN
+        -- User B tries to reorder User A's album col_a_1
+        PERFORM public.reorder_album_pages('col_a_1', ARRAY[v_p0]);
+    EXCEPTION WHEN OTHERS THEN
+        v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'USER B CANNOT REORDER USER A ALBUM PAGES Failed: expected rejection';
+    END IF;
+END $$;
+
+-- Assertion 118: USER B CANNOT REMOVE USER A ALBUM PAGE: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+    v_p0 UUID;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+    SELECT id INTO v_p0 FROM public.album_pages WHERE owner_id = '11111111-1111-1111-1111-111111111111' AND album_id = 'col_a_1' AND page_index = 0;
+
+    BEGIN
+        PERFORM public.remove_album_page('col_a_1', v_p0);
+    EXCEPTION WHEN OTHERS THEN
+        v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'USER B CANNOT REMOVE USER A ALBUM PAGE Failed: expected rejection';
+    END IF;
+END $$;
+
+-- Assertion 119: CANNOT REMOVE NON-EMPTY ALBUM PAGE: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+    v_p0 UUID;
+    v_p1_res JSONB;
+    v_p1 UUID;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    SELECT id INTO v_p0 FROM public.album_pages WHERE owner_id = '11111111-1111-1111-1111-111111111111' AND album_id = 'col_a_1' AND page_index = 0;
+
+    -- Append page 1 so album has > 1 pages
+    v_p1_res := public.append_album_page('col_a_1');
+    v_p1 := (v_p1_res->>'id')::UUID;
+
+    -- Page 0 has a placement attached in Assertion 102
+    BEGIN
+        PERFORM public.remove_album_page('col_a_1', v_p0);
+    EXCEPTION WHEN OTHERS THEN
+        v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'CANNOT REMOVE NON-EMPTY ALBUM PAGE Failed: expected rejection';
+    END IF;
+
+    -- Now remove the empty page 1 - this should SUCCEED
+    PERFORM public.remove_album_page('col_a_1', v_p1);
+END $$;
+
+-- Assertion 120: CANNOT REMOVE THE ONLY ALBUM PAGE: PASS
+DO $$
+DECLARE
+    v_threw BOOLEAN := false;
+    v_p0 UUID;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    SELECT id INTO v_p0 FROM public.album_pages WHERE owner_id = '11111111-1111-1111-1111-111111111111' AND album_id = 'col_a_1' AND page_index = 0;
+
+    BEGIN
+        -- col_a_1 has only 1 page now
+        PERFORM public.remove_album_page('col_a_1', v_p0);
+    EXCEPTION WHEN OTHERS THEN
+        v_threw := true;
+    END;
+
+    IF NOT v_threw THEN
+        RAISE EXCEPTION 'CANNOT REMOVE THE ONLY ALBUM PAGE Failed: expected rejection';
+    END IF;
+END $$;
+
+-- Assertion 121: USER A CAN APPEND AND REORDER OWN PAGES ATOMICALLY: PASS
+DO $$
+DECLARE
+    v_p0 UUID;
+    v_p1 UUID;
+    v_p1_res JSONB;
+    v_reorder_res JSONB;
+    v_idx_p0 INTEGER;
+    v_idx_p1 INTEGER;
+BEGIN
+    SET LOCAL ROLE authenticated;
+    SET LOCAL request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+    SELECT id INTO v_p0 FROM public.album_pages WHERE owner_id = '11111111-1111-1111-1111-111111111111' AND album_id = 'col_a_1' AND page_index = 0;
+
+    -- Append page 1
+    v_p1_res := public.append_album_page('col_a_1');
+    v_p1 := (v_p1_res->>'id')::UUID;
+
+    -- Reorder: swap p1 and p0 so p1 is page 0 and p0 is page 1
+    v_reorder_res := public.reorder_album_pages('col_a_1', ARRAY[v_p1, v_p0]);
+
+    SELECT page_index INTO v_idx_p1 FROM public.album_pages WHERE id = v_p1;
+    SELECT page_index INTO v_idx_p0 FROM public.album_pages WHERE id = v_p0;
+
+    IF v_idx_p1 != 0 OR v_idx_p0 != 1 THEN
+        RAISE EXCEPTION 'REORDER FAILED: expected p1=0, p0=1; got p1=%, p0=%', v_idx_p1, v_idx_p0;
+    END IF;
+
+    -- Restore order: p0=0, p1=1
+    PERFORM public.reorder_album_pages('col_a_1', ARRAY[v_p0, v_p1]);
+
+    -- Clean up empty page 1
+    PERFORM public.remove_album_page('col_a_1', v_p1);
+END $$;
 
 -- ===================================================
 -- 4. FIXTURE TEARDOWN (POSTGRES ROLE)

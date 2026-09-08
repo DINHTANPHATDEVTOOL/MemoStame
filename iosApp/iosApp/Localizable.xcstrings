@@ -7866,6 +7866,222 @@
           }
         }
       }
+    },
+    "album_editor_manage_pages": {
+      "comment": "Localization key album_editor_manage_pages",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Pages"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản lý trang"
+          }
+        }
+      }
+    },
+    "album_editor_pages_title": {
+      "comment": "Localization key album_editor_pages_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page Management"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản lý trang"
+          }
+        }
+      }
+    },
+    "album_editor_add_page": {
+      "comment": "Localization key album_editor_add_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm trang"
+          }
+        }
+      }
+    },
+    "album_editor_remove_page": {
+      "comment": "Localization key album_editor_remove_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa trang"
+          }
+        }
+      }
+    },
+    "album_editor_move_earlier": {
+      "comment": "Localization key album_editor_move_earlier",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move Earlier"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển lên trước"
+          }
+        }
+      }
+    },
+    "album_editor_move_later": {
+      "comment": "Localization key album_editor_move_later",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move Later"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển về sau"
+          }
+        }
+      }
+    },
+    "album_editor_page_current": {
+      "comment": "Localization key album_editor_page_current",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện tại"
+          }
+        }
+      }
+    },
+    "album_editor_page_has_stamps_error": {
+      "comment": "Localization key album_editor_page_has_stamps_error",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move stamps before removing this page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy di chuyển hoặc xóa tem trước khi xóa trang này"
+          }
+        }
+      }
+    },
+    "album_editor_max_pages_reached": {
+      "comment": "Localization key album_editor_max_pages_reached",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum pages reached"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đạt số trang tối đa"
+          }
+        }
+      }
+    },
+    "album_editor_empty_page": {
+      "comment": "Localization key album_editor_empty_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang trống"
+          }
+        }
+      }
+    },
+    "album_editor_stamps_count": {
+      "comment": "Localization key album_editor_stamps_count",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d stamps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d con tem"
+          }
+        }
+      }
+    },
+    "album_editor_cannot_remove_only_page": {
+      "comment": "Localization key album_editor_cannot_remove_only_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot remove the only page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xóa trang duy nhất"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

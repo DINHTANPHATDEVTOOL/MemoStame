@@ -52,6 +52,7 @@ public final class AlbumEditState: ObservableObject {
     @Published public var activePageIndex: Int32 = 0
     @Published public var isVaultPickerOpen: Bool = false
     @Published public var isMovePageMenuOpen: Bool = false
+    @Published public var isPageManagementOpen: Bool = false
     @Published public var isSaving: Bool = false
     @Published public var saveErrorMessage: String? = nil
 
@@ -103,6 +104,7 @@ public final class AlbumEditState: ObservableObject {
         selectedPlacementId = nil
         isVaultPickerOpen = false
         isMovePageMenuOpen = false
+        isPageManagementOpen = false
         mode = .view
     }
 
@@ -323,11 +325,12 @@ public final class AlbumEditState: ObservableObject {
     public func movePlacementToPage(
         placementId: String,
         targetPageIndex: Int32,
+        targetPageId: String? = nil,
         currentPlacement: PersistedStampPlacementData
     ) {
         guard !isVirtualAlbum, mode == .edit else { return }
         let safeTarget = max(targetPageIndex, 0)
-        guard safeTarget != currentPlacement.pageIndex else { return }
+        guard safeTarget != currentPlacement.pageIndex || (targetPageId != nil && targetPageId != currentPlacement.pageId) else { return }
 
         undoStack.append(.movePage(placementId: placementId, oldPageIndex: currentPlacement.pageIndex, newPageIndex: safeTarget))
 
@@ -335,8 +338,86 @@ public final class AlbumEditState: ObservableObject {
         IOSAlbumLayoutRepository.shared.movePlacementToPage(
             placementId: placementId,
             albumId: albumId,
-            newPageIndex: safeTarget
+            newPageIndex: safeTarget,
+            newPageId: targetPageId
         ) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isSaving = false
+                if case .failure(let error) = result {
+                    self?.saveErrorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    public func openPageManagement() {
+        guard mode == .edit else { return }
+        isPageManagementOpen = true
+    }
+
+    public func closePageManagement() {
+        isPageManagementOpen = false
+    }
+
+    public func appendPage(completion: ((Result<PersistedAlbumPageData, Error>) -> Void)? = nil) {
+        guard !isVirtualAlbum, mode == .edit else { return }
+        isSaving = true
+        IOSAlbumLayoutRepository.shared.appendPage(albumId: albumId) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isSaving = false
+                if case .failure(let error) = result {
+                    self?.saveErrorMessage = error.localizedDescription
+                }
+                completion?(result)
+            }
+        }
+    }
+
+    public func removePage(
+        pageId: String,
+        placementsOnPage: [PersistedStampPlacementData],
+        totalPageCount: Int,
+        completion: ((Result<Void, Error>) -> Void)? = nil
+    ) {
+        guard !isVirtualAlbum, mode == .edit else { return }
+        guard placementsOnPage.isEmpty else {
+            saveErrorMessage = NSLocalizedString("album_editor_page_has_stamps_error", comment: "")
+            return
+        }
+        guard totalPageCount > 1 else {
+            saveErrorMessage = NSLocalizedString("album_editor_cannot_remove_only_page", comment: "")
+            return
+        }
+
+        isSaving = true
+        IOSAlbumLayoutRepository.shared.removePage(albumId: albumId, pageId: pageId) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isSaving = false
+                if case .failure(let error) = result {
+                    self?.saveErrorMessage = error.localizedDescription
+                }
+                completion?(result)
+            }
+        }
+    }
+
+    public func reorderPage(
+        pageId: String,
+        direction: Int,
+        pages: [PersistedAlbumPageData]
+    ) {
+        guard !isVirtualAlbum, mode == .edit else { return }
+        let sorted = pages.sorted { $0.pageIndex < $1.pageIndex }
+        guard let currentIndex = sorted.firstIndex(where: { $0.id == pageId }) else { return }
+        let targetIndex = currentIndex + direction
+        guard targetIndex >= 0 && targetIndex < sorted.count else { return }
+
+        var ids = sorted.map { $0.id }
+        let item = ids.remove(at: currentIndex)
+        ids.insert(item, at: targetIndex)
+
+        isSaving = true
+        IOSAlbumLayoutRepository.shared.reorderPages(albumId: albumId, pageIds: ids) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isSaving = false
                 if case .failure(let error) = result {
@@ -405,6 +486,10 @@ public final class AlbumEditState: ObservableObject {
         }
     }
 
+    public func clearSaveError() {
+        saveErrorMessage = nil
+    }
+
     public func resetSession() {
         mode = .view
         selectedPlacementId = nil
@@ -412,6 +497,7 @@ public final class AlbumEditState: ObservableObject {
         undoStack.removeAll()
         isVaultPickerOpen = false
         isMovePageMenuOpen = false
+        isPageManagementOpen = false
         isSaving = false
         saveErrorMessage = nil
     }

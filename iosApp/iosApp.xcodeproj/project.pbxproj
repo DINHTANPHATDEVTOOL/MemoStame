@@ -27,6 +27,7 @@
 		1D3627852D00000100000001 /* EditableBookPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627842D00000100000001 /* EditableBookPageView.swift */; };
 		1D3627872D00000100000001 /* AlbumVaultPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627862D00000100000001 /* AlbumVaultPickerView.swift */; };
 		1D3627892D00000100000001 /* AlbumEditorToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627882D00000100000001 /* AlbumEditorToolbarView.swift */; };
+		1D36278B2D00000100000001 /* AlbumPageManagementSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D36278A2D00000100000001 /* AlbumPageManagementSheetView.swift */; };
 		1D3623432D00000100000001 /* FriendsAndTradeScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */; };
 		1D3623992D00000100000001 /* ChatScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623982D00000100000001 /* ChatScreenView.swift */; };
 		1D3623452D00000100000001 /* PassportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623442D00000100000001 /* PassportScreenView.swift */; };
@@ -91,6 +92,7 @@
 		1D3627842D00000100000001 /* EditableBookPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/EditableBookPageView.swift; sourceTree = "<group>"; };
 		1D3627862D00000100000001 /* AlbumVaultPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/AlbumVaultPickerView.swift; sourceTree = "<group>"; };
 		1D3627882D00000100000001 /* AlbumEditorToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/AlbumEditorToolbarView.swift; sourceTree = "<group>"; };
+		1D36278A2D00000100000001 /* AlbumPageManagementSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/AlbumPageManagementSheetView.swift; sourceTree = "<group>"; };
 		1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAndTradeScreenView.swift; sourceTree = "<group>"; };
 		1D3623982D00000100000001 /* ChatScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatScreenView.swift; sourceTree = "<group>"; };
 		1D3623442D00000100000001 /* PassportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportScreenView.swift; sourceTree = "<group>"; };
@@ -291,6 +293,7 @@
 				1D3627842D00000100000001 /* EditableBookPageView.swift */,
 				1D3627862D00000100000001 /* AlbumVaultPickerView.swift */,
 				1D3627882D00000100000001 /* AlbumEditorToolbarView.swift */,
+				1D36278A2D00000100000001 /* AlbumPageManagementSheetView.swift */,
 			);
 			path = Collection;
 			sourceTree = "<group>";
@@ -472,6 +475,7 @@
 				1D3627852D00000100000001 /* EditableBookPageView.swift in Sources */,
 				1D3627872D00000100000001 /* AlbumVaultPickerView.swift in Sources */,
 				1D3627892D00000100000001 /* AlbumEditorToolbarView.swift in Sources */,
+				1D36278B2D00000100000001 /* AlbumPageManagementSheetView.swift in Sources */,
 				1D3623432D00000100000001 /* FriendsAndTradeScreenView.swift in Sources */,
 				1D3623992D00000100000001 /* ChatScreenView.swift in Sources */,
 				1D3623452D00000100000001 /* PassportScreenView.swift in Sources */,

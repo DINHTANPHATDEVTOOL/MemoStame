@@ -22,7 +22,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AlbumPageEntity::class,
         StampPlacementEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = false
 )
 abstract class MemoStampDatabase : RoomDatabase() {
@@ -473,6 +473,13 @@ abstract class MemoStampDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE album_stamp_placements ADD COLUMN pageId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_album_stamp_placements_pageId ON album_stamp_placements (pageId)")
+            }
+        }
+
         fun getInstance(context: Context): MemoStampDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -486,7 +493,8 @@ abstract class MemoStampDatabase : RoomDatabase() {
                     getMigration11To12(context.applicationContext),
                     getMigration12To13(context.applicationContext),
                     MIGRATION_13_14,
-                    MIGRATION_14_15
+                    MIGRATION_14_15,
+                    MIGRATION_15_16
                 )
                 .build().also { INSTANCE = it }
             }
