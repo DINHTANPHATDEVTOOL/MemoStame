@@ -28,7 +28,7 @@ public struct EditableBookPageView: View {
             let pageHeight = geo.size.height
 
             let stampDict = Dictionary(stampsList.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            let pagePlacements = placements.filter { $0.pageIndex == pageData.pageIndex }
+            let pagePlacements = placements.filter { Int($0.pageIndex) == pageData.pageIndex }
             let sortedPlacements = pagePlacements.sorted {
                 if $0.zIndex != $1.zIndex { return $0.zIndex < $1.zIndex }
                 return $0.id < $1.id
@@ -40,7 +40,7 @@ public struct EditableBookPageView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         if editState.mode == .edit {
-                            editState.activePageIndex = pageData.pageIndex
+                            editState.activePageIndex = Int32(pageData.pageIndex)
                             editState.selectPlacement(nil)
                         }
                     }
