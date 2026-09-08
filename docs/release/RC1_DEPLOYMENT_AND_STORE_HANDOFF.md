@@ -132,6 +132,15 @@ MemoStamp uses Codemagic CI/CD (configured in `codemagic.yaml`) for automated pr
    - `MEMOSTAMP_VERSION_NAME="1.0.0"` (maps to `MARKETING_VERSION`)
    - `MEMOSTAMP_VERSION_CODE="100"` (maps to `CURRENT_PROJECT_VERSION`)
 3. Codemagic exports the signed IPA using `iosApp/ExportOptions-AppStore.plist`.
+4. Codemagic publishes directly to TestFlight using the App Store Connect API keys without requiring mixed integration authentication:
+   ```yaml
+   publishing:
+     app_store_connect:
+       api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+       key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+       issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+       submit_to_testflight: true
+   ```
 
 ### 3.3 Verifying Exported IPA & APNs Production Entitlement
 ```bash
