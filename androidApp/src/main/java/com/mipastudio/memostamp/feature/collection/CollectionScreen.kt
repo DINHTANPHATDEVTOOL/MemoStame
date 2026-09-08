@@ -225,6 +225,8 @@ fun CollectionScreen(
             iconKey = album.iconKey,
             stamps = album.stamps,
             placements = placements,
+            availableVaultStamps = cloudStamps,
+            albumLayoutRepo = albumLayoutRepo,
             onStampClick = onStampClick,
             onDismiss = { selectedAlbum = null }
         )

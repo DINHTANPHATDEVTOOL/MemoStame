@@ -3327,6 +3327,11 @@ class E2EContractRunner:
             self.client.request("POST", "/rest/v1/friend_requests", token=dm_sender["token"], json_data={"id": fr_id, "sender_id": dm_sender["uid"], "recipient_id": rec["uid"], "status": "PENDING"})
             self.client.request("POST", "/rest/v1/rpc/accept_friend_request", token=rec["token"], json_data={"p_request_id": fr_id})
 
+        # Ensure we have a fresh minute window so all 30 DMs land in the same rate-limit window
+        sec_in_min = time.time() % 60
+        if sec_in_min > 42:
+            time.sleep(60 - sec_in_min + 0.5)
+
         # Case 6: Normal DM remains successful
         st, _, txt, _ = self.client.request(
             "POST",

@@ -47,6 +47,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.mipastudio.memostamp.R
+import com.mipastudio.memostamp.data.local.StampEntity
+import com.mipastudio.memostamp.data.repository.AlbumLayoutRepository
+import com.mipastudio.memostamp.feature.collection.editor.AlbumEditMode
+import com.mipastudio.memostamp.feature.collection.editor.AlbumEditState
+import com.mipastudio.memostamp.feature.collection.editor.AlbumEditorBottomBar
+import com.mipastudio.memostamp.feature.collection.editor.AlbumEditorTopControls
+import com.mipastudio.memostamp.feature.collection.editor.AlbumVaultPicker
+import com.mipastudio.memostamp.feature.collection.editor.EditableBookPage
 import com.mipastudio.memostamp.ui.icon.MemoStampIcons
 import com.mipastudio.memostamp.ui.theme.*
 import kotlinx.coroutines.launch
@@ -69,6 +77,8 @@ fun StampBook3DRenderer(
     iconKey: String?,
     stamps: List<AlbumStampData>,
     placements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
+    availableVaultStamps: List<StampEntity> = emptyList(),
+    albumLayoutRepo: AlbumLayoutRepository? = null,
     onStampClick: (String) -> Unit = {},
     onDismiss: () -> Unit
 ) {
@@ -97,6 +107,21 @@ fun StampBook3DRenderer(
         PageTurnStateMachine(albumId = albumId)
     }
 
+    val resolvedRepo = remember(context, albumLayoutRepo) {
+        albumLayoutRepo ?: AlbumLayoutRepository.getInstance(context) { null }
+    }
+    val editState = remember(albumId) {
+        AlbumEditState(albumId = albumId)
+    }
+
+    LaunchedEffect(stateMachine.currentSpreadIndex) {
+        val spread = spreads.getOrNull(stateMachine.currentSpreadIndex)
+        if (spread != null) {
+            val pageIdx = if (!spread.leftPage.isInsideCover) spread.leftPage.pageIndex else spread.rightPage.pageIndex
+            editState.activePageIndex = pageIdx
+        }
+    }
+
     // Animated values for 2.5D cover and page turns
     val coverOpenProgress = remember { Animatable(0f) }
     val turnAnimProgress = remember { Animatable(0f) }
@@ -104,6 +129,10 @@ fun StampBook3DRenderer(
 
     // Safe Back handling during animation
     BackHandler {
+        if (editState.mode == AlbumEditMode.EDIT) {
+            editState.exitEditMode(resolvedRepo, coroutineScope)
+            return@BackHandler
+        }
         if (!stateMachine.interactionLocked) {
             if (stateMachine.bookState == BookState.OPEN) {
                 coroutineScope.launch {
@@ -134,6 +163,9 @@ fun StampBook3DRenderer(
 
     fun requestClose() {
         if (stateMachine.interactionLocked) return
+        if (editState.mode == AlbumEditMode.EDIT) {
+            editState.exitEditMode(resolvedRepo, coroutineScope)
+        }
         coroutineScope.launch {
             stateMachine.close()
             coverOpenProgress.animateTo(
@@ -207,15 +239,26 @@ fun StampBook3DRenderer(
                         )
                     }
 
-                    IconButton(
-                        onClick = { requestClose() },
-                        enabled = !stateMachine.interactionLocked
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(R.string.book_close),
-                            tint = BookGold
+                        AlbumEditorTopControls(
+                            isVirtualAlbum = editState.isVirtualAlbum,
+                            editState = editState,
+                            albumLayoutRepo = resolvedRepo
                         )
+
+                        IconButton(
+                            onClick = { requestClose() },
+                            enabled = !stateMachine.interactionLocked
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringResource(R.string.book_close),
+                                tint = BookGold
+                            )
+                        }
                     }
                 }
 
@@ -226,8 +269,8 @@ fun StampBook3DRenderer(
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                         .onSizeChanged { bookSize = it }
-                        .pointerInput(albumId, stateMachine.currentSpreadIndex, totalSpreads, isReducedMotion) {
-                            if (isReducedMotion) return@pointerInput
+                        .pointerInput(albumId, stateMachine.currentSpreadIndex, totalSpreads, isReducedMotion, editState.mode) {
+                            if (isReducedMotion || editState.mode == AlbumEditMode.EDIT) return@pointerInput
                             var totalDragX = 0f
                             val halfWidth = (size.width / 2f).coerceAtLeast(1f)
 
@@ -333,6 +376,9 @@ fun StampBook3DRenderer(
                                     albumDesc = albumDescription,
                                     curatorName = curatorName,
                                     totalStampsCount = stamps.size,
+                                    allPlacements = placements,
+                                    editState = editState,
+                                    albumLayoutRepo = resolvedRepo,
                                     onStampClick = onStampClick
                                 )
                             } else {
@@ -343,6 +389,9 @@ fun StampBook3DRenderer(
                                     albumDesc = albumDescription,
                                     curatorName = curatorName,
                                     totalStampsCount = stamps.size,
+                                    allPlacements = placements,
+                                    editState = editState,
+                                    albumLayoutRepo = resolvedRepo,
                                     onStampClick = onStampClick
                                 )
                             }
@@ -368,6 +417,9 @@ fun StampBook3DRenderer(
                                             albumDesc = albumDescription,
                                             curatorName = curatorName,
                                             totalStampsCount = stamps.size,
+                                            allPlacements = placements,
+                                            editState = editState,
+                                            albumLayoutRepo = resolvedRepo,
                                             onStampClick = onStampClick
                                         )
                                     } else {
@@ -383,6 +435,9 @@ fun StampBook3DRenderer(
                                                 albumDesc = albumDescription,
                                                 curatorName = curatorName,
                                                 totalStampsCount = stamps.size,
+                                                allPlacements = placements,
+                                                editState = editState,
+                                                albumLayoutRepo = resolvedRepo,
                                                 onStampClick = onStampClick
                                             )
                                         }
@@ -431,6 +486,9 @@ fun StampBook3DRenderer(
                                     albumDesc = albumDescription,
                                     curatorName = curatorName,
                                     totalStampsCount = stamps.size,
+                                    allPlacements = placements,
+                                    editState = editState,
+                                    albumLayoutRepo = resolvedRepo,
                                     onStampClick = onStampClick
                                 )
                             } else {
@@ -441,6 +499,9 @@ fun StampBook3DRenderer(
                                     albumDesc = albumDescription,
                                     curatorName = curatorName,
                                     totalStampsCount = stamps.size,
+                                    allPlacements = placements,
+                                    editState = editState,
+                                    albumLayoutRepo = resolvedRepo,
                                     onStampClick = onStampClick
                                 )
                             }
@@ -483,6 +544,9 @@ fun StampBook3DRenderer(
                                             albumDesc = albumDescription,
                                             curatorName = curatorName,
                                             totalStampsCount = stamps.size,
+                                            allPlacements = placements,
+                                            editState = editState,
+                                            albumLayoutRepo = resolvedRepo,
                                             onStampClick = onStampClick
                                         )
                                     } else {
@@ -498,6 +562,9 @@ fun StampBook3DRenderer(
                                                 albumDesc = albumDescription,
                                                 curatorName = curatorName,
                                                 totalStampsCount = stamps.size,
+                                                allPlacements = placements,
+                                                editState = editState,
+                                                albumLayoutRepo = resolvedRepo,
                                                 onStampClick = onStampClick
                                             )
                                         }
@@ -595,6 +662,16 @@ fun StampBook3DRenderer(
                     }
                 }
 
+                // Interactive Stamp Editor Bottom Bar
+                if (editState.mode == AlbumEditMode.EDIT) {
+                    AlbumEditorBottomBar(
+                        placements = placements,
+                        totalPagesCount = totalSpreads * 2,
+                        editState = editState,
+                        albumLayoutRepo = resolvedRepo
+                    )
+                }
+
                 // Bottom Accessible Navigation Controls
                 Row(
                     modifier = Modifier
@@ -634,6 +711,18 @@ fun StampBook3DRenderer(
                 }
             }
         }
+
+        // Vault Chooser Modal Bottom Sheet
+        if (editState.isVaultPickerOpen) {
+            AlbumVaultPicker(
+                availableStamps = availableVaultStamps,
+                placements = placements,
+                targetPageIndex = editState.activePageIndex,
+                editState = editState,
+                albumLayoutRepo = resolvedRepo,
+                onDismiss = { editState.isVaultPickerOpen = false }
+            )
+        }
     }
 }
 
@@ -648,6 +737,9 @@ fun BookPageSurface(
     albumDesc: String,
     curatorName: String,
     totalStampsCount: Int,
+    allPlacements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
+    editState: AlbumEditState? = null,
+    albumLayoutRepo: AlbumLayoutRepository? = null,
     onStampClick: (String) -> Unit = {}
 ) {
     Box(
@@ -730,6 +822,16 @@ fun BookPageSurface(
                     )
                 }
             }
+        } else if (editState != null && albumLayoutRepo != null) {
+            // Interactive Stamp Placement Surface (Issue #78)
+            EditableBookPage(
+                pageData = pageData,
+                stampsList = pageData.stamps,
+                placements = allPlacements.ifEmpty { pageData.placements },
+                editState = editState,
+                albumLayoutRepo = albumLayoutRepo,
+                onStampClick = onStampClick
+            )
         } else if (pageData.stamps.isEmpty()) {
             // Empty album page
             Box(

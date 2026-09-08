@@ -418,3 +418,24 @@
 "book_spread_prev" = "Previous spread";
 "book_tap_to_open" = "Tap to open album";
 "book_total_stamps_format" = "Total stamps: %d";
+
+/* Issue #78: Interactive Album Stamp Editor */
+"album_editor_edit" = "Edit";
+"album_editor_done" = "Done";
+"album_editor_add_stamp" = "Add Stamp";
+"album_editor_remove_placement" = "Remove from page";
+"album_editor_bring_forward" = "Bring Forward";
+"album_editor_send_backward" = "Send Backward";
+"album_editor_move_page" = "Move to page";
+"album_editor_move_prev_page" = "Previous page";
+"album_editor_move_next_page" = "Next page";
+"album_editor_undo" = "Undo";
+"album_editor_retry_save" = "Retry saving";
+"album_editor_virtual_readonly" = "Synthetic albums are read-only";
+"album_editor_vault_title" = "Stamp Vault";
+"album_editor_vault_subtitle" = "Select a stamp to place on page";
+"album_editor_vault_placed" = "Placed";
+"album_editor_vault_empty" = "No stamps in vault";
+"album_editor_editing_title" = "Editing Album";
+"album_editor_saving" = "Saving layout…";
+"album_editor_save_failed" = "Failed to sync layout. Offline copy preserved.";

@@ -15,10 +15,12 @@ public struct StampBook3DRenderer: View {
     public let iconKey: String?
     public let stamps: [BookStampItem]
     public let placements: [PersistedStampPlacementData]
+    public let availableVaultStamps: [BookStampItem]
     public var onStampClick: (String) -> Void
     public var onDismiss: () -> Void
 
     @StateObject private var stateMachine: PageTurnStateMachine
+    @StateObject private var editState: AlbumEditState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var langManager = AppLanguageManager.shared
 
@@ -43,6 +45,7 @@ public struct StampBook3DRenderer: View {
         iconKey: String?,
         stamps: [BookStampItem],
         placements: [PersistedStampPlacementData] = [],
+        availableVaultStamps: [BookStampItem] = [],
         onStampClick: @escaping (String) -> Void = { _ in },
         onDismiss: @escaping () -> Void = {}
     ) {
@@ -54,9 +57,11 @@ public struct StampBook3DRenderer: View {
         self.iconKey = iconKey
         self.stamps = stamps
         self.placements = placements
+        self.availableVaultStamps = availableVaultStamps.isEmpty ? stamps : availableVaultStamps
         self.onStampClick = onStampClick
         self.onDismiss = onDismiss
         _stateMachine = StateObject(wrappedValue: PageTurnStateMachine(albumId: albumId))
+        _editState = StateObject(wrappedValue: AlbumEditState(albumId: albumId))
     }
 
     public var body: some View {
@@ -91,7 +96,7 @@ public struct StampBook3DRenderer: View {
                     .gesture(
                         DragGesture(minimumDistance: 12)
                             .onChanged { value in
-                                guard !reduceMotion, !isAnimating, stateMachine.bookState == .open else { return }
+                                guard !reduceMotion, !isAnimating, stateMachine.bookState == .open, editState.mode != .edit else { return }
                                 let isRight = value.startLocation.x >= halfWidth
                                 if stateMachine.turnDirection == .none {
                                     let dir: TurnDirection = isRight ? .forward : .backward
@@ -108,7 +113,7 @@ public struct StampBook3DRenderer: View {
                                 }
                             }
                             .onEnded { value in
-                                guard !reduceMotion, !isAnimating, stateMachine.turnDirection != .none else { return }
+                                guard !reduceMotion, !isAnimating, stateMachine.turnDirection != .none, editState.mode != .edit else { return }
                                 let progress = dragTurnProgress
                                 let velocity = value.predictedEndTranslation.width
                                 let shouldComplete: Bool
@@ -141,6 +146,16 @@ public struct StampBook3DRenderer: View {
         .onAppear {
             openCover()
         }
+        .sheet(isPresented: $editState.isVaultPickerOpen) {
+            AlbumVaultPickerView(
+                availableStamps: availableVaultStamps,
+                placements: placements,
+                targetPageIndex: editState.activePageIndex,
+                editState: editState
+            ) {
+                editState.isVaultPickerOpen = false
+            }
+        }
     }
 
     // MARK: - Top Action Bar
@@ -162,6 +177,12 @@ public struct StampBook3DRenderer: View {
                     .foregroundColor(BookGold.opacity(0.8))
             }
             Spacer()
+
+            AlbumEditorTopControlsView(
+                isVirtualAlbum: editState.isVirtualAlbum,
+                editState: editState
+            )
+
             Button(action: { requestClose() }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 16, weight: .bold))
@@ -197,6 +218,8 @@ public struct StampBook3DRenderer: View {
                         albumDesc: albumDescription,
                         curatorName: curatorName,
                         totalStampsCount: stamps.count,
+                        allPlacements: placements,
+                        editState: editState,
                         onStampClick: onStampClick
                     )
                 } else {
@@ -206,6 +229,8 @@ public struct StampBook3DRenderer: View {
                         albumDesc: albumDescription,
                         curatorName: curatorName,
                         totalStampsCount: stamps.count,
+                        allPlacements: placements,
+                        editState: editState,
                         onStampClick: onStampClick
                     )
                 }
@@ -222,6 +247,8 @@ public struct StampBook3DRenderer: View {
                                 albumDesc: albumDescription,
                                 curatorName: curatorName,
                                 totalStampsCount: stamps.count,
+                                allPlacements: placements,
+                                editState: editState,
                                 onStampClick: onStampClick
                             )
                         } else {
@@ -231,6 +258,8 @@ public struct StampBook3DRenderer: View {
                                 albumDesc: albumDescription,
                                 curatorName: curatorName,
                                 totalStampsCount: stamps.count,
+                                allPlacements: placements,
+                                editState: editState,
                                 onStampClick: onStampClick
                             )
                             .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
@@ -275,6 +304,8 @@ public struct StampBook3DRenderer: View {
                         albumDesc: albumDescription,
                         curatorName: curatorName,
                         totalStampsCount: stamps.count,
+                        allPlacements: placements,
+                        editState: editState,
                         onStampClick: onStampClick
                     )
                 } else {
@@ -284,6 +315,8 @@ public struct StampBook3DRenderer: View {
                         albumDesc: albumDescription,
                         curatorName: curatorName,
                         totalStampsCount: stamps.count,
+                        allPlacements: placements,
+                        editState: editState,
                         onStampClick: onStampClick
                     )
                 }
@@ -310,6 +343,8 @@ public struct StampBook3DRenderer: View {
                                 albumDesc: albumDescription,
                                 curatorName: curatorName,
                                 totalStampsCount: stamps.count,
+                                allPlacements: placements,
+                                editState: editState,
                                 onStampClick: onStampClick
                             )
                         } else {
@@ -319,6 +354,8 @@ public struct StampBook3DRenderer: View {
                                 albumDesc: albumDescription,
                                 curatorName: curatorName,
                                 totalStampsCount: stamps.count,
+                                allPlacements: placements,
+                                editState: editState,
                                 onStampClick: onStampClick
                             )
                             .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
@@ -399,40 +436,50 @@ public struct StampBook3DRenderer: View {
 
     // MARK: - Bottom Navigation Controls
     private var bottomNavigationControls: some View {
-        HStack {
-            Button(action: { navigateSpread(forward: false) }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(stateMachine.currentSpreadIndex > 0 ? BookGold : BookGold.opacity(0.3))
-                    .padding(10)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Circle())
+        VStack(spacing: 4) {
+            if editState.mode == .edit {
+                AlbumEditorBottomBarView(
+                    placements: placements,
+                    totalPagesCount: totalSpreads * 2,
+                    editState: editState
+                )
             }
-            .accessibilityLabel(langManager.localized("book_spread_prev"))
-            .disabled(stateMachine.currentSpreadIndex <= 0 || isAnimating || stateMachine.interactionLocked)
 
-            Spacer()
+            HStack {
+                Button(action: { navigateSpread(forward: false) }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(stateMachine.currentSpreadIndex > 0 ? BookGold : BookGold.opacity(0.3))
+                        .padding(10)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel(langManager.localized("book_spread_prev"))
+                .disabled(stateMachine.currentSpreadIndex <= 0 || isAnimating || stateMachine.interactionLocked)
 
-            Text(langManager.localized("book_drag_hint"))
-                .font(.caption)
-                .italic()
-                .foregroundColor(BookGold.opacity(0.65))
+                Spacer()
 
-            Spacer()
+                Text(langManager.localized("book_drag_hint"))
+                    .font(.caption)
+                    .italic()
+                    .foregroundColor(BookGold.opacity(0.65))
 
-            Button(action: { navigateSpread(forward: true) }) {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(stateMachine.currentSpreadIndex < totalSpreads - 1 ? BookGold : BookGold.opacity(0.3))
-                    .padding(10)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Circle())
+                Spacer()
+
+                Button(action: { navigateSpread(forward: true) }) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(stateMachine.currentSpreadIndex < totalSpreads - 1 ? BookGold : BookGold.opacity(0.3))
+                        .padding(10)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel(langManager.localized("book_spread_next"))
+                .disabled(stateMachine.currentSpreadIndex >= totalSpreads - 1 || isAnimating || stateMachine.interactionLocked)
             }
-            .accessibilityLabel(langManager.localized("book_spread_next"))
-            .disabled(stateMachine.currentSpreadIndex >= totalSpreads - 1 || isAnimating || stateMachine.interactionLocked)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
     }
 
     // MARK: - Animation Triggers
@@ -456,6 +503,9 @@ public struct StampBook3DRenderer: View {
 
     private func requestClose() {
         guard !isAnimating, !stateMachine.interactionLocked else { return }
+        if editState.mode == .edit {
+            editState.exitEditMode()
+        }
         stateMachine.close()
         if reduceMotion {
             stateMachine.settleClosed()
@@ -503,6 +553,8 @@ public struct BookPageSurfaceView: View {
     public let albumDesc: String
     public let curatorName: String
     public let totalStampsCount: Int
+    public let allPlacements: [PersistedStampPlacementData]
+    public var editState: AlbumEditState?
     public var onStampClick: (String) -> Void
 
     @ObservedObject private var langManager = AppLanguageManager.shared
@@ -513,6 +565,8 @@ public struct BookPageSurfaceView: View {
         albumDesc: String,
         curatorName: String,
         totalStampsCount: Int,
+        allPlacements: [PersistedStampPlacementData] = [],
+        editState: AlbumEditState? = nil,
         onStampClick: @escaping (String) -> Void = { _ in }
     ) {
         self.pageData = pageData
@@ -520,6 +574,8 @@ public struct BookPageSurfaceView: View {
         self.albumDesc = albumDesc
         self.curatorName = curatorName
         self.totalStampsCount = totalStampsCount
+        self.allPlacements = allPlacements
+        self.editState = editState
         self.onStampClick = onStampClick
     }
 
@@ -571,6 +627,15 @@ public struct BookPageSurfaceView: View {
                         .font(.caption2)
                         .foregroundColor(MSColors.grey.opacity(0.3))
                 }
+            } else if let editState = editState {
+                // Interactive Stamp Placement Surface (Issue #78)
+                EditableBookPageView(
+                    pageData: pageData,
+                    stampsList: pageData.stamps,
+                    placements: allPlacements.isEmpty ? pageData.placements : allPlacements,
+                    editState: editState,
+                    onStampClick: onStampClick
+                )
             } else if !pageData.placements.isEmpty {
                 // Persisted Placement Layout (Custom Physical Stamp Placement)
                 GeometryReader { geo in

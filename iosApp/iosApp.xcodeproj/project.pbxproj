@@ -22,6 +22,11 @@
 		1D3623412D00000100000001 /* CollectionScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623402D00000100000001 /* CollectionScreenView.swift */; };
 		1D3627412D00000100000001 /* PageTurnState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627402D00000100000001 /* PageTurnState.swift */; };
 		1D3627432D00000100000001 /* StampBook3DRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627422D00000100000001 /* StampBook3DRenderer.swift */; };
+		1D3627812D00000100000001 /* AlbumEditState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627802D00000100000001 /* AlbumEditState.swift */; };
+		1D3627832D00000100000001 /* EditableStampPlacementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627822D00000100000001 /* EditableStampPlacementView.swift */; };
+		1D3627852D00000100000001 /* EditableBookPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627842D00000100000001 /* EditableBookPageView.swift */; };
+		1D3627872D00000100000001 /* AlbumVaultPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627862D00000100000001 /* AlbumVaultPickerView.swift */; };
+		1D3627892D00000100000001 /* AlbumEditorToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3627882D00000100000001 /* AlbumEditorToolbarView.swift */; };
 		1D3623432D00000100000001 /* FriendsAndTradeScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */; };
 		1D3623992D00000100000001 /* ChatScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623982D00000100000001 /* ChatScreenView.swift */; };
 		1D3623452D00000100000001 /* PassportScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3623442D00000100000001 /* PassportScreenView.swift */; };
@@ -81,6 +86,11 @@
 		1D3623402D00000100000001 /* CollectionScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionScreenView.swift; sourceTree = "<group>"; };
 		1D3627402D00000100000001 /* PageTurnState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book/PageTurnState.swift; sourceTree = "<group>"; };
 		1D3627422D00000100000001 /* StampBook3DRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Book/StampBook3DRenderer.swift; sourceTree = "<group>"; };
+		1D3627802D00000100000001 /* AlbumEditState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/AlbumEditState.swift; sourceTree = "<group>"; };
+		1D3627822D00000100000001 /* EditableStampPlacementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/EditableStampPlacementView.swift; sourceTree = "<group>"; };
+		1D3627842D00000100000001 /* EditableBookPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/EditableBookPageView.swift; sourceTree = "<group>"; };
+		1D3627862D00000100000001 /* AlbumVaultPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/AlbumVaultPickerView.swift; sourceTree = "<group>"; };
+		1D3627882D00000100000001 /* AlbumEditorToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Editor/AlbumEditorToolbarView.swift; sourceTree = "<group>"; };
 		1D3623422D00000100000001 /* FriendsAndTradeScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsAndTradeScreenView.swift; sourceTree = "<group>"; };
 		1D3623982D00000100000001 /* ChatScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatScreenView.swift; sourceTree = "<group>"; };
 		1D3623442D00000100000001 /* PassportScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassportScreenView.swift; sourceTree = "<group>"; };
@@ -276,6 +286,11 @@
 				1D3623402D00000100000001 /* CollectionScreenView.swift */,
 				1D3627402D00000100000001 /* PageTurnState.swift */,
 				1D3627422D00000100000001 /* StampBook3DRenderer.swift */,
+				1D3627802D00000100000001 /* AlbumEditState.swift */,
+				1D3627822D00000100000001 /* EditableStampPlacementView.swift */,
+				1D3627842D00000100000001 /* EditableBookPageView.swift */,
+				1D3627862D00000100000001 /* AlbumVaultPickerView.swift */,
+				1D3627882D00000100000001 /* AlbumEditorToolbarView.swift */,
 			);
 			path = Collection;
 			sourceTree = "<group>";
@@ -452,6 +467,11 @@
 				1D3623412D00000100000001 /* CollectionScreenView.swift in Sources */,
 				1D3627412D00000100000001 /* PageTurnState.swift in Sources */,
 				1D3627432D00000100000001 /* StampBook3DRenderer.swift in Sources */,
+				1D3627812D00000100000001 /* AlbumEditState.swift in Sources */,
+				1D3627832D00000100000001 /* EditableStampPlacementView.swift in Sources */,
+				1D3627852D00000100000001 /* EditableBookPageView.swift in Sources */,
+				1D3627872D00000100000001 /* AlbumVaultPickerView.swift in Sources */,
+				1D3627892D00000100000001 /* AlbumEditorToolbarView.swift in Sources */,
 				1D3623432D00000100000001 /* FriendsAndTradeScreenView.swift in Sources */,
 				1D3623992D00000100000001 /* ChatScreenView.swift in Sources */,
 				1D3623452D00000100000001 /* PassportScreenView.swift in Sources */,

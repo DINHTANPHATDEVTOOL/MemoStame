@@ -159,6 +159,7 @@ struct CollectionScreenView: View {
         .fullScreenCover(item: $selectedAlbum) { album in
             // 📖 Production 2.5D Two-Page Stamp Book Renderer (replaces old flat TabView)
             let placements = albumLayoutRepo.layoutPlacements[album.id] ?? []
+            let vaultStamps = cloudStamps.map { BookStampItem(id: $0.id, name: $0.title, imageUrl: $0.stampImagePath) }
             StampBook3DRenderer(
                 albumId: album.id,
                 albumTitle: album.title,
@@ -168,6 +169,7 @@ struct CollectionScreenView: View {
                 iconKey: album.iconName,
                 stamps: album.stamps,
                 placements: placements,
+                availableVaultStamps: vaultStamps,
                 onStampClick: { _ in },
                 onDismiss: { selectedAlbum = nil }
             )
