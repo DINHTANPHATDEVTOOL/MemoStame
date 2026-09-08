@@ -1,28 +1,56 @@
 #!/usr/bin/env python3
 """
-scripts/resolve-ios-export-options.py
+scripts/resolve_ios_export_options.py
 
 Validates and resolves a robust ExportOptions.plist for Xcode `xcodebuild -exportArchive`.
 Guarantees the strict contract:
 - Root is a Dictionary
 - `provisioningProfiles` is a Dictionary<String, String>, NOT an array
-- Maps the target bundle identifier (com.mipastudio.memostamp) to a valid profile name or UUID
-- Safely handles malformed dynamic plists (e.g. array-formatted provisioningProfiles from CLI tools)
-  by rejecting them and reconstructing valid options from installed .mobileprovision files or static fallback.
+- Maps the target bundle identifier (com.mipastudio.memostamp) to a valid installed profile Name or UUID
+- Distribution method uses modern 'app-store-connect' (with 'app-store' compatibility)
+- Rejects literal shell parameter-expansion syntax (e.g. '${DEVELOPMENT_TEAM:-...}')
+- Derives Team ID from installed profile metadata if not explicitly provided
+- Fails early with EXTERNAL_SETUP_REQUIRED when no compatible Apple distribution profile is installed
+  instead of falling back to a non-existent static profile name.
 """
 
 from __future__ import annotations
 
 import argparse
-import glob
+from datetime import datetime, timezone
 import os
 import pathlib
 import plistlib
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
+try:
+    from scripts.resolve_ios_signing_context import (
+        DEFAULT_BUNDLE_ID,
+        default_profile_search_dirs,
+        discover_installed_profiles,
+        parse_mobileprovision,
+        sanitize_team_id,
+        validate_profile_metadata,
+    )
+except ImportError:
+    from resolve_ios_signing_context import (  # type: ignore
+        DEFAULT_BUNDLE_ID,
+        default_profile_search_dirs,
+        discover_installed_profiles,
+        parse_mobileprovision,
+        sanitize_team_id,
+        validate_profile_metadata,
+    )
 
-DEFAULT_BUNDLE_ID = "com.mipastudio.memostamp"
+
+VALID_EXPORT_METHODS = (
+    "app-store-connect",
+    "app-store",
+    "ad-hoc",
+    "enterprise",
+    "development",
+)
 
 
 def validate_export_options(
@@ -36,8 +64,17 @@ def validate_export_options(
         return False, f"Root element is {type(plist_data).__name__}, expected Dictionary"
 
     method = plist_data.get("method")
-    if not method or method not in ("app-store", "ad-hoc", "enterprise", "development"):
-        return False, f"Invalid or missing distribution 'method': {method!r}"
+    if not method or method not in VALID_EXPORT_METHODS:
+        return False, f"Invalid or missing distribution 'method': {method!r}. Supported: {VALID_EXPORT_METHODS}"
+
+    # Validate Team ID if present
+    team_id = plist_data.get("teamID")
+    if team_id is not None:
+        if not isinstance(team_id, str):
+            return False, f"teamID must be a string, got {type(team_id).__name__}"
+        cleaned = sanitize_team_id(team_id)
+        if not cleaned:
+            return False, f"Invalid or unresolved Team ID expression: {team_id!r}"
 
     profiles = plist_data.get("provisioningProfiles")
     if profiles is None:
@@ -69,89 +106,38 @@ def validate_export_options(
     return True, "OK"
 
 
-def parse_mobileprovision(file_path: pathlib.Path) -> Optional[Dict[str, Any]]:
+def is_profile_specifier_installed(
+    specifier: str,
+    bundle_id: str,
+    search_dirs: List[pathlib.Path],
+    team_id: Optional[str] = None,
+    current_time: Optional[datetime] = None,
+) -> bool:
     """
-    Extracts and parses the embedded XML plist from a signed .mobileprovision file.
+    Checks if a profile name or UUID is actually installed on disk and matches bundle_id and team_id.
     """
-    try:
-        data = file_path.read_bytes()
-        start = data.find(b"<?xml")
-        end = data.find(b"</plist>")
-        if start == -1 or end == -1:
-            return None
-        plist_bytes = data[start : end + len(b"</plist>")]
-        parsed = plistlib.loads(plist_bytes)
-        if isinstance(parsed, dict):
-            return parsed
-    except Exception as err:
-        print(f"[DEBUG] Failed to parse {file_path}: {err}", file=sys.stderr)
-    return None
-
-
-def discover_installed_profiles(
-    bundle_id: str, search_dirs: List[pathlib.Path]
-) -> List[Dict[str, Any]]:
-    """
-    Scans search directories for .mobileprovision files matching the given bundle_id.
-    """
-    discovered: List[Dict[str, Any]] = []
-
-    for s_dir in search_dirs:
-        if not s_dir.is_dir():
-            continue
-        for p_file in s_dir.glob("*.mobileprovision"):
-            info = parse_mobileprovision(p_file)
-            if not info:
-                continue
-
-            name = info.get("Name", "")
-            uuid = info.get("UUID", "")
-            team_ids = info.get("TeamIdentifier", [])
-            team_id = team_ids[0] if team_ids else ""
-            entitlements = info.get("Entitlements", {})
-            app_id = entitlements.get("application-identifier", "")
-            aps_env = entitlements.get("aps-environment", "")
-            get_task_allow = entitlements.get("get-task-allow", False)
-
-            # Match bundle_id either directly or prefixed with Team ID (e.g. TEAMID.bundle_id)
-            matches_bundle = (
-                app_id == bundle_id
-                or app_id.endswith("." + bundle_id)
-                or (app_id.endswith(".*") and bundle_id.startswith(app_id[:-2]))
-            )
-
-            if matches_bundle:
-                discovered.append(
-                    {
-                        "path": str(p_file),
-                        "name": name,
-                        "uuid": uuid,
-                        "team_id": team_id,
-                        "app_id": app_id,
-                        "aps_env": aps_env,
-                        "get_task_allow": get_task_allow,
-                    }
-                )
-
-    # Sort profiles: prefer production App Store profiles (get_task_allow == False, aps_env == production)
-    discovered.sort(
-        key=lambda p: (
-            not p["get_task_allow"],
-            p["aps_env"] == "production",
-            bool(p["name"]),
-        ),
-        reverse=True,
+    installed = discover_installed_profiles(
+        bundle_id=bundle_id,
+        search_dirs=search_dirs,
+        team_id=team_id,
+        current_time=current_time,
     )
-    return discovered
+    for p in installed:
+        if p["name"] == specifier or p["uuid"] == specifier:
+            return True
+    return False
 
 
 def resolve_export_options(
     dynamic_plist_path: Optional[pathlib.Path],
     static_plist_path: Optional[pathlib.Path],
     output_plist_path: pathlib.Path,
-    bundle_id: str,
+    bundle_id: str = DEFAULT_BUNDLE_ID,
     team_id: Optional[str] = None,
     search_dirs: Optional[List[pathlib.Path]] = None,
+    require_installed_profile: bool = True,
+    current_time: Optional[datetime] = None,
+    export_method: str = "app-store-connect",
 ) -> bool:
     """
     Resolves a valid ExportOptions dictionary and writes it to output_plist_path.
@@ -159,6 +145,15 @@ def resolve_export_options(
     """
     resolved_data: Optional[Dict[str, Any]] = None
     selection_reason = ""
+    dirs = search_dirs if search_dirs is not None else default_profile_search_dirs()
+
+    # Sanitize Team ID: reject literal syntax (${...}), quotes, spaces
+    clean_team_id = (
+        sanitize_team_id(team_id)
+        or sanitize_team_id(os.environ.get("DEVELOPMENT_TEAM"))
+        or sanitize_team_id(os.environ.get("APPLE_TEAM_ID"))
+        or sanitize_team_id(os.environ.get("APNS_TEAM_ID"))
+    )
 
     # 1. Attempt validation of dynamic plist
     if dynamic_plist_path and dynamic_plist_path.is_file():
@@ -167,7 +162,17 @@ def resolve_export_options(
                 dyn_data = plistlib.load(f)
             is_valid, msg = validate_export_options(dyn_data, bundle_id)
             if is_valid:
-                print(f"[INFO] Dynamic export options at '{dynamic_plist_path}' are valid.")
+                # If dynamic plist has a clean team ID or we have clean_team_id, ensure it's not a literal string
+                dyn_team = sanitize_team_id(dyn_data.get("teamID"))
+                if clean_team_id and not dyn_team:
+                    dyn_data["teamID"] = clean_team_id
+                elif dyn_team:
+                    dyn_data["teamID"] = dyn_team
+                elif "teamID" in dyn_data and not dyn_team:
+                    # Invalid literal teamID in dynamic plist -> reject
+                    del dyn_data["teamID"]
+
+                print(f"[INFO] Dynamic export options at '{dynamic_plist_path}' are structurally valid.")
                 resolved_data = dyn_data
                 selection_reason = f"Validated dynamic plist ({dynamic_plist_path})"
             else:
@@ -176,68 +181,96 @@ def resolve_export_options(
         except Exception as err:
             print(f"[WARN] Error reading dynamic plist '{dynamic_plist_path}': {err}")
 
-    # 2. If dynamic plist is rejected or missing, discover from installed .mobileprovision
-    if resolved_data is None and search_dirs:
-        print(f"[INFO] Searching for installed provisioning profiles for bundle ID '{bundle_id}'...")
-        matching_profiles = discover_installed_profiles(bundle_id, search_dirs)
-        if matching_profiles:
-            best_profile = matching_profiles[0]
-            prof_name = best_profile["name"] or best_profile["uuid"]
-            prof_team = best_profile["team_id"] or team_id or ""
-            print(
-                f"[INFO] Discovered matching installed profile: '{best_profile['name']}' "
-                f"(UUID: {best_profile['uuid']}, Team: {prof_team}, File: {best_profile['path']})"
-            )
+    # 2. Discover installed profiles matching bundle_id (and clean_team_id if known)
+    matching_installed = discover_installed_profiles(
+        bundle_id=bundle_id,
+        search_dirs=dirs,
+        team_id=clean_team_id,
+        current_time=current_time,
+    )
 
-            reconstructed = {
-                "method": "app-store",
-                "destination": "export",
-                "signingStyle": "manual",
-                "stripSwiftSymbols": True,
-                "uploadSymbols": True,
-                "uploadBitcode": False,
-                "compileBitcode": False,
-                "provisioningProfiles": {
-                    bundle_id: prof_name,
-                },
-            }
-            if prof_team:
-                reconstructed["teamID"] = prof_team
+    # If clean_team_id was not provided, derive it from the installed profile
+    if not clean_team_id and matching_installed:
+        derived_team = sanitize_team_id(matching_installed[0]["team_id"])
+        if derived_team:
+            clean_team_id = derived_team
+            print(f"[INFO] Derived Team ID '{clean_team_id}' from installed provisioning profile metadata.")
 
-            is_valid, msg = validate_export_options(reconstructed, bundle_id)
-            if is_valid:
-                resolved_data = reconstructed
-                selection_reason = f"Reconstructed from installed profile '{prof_name}'"
-            else:
-                print(f"[WARN] Reconstructed profile plist failed validation: {msg}")
+    # 3. If dynamic plist was rejected or missing, reconstruct from discovered installed profile
+    if resolved_data is None and matching_installed:
+        best_profile = matching_installed[0]
+        prof_name = best_profile["name"] or best_profile["uuid"]
+        prof_team = best_profile["team_id"] or clean_team_id or ""
+        print(
+            f"[INFO] Discovered matching installed profile: '{best_profile['name']}' "
+            f"(UUID: {best_profile['uuid']}, Team: {prof_team}, File: {best_profile['path']})"
+        )
 
-    # 3. Fallback to static plist if dynamic was rejected and reconstruction was not possible
+        reconstructed = {
+            "method": export_method,
+            "destination": "export",
+            "signingStyle": "manual",
+            "stripSwiftSymbols": True,
+            "uploadSymbols": True,
+            "uploadBitcode": False,
+            "compileBitcode": False,
+            "provisioningProfiles": {
+                bundle_id: prof_name,
+            },
+        }
+        if prof_team:
+            reconstructed["teamID"] = prof_team
+
+        is_valid, msg = validate_export_options(reconstructed, bundle_id)
+        if is_valid:
+            resolved_data = reconstructed
+            selection_reason = f"Reconstructed from installed profile '{prof_name}'"
+        else:
+            print(f"[WARN] Reconstructed profile plist failed validation: {msg}")
+
+    # 4. If still unresolved, check static plist template
     if resolved_data is None and static_plist_path and static_plist_path.is_file():
-        print(f"[INFO] Falling back to static export options '{static_plist_path}'...")
         try:
             with static_plist_path.open("rb") as f:
                 static_data = plistlib.load(f)
             is_valid, msg = validate_export_options(static_data, bundle_id)
             if is_valid:
-                resolved_data = static_data
-                selection_reason = f"Validated static fallback plist ({static_plist_path})"
+                specifier = static_data.get("provisioningProfiles", {}).get(bundle_id, "")
+                # Check if this profile actually exists on the runner
+                installed_ok = is_profile_specifier_installed(
+                    specifier=specifier,
+                    bundle_id=bundle_id,
+                    search_dirs=dirs,
+                    team_id=clean_team_id,
+                    current_time=current_time,
+                )
+                if installed_ok or not require_installed_profile:
+                    resolved_data = static_data
+                    if clean_team_id and not resolved_data.get("teamID"):
+                        resolved_data["teamID"] = clean_team_id
+                    selection_reason = f"Validated static fallback plist ({static_plist_path})"
+                else:
+                    print(
+                        f"[WARN] Static plist '{static_plist_path}' references '{specifier}', "
+                        f"but no such profile is installed for team '{clean_team_id or '(any)'}'."
+                    )
             else:
                 print(f"[WARN] Static plist '{static_plist_path}' is INVALID: {msg}")
         except Exception as err:
             print(f"[WARN] Error reading static plist '{static_plist_path}': {err}")
 
-    # 4. If we still don't have resolved data, fail closed
+    # 5. Fail closed if no valid configuration could be resolved
     if resolved_data is None:
         print(
-            f"[ERROR] Could not resolve any valid ExportOptions.plist for bundle ID '{bundle_id}'!",
+            f"[ERROR] EXTERNAL_SETUP_REQUIRED: No compatible Apple App Store provisioning profile "
+            f"installed for bundle ID '{bundle_id}' and team '{clean_team_id or '(unspecified)'}'.",
             file=sys.stderr,
         )
         return False
 
-    # Inject / update teamID if available and not already set
-    effective_team = team_id or os.environ.get("DEVELOPMENT_TEAM") or os.environ.get("APNS_TEAM_ID")
-    if effective_team and not resolved_data.get("teamID"):
-        resolved_data["teamID"] = effective_team
+    # Inject clean_team_id if not present or replace invalid literal teamID
+    if clean_team_id:
+        resolved_data["teamID"] = clean_team_id
 
     # Final sanity validation before writing
     final_valid, final_msg = validate_export_options(resolved_data, bundle_id)
@@ -266,14 +299,6 @@ def resolve_export_options(
     return True
 
 
-def default_profile_search_dirs() -> List[pathlib.Path]:
-    home = pathlib.Path.home()
-    return [
-        home / "Library" / "MobileDevice" / "Provisioning Profiles",
-        home / "Library" / "Developer" / "Xcode" / "UserData" / "Provisioning Profiles",
-    ]
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Resolve and validate iOS ExportOptions.plist")
     parser.add_argument("--dynamic-plist", type=pathlib.Path, default=None, help="Dynamic plist from use-profiles")
@@ -288,6 +313,18 @@ def main() -> int:
         default=[],
         help="Directories to search for .mobileprovision files",
     )
+    parser.add_argument(
+        "--method",
+        type=str,
+        default="app-store-connect",
+        choices=list(VALID_EXPORT_METHODS),
+        help="Export distribution method",
+    )
+    parser.add_argument(
+        "--allow-uninstalled-static",
+        action="store_true",
+        help="Allow static plist even if referenced profile is not installed",
+    )
 
     args = parser.parse_args()
 
@@ -300,6 +337,8 @@ def main() -> int:
         bundle_id=args.bundle_id,
         team_id=args.team_id,
         search_dirs=search_dirs,
+        require_installed_profile=not args.allow_uninstalled_static,
+        export_method=args.method,
     )
 
     return 0 if success else 1
