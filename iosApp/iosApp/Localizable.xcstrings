@@ -181,6 +181,564 @@
         }
       }
     },
+    "album_editor_add_page": {
+      "comment": "Localization key album_editor_add_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm trang"
+          }
+        }
+      }
+    },
+    "album_editor_add_stamp": {
+      "comment": "Localization key album_editor_add_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm tem"
+          }
+        }
+      }
+    },
+    "album_editor_bring_forward": {
+      "comment": "Localization key album_editor_bring_forward",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring Forward"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đưa lên trước"
+          }
+        }
+      }
+    },
+    "album_editor_cannot_remove_only_page": {
+      "comment": "Localization key album_editor_cannot_remove_only_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot remove the only page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xóa trang duy nhất"
+          }
+        }
+      }
+    },
+    "album_editor_done": {
+      "comment": "Localization key album_editor_done",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong"
+          }
+        }
+      }
+    },
+    "album_editor_edit": {
+      "comment": "Localization key album_editor_edit",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa"
+          }
+        }
+      }
+    },
+    "album_editor_editing_title": {
+      "comment": "Localization key album_editor_editing_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editing Album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa album"
+          }
+        }
+      }
+    },
+    "album_editor_empty_page": {
+      "comment": "Localization key album_editor_empty_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empty page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang trống"
+          }
+        }
+      }
+    },
+    "album_editor_manage_pages": {
+      "comment": "Localization key album_editor_manage_pages",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage Pages"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản lý trang"
+          }
+        }
+      }
+    },
+    "album_editor_max_pages_reached": {
+      "comment": "Localization key album_editor_max_pages_reached",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum pages reached"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đạt số trang tối đa"
+          }
+        }
+      }
+    },
+    "album_editor_move_earlier": {
+      "comment": "Localization key album_editor_move_earlier",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move Earlier"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển lên trước"
+          }
+        }
+      }
+    },
+    "album_editor_move_later": {
+      "comment": "Localization key album_editor_move_later",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move Later"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển về sau"
+          }
+        }
+      }
+    },
+    "album_editor_move_next_page": {
+      "comment": "Localization key album_editor_move_next_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang sau"
+          }
+        }
+      }
+    },
+    "album_editor_move_page": {
+      "comment": "Localization key album_editor_move_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển sang trang"
+          }
+        }
+      }
+    },
+    "album_editor_move_prev_page": {
+      "comment": "Localization key album_editor_move_prev_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang trước"
+          }
+        }
+      }
+    },
+    "album_editor_page_current": {
+      "comment": "Localization key album_editor_page_current",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện tại"
+          }
+        }
+      }
+    },
+    "album_editor_page_has_stamps_error": {
+      "comment": "Localization key album_editor_page_has_stamps_error",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move stamps before removing this page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy di chuyển hoặc xóa tem trước khi xóa trang này"
+          }
+        }
+      }
+    },
+    "album_editor_pages_title": {
+      "comment": "Localization key album_editor_pages_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page Management"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản lý trang"
+          }
+        }
+      }
+    },
+    "album_editor_remove_page": {
+      "comment": "Localization key album_editor_remove_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa trang"
+          }
+        }
+      }
+    },
+    "album_editor_remove_placement": {
+      "comment": "Localization key album_editor_remove_placement",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa khỏi trang"
+          }
+        }
+      }
+    },
+    "album_editor_retry_save": {
+      "comment": "Localization key album_editor_retry_save",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry saving"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử lưu lại"
+          }
+        }
+      }
+    },
+    "album_editor_save_failed": {
+      "comment": "Localization key album_editor_save_failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to sync layout. Offline copy preserved."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lỗi đồng bộ bố cục. Bản lưu ngoại tuyến đã được giữ."
+          }
+        }
+      }
+    },
+    "album_editor_saving": {
+      "comment": "Localization key album_editor_saving",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving layout…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang lưu bố cục…"
+          }
+        }
+      }
+    },
+    "album_editor_send_backward": {
+      "comment": "Localization key album_editor_send_backward",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Backward"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đưa về sau"
+          }
+        }
+      }
+    },
+    "album_editor_stamps_count": {
+      "comment": "Localization key album_editor_stamps_count",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d stamps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d con tem"
+          }
+        }
+      }
+    },
+    "album_editor_undo": {
+      "comment": "Localization key album_editor_undo",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác"
+          }
+        }
+      }
+    },
+    "album_editor_vault_empty": {
+      "comment": "Localization key album_editor_vault_empty",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamps in vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem trống"
+          }
+        }
+      }
+    },
+    "album_editor_vault_placed": {
+      "comment": "Localization key album_editor_vault_placed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Placed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đặt"
+          }
+        }
+      }
+    },
+    "album_editor_vault_subtitle": {
+      "comment": "Localization key album_editor_vault_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a stamp to place on page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn con tem để đặt vào trang sách"
+          }
+        }
+      }
+    },
+    "album_editor_vault_title": {
+      "comment": "Localization key album_editor_vault_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem"
+          }
+        }
+      }
+    },
+    "album_editor_virtual_readonly": {
+      "comment": "Localization key album_editor_virtual_readonly",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synthetic albums are read-only"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập tự động chỉ xem, không thể sửa"
+          }
+        }
+      }
+    },
     "app_name": {
       "comment": "Localization key app_name",
       "extractionState": "manual",
@@ -1027,6 +1585,384 @@
         }
       }
     },
+    "book_archival_blank_page": {
+      "comment": "Localization key book_archival_blank_page",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archival Blank Page"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang lưu trữ trống"
+          }
+        }
+      }
+    },
+    "book_close": {
+      "comment": "Localization key book_close",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close book"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng sách"
+          }
+        }
+      }
+    },
+    "book_created_date_format": {
+      "comment": "Localization key book_created_date_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngày tạo: %s"
+          }
+        }
+      }
+    },
+    "book_curator_format": {
+      "comment": "Localization key book_curator_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curator: %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người lưu giữ: %s"
+          }
+        }
+      }
+    },
+    "book_drag_hint": {
+      "comment": "Localization key book_drag_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag page edge to turn"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuốt mép trang để lật"
+          }
+        }
+      }
+    },
+    "book_empty_page_hint": {
+      "comment": "Localization key book_empty_page_hint",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamps on this page yet"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có con tem nào trên trang này"
+          }
+        }
+      }
+    },
+    "book_end_of_album": {
+      "comment": "Localization key book_end_of_album",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End of Album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hết cuốn album"
+          }
+        }
+      }
+    },
+    "book_inside_cover_title": {
+      "comment": "Localization key book_inside_cover_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CURATED MEMORY COLLECTION"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BỘ SƯU TẬP TEM KỶ NIỆM"
+          }
+        }
+      }
+    },
+    "book_legacy_default_location": {
+      "comment": "Localization key book_legacy_default_location",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General Memories"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kỷ niệm chung"
+          }
+        }
+      }
+    },
+    "book_legacy_desc_format": {
+      "comment": "Localization key book_legacy_desc_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory stamp collection at %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập tem kỷ niệm tại %s"
+          }
+        }
+      }
+    },
+    "book_page_number_format": {
+      "comment": "Localization key book_page_number_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page %d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang %d"
+          }
+        }
+      }
+    },
+    "book_shelf_collected_format": {
+      "comment": "Localization key book_shelf_collected_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%s collected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%s đã sưu tầm"
+          }
+        }
+      }
+    },
+    "book_shelf_empty_desc": {
+      "comment": "Localization key book_shelf_empty_desc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture and save stamps from camera to curate vintage postal albums!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy chụp và lưu tem từ máy ảnh để tự động lưu giữ album bưu chính!"
+          }
+        }
+      }
+    },
+    "book_shelf_empty_title": {
+      "comment": "Localization key book_shelf_empty_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stamp collections yet"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bộ sưu tập tem nào"
+          }
+        }
+      }
+    },
+    "book_shelf_subtitle": {
+      "comment": "Localization key book_shelf_subtitle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curated Memory Collections • Tap book to open"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập tem kỷ niệm • Chạm vào sách để mở"
+          }
+        }
+      }
+    },
+    "book_shelf_title": {
+      "comment": "Localization key book_shelf_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STAMP ALBUMS"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ALBUM TEM"
+          }
+        }
+      }
+    },
+    "book_spread_next": {
+      "comment": "Localization key book_spread_next",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next spread"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đôi sau"
+          }
+        }
+      }
+    },
+    "book_spread_page_indicator": {
+      "comment": "Localization key book_spread_page_indicator",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spread %1$d / %2$d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đôi %1$d / %2$d"
+          }
+        }
+      }
+    },
+    "book_spread_prev": {
+      "comment": "Localization key book_spread_prev",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous spread"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trang đôi trước"
+          }
+        }
+      }
+    },
+    "book_tap_to_open": {
+      "comment": "Localization key book_tap_to_open",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to open album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để mở album"
+          }
+        }
+      }
+    },
+    "book_total_stamps_format": {
+      "comment": "Localization key book_total_stamps_format",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total stamps: %d"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng số tem: %d"
+          }
+        }
+      }
+    },
     "camera_filter_cool": {
       "comment": "Localization key camera_filter_cool",
       "extractionState": "manual",
@@ -1833,6 +2769,168 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bộ sưu tập tem"
+          }
+        }
+      }
+    },
+    "comment_error_account_mismatch": {
+      "comment": "Localization key comment_error_account_mismatch",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not verify account. Please sign in again."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xác minh tài khoản. Vui lòng đăng nhập lại."
+          }
+        }
+      }
+    },
+    "comment_error_delete_failed": {
+      "comment": "Localization key comment_error_delete_failed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to delete comment. Please try again."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xóa bình luận. Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "comment_error_delete_forbidden": {
+      "comment": "Localization key comment_error_delete_forbidden",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have permission to delete this comment."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn không có quyền xóa bình luận này."
+          }
+        }
+      }
+    },
+    "comment_error_forbidden": {
+      "comment": "Localization key comment_error_forbidden",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have permission to comment on this post."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn không có quyền bình luận trên bài viết này."
+          }
+        }
+      }
+    },
+    "comment_error_network": {
+      "comment": "Localization key comment_error_network",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to connect. Please check your network and try again."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có kết nối mạng. Vui lòng kiểm tra và thử lại."
+          }
+        }
+      }
+    },
+    "comment_error_rate_limited": {
+      "comment": "Localization key comment_error_rate_limited",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are commenting too quickly. Please try again shortly."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn thao tác quá nhanh. Vui lòng thử lại sau giây lát."
+          }
+        }
+      }
+    },
+    "comment_error_server": {
+      "comment": "Localization key comment_error_server",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to send comment. Please try again."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể gửi bình luận. Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "comment_error_unauthenticated": {
+      "comment": "Localization key comment_error_unauthenticated",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in to comment."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn cần đăng nhập để bình luận."
+          }
+        }
+      }
+    },
+    "comment_submitting": {
+      "comment": "Localization key comment_submitting",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang gửi…"
           }
         }
       }
@@ -4861,6 +5959,276 @@
         }
       }
     },
+    "post_detail_comment_placeholder": {
+      "comment": "Localization key post_detail_comment_placeholder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a comment..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết bình luận..."
+          }
+        }
+      }
+    },
+    "post_detail_comments": {
+      "comment": "Localization key post_detail_comments",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comments"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình luận"
+          }
+        }
+      }
+    },
+    "post_detail_delete_comment": {
+      "comment": "Localization key post_detail_delete_comment",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Comment"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa bình luận"
+          }
+        }
+      }
+    },
+    "post_detail_delete_memory": {
+      "comment": "Localization key post_detail_delete_memory",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Memory Permanently"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa vĩnh viễn kỷ niệm"
+          }
+        }
+      }
+    },
+    "post_detail_header": {
+      "comment": "Localization key post_detail_header",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory Detail"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết Kỷ niệm"
+          }
+        }
+      }
+    },
+    "post_detail_like": {
+      "comment": "Localization key post_detail_like",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thích"
+          }
+        }
+      }
+    },
+    "post_detail_no_comments": {
+      "comment": "Localization key post_detail_no_comments",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No comments yet. Start the conversation!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bình luận nào. Hãy bắt đầu cuộc trò chuyện!"
+          }
+        }
+      }
+    },
+    "post_detail_options": {
+      "comment": "Localization key post_detail_options",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tùy chọn"
+          }
+        }
+      }
+    },
+    "post_detail_remove_feed": {
+      "comment": "Localization key post_detail_remove_feed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Feed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gỡ khỏi bảng tin"
+          }
+        }
+      }
+    },
+    "post_detail_reply": {
+      "comment": "Localization key post_detail_reply",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phản hồi"
+          }
+        }
+      }
+    },
+    "post_detail_reply_by": {
+      "comment": "Localization key post_detail_reply_by",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply by %s"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồi âm bởi %s"
+          }
+        }
+      }
+    },
+    "post_detail_reply_chain_title": {
+      "comment": "Localization key post_detail_reply_chain_title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Reply Chain (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuỗi hồi âm bằng tem (%d)"
+          }
+        }
+      }
+    },
+    "post_detail_reply_with_stamp": {
+      "comment": "Localization key post_detail_reply_with_stamp",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reply with Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồi âm bằng Tem"
+          }
+        }
+      }
+    },
+    "post_detail_stamp_replies": {
+      "comment": "Localization key post_detail_stamp_replies",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Replies (%d)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem phản hồi (%d)"
+          }
+        }
+      }
+    },
+    "post_detail_stamp_reply_badge": {
+      "comment": "Localization key post_detail_stamp_reply_badge",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Reply"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồi âm bằng tem"
+          }
+        }
+      }
+    },
     "post_detail_title": {
       "comment": "Localization key post_detail_title",
       "extractionState": "manual",
@@ -4868,13 +6236,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Memory Post"
+            "value": "Memory Stamp"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chi tiết kỷ niệm"
+            "value": "Dấu tem kỷ niệm"
+          }
+        }
+      }
+    },
+    "post_detail_unavailable": {
+      "comment": "Localization key post_detail_unavailable",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post unavailable"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài viết không khả dụng"
           }
         }
       }
@@ -7143,942 +8529,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kho tem bưu chính"
-          }
-        }
-      }
-    },
-    "book_archival_blank_page": {
-      "comment": "Localization key book_archival_blank_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Archival Blank Page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang lưu trữ trống"
-          }
-        }
-      }
-    },
-    "book_close": {
-      "comment": "Localization key book_close",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close book"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đóng sách"
-          }
-        }
-      }
-    },
-    "book_created_date_format": {
-      "comment": "Localization key book_created_date_format",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Created: %s"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ngày tạo: %s"
-          }
-        }
-      }
-    },
-    "book_curator_format": {
-      "comment": "Localization key book_curator_format",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Curator: %s"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Người lưu giữ: %s"
-          }
-        }
-      }
-    },
-    "book_drag_hint": {
-      "comment": "Localization key book_drag_hint",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drag page edge to turn"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vuốt mép trang để lật"
-          }
-        }
-      }
-    },
-    "book_empty_page_hint": {
-      "comment": "Localization key book_empty_page_hint",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No stamps on this page yet"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chưa có con tem nào trên trang này"
-          }
-        }
-      }
-    },
-    "book_end_of_album": {
-      "comment": "Localization key book_end_of_album",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "End of Album"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hết cuốn album"
-          }
-        }
-      }
-    },
-    "book_inside_cover_title": {
-      "comment": "Localization key book_inside_cover_title",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CURATED MEMORY COLLECTION"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BỘ SƯU TẬP TEM KỶ NIỆM"
-          }
-        }
-      }
-    },
-    "book_legacy_default_location": {
-      "comment": "Localization key book_legacy_default_location",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "General Memories"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kỷ niệm chung"
-          }
-        }
-      }
-    },
-    "book_legacy_desc_format": {
-      "comment": "Localization key book_legacy_desc_format",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Memory stamp collection at %s"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bộ sưu tập tem kỷ niệm tại %s"
-          }
-        }
-      }
-    },
-    "book_page_number_format": {
-      "comment": "Localization key book_page_number_format",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Page %d"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang %d"
-          }
-        }
-      }
-    },
-    "book_shelf_collected_format": {
-      "comment": "Localization key book_shelf_collected_format",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%s collected"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%s đã sưu tầm"
-          }
-        }
-      }
-    },
-    "book_shelf_empty_desc": {
-      "comment": "Localization key book_shelf_empty_desc",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Capture and save stamps from camera to curate vintage postal albums!"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hãy chụp và lưu tem từ máy ảnh để tự động lưu giữ album bưu chính!"
-          }
-        }
-      }
-    },
-    "book_shelf_empty_title": {
-      "comment": "Localization key book_shelf_empty_title",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No stamp collections yet"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chưa có bộ sưu tập tem nào"
-          }
-        }
-      }
-    },
-    "book_shelf_subtitle": {
-      "comment": "Localization key book_shelf_subtitle",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Curated Memory Collections • Tap book to open"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bộ sưu tập tem kỷ niệm • Chạm vào sách để mở"
-          }
-        }
-      }
-    },
-    "book_shelf_title": {
-      "comment": "Localization key book_shelf_title",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "STAMP ALBUMS"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ALBUM TEM"
-          }
-        }
-      }
-    },
-    "book_spread_next": {
-      "comment": "Localization key book_spread_next",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next spread"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang đôi sau"
-          }
-        }
-      }
-    },
-    "book_spread_page_indicator": {
-      "comment": "Localization key book_spread_page_indicator",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spread %1$d / %2$d"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang đôi %1$d / %2$d"
-          }
-        }
-      }
-    },
-    "book_spread_prev": {
-      "comment": "Localization key book_spread_prev",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previous spread"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang đôi trước"
-          }
-        }
-      }
-    },
-    "book_tap_to_open": {
-      "comment": "Localization key book_tap_to_open",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tap to open album"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chạm để mở album"
-          }
-        }
-      }
-    },
-    "book_total_stamps_format": {
-      "comment": "Localization key book_total_stamps_format",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Total stamps: %d"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tổng số tem: %d"
-          }
-        }
-      }
-    },
-    "album_editor_edit": {
-      "comment": "Localization key album_editor_edit",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Edit"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chỉnh sửa"
-          }
-        }
-      }
-    },
-    "album_editor_done": {
-      "comment": "Localization key album_editor_done",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Done"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xong"
-          }
-        }
-      }
-    },
-    "album_editor_add_stamp": {
-      "comment": "Localization key album_editor_add_stamp",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Stamp"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thêm tem"
-          }
-        }
-      }
-    },
-    "album_editor_remove_placement": {
-      "comment": "Localization key album_editor_remove_placement",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remove from page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xóa khỏi trang"
-          }
-        }
-      }
-    },
-    "album_editor_bring_forward": {
-      "comment": "Localization key album_editor_bring_forward",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bring Forward"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đưa lên trước"
-          }
-        }
-      }
-    },
-    "album_editor_send_backward": {
-      "comment": "Localization key album_editor_send_backward",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Send Backward"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đưa về sau"
-          }
-        }
-      }
-    },
-    "album_editor_move_page": {
-      "comment": "Localization key album_editor_move_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move to page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chuyển sang trang"
-          }
-        }
-      }
-    },
-    "album_editor_move_prev_page": {
-      "comment": "Localization key album_editor_move_prev_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previous page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang trước"
-          }
-        }
-      }
-    },
-    "album_editor_move_next_page": {
-      "comment": "Localization key album_editor_move_next_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Next page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang sau"
-          }
-        }
-      }
-    },
-    "album_editor_undo": {
-      "comment": "Localization key album_editor_undo",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Undo"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hoàn tác"
-          }
-        }
-      }
-    },
-    "album_editor_retry_save": {
-      "comment": "Localization key album_editor_retry_save",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retry saving"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thử lưu lại"
-          }
-        }
-      }
-    },
-    "album_editor_virtual_readonly": {
-      "comment": "Localization key album_editor_virtual_readonly",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Synthetic albums are read-only"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bộ sưu tập tự động chỉ xem, không thể sửa"
-          }
-        }
-      }
-    },
-    "album_editor_vault_title": {
-      "comment": "Localization key album_editor_vault_title",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stamp Vault"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kho tem"
-          }
-        }
-      }
-    },
-    "album_editor_vault_subtitle": {
-      "comment": "Localization key album_editor_vault_subtitle",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Select a stamp to place on page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chọn con tem để đặt vào trang sách"
-          }
-        }
-      }
-    },
-    "album_editor_vault_placed": {
-      "comment": "Localization key album_editor_vault_placed",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Placed"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đã đặt"
-          }
-        }
-      }
-    },
-    "album_editor_vault_empty": {
-      "comment": "Localization key album_editor_vault_empty",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No stamps in vault"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kho tem trống"
-          }
-        }
-      }
-    },
-    "album_editor_editing_title": {
-      "comment": "Localization key album_editor_editing_title",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editing Album"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chỉnh sửa album"
-          }
-        }
-      }
-    },
-    "album_editor_saving": {
-      "comment": "Localization key album_editor_saving",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saving layout…"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đang lưu bố cục…"
-          }
-        }
-      }
-    },
-    "album_editor_save_failed": {
-      "comment": "Localization key album_editor_save_failed",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Failed to sync layout. Offline copy preserved."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lỗi đồng bộ bố cục. Bản lưu ngoại tuyến đã được giữ."
-          }
-        }
-      }
-    },
-    "album_editor_manage_pages": {
-      "comment": "Localization key album_editor_manage_pages",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage Pages"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quản lý trang"
-          }
-        }
-      }
-    },
-    "album_editor_pages_title": {
-      "comment": "Localization key album_editor_pages_title",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Page Management"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quản lý trang"
-          }
-        }
-      }
-    },
-    "album_editor_add_page": {
-      "comment": "Localization key album_editor_add_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add Page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thêm trang"
-          }
-        }
-      }
-    },
-    "album_editor_remove_page": {
-      "comment": "Localization key album_editor_remove_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remove Page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Xóa trang"
-          }
-        }
-      }
-    },
-    "album_editor_move_earlier": {
-      "comment": "Localization key album_editor_move_earlier",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move Earlier"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chuyển lên trước"
-          }
-        }
-      }
-    },
-    "album_editor_move_later": {
-      "comment": "Localization key album_editor_move_later",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move Later"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chuyển về sau"
-          }
-        }
-      }
-    },
-    "album_editor_page_current": {
-      "comment": "Localization key album_editor_page_current",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hiện tại"
-          }
-        }
-      }
-    },
-    "album_editor_page_has_stamps_error": {
-      "comment": "Localization key album_editor_page_has_stamps_error",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move stamps before removing this page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hãy di chuyển hoặc xóa tem trước khi xóa trang này"
-          }
-        }
-      }
-    },
-    "album_editor_max_pages_reached": {
-      "comment": "Localization key album_editor_max_pages_reached",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Maximum pages reached"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đã đạt số trang tối đa"
-          }
-        }
-      }
-    },
-    "album_editor_empty_page": {
-      "comment": "Localization key album_editor_empty_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empty page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang trống"
-          }
-        }
-      }
-    },
-    "album_editor_stamps_count": {
-      "comment": "Localization key album_editor_stamps_count",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d stamps"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%d con tem"
-          }
-        }
-      }
-    },
-    "album_editor_cannot_remove_only_page": {
-      "comment": "Localization key album_editor_cannot_remove_only_page",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cannot remove the only page"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không thể xóa trang duy nhất"
           }
         }
       }
