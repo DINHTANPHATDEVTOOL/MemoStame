@@ -199,6 +199,16 @@ else
     EXIT_CODE=1
 fi
 
+# Team ID Resolution & Canonical Signing Context (#91)
+if [ -f "scripts/resolve_ios_signing_context.py" ] && \
+   grep -q "resolve_ios_signing_context.py" codemagic.yaml && \
+   ! grep -q "DEVELOPMENT_TEAM: \${" codemagic.yaml; then
+    echo "  [PASS] Team ID resolution & canonical signing context verified (#91)"
+else
+    echo "  [FAIL] Team ID resolution or canonical signing context missing or literal expansion present"
+    EXIT_CODE=1
+fi
+
 # iOS External Apple Distribution Credentials Check
 if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ] || [ -n "${CERTIFICATE_PRIVATE_KEY:-}" ]; then
     echo "  [PASS] iOS distribution signing credentials provided in environment"

@@ -136,8 +136,8 @@ class ReleaseCandidateWiringStaticTest {
         val exportPlist = File(workspaceRoot, "iosApp/ExportOptions-AppStore.plist")
         assertTrue("ExportOptions-AppStore.plist must exist", exportPlist.exists())
         val plistContent = exportPlist.readText()
-        assertTrue("Export method must be app-store",
-            plistContent.contains("<string>app-store</string>"))
+        assertTrue("Export method must be app-store-connect or app-store",
+            plistContent.contains("<string>app-store-connect</string>") || plistContent.contains("<string>app-store</string>"))
 
         val codemagicYaml = File(workspaceRoot, "codemagic.yaml")
         assertTrue("codemagic.yaml must exist", codemagicYaml.exists())

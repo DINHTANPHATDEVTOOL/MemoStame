@@ -41,7 +41,6 @@ workflows:
         XCODE_PROJECT: "iosApp/iosApp.xcodeproj"
         XCODE_SCHEME: "iosApp"
         BUNDLE_ID: "com.mipastudio.memostamp"
-        DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM:-${APNS_TEAM_ID:-${APPLE_TEAM_ID:-""}}}
       xcode: latest
       cocoapods: default
     scripts:
@@ -85,44 +84,38 @@ workflows:
           # Apply matching profiles and certificates to Xcode project and export options plist
           xcode-project use-profiles --project "$XCODE_PROJECT" --export-options-plist /tmp/export_options.plist --warn-only || true
 
-          # Audit signing configuration readiness
-          VALID_IDENTITIES=$(security find-identity -v -p codesigning 2>/dev/null | grep -E "^[[:space:]]*[0-9]+\)" | wc -l || echo "0")
-          VALID_PROFILES=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" -name "*.mobileprovision" -o -name "*.provisionprofile" 2>/dev/null | wc -l || echo "0")
-
-          echo "================================================================="
-          echo "   IOS CODE SIGNING CONFIGURATION AUDIT                          "
-          echo "================================================================="
-          echo "Discovered Signing Identities:    $VALID_IDENTITIES"
-          echo "Discovered Provisioning Profiles: $VALID_PROFILES"
-          if [ "$VALID_IDENTITIES" -gt 0 ] && [ "$VALID_PROFILES" -gt 0 ]; then
-            echo "SIGNING_CONFIG_READY:             TRUE"
-          else
-            echo "SIGNING_CONFIG_READY:             FALSE (Apple distribution signing credentials not provided)"
-          fi
-          echo "================================================================="
+          # Canonical iOS Signing Context Resolution & Audit
+          python3 scripts/resolve_ios_signing_context.py \
+            --bundle-id "$BUNDLE_ID" \
+            --output-env /tmp/signing_context.env
 
       - name: Build iOS App Store Archive (.xcarchive)
         script: |
           # Overrides MARKETING_VERSION and CURRENT_PROJECT_VERSION externally without source edits
           TARGET_VERSION="${MEMOSTAMP_VERSION_NAME:-1.0}"
           TARGET_BUILD="${MEMOSTAMP_VERSION_CODE:-1}"
-          DEV_TEAM="${DEVELOPMENT_TEAM:-${APNS_TEAM_ID:-${APPLE_TEAM_ID:-}}}"
-          echo "Archiving Release for generic/platform=iOS with version $TARGET_VERSION ($TARGET_BUILD)..."
 
-          # Inspect runner for available signing identities and provisioning profiles
-          VALID_IDENTITIES=$(security find-identity -v -p codesigning 2>/dev/null | grep -E "^[[:space:]]*[0-9]+\)" | wc -l || echo "0")
-          VALID_PROFILES=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" -name "*.mobileprovision" -o -name "*.provisionprofile" 2>/dev/null | wc -l || echo "0")
+          # Source resolved signing context if available
+          if [ -f /tmp/signing_context.env ]; then
+            source /tmp/signing_context.env
+          fi
+
+          DEV_TEAM="${RESOLVED_DEVELOPMENT_TEAM:-${DEVELOPMENT_TEAM:-${APNS_TEAM_ID:-${APPLE_TEAM_ID:-}}}}"
+          if [[ "$DEV_TEAM" == *'${'* || "$DEV_TEAM" == *'}'* ]]; then
+            DEV_TEAM=""
+          fi
+          echo "Archiving Release for generic/platform=iOS with version $TARGET_VERSION ($TARGET_BUILD)..."
 
           EXTRA_ARCHIVE_ARGS=()
           if [ -n "$DEV_TEAM" ]; then
             EXTRA_ARCHIVE_ARGS+=("DEVELOPMENT_TEAM=$DEV_TEAM")
           fi
 
-          if [ "$VALID_IDENTITIES" -gt 0 ] && [ "$VALID_PROFILES" -gt 0 ]; then
-            echo "Found $VALID_IDENTITIES signing identities and $VALID_PROFILES provisioning profiles. Archiving with Manual code signing..."
+          if [ "${SIGNING_CONFIG_READY:-false}" = "true" ]; then
+            echo "Signing configuration ready. Archiving with Manual code signing..."
             EXTRA_ARCHIVE_ARGS+=("CODE_SIGN_STYLE=Manual")
           else
-            echo "[WARNING] No code signing identity or provisioning profile found in runner environment."
+            echo "[WARNING] Apple distribution credentials or matching App Store profile not found in runner environment."
             echo "Archiving with CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_STYLE=Manual (signing will occur during exportArchive when credentials are present)."
             EXTRA_ARCHIVE_ARGS+=("CODE_SIGNING_ALLOWED=NO" "CODE_SIGNING_REQUIRED=NO" "CODE_SIGN_STYLE=Manual")
           fi
@@ -139,6 +132,29 @@ workflows:
       - name: Export Signed IPA for App Store / TestFlight
         script: |
           set -euo pipefail
+
+          if [ -f /tmp/signing_context.env ]; then
+            source /tmp/signing_context.env
+          fi
+
+          # Fail early if signing credentials or matching App Store profile are missing
+          if [ "${SIGNING_CONFIG_READY:-false}" != "true" ]; then
+            echo "================================================================="
+            echo "[ERROR] EXTERNAL_SETUP_REQUIRED: Apple distribution credentials or matching App Store provisioning profile missing!"
+            echo "Cannot export signed IPA without a valid Apple Distribution identity and matching App Store profile for $BUNDLE_ID."
+            echo "Remediation:"
+            echo "  1. Codemagic secret group 'app_store_credentials':"
+            echo "     - APP_STORE_CONNECT_PRIVATE_KEY"
+            echo "     - APP_STORE_CONNECT_KEY_IDENTIFIER"
+            echo "     - APP_STORE_CONNECT_ISSUER_ID"
+            echo "  2. OR Codemagic UI identities / environment variables:"
+            echo "     - CM_CERTIFICATE (base64 .p12)"
+            echo "     - CM_CERTIFICATE_PASSWORD"
+            echo "     - CM_PROVISIONING_PROFILE (base64 .mobileprovision)"
+            echo "================================================================="
+            exit 1
+          fi
+
           RESOLVED_EXPORT_OPTIONS="/tmp/resolved_export_options.plist"
 
           echo "Resolving and validating ExportOptions.plist contract..."
@@ -147,7 +163,7 @@ workflows:
             --static-plist "iosApp/ExportOptions-AppStore.plist" \
             --output-plist "$RESOLVED_EXPORT_OPTIONS" \
             --bundle-id "$BUNDLE_ID" \
-            ${DEVELOPMENT_TEAM:+--team-id "$DEVELOPMENT_TEAM"}
+            ${RESOLVED_DEVELOPMENT_TEAM:+--team-id "$RESOLVED_DEVELOPMENT_TEAM"}
 
           echo "Exporting signed IPA for distribution using $RESOLVED_EXPORT_OPTIONS..."
           xcodebuild -exportArchive \
