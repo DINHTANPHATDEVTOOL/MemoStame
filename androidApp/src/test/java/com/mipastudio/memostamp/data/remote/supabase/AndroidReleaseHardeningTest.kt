@@ -9,16 +9,16 @@ class AndroidReleaseHardeningTest {
 
     @Test
     fun test1_canonicalProductionSupabaseConstants() {
-        assertEquals("https://mghmhhbyhmuvherlyrqa.supabase.co", SupabaseConfig.DEFAULT_SUPABASE_URL)
+        assertEquals("https://byjedmjbzcwxjkewtkzx.supabase.co", SupabaseConfig.DEFAULT_SUPABASE_URL)
         assertNotNull(SupabaseConfig.DEFAULT_ANON_KEY)
         assertTrue(SupabaseConfig.DEFAULT_ANON_KEY.startsWith("eyJ"))
-        assertEquals("mghmhhbyhmuvherlyrqa", SupabaseConfig.DEFAULT_PROJECT_ID)
+        assertEquals("byjedmjbzcwxjkewtkzx", SupabaseConfig.DEFAULT_PROJECT_ID)
     }
 
     @Test
     fun test2_getSupabaseUrl_defaultsToCanonical() {
         val url = SupabaseConfig.getSupabaseUrl(null)
-        assertEquals("https://mghmhhbyhmuvherlyrqa.supabase.co", url)
+        assertEquals("https://byjedmjbzcwxjkewtkzx.supabase.co", url)
     }
 
     @Test

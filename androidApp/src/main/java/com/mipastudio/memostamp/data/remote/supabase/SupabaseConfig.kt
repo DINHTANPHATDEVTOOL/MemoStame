@@ -5,10 +5,15 @@ import android.content.SharedPreferences
 import com.mipastudio.memostamp.BuildConfig
 
 object SupabaseConfig {
-    const val DEFAULT_PROJECT_ID = "mghmhhbyhmuvherlyrqa"
-    const val DEFAULT_REGION = "ap-northeast-1"
-    const val DEFAULT_SUPABASE_URL = "https://mghmhhbyhmuvherlyrqa.supabase.co"
-    const val DEFAULT_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1naG1oaGJ5aG11dmhlcmx5cnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMDc1MTksImV4cCI6MjEwMjc4MzUxOX0._vviFZ3q8aSl-7wTX8nDXVN6KtN9eF-B5fBndlO6KRc"
+    private val DEFAULT_SUPABASE_URL = BuildConfig.SUPABASE_URL
+    private val DEFAULT_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
+    
+    val DEFAULT_PROJECT_ID = BuildConfig.SUPABASE_PROJECT_ID
+    val DEFAULT_REGION = BuildConfig.SUPABASE_REGION
+
+    private const val RETIRED_PROJECT_HOST = "mghmhhbyhmuvherlyrqa.supabase.co"
+    // Base64url fragment of {"ref":"mghmhhbyhmuvherlyrqa"...} inside legacy anon JWTs.
+    private const val RETIRED_ANON_REF_FRAGMENT = "bWdobWhoYnlobXV2aGVybHlycWE"
 
     private const val PREFS_NAME = "memostamp_supabase_config"
     private const val KEY_URL = "supabase_url"
@@ -17,14 +22,19 @@ object SupabaseConfig {
     fun getSupabaseUrl(context: Context?): String {
         if (!BuildConfig.DEBUG || context == null) return DEFAULT_SUPABASE_URL
         val prefs = getPrefs(context) ?: return DEFAULT_SUPABASE_URL
-        return prefs.getString(KEY_URL, DEFAULT_SUPABASE_URL) ?: DEFAULT_SUPABASE_URL
+        val saved = prefs.getString(KEY_URL, DEFAULT_SUPABASE_URL) ?: DEFAULT_SUPABASE_URL
+        // Drop stale overrides that still point at the retired project.
+        if (saved.contains(RETIRED_PROJECT_HOST)) return DEFAULT_SUPABASE_URL
+        return saved
     }
 
     fun getAnonKey(context: Context?): String {
         if (!BuildConfig.DEBUG || context == null) return DEFAULT_ANON_KEY
         val prefs = getPrefs(context) ?: return DEFAULT_ANON_KEY
         val saved = prefs.getString(KEY_ANON_KEY, "")
-        return if (!saved.isNullOrBlank() && !saved.startsWith("sb_publishable")) saved else DEFAULT_ANON_KEY
+        if (saved.isNullOrBlank() || saved.startsWith("sb_publishable")) return DEFAULT_ANON_KEY
+        if (saved.contains(RETIRED_ANON_REF_FRAGMENT)) return DEFAULT_ANON_KEY
+        return saved
     }
 
     fun saveConfig(context: Context, url: String, anonKey: String): Boolean {

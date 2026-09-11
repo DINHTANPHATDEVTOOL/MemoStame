@@ -41,7 +41,37 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
     ): Result<AndroidAuthSession> = withContext(Dispatchers.IO) {
         val endpoint = "${getBaseUrl()}/auth/v1/signup"
         val bodyMap = mapOf("email" to email, "password" to password)
-        return@withContext postAuthRequest(endpoint, gson.toJson(bodyMap))
+        val signUpResult = postAuthRequest(endpoint, gson.toJson(bodyMap), isSignUp = true)
+        if (signUpResult.isSuccess) {
+            return@withContext signUpResult
+        }
+
+        // Signup can return 200 with a user and no session (confirm-email / GoTrue shape).
+        // If the account is already usable, password grant recovers the session.
+        val signUpMessage = signUpResult.exceptionOrNull()?.message.orEmpty()
+        val missingSession = signUpMessage.contains("access_token", ignoreCase = true) ||
+            signUpMessage.contains("parse auth session", ignoreCase = true) ||
+            signUpMessage.contains("xác nhận tài khoản", ignoreCase = true)
+        if (!missingSession) {
+            return@withContext signUpResult
+        }
+
+        val signInEndpoint = "${getBaseUrl()}/auth/v1/token?grant_type=password"
+        val signInResult = postAuthRequest(signInEndpoint, gson.toJson(bodyMap))
+        if (signInResult.isSuccess) {
+            return@withContext signInResult
+        }
+
+        val signInMessage = signInResult.exceptionOrNull()?.message.orEmpty().lowercase()
+        if (signInMessage.contains("confirm") || signInMessage.contains("not confirmed")) {
+            return@withContext Result.failure(
+                IllegalStateException(
+                    "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập."
+                )
+            )
+        }
+
+        return@withContext signUpResult
     }
 
     suspend fun signIn(
@@ -251,7 +281,11 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
         }
     }
 
-    private fun postAuthRequest(endpoint: String, jsonBody: String): Result<AndroidAuthSession> {
+    private fun postAuthRequest(
+        endpoint: String,
+        jsonBody: String,
+        isSignUp: Boolean = false
+    ): Result<AndroidAuthSession> {
         return try {
             val url = URL(endpoint)
             val conn = (url.openConnection() as HttpURLConnection).apply {
@@ -273,15 +307,54 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
             val responseText = stream?.bufferedReader()?.use(BufferedReader::readText) ?: ""
 
             if (!isSuccess) {
-                val errorMsg = parseErrorMessage(responseText) ?: "Supabase auth failed [$code]"
+                val errorMsg = parseErrorMessage(responseText)?.let { humanizeAuthError(it) }
+                    ?: "Supabase auth failed [$code]"
                 return Result.failure(IllegalStateException(errorMsg))
             }
 
             val session = parseAuthSession(responseText)
-                ?: return Result.failure(IllegalStateException("Failed to parse auth session"))
-            Result.success(session)
+            if (session != null) {
+                return Result.success(session)
+            }
+
+            // Email confirmation enabled: signup returns user without access/refresh tokens.
+            if (isSignUp && hasSignupUserWithoutSession(responseText)) {
+                return Result.failure(
+                    IllegalStateException(
+                        "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập."
+                    )
+                )
+            }
+
+            Result.failure(
+                IllegalStateException(
+                    "Failed to parse auth session (server không trả access_token). Kiểm tra Confirm email trên đúng project Supabase."
+                )
+            )
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    private fun humanizeAuthError(raw: String): String {
+        val lower = raw.lowercase()
+        return when {
+            lower.contains("rate limit") || lower.contains("over_email_send_rate_limit") ->
+                "Đã gửi quá nhiều email xác nhận. Vui lòng đợi vài phút rồi thử lại (hoặc tắt Confirm email trên project đúng)."
+            else -> raw
+        }
+    }
+
+    private fun hasSignupUserWithoutSession(jsonText: String): Boolean {
+        return try {
+            val obj = gson.fromJson(jsonText, JsonObject::class.java) ?: return false
+            if (!obj.get("access_token")?.asString.isNullOrBlank()) return false
+            val nestedUserId = obj.getAsJsonObject("user")?.get("id")?.asString
+            val rootUserId = obj.get("id")?.asString
+            // GoTrue may return either { user: { id } } or the user object at the root.
+            !nestedUserId.isNullOrBlank() || !rootUserId.isNullOrBlank()
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -300,19 +373,16 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
     private fun parseAuthSession(jsonText: String): AndroidAuthSession? {
         return try {
             val obj = gson.fromJson(jsonText, JsonObject::class.java) ?: return null
-            val accessToken = obj.get("access_token")?.asString ?: return null
-            val refreshToken = obj.get("refresh_token")?.asString ?: return null
-            
+            val accessToken = obj.get("access_token")?.asString?.takeIf { it.isNotBlank() } ?: return null
+            val refreshToken = obj.get("refresh_token")?.asString?.takeIf { it.isNotBlank() } ?: return null
+
             val userObj = obj.getAsJsonObject("user") ?: return null
-            val userId = userObj.get("id")?.asString ?: return null
+            val userId = userObj.get("id")?.asString?.takeIf { it.isNotBlank() } ?: return null
             val email = userObj.get("email")?.asString ?: ""
 
-            val expiresIn = obj.get("expires_in")?.asLong ?: 3600L
-            val expiresAt = if (obj.has("expires_at")) {
-                obj.get("expires_at").asLong
-            } else {
-                (System.currentTimeMillis() / 1000) + expiresIn
-            }
+            val expiresIn = readEpochSeconds(obj.get("expires_in")) ?: 3600L
+            val expiresAt = readEpochSeconds(obj.get("expires_at"))
+                ?: ((System.currentTimeMillis() / 1000) + expiresIn)
 
             AndroidAuthSession(
                 accessToken = accessToken,
@@ -321,6 +391,21 @@ class SupabaseAuthService private constructor(private val context: Context? = nu
                 userId = userId,
                 email = email
             )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun readEpochSeconds(element: com.google.gson.JsonElement?): Long? {
+        if (element == null || element.isJsonNull) return null
+        return try {
+            when {
+                element.isJsonPrimitive && element.asJsonPrimitive.isNumber ->
+                    element.asJsonPrimitive.asDouble.toLong()
+                element.isJsonPrimitive && element.asJsonPrimitive.isString ->
+                    element.asString.toDoubleOrNull()?.toLong()
+                else -> null
+            }
         } catch (_: Exception) {
             null
         }
