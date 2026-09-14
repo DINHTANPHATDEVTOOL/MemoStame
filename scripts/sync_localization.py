@@ -107,7 +107,13 @@ new_keys = {
     "profile_status_guest": ("GUEST", "KHÁCH"),
     "theme_selector_title": ("Select Theme Style", "Chọn Phong Cách Giao Diện"),
     "theme_selector_desc": ("Change display style to your preference", "Thay đổi phong cách hiển thị theo sở thích của bạn"),
-    "theme_applied": ("Applied theme %s!", "Đã áp dụng phong cách %s!")
+    "theme_applied": ("Applied theme %s!", "Đã áp dụng phong cách %s!"),
+    "post_detail_header": ("Memory Detail", "Chi tiết Kỷ niệm"),
+    "post_detail_reply": ("Reply", "Phản hồi"),
+    "post_detail_stamp_replies": ("Stamp Replies (%d)", "Tem phản hồi (%d)"),
+    "post_detail_no_comments": ("No comments yet. Start the conversation!", "Chưa có bình luận nào. Hãy bắt đầu cuộc trò chuyện!"),
+    "post_detail_comment_placeholder": ("Write a comment...", "Viết bình luận..."),
+    "post_detail_title": ("Memory Stamp", "Dấu tem kỷ niệm")
 }
 
 def escape_xml(s: str) -> str:

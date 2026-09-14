@@ -21,6 +21,9 @@ interface AlbumLayoutDao {
     @Query("DELETE FROM album_pages WHERE ownerId = :ownerId AND albumId = :albumId")
     suspend fun deletePagesForAlbum(ownerId: String, albumId: String)
 
+    @Query("DELETE FROM album_pages WHERE id = :pageId AND ownerId = :ownerId")
+    suspend fun deletePage(pageId: String, ownerId: String)
+
     @Query("SELECT * FROM album_stamp_placements WHERE ownerId = :ownerId AND albumId = :albumId ORDER BY pageIndex ASC, zIndex ASC, id ASC")
     fun observePlacements(ownerId: String, albumId: String): Flow<List<StampPlacementEntity>>
 

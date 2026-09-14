@@ -214,7 +214,14 @@ fun CollectionScreen(
             AlbumLayoutRepository.getInstance(context) { authRepo.authUserId.value ?: currentUser.userId }
         }
         val layoutState by albumLayoutRepo.observeLayout(album.id).collectAsState(initial = null)
+        val pages = layoutState?.pages ?: emptyList()
         val placements = layoutState?.placements ?: emptyList()
+
+        LaunchedEffect(album.id) {
+            if (!AlbumLayoutRepository.isVirtualAlbum(album.id)) {
+                albumLayoutRepo.ensurePageStructure(album.id, placements)
+            }
+        }
 
         StampBook3DRenderer(
             albumId = album.id,
@@ -224,6 +231,7 @@ fun CollectionScreen(
             coverColor = album.coverColor,
             iconKey = album.iconKey,
             stamps = album.stamps,
+            pages = pages,
             placements = placements,
             availableVaultStamps = cloudStamps,
             albumLayoutRepo = albumLayoutRepo,

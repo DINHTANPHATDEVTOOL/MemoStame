@@ -49,10 +49,12 @@ import coil.compose.rememberAsyncImagePainter
 import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.data.local.StampEntity
 import com.mipastudio.memostamp.data.repository.AlbumLayoutRepository
+import com.mipastudio.memostamp.domain.model.AlbumPage
 import com.mipastudio.memostamp.feature.collection.editor.AlbumEditMode
 import com.mipastudio.memostamp.feature.collection.editor.AlbumEditState
 import com.mipastudio.memostamp.feature.collection.editor.AlbumEditorBottomBar
 import com.mipastudio.memostamp.feature.collection.editor.AlbumEditorTopControls
+import com.mipastudio.memostamp.feature.collection.editor.AlbumPageManagementSheet
 import com.mipastudio.memostamp.feature.collection.editor.AlbumVaultPicker
 import com.mipastudio.memostamp.feature.collection.editor.EditableBookPage
 import com.mipastudio.memostamp.ui.icon.MemoStampIcons
@@ -76,6 +78,7 @@ fun StampBook3DRenderer(
     coverColor: Color,
     iconKey: String?,
     stamps: List<AlbumStampData>,
+    pages: List<AlbumPage> = emptyList(),
     placements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
     availableVaultStamps: List<StampEntity> = emptyList(),
     albumLayoutRepo: AlbumLayoutRepository? = null,
@@ -97,14 +100,21 @@ fun StampBook3DRenderer(
         }
     }
 
-    // Spreads calculation (pure & deterministic)
-    val spreads = remember(albumId, stamps, placements) {
-        calculateSpreads(albumId = albumId, stamps = stamps, placements = placements)
+    // Spreads calculation (pure & deterministic with canonical pages authority)
+    val spreads = remember(albumId, pages, stamps, placements) {
+        calculateSpreads(albumId = albumId, pages = pages, stamps = stamps, placements = placements)
     }
     val totalSpreads = spreads.size
 
     val stateMachine = remember(albumId) {
         PageTurnStateMachine(albumId = albumId)
+    }
+
+    // Safety: clamp spread index if page removal shrinks total spreads
+    LaunchedEffect(totalSpreads) {
+        if (totalSpreads > 0 && stateMachine.currentSpreadIndex >= totalSpreads) {
+            stateMachine.goToSpread(totalSpreads - 1)
+        }
     }
 
     val resolvedRepo = remember(context, albumLayoutRepo) {
@@ -667,6 +677,7 @@ fun StampBook3DRenderer(
                     AlbumEditorBottomBar(
                         placements = placements,
                         totalPagesCount = totalSpreads * 2,
+                        pages = pages,
                         editState = editState,
                         albumLayoutRepo = resolvedRepo
                     )
@@ -721,6 +732,51 @@ fun StampBook3DRenderer(
                 editState = editState,
                 albumLayoutRepo = resolvedRepo,
                 onDismiss = { editState.isVaultPickerOpen = false }
+            )
+        }
+
+        // Page Management Modal Bottom Sheet
+        if (editState.isPageManagementOpen) {
+            AlbumPageManagementSheet(
+                pages = pages,
+                placements = placements,
+                activePageIndex = editState.activePageIndex,
+                onDismiss = { editState.closePageManagement() },
+                onAddPage = {
+                    editState.appendPage(resolvedRepo, coroutineScope)
+                },
+                onRemovePage = { page, placementsOnPage ->
+                    editState.removePage(
+                        pageId = page.id,
+                        pageIndex = page.pageIndex,
+                        placementsOnPage = placementsOnPage,
+                        totalPageCount = pages.size,
+                        repository = resolvedRepo,
+                        coroutineScope = coroutineScope
+                    )
+                },
+                onReorderPage = { pageId, direction ->
+                    editState.reorderPage(
+                        pageId = pageId,
+                        direction = direction,
+                        pages = pages,
+                        repository = resolvedRepo,
+                        coroutineScope = coroutineScope
+                    )
+                }
+            )
+        }
+
+        // Save error dialog if an operation fails
+        if (editState.saveErrorMessage != null) {
+            AlertDialog(
+                onDismissRequest = { editState.clearSaveError() },
+                text = { Text(text = editState.saveErrorMessage ?: "") },
+                confirmButton = {
+                    TextButton(onClick = { editState.clearSaveError() }) {
+                        Text(text = stringResource(R.string.book_close))
+                    }
+                }
             )
         }
     }

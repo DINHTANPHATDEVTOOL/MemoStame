@@ -91,10 +91,103 @@ data class BookSpread(
  */
 fun calculateSpreads(
     albumId: String,
-    stamps: List<AlbumStampData>,
+    pages: List<com.mipastudio.memostamp.domain.model.AlbumPage> = emptyList(),
+    stamps: List<AlbumStampData> = emptyList(),
     placements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
     stampsPerPage: Int = 4
 ): List<BookSpread> {
+    // 1. CANONICAL PAGE AUTHORITY (Task #80)
+    if (pages.isNotEmpty()) {
+        val sortedPages = pages.sortedBy { it.pageIndex }
+        val totalSpreads = (sortedPages.size / 2) + 1
+        val spreads = mutableListOf<BookSpread>()
+
+        for (spreadIdx in 0 until totalSpreads) {
+            if (spreadIdx == 0) {
+                val p0 = sortedPages[0]
+                val p0Placements = placements.filter {
+                    (it.pageId.isNotBlank() && it.pageId == p0.id) || it.pageIndex == p0.pageIndex
+                }
+                spreads.add(
+                    BookSpread(
+                        spreadIndex = 0,
+                        leftPage = BookPageData(
+                            albumId = albumId,
+                            pageIndex = -1,
+                            stamps = emptyList(),
+                            placements = emptyList(),
+                            isInsideCover = true
+                        ),
+                        rightPage = BookPageData(
+                            albumId = albumId,
+                            pageIndex = p0.pageIndex,
+                            stamps = stamps,
+                            placements = p0Placements,
+                            isBlankArchival = false
+                        )
+                    )
+                )
+            } else {
+                val leftIdx = 2 * spreadIdx - 1
+                val rightIdx = 2 * spreadIdx
+
+                val leftPageData = if (leftIdx < sortedPages.size) {
+                    val lp = sortedPages[leftIdx]
+                    val lpPlacements = placements.filter {
+                        (it.pageId.isNotBlank() && it.pageId == lp.id) || it.pageIndex == lp.pageIndex
+                    }
+                    BookPageData(
+                        albumId = albumId,
+                        pageIndex = lp.pageIndex,
+                        stamps = stamps,
+                        placements = lpPlacements,
+                        isBlankArchival = false
+                    )
+                } else {
+                    BookPageData(
+                        albumId = albumId,
+                        pageIndex = leftIdx,
+                        stamps = emptyList(),
+                        placements = emptyList(),
+                        isBlankArchival = true
+                    )
+                }
+
+                val rightPageData = if (rightIdx < sortedPages.size) {
+                    val rp = sortedPages[rightIdx]
+                    val rpPlacements = placements.filter {
+                        (it.pageId.isNotBlank() && it.pageId == rp.id) || it.pageIndex == rp.pageIndex
+                    }
+                    BookPageData(
+                        albumId = albumId,
+                        pageIndex = rp.pageIndex,
+                        stamps = stamps,
+                        placements = rpPlacements,
+                        isBlankArchival = false
+                    )
+                } else {
+                    BookPageData(
+                        albumId = albumId,
+                        pageIndex = rightIdx,
+                        stamps = emptyList(),
+                        placements = emptyList(),
+                        isBlankArchival = true
+                    )
+                }
+
+                spreads.add(
+                    BookSpread(
+                        spreadIndex = spreadIdx,
+                        leftPage = leftPageData,
+                        rightPage = rightPageData
+                    )
+                )
+            }
+        }
+        return spreads
+    }
+
+    // 2. Legacy Placements Fallback
     if (placements.isNotEmpty()) {
         val maxPlacementPage = placements.maxOfOrNull { it.pageIndex } ?: 0
         val maxPage = maxOf(0, maxPlacementPage)
@@ -233,6 +326,20 @@ fun calculateSpreads(
     return spreads
 }
 
+fun calculateSpreads(
+    albumId: String,
+    stamps: List<AlbumStampData>,
+    placements: List<com.mipastudio.memostamp.domain.model.StampPlacement> = emptyList(),
+    stampsPerPage: Int = 4
+): List<BookSpread> = calculateSpreads(
+    albumId = albumId,
+    pages = emptyList(),
+    stamps = stamps,
+    placements = placements,
+    stampsPerPage = stampsPerPage
+)
+
+
 /**
  * Pure state machine tracking transient book state.
  * Never persists animation/gesture state to Room/Supabase.
@@ -317,6 +424,13 @@ class PageTurnStateMachine(
         turnProgress = 0f
         turnDirection = TurnDirection.NONE
         bookState = BookState.OPEN
+        interactionLocked = false
+    }
+
+    fun goToSpread(spreadIndex: Int) {
+        currentSpreadIndex = spreadIndex.coerceAtLeast(0)
+        turnProgress = 0f
+        turnDirection = TurnDirection.NONE
         interactionLocked = false
     }
 

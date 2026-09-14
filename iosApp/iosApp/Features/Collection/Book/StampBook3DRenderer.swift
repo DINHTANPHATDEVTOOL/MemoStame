@@ -14,6 +14,7 @@ public struct StampBook3DRenderer: View {
     public let coverColor: Color
     public let iconKey: String?
     public let stamps: [BookStampItem]
+    public let pages: [PersistedAlbumPageData]
     public let placements: [PersistedStampPlacementData]
     public let availableVaultStamps: [BookStampItem]
     public var onStampClick: (String) -> Void
@@ -29,7 +30,7 @@ public struct StampBook3DRenderer: View {
     @State private var isAnimating: Bool = false
 
     private var spreads: [BookSpread] {
-        calculateSpreads(albumId: albumId, stamps: stamps, placements: placements)
+        calculateSpreads(albumId: albumId, pages: pages, stamps: stamps, placements: placements)
     }
 
     private var totalSpreads: Int {
@@ -44,6 +45,7 @@ public struct StampBook3DRenderer: View {
         coverColor: Color,
         iconKey: String?,
         stamps: [BookStampItem],
+        pages: [PersistedAlbumPageData] = [],
         placements: [PersistedStampPlacementData] = [],
         availableVaultStamps: [BookStampItem] = [],
         onStampClick: @escaping (String) -> Void = { _ in },
@@ -56,6 +58,7 @@ public struct StampBook3DRenderer: View {
         self.coverColor = coverColor
         self.iconKey = iconKey
         self.stamps = stamps
+        self.pages = pages
         self.placements = placements
         self.availableVaultStamps = availableVaultStamps.isEmpty ? stamps : availableVaultStamps
         self.onStampClick = onStampClick
@@ -146,6 +149,11 @@ public struct StampBook3DRenderer: View {
         .onAppear {
             openCover()
         }
+        .onChange(of: totalSpreads) { newTotal in
+            if newTotal > 0 && stateMachine.currentSpreadIndex >= newTotal {
+                stateMachine.goToSpread(newTotal - 1)
+            }
+        }
         .sheet(isPresented: $editState.isVaultPickerOpen) {
             AlbumVaultPickerView(
                 availableStamps: availableVaultStamps,
@@ -155,6 +163,45 @@ public struct StampBook3DRenderer: View {
             ) {
                 editState.isVaultPickerOpen = false
             }
+        }
+        .sheet(isPresented: $editState.isPageManagementOpen) {
+            AlbumPageManagementSheetView(
+                pages: pages,
+                placements: placements,
+                activePageIndex: editState.activePageIndex,
+                onDismiss: { editState.closePageManagement() },
+                onAddPage: {
+                    editState.appendPage()
+                },
+                onRemovePage: { page, placementsOnPage in
+                    editState.removePage(
+                        pageId: page.id,
+                        placementsOnPage: placementsOnPage,
+                        totalPageCount: pages.count
+                    )
+                },
+                onReorderPage: { pageId, direction in
+                    editState.reorderPage(
+                        pageId: pageId,
+                        direction: direction,
+                        pages: pages
+                    )
+                }
+            )
+        }
+        .alert(
+            isPresented: Binding(
+                get: { editState.saveErrorMessage != nil },
+                set: { if !$0 { editState.clearSaveError() } }
+            )
+        ) {
+            Alert(
+                title: Text(langManager.localized("book_close")),
+                message: Text(editState.saveErrorMessage ?? ""),
+                dismissButton: .default(Text(langManager.localized("book_close")), action: {
+                    editState.clearSaveError()
+                })
+            )
         }
     }
 
@@ -441,6 +488,7 @@ public struct StampBook3DRenderer: View {
                 AlbumEditorBottomBarView(
                     placements: placements,
                     totalPagesCount: totalSpreads * 2,
+                    pages: pages,
                     editState: editState
                 )
             }

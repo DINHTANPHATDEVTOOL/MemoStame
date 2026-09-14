@@ -1489,4 +1489,33 @@ class SupabaseClient internal constructor(private val context: Context? = null) 
         val res = executeHttp(endpoint, method = "DELETE", requireUserAuth = true)
         if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to delete placement"))
     }
+
+    suspend fun appendAlbumPage(albumId: String): Result<String> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/append_album_page"
+        val body = mapOf("p_album_id" to albumId)
+        val res = executeHttp(endpoint, method = "POST", jsonBody = gson.toJson(body), requireUserAuth = true)
+        res.getOrNull()?.let { json ->
+            try {
+                val map = gson.fromJson<Map<String, Any>>(json, Map::class.java)
+                val newId = map["id"]?.toString().orEmpty()
+                Result.success(newId)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        } ?: Result.failure(res.exceptionOrNull() ?: Exception("Failed to append album page"))
+    }
+
+    suspend fun removeAlbumPage(albumId: String, pageId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/remove_album_page"
+        val body = mapOf("p_album_id" to albumId, "p_page_id" to pageId)
+        val res = executeHttp(endpoint, method = "POST", jsonBody = gson.toJson(body), requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to remove album page"))
+    }
+
+    suspend fun reorderAlbumPages(albumId: String, pageIds: List<String>): Result<Boolean> = withContext(Dispatchers.IO) {
+        val endpoint = "${getBaseUrl()}/rest/v1/rpc/reorder_album_pages"
+        val body = mapOf("p_album_id" to albumId, "p_page_ids" to pageIds)
+        val res = executeHttp(endpoint, method = "POST", jsonBody = gson.toJson(body), requireUserAuth = true)
+        if (res.isSuccess) Result.success(true) else Result.failure(res.exceptionOrNull() ?: Exception("Failed to reorder album pages"))
+    }
 }

@@ -114,10 +114,104 @@ public struct BookSpread: Identifiable, Equatable {
 ///   Right = Page (2 * S) or Archival Blank Page if odd count.
 public func calculateSpreads(
     albumId: String,
-    stamps: [BookStampItem],
+    pages: [PersistedAlbumPageData] = [],
+    stamps: [BookStampItem] = [],
     placements: [PersistedStampPlacementData] = [],
     stampsPerPage: Int = 4
 ) -> [BookSpread] {
+    // 1. CANONICAL PAGE AUTHORITY (Task #80)
+    if !pages.isEmpty {
+        let sortedPages = pages.sorted { $0.pageIndex < $1.pageIndex }
+        let totalSpreads = (sortedPages.count / 2) + 1
+        var spreads: [BookSpread] = []
+
+        for spreadIdx in 0..<totalSpreads {
+            if spreadIdx == 0 {
+                let p0 = sortedPages[0]
+                let p0Placements = placements.filter {
+                    ($0.pageId != nil && $0.pageId == p0.id) || $0.pageIndex == p0.pageIndex
+                }
+                spreads.append(
+                    BookSpread(
+                        spreadIndex: 0,
+                        leftPage: BookPageData(
+                            albumId: albumId,
+                            pageIndex: -1,
+                            stamps: [],
+                            placements: [],
+                            isInsideCover: true
+                        ),
+                        rightPage: BookPageData(
+                            albumId: albumId,
+                            pageIndex: Int(p0.pageIndex),
+                            stamps: stamps,
+                            placements: p0Placements,
+                            isBlankArchival: false
+                        )
+                    )
+                )
+            } else {
+                let leftIdx = 2 * spreadIdx - 1
+                let rightIdx = 2 * spreadIdx
+
+                let leftPageData: BookPageData
+                if leftIdx < sortedPages.count {
+                    let lp = sortedPages[leftIdx]
+                    let lpPlacements = placements.filter {
+                        ($0.pageId != nil && $0.pageId == lp.id) || $0.pageIndex == lp.pageIndex
+                    }
+                    leftPageData = BookPageData(
+                        albumId: albumId,
+                        pageIndex: Int(lp.pageIndex),
+                        stamps: stamps,
+                        placements: lpPlacements,
+                        isBlankArchival: false
+                    )
+                } else {
+                    leftPageData = BookPageData(
+                        albumId: albumId,
+                        pageIndex: leftIdx,
+                        stamps: [],
+                        placements: [],
+                        isBlankArchival: true
+                    )
+                }
+
+                let rightPageData: BookPageData
+                if rightIdx < sortedPages.count {
+                    let rp = sortedPages[rightIdx]
+                    let rpPlacements = placements.filter {
+                        ($0.pageId != nil && $0.pageId == rp.id) || $0.pageIndex == rp.pageIndex
+                    }
+                    rightPageData = BookPageData(
+                        albumId: albumId,
+                        pageIndex: Int(rp.pageIndex),
+                        stamps: stamps,
+                        placements: rpPlacements,
+                        isBlankArchival: false
+                    )
+                } else {
+                    rightPageData = BookPageData(
+                        albumId: albumId,
+                        pageIndex: rightIdx,
+                        stamps: [],
+                        placements: [],
+                        isBlankArchival: true
+                    )
+                }
+
+                spreads.append(
+                    BookSpread(
+                        spreadIndex: spreadIdx,
+                        leftPage: leftPageData,
+                        rightPage: rightPageData
+                    )
+                )
+            }
+        }
+        return spreads
+    }
+
     if !placements.isEmpty {
         let maxPlacementPage = placements.map { Int($0.pageIndex) }.max() ?? 0
         let maxPage = max(0, maxPlacementPage)
@@ -266,6 +360,21 @@ public func calculateSpreads(
     return spreads
 }
 
+public func calculateSpreads(
+    albumId: String,
+    stamps: [BookStampItem],
+    placements: [PersistedStampPlacementData] = [],
+    stampsPerPage: Int = 4
+) -> [BookSpread] {
+    return calculateSpreads(
+        albumId: albumId,
+        pages: [],
+        stamps: stamps,
+        placements: placements,
+        stampsPerPage: stampsPerPage
+    )
+}
+
 /// Pure state machine tracking transient book state.
 /// Never persists animation/gesture state to Room/Supabase.
 public class PageTurnStateMachine: ObservableObject {
@@ -341,6 +450,13 @@ public class PageTurnStateMachine: ObservableObject {
         turnProgress = 0.0
         turnDirection = .none
         bookState = .open
+        interactionLocked = false
+    }
+
+    public func goToSpread(_ spreadIndex: Int) {
+        currentSpreadIndex = max(0, spreadIndex)
+        turnProgress = 0.0
+        turnDirection = .none
         interactionLocked = false
     }
 

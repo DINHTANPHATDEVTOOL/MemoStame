@@ -354,11 +354,12 @@ data class StampPlacement(
     val albumId: String,
     val pageIndex: Int,
     val stampId: String,
-    val x: Double,
-    val y: Double,
+    val x: Double = 0.5,
+    val y: Double = 0.5,
     val scale: Double = 1.0,
     val rotationDegrees: Double = 0.0,
     val zIndex: Int = 1,
+    val pageId: String = "",
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L
 )

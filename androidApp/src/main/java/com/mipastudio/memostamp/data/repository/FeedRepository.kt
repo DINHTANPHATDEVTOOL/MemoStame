@@ -614,8 +614,17 @@ class FeedRepository private constructor(
     }
 
     suspend fun addComment(postId: String, content: String): String = withContext(Dispatchers.IO) {
-        if (!isAuthorizedToViewPost(postId)) return@withContext ""
+        if (!isAuthorizedToViewPost(postId)) {
+            throw SecurityException("Unauthorized: not authorized to view or comment on this post")
+        }
         val currentUser = getCurrentUser()
+        if (currentUser.userId.isBlank() || currentUser.userId == "user_me" || currentUser.userId.startsWith("guest_")) {
+            throw IllegalStateException("Unauthenticated: please sign in to comment")
+        }
+        val trimmed = content.trim()
+        if (trimmed.isEmpty() || trimmed.length > 500) {
+            throw IllegalArgumentException("Comment content must be between 1 and 500 characters")
+        }
         val commentId = UUID.randomUUID().toString()
         val record = com.mipastudio.memostamp.data.remote.supabase.SupabaseFeedCommentRecord(
             id = commentId,
@@ -623,7 +632,7 @@ class FeedRepository private constructor(
             authorId = currentUser.userId,
             authorName = currentUser.displayName,
             authorAvatar = currentUser.avatarUrl,
-            content = content,
+            content = trimmed,
             createdAt = System.currentTimeMillis()
         )
         val res = supabaseClient.addFeedComment(record)
@@ -634,7 +643,7 @@ class FeedRepository private constructor(
                 authorId = currentUser.userId,
                 authorName = currentUser.displayName,
                 authorAvatar = currentUser.avatarUrl,
-                content = content,
+                content = trimmed,
                 createdAt = record.createdAt ?: System.currentTimeMillis()
             )
             feedDao.insertComment(comment)
@@ -787,19 +796,24 @@ class FeedRepository private constructor(
         Circle(id, entity.ownerId, name, icon, memberIds, entity.createdAt)
     }
 
-    suspend fun deleteComment(commentId: String) = withContext(Dispatchers.IO) {
+    suspend fun deleteComment(commentId: String): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUser = getCurrentUser()
-        val comment = feedDao.getAllCommentsList().find { it.id == commentId } ?: return@withContext
+        val comment = feedDao.getAllCommentsList().find { it.id == commentId }
+            ?: return@withContext Result.failure(NoSuchElementException("Comment not found"))
         val post = feedDao.getPostById(comment.postId)
         val isCommentAuthor = comment.authorId == currentUser.userId
         val isPostAuthor = post != null && post.authorId == currentUser.userId
-        if (isCommentAuthor || isPostAuthor) {
-            val res = supabaseClient.deleteFeedComment(commentId)
-            if (res.isSuccess || res.exceptionOrNull()?.message?.contains("404") == true) {
-                feedDao.deleteComment(commentId)
-            } else {
-                System.err.println("Cloud deleteFeedComment failed for $commentId: ${res.exceptionOrNull()?.message}")
-            }
+        if (!isCommentAuthor && !isPostAuthor) {
+            return@withContext Result.failure(SecurityException("Unauthorized to delete this comment"))
+        }
+        val res = supabaseClient.deleteFeedComment(commentId)
+        if (res.isSuccess || res.exceptionOrNull()?.message?.contains("404") == true) {
+            feedDao.deleteComment(commentId)
+            Result.success(Unit)
+        } else {
+            val err = res.exceptionOrNull() ?: Exception("Cloud deleteFeedComment failed")
+            System.err.println("Cloud deleteFeedComment failed for $commentId: ${err.message}")
+            Result.failure(err)
         }
     }
 

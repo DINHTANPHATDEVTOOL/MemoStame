@@ -16,6 +16,7 @@ struct SupabaseStampPlacementRecord: Codable {
     let owner_id: String
     let album_id: String
     let page_index: Int32
+    let page_id: String?
     let stamp_id: String
     let x: Double
     let y: Double
@@ -220,6 +221,7 @@ final class IOSAlbumLayoutRepository: ObservableObject {
                     id: r.id,
                     albumId: r.album_id,
                     pageIndex: r.page_index,
+                    pageId: r.page_id,
                     stampId: r.stamp_id,
                     x: r.x,
                     y: r.y,
@@ -308,6 +310,7 @@ final class IOSAlbumLayoutRepository: ObservableObject {
     func upsertPlacement(
         albumId: String,
         pageIndex: Int32,
+        pageId: String? = nil,
         stampId: String,
         x: Double,
         y: Double,
@@ -330,7 +333,16 @@ final class IOSAlbumLayoutRepository: ObservableObject {
         }
 
         // Ensure page exists
-        upsertPage(albumId: albumId, pageIndex: pageIndex)
+        var currentPages = layoutPages[albumId] ?? IOSLocalPersistenceStore.shared.getAlbumPages(userId: activeUserId, albumId: albumId)
+        var resolvedPageId = pageId
+        if resolvedPageId == nil || resolvedPageId?.isEmpty == true {
+            resolvedPageId = currentPages.first(where: { $0.pageIndex == pageIndex })?.id
+        }
+        if resolvedPageId == nil {
+            upsertPage(albumId: albumId, pageIndex: pageIndex)
+            currentPages = layoutPages[albumId] ?? IOSLocalPersistenceStore.shared.getAlbumPages(userId: activeUserId, albumId: albumId)
+            resolvedPageId = currentPages.first(where: { $0.pageIndex == pageIndex })?.id
+        }
 
         let now = Int64(Date().timeIntervalSince1970 * 1000)
         var currentPlacements = layoutPlacements[albumId] ?? IOSLocalPersistenceStore.shared.getStampPlacements(userId: activeUserId, albumId: albumId)
@@ -346,6 +358,7 @@ final class IOSAlbumLayoutRepository: ObservableObject {
             id: placementId,
             albumId: albumId,
             pageIndex: pageIndex,
+            pageId: resolvedPageId,
             stampId: stampId,
             x: x,
             y: y,
@@ -365,7 +378,6 @@ final class IOSAlbumLayoutRepository: ObservableObject {
             return $0.id < $1.id
         }
 
-        let currentPages = layoutPages[albumId] ?? IOSLocalPersistenceStore.shared.getAlbumPages(userId: activeUserId, albumId: albumId)
         IOSLocalPersistenceStore.shared.saveAlbumLayout(userId: activeUserId, albumId: albumId, pages: currentPages, placements: currentPlacements)
 
         DispatchQueue.main.async {
@@ -391,7 +403,7 @@ final class IOSAlbumLayoutRepository: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "id": placementId,
             "owner_id": activeUserId,
             "album_id": albumId,
@@ -403,6 +415,9 @@ final class IOSAlbumLayoutRepository: ObservableObject {
             "rotation_degrees": rotationDegrees,
             "z_index": zIndex
         ]
+        if let pid = resolvedPageId, !pid.isEmpty {
+            body["page_id"] = pid
+        }
         request.httpBody = try? JSONSerialization.data(withJSONObject: [body])
 
         URLSession.shared.dataTask(with: request) { _, _, _ in
@@ -441,6 +456,7 @@ final class IOSAlbumLayoutRepository: ObservableObject {
         placementId: String,
         albumId: String,
         newPageIndex: Int32,
+        newPageId: String? = nil,
         x: Double? = nil,
         y: Double? = nil,
         completion: ((Result<PersistedStampPlacementData, Error>) -> Void)? = nil
@@ -452,6 +468,7 @@ final class IOSAlbumLayoutRepository: ObservableObject {
         upsertPlacement(
             albumId: albumId,
             pageIndex: newPageIndex,
+            pageId: newPageId,
             stampId: current.stampId,
             x: x ?? current.x,
             y: y ?? current.y,
@@ -492,6 +509,264 @@ final class IOSAlbumLayoutRepository: ObservableObject {
 
         URLSession.shared.dataTask(with: request) { _, _, _ in
             completion?(.success(true))
+        }.resume()
+    }
+
+    func ensurePageStructure(albumId: String, completion: (() -> Void)? = nil) {
+        if Self.isVirtualAlbum(albumId) {
+            completion?()
+            return
+        }
+        guard !activeUserId.isEmpty else {
+            completion?()
+            return
+        }
+
+        let currentPages = layoutPages[albumId] ?? IOSLocalPersistenceStore.shared.getAlbumPages(userId: activeUserId, albumId: albumId)
+        let currentPlacements = layoutPlacements[albumId] ?? IOSLocalPersistenceStore.shared.getStampPlacements(userId: activeUserId, albumId: albumId)
+
+        if currentPages.isEmpty {
+            let maxPage = currentPlacements.map { $0.pageIndex }.max() ?? 0
+            let requiredCount = max(1, Int(maxPage) + 1)
+            for i in 0..<requiredCount {
+                upsertPage(albumId: albumId, pageIndex: Int32(i))
+            }
+        }
+        completion?()
+    }
+
+    func appendPage(albumId: String, completion: ((Result<PersistedAlbumPageData, Error>) -> Void)? = nil) {
+        if Self.isVirtualAlbum(albumId) {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Synthetic albums are read-only"])))
+            return
+        }
+        guard !activeUserId.isEmpty else {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthenticated"])))
+            return
+        }
+
+        var currentPages = layoutPages[albumId] ?? IOSLocalPersistenceStore.shared.getAlbumPages(userId: activeUserId, albumId: albumId)
+        guard currentPages.count < 50 else {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Maximum pages reached"])))
+            return
+        }
+
+        let maxIdx = currentPages.map { $0.pageIndex }.max() ?? -1
+        let nextIndex = maxIdx + 1
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+        let pageId = UUID().uuidString.lowercased()
+        let page = PersistedAlbumPageData(id: pageId, albumId: albumId, pageIndex: nextIndex, createdAt: now, updatedAt: now)
+
+        currentPages.append(page)
+        currentPages.sort { $0.pageIndex < $1.pageIndex }
+
+        let currentPlacements = layoutPlacements[albumId] ?? IOSLocalPersistenceStore.shared.getStampPlacements(userId: activeUserId, albumId: albumId)
+        IOSLocalPersistenceStore.shared.saveAlbumLayout(userId: activeUserId, albumId: albumId, pages: currentPages, placements: currentPlacements)
+
+        DispatchQueue.main.async {
+            self.layoutPages[albumId] = currentPages
+        }
+
+        guard let token = activeToken, let url = URL(string: "\(supabaseUrl)/rest/v1/rpc/append_album_page") else {
+            completion?(.success(page))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["p_album_id": albumId]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let data = data,
+               let cloudRecord = try? JSONDecoder().decode(SupabaseAlbumPageRecord.self, from: data) {
+                let cloudPage = PersistedAlbumPageData(
+                    id: cloudRecord.id,
+                    albumId: cloudRecord.album_id,
+                    pageIndex: cloudRecord.page_index,
+                    createdAt: now,
+                    updatedAt: now
+                )
+                DispatchQueue.main.async {
+                    if let idx = self.layoutPages[albumId]?.firstIndex(where: { $0.id == pageId }) {
+                        self.layoutPages[albumId]?[idx] = cloudPage
+                    }
+                    completion?(.success(cloudPage))
+                }
+            } else {
+                completion?(.success(page))
+            }
+        }.resume()
+    }
+
+    func removePage(albumId: String, pageId: String, completion: ((Result<Void, Error>) -> Void)? = nil) {
+        if Self.isVirtualAlbum(albumId) {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Synthetic albums are read-only"])))
+            return
+        }
+        guard !activeUserId.isEmpty else {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthenticated"])))
+            return
+        }
+
+        var currentPages = layoutPages[albumId] ?? IOSLocalPersistenceStore.shared.getAlbumPages(userId: activeUserId, albumId: albumId)
+        guard currentPages.count > 1 else {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot remove the only page"])))
+            return
+        }
+
+        guard let targetIndex = currentPages.firstIndex(where: { $0.id == pageId }) else {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 404, userInfo: [NSLocalizedDescriptionKey: "Page not found"])))
+            return
+        }
+
+        let pageToRemove = currentPages[targetIndex]
+        var currentPlacements = layoutPlacements[albumId] ?? IOSLocalPersistenceStore.shared.getStampPlacements(userId: activeUserId, albumId: albumId)
+        let hasStamps = currentPlacements.contains { p in
+            (p.pageId != nil && p.pageId == pageId) || p.pageIndex == pageToRemove.pageIndex
+        }
+        if hasStamps {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Move stamps before removing this page"])))
+            return
+        }
+
+        // Local deletion & contiguous reindexing
+        currentPages.remove(at: targetIndex)
+        var updatedPages: [PersistedAlbumPageData] = []
+        for (i, p) in currentPages.enumerated() {
+            updatedPages.append(PersistedAlbumPageData(
+                id: p.id,
+                albumId: p.albumId,
+                pageIndex: Int32(i),
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt
+            ))
+        }
+
+        // Also shift placements whose pageIndex was greater than removed page
+        var updatedPlacements: [PersistedStampPlacementData] = []
+        for p in currentPlacements {
+            if p.pageIndex > pageToRemove.pageIndex {
+                updatedPlacements.append(PersistedStampPlacementData(
+                    id: p.id,
+                    albumId: p.albumId,
+                    pageIndex: p.pageIndex - 1,
+                    pageId: p.pageId,
+                    stampId: p.stampId,
+                    x: p.x,
+                    y: p.y,
+                    scale: p.scale,
+                    rotationDegrees: p.rotationDegrees,
+                    zIndex: p.zIndex,
+                    createdAt: p.createdAt,
+                    updatedAt: p.updatedAt
+                ))
+            } else {
+                updatedPlacements.append(p)
+            }
+        }
+
+        IOSLocalPersistenceStore.shared.saveAlbumLayout(userId: activeUserId, albumId: albumId, pages: updatedPages, placements: updatedPlacements)
+        DispatchQueue.main.async {
+            self.layoutPages[albumId] = updatedPages
+            self.layoutPlacements[albumId] = updatedPlacements
+        }
+
+        guard let token = activeToken, let url = URL(string: "\(supabaseUrl)/rest/v1/rpc/remove_album_page") else {
+            completion?(.success(()))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = ["p_album_id": albumId, "p_page_id": pageId]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { _, _, _ in
+            completion?(.success(()))
+        }.resume()
+    }
+
+    func reorderPages(albumId: String, pageIds: [String], completion: ((Result<Void, Error>) -> Void)? = nil) {
+        if Self.isVirtualAlbum(albumId) {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 400, userInfo: [NSLocalizedDescriptionKey: "Synthetic albums are read-only"])))
+            return
+        }
+        guard !activeUserId.isEmpty else {
+            completion?(.failure(NSError(domain: "IOSAlbumLayoutRepository", code: 401, userInfo: [NSLocalizedDescriptionKey: "Unauthenticated"])))
+            return
+        }
+
+        let currentPages = layoutPages[albumId] ?? IOSLocalPersistenceStore.shared.getAlbumPages(userId: activeUserId, albumId: albumId)
+        var pageMap: [String: PersistedAlbumPageData] = [:]
+        for p in currentPages {
+            pageMap[p.id] = p
+        }
+
+        var reorderedPages: [PersistedAlbumPageData] = []
+        var newIndexMap: [String: Int32] = [:]
+        for (i, pid) in pageIds.enumerated() {
+            if let p = pageMap[pid] {
+                reorderedPages.append(PersistedAlbumPageData(
+                    id: p.id,
+                    albumId: p.albumId,
+                    pageIndex: Int32(i),
+                    createdAt: p.createdAt,
+                    updatedAt: p.updatedAt
+                ))
+                newIndexMap[p.id] = Int32(i)
+            }
+        }
+
+        // Placements stay with their page!
+        let currentPlacements = layoutPlacements[albumId] ?? IOSLocalPersistenceStore.shared.getStampPlacements(userId: activeUserId, albumId: albumId)
+        var updatedPlacements: [PersistedStampPlacementData] = []
+        for p in currentPlacements {
+            let matchingPageId = p.pageId ?? currentPages.first(where: { $0.pageIndex == p.pageIndex })?.id
+            let newPageIndex = (matchingPageId != nil ? newIndexMap[matchingPageId!] : nil) ?? p.pageIndex
+            updatedPlacements.append(PersistedStampPlacementData(
+                id: p.id,
+                albumId: p.albumId,
+                pageIndex: newPageIndex,
+                pageId: matchingPageId ?? p.pageId,
+                stampId: p.stampId,
+                x: p.x,
+                y: p.y,
+                scale: p.scale,
+                rotationDegrees: p.rotationDegrees,
+                zIndex: p.zIndex,
+                createdAt: p.createdAt,
+                updatedAt: p.updatedAt
+            ))
+        }
+
+        IOSLocalPersistenceStore.shared.saveAlbumLayout(userId: activeUserId, albumId: albumId, pages: reorderedPages, placements: updatedPlacements)
+        DispatchQueue.main.async {
+            self.layoutPages[albumId] = reorderedPages
+            self.layoutPlacements[albumId] = updatedPlacements
+        }
+
+        guard let token = activeToken, let url = URL(string: "\(supabaseUrl)/rest/v1/rpc/reorder_album_pages") else {
+            completion?(.success(()))
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = ["p_album_id": albumId, "p_page_ids": pageIds]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request) { _, _, _ in
+            completion?(.success(()))
         }.resume()
     }
 }

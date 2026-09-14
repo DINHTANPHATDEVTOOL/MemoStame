@@ -9,7 +9,7 @@ class IOSFeedRepository: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String? = nil
 
-    private var activeUserId: String? = nil
+    private(set) var activeUserId: String? = nil
     private let client = SupabaseSocialClient.shared
 
     private init() {

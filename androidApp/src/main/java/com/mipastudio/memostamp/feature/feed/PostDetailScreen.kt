@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -24,19 +25,20 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.mipastudio.memostamp.data.repository.SampleDataRepository
-import com.mipastudio.memostamp.ui.theme.*
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.data.repository.UserAuthRepository
+import com.mipastudio.memostamp.domain.model.CommentSubmissionError
 import com.mipastudio.memostamp.domain.model.FeedComment
 import com.mipastudio.memostamp.domain.model.FeedPost
 import com.mipastudio.memostamp.domain.model.FeedReply
-import androidx.compose.ui.window.Dialog
+import com.mipastudio.memostamp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,32 +60,56 @@ fun PostDetailScreen(
         viewModel.loadPost(context, postId)
     }
 
+    // Safe Draft Clearing: Clear only if draft in field still matches the submitted snapshot!
+    LaunchedEffect(uiState.commentSuccessToken) {
+        val token = uiState.commentSuccessToken
+        if (token != null) {
+            if (commentText.trim() == token) {
+                commentText = ""
+            }
+            viewModel.consumeCommentSuccess()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Memory Stamp", fontFamily = StampSerifFontFamily) },
+                title = { Text(stringResource(R.string.post_detail_title), fontFamily = StampSerifFontFamily) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = PrimaryText)
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back),
+                            tint = PrimaryText
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = PrimaryText)
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.post_detail_options),
+                            tint = PrimaryText
+                        )
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Remove from Feed") },
+                            text = { Text(stringResource(R.string.post_detail_remove_feed)) },
                             onClick = {
                                 showMenu = false
                                 viewModel.removePostFromFeed(context, postId, onNavigateBack)
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete Memory Permanently", color = MaterialTheme.colorScheme.error) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.post_detail_delete_memory),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            },
                             onClick = {
                                 showMenu = false
                                 uiState.post?.stampId?.let { stampId ->
@@ -99,7 +125,7 @@ fun PostDetailScreen(
         containerColor = WarmPaperBg
     ) { padding ->
         val post = uiState.post
-        if (uiState.isLoading || post == null) {
+        if (uiState.isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -107,6 +133,28 @@ fun PostDetailScreen(
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = AccentRed)
+            }
+        } else if (post == null || uiState.postUnavailable) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.post_detail_unavailable),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = SecondaryText
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { viewModel.loadPost(context, postId) },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Text(stringResource(R.string.common_retry), color = Color.White)
+                }
             }
         } else {
             LazyColumn(
@@ -213,7 +261,7 @@ fun PostDetailScreen(
                         TextButton(onClick = { viewModel.toggleLike(context, post.id) }) {
                             Icon(
                                 imageVector = if (post.isLikedByMe) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Like",
+                                contentDescription = stringResource(R.string.post_detail_like),
                                 tint = if (post.isLikedByMe) AccentRed else PrimaryText
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -225,7 +273,12 @@ fun PostDetailScreen(
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.ChatBubbleOutline, contentDescription = "Comments", tint = PrimaryText, modifier = Modifier.size(20.dp))
+                            Icon(
+                                imageVector = Icons.Default.ChatBubbleOutline,
+                                contentDescription = stringResource(R.string.post_detail_comments),
+                                tint = PrimaryText,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(text = "${post.commentCount}", color = PrimaryText, fontWeight = FontWeight.Bold)
                         }
@@ -244,7 +297,11 @@ fun PostDetailScreen(
                                     tint = Color.White
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(text = "Reply with Stamp", fontSize = 12.sp, color = Color.White)
+                                Text(
+                                    text = stringResource(R.string.post_detail_reply_with_stamp),
+                                    fontSize = 12.sp,
+                                    color = Color.White
+                                )
                             }
                         }
                     }
@@ -255,7 +312,7 @@ fun PostDetailScreen(
                     item {
                         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                             Text(
-                                text = "Stamp Reply Chain (${post.replyCount})",
+                                text = stringResource(R.string.post_detail_reply_chain_title, post.replyCount),
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = StampSerifFontFamily,
@@ -280,7 +337,7 @@ fun PostDetailScreen(
                         HorizontalDivider(color = UIBorder)
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Comments (${post.commentCount})",
+                            text = stringResource(R.string.post_comments_title, post.commentCount),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = StampSerifFontFamily,
@@ -299,6 +356,47 @@ fun PostDetailScreen(
                     )
                 }
 
+                // Comment Submission Error Banner
+                if (uiState.commentSubmissionError != null) {
+                    item {
+                        val errorRes = when (uiState.commentSubmissionError) {
+                            CommentSubmissionError.UNAUTHENTICATED -> R.string.comment_error_unauthenticated
+                            CommentSubmissionError.FORBIDDEN -> R.string.comment_error_forbidden
+                            CommentSubmissionError.RATE_LIMITED -> R.string.comment_error_rate_limited
+                            CommentSubmissionError.NETWORK_UNAVAILABLE -> R.string.comment_error_network
+                            CommentSubmissionError.SERVER_FAILURE -> R.string.comment_error_server
+                            else -> R.string.comment_error_server
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 4.dp)
+                                .background(AccentRed.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(errorRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AccentRed,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { viewModel.clearCommentError() },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.common_close),
+                                    tint = AccentRed,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Comment Input Row
                 item {
                     val trimmed = commentText.trim()
@@ -314,7 +412,7 @@ fun PostDetailScreen(
                         OutlinedTextField(
                             value = commentText,
                             onValueChange = { commentText = it },
-                            placeholder = { Text("Write a comment...", fontSize = 13.sp) },
+                            placeholder = { Text(stringResource(R.string.post_add_comment_placeholder), fontSize = 13.sp) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(24.dp),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -326,23 +424,30 @@ fun PostDetailScreen(
                         )
                         IconButton(
                             onClick = {
-                                if (isValid) {
+                                if (isValid && !uiState.isSubmittingComment) {
                                     viewModel.addComment(context, post.id, trimmed)
-                                    commentText = ""
                                 }
                             },
-                            enabled = isValid,
+                            enabled = isValid && !uiState.isSubmittingComment,
                             modifier = Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .background(if (isValid) AccentRed else SurfaceSoft)
+                                .background(if (isValid && !uiState.isSubmittingComment) AccentRed else SurfaceSoft)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Send,
-                                contentDescription = "Send",
-                                tint = if (isValid) Color.White else SecondaryText,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            if (uiState.isSubmittingComment) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Send,
+                                    contentDescription = stringResource(R.string.post_send_comment),
+                                    tint = if (isValid) Color.White else SecondaryText,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -460,7 +565,7 @@ fun PostDetailCommentItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.DeleteOutline,
-                    contentDescription = "Delete Comment",
+                    contentDescription = stringResource(R.string.post_detail_delete_comment),
                     tint = SecondaryText,
                     modifier = Modifier.size(16.dp)
                 )
@@ -488,7 +593,7 @@ fun ReplyLightboxDialog(
             ) {
                 AsyncImage(
                     model = reply.replyStampUrl,
-                    contentDescription = "Stamp Reply",
+                    contentDescription = stringResource(R.string.post_detail_stamp_reply_badge),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(240.dp)
@@ -497,7 +602,7 @@ fun ReplyLightboxDialog(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Reply by ${reply.authorName}",
+                    text = stringResource(R.string.post_detail_reply_by, reply.authorName),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = PrimaryText
@@ -516,9 +621,10 @@ fun ReplyLightboxDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Close", color = Color.White)
+                    Text(stringResource(R.string.common_close), color = Color.White)
                 }
             }
         }
     }
 }
+

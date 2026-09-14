@@ -74,11 +74,17 @@ class AlbumEditState(
 
     var isMovePageMenuOpen by mutableStateOf(false)
 
+    var isPageManagementOpen by mutableStateOf(false)
+
     var isSaving by mutableStateOf(false)
         private set
 
     var saveErrorMessage by mutableStateOf<String?>(null)
         private set
+
+    fun clearSaveError() {
+        saveErrorMessage = null
+    }
 
     // Transient transforms during ongoing gestures (not yet committed to DB/cloud)
     val transientTransforms = mutableStateMapOf<String, TransientPlacementTransform>()
@@ -117,6 +123,7 @@ class AlbumEditState(
         selectedPlacementId = null
         isVaultPickerOpen = false
         isMovePageMenuOpen = false
+        isPageManagementOpen = false
         mode = AlbumEditMode.VIEW
     }
 
@@ -375,13 +382,14 @@ class AlbumEditState(
     fun movePlacementToPage(
         placementId: String,
         targetPageIndex: Int,
+        targetPageId: String? = null,
         currentPlacement: StampPlacement,
         repository: AlbumLayoutRepository,
         coroutineScope: CoroutineScope
     ) {
         if (isVirtualAlbum || mode != AlbumEditMode.EDIT) return
         val safeTargetPage = targetPageIndex.coerceAtLeast(0)
-        if (safeTargetPage == currentPlacement.pageIndex) return
+        if (safeTargetPage == currentPlacement.pageIndex && (targetPageId == null || targetPageId == currentPlacement.pageId)) return
 
         undoStack.add(
             AlbumEditorAction.MovePage(
@@ -393,7 +401,94 @@ class AlbumEditState(
 
         coroutineScope.launch(Dispatchers.IO) {
             isSaving = true
-            val result = repository.movePlacementToPage(placementId, albumId, safeTargetPage)
+            val result = repository.movePlacementToPage(placementId, albumId, safeTargetPage, targetPageId)
+            isSaving = false
+            if (result.isFailure) {
+                saveErrorMessage = result.exceptionOrNull()?.message
+            }
+        }
+    }
+
+    fun openPageManagement() {
+        if (mode == AlbumEditMode.EDIT) {
+            isPageManagementOpen = true
+        }
+    }
+
+    fun closePageManagement() {
+        isPageManagementOpen = false
+    }
+
+    fun appendPage(
+        repository: AlbumLayoutRepository,
+        coroutineScope: CoroutineScope,
+        onSuccess: ((com.mipastudio.memostamp.domain.model.AlbumPage) -> Unit)? = null
+    ) {
+        if (isVirtualAlbum || mode != AlbumEditMode.EDIT) return
+        coroutineScope.launch(Dispatchers.IO) {
+            isSaving = true
+            val result = repository.appendPage(albumId)
+            isSaving = false
+            if (result.isSuccess) {
+                val page = result.getOrThrow()
+                onSuccess?.invoke(page)
+            } else {
+                saveErrorMessage = result.exceptionOrNull()?.message
+            }
+        }
+    }
+
+    fun removePage(
+        pageId: String,
+        pageIndex: Int,
+        placementsOnPage: List<StampPlacement>,
+        totalPageCount: Int,
+        repository: AlbumLayoutRepository,
+        coroutineScope: CoroutineScope,
+        onSuccess: (() -> Unit)? = null
+    ) {
+        if (isVirtualAlbum || mode != AlbumEditMode.EDIT) return
+        if (placementsOnPage.isNotEmpty()) {
+            saveErrorMessage = "Move stamps before removing this page"
+            return
+        }
+        if (totalPageCount <= 1) {
+            saveErrorMessage = "Cannot remove the only page"
+            return
+        }
+        coroutineScope.launch(Dispatchers.IO) {
+            isSaving = true
+            val result = repository.removePage(albumId, pageId)
+            isSaving = false
+            if (result.isSuccess) {
+                onSuccess?.invoke()
+            } else {
+                saveErrorMessage = result.exceptionOrNull()?.message
+            }
+        }
+    }
+
+    fun reorderPage(
+        pageId: String,
+        direction: Int, // -1 for earlier, +1 for later
+        pages: List<com.mipastudio.memostamp.domain.model.AlbumPage>,
+        repository: AlbumLayoutRepository,
+        coroutineScope: CoroutineScope
+    ) {
+        if (isVirtualAlbum || mode != AlbumEditMode.EDIT) return
+        val sorted = pages.sortedBy { it.pageIndex }
+        val currentIndex = sorted.indexOfFirst { it.id == pageId }
+        if (currentIndex < 0) return
+        val targetIndex = currentIndex + direction
+        if (targetIndex < 0 || targetIndex >= sorted.size) return
+
+        val mutableList = sorted.map { it.id }.toMutableList()
+        val item = mutableList.removeAt(currentIndex)
+        mutableList.add(targetIndex, item)
+
+        coroutineScope.launch(Dispatchers.IO) {
+            isSaving = true
+            val result = repository.reorderPages(albumId, mutableList)
             isSaving = false
             if (result.isFailure) {
                 saveErrorMessage = result.exceptionOrNull()?.message
@@ -480,6 +575,7 @@ class AlbumEditState(
         undoStack.clear()
         isVaultPickerOpen = false
         isMovePageMenuOpen = false
+        isPageManagementOpen = false
         isSaving = false
         saveErrorMessage = null
     }

@@ -137,6 +137,7 @@ public struct PersistedStampPlacementData: Codable, Equatable {
     public let id: String
     public let albumId: String
     public let pageIndex: Int32
+    public let pageId: String?
     public let stampId: String
     public let x: Double
     public let y: Double
@@ -150,6 +151,7 @@ public struct PersistedStampPlacementData: Codable, Equatable {
         id: String,
         albumId: String,
         pageIndex: Int32,
+        pageId: String? = nil,
         stampId: String,
         x: Double,
         y: Double,
@@ -162,6 +164,7 @@ public struct PersistedStampPlacementData: Codable, Equatable {
         self.id = id
         self.albumId = albumId
         self.pageIndex = pageIndex
+        self.pageId = pageId
         self.stampId = stampId
         self.x = x
         self.y = y

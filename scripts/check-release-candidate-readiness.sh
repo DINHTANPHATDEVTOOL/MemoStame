@@ -178,6 +178,37 @@ else
     EXIT_CODE=1
 fi
 
+# Codemagic App Store Connect Publishing & Authentication Consistency (#86)
+if grep -q 'api_key: \$APP_STORE_CONNECT_PRIVATE_KEY' codemagic.yaml && \
+   grep -q 'key_id: \$APP_STORE_CONNECT_KEY_IDENTIFIER' codemagic.yaml && \
+   grep -q 'issuer_id: \$APP_STORE_CONNECT_ISSUER_ID' codemagic.yaml && \
+   ! grep -q 'auth: integration' codemagic.yaml; then
+    echo "  [PASS] Codemagic App Store Connect publishing configured with consistent secret group variables (no mixed auth)"
+else
+    echo "  [FAIL] Codemagic App Store Connect publishing configuration invalid or uses mixed auth mode"
+    EXIT_CODE=1
+fi
+
+# ExportOptions.plist Dynamic Resolution & Dictionary Contract (#89)
+if [ -f "scripts/resolve_ios_export_options.py" ] && \
+   grep -q "resolve_ios_export_options.py" codemagic.yaml && \
+   python3 scripts/tests/test_resolve_ios_export_options.py >/dev/null 2>&1; then
+    echo "  [PASS] ExportOptions dynamic resolution & provisioningProfiles dictionary contract verified (#89)"
+else
+    echo "  [FAIL] ExportOptions dynamic resolution or provisioningProfiles dictionary contract invalid"
+    EXIT_CODE=1
+fi
+
+# Team ID Resolution & Canonical Signing Context (#91)
+if [ -f "scripts/resolve_ios_signing_context.py" ] && \
+   grep -q "resolve_ios_signing_context.py" codemagic.yaml && \
+   ! grep -q "DEVELOPMENT_TEAM: \${" codemagic.yaml; then
+    echo "  [PASS] Team ID resolution & canonical signing context verified (#91)"
+else
+    echo "  [FAIL] Team ID resolution or canonical signing context missing or literal expansion present"
+    EXIT_CODE=1
+fi
+
 # iOS External Apple Distribution Credentials Check
 if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY:-}" ] || [ -n "${CERTIFICATE_PRIVATE_KEY:-}" ]; then
     echo "  [PASS] iOS distribution signing credentials provided in environment"
@@ -201,7 +232,7 @@ fi
 echo ""
 echo "[CHECK 4] Verifying hosted Supabase backend migrations & Edge Functions contracts..."
 
-# Migrations 001 through 011
+# Migrations 001 through 013
 MIGRATIONS=(
     "001_auth_social_rls.sql"
     "002_schema_contract_and_rls_hardening.sql"
@@ -214,6 +245,8 @@ MIGRATIONS=(
     "009_cloud_stamp_trade.sql"
     "010_social_abuse_rate_limits.sql"
     "011_maps_grounding_rate_limits.sql"
+    "012_album_layout_persistence.sql"
+    "013_album_page_lifecycle.sql"
 )
 MISSING_MIGRATIONS=0
 for MIG in "${MIGRATIONS[@]}"; do
@@ -223,7 +256,7 @@ for MIG in "${MIGRATIONS[@]}"; do
     fi
 done
 if [ "$MISSING_MIGRATIONS" -eq 0 ]; then
-    echo "  [PASS] All 11 required database migrations present (001 through 011)"
+    echo "  [PASS] All 13 required database migrations present (001 through 013)"
 else
     EXIT_CODE=1
 fi

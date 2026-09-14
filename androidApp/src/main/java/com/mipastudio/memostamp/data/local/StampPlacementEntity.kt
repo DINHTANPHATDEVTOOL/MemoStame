@@ -10,7 +10,8 @@ import com.mipastudio.memostamp.domain.model.StampPlacement
     indices = [
         Index(value = ["ownerId", "albumId", "stampId"], unique = true),
         Index(value = ["ownerId", "albumId", "pageIndex"]),
-        Index(value = ["ownerId", "albumId"])
+        Index(value = ["ownerId", "albumId"]),
+        Index(value = ["pageId"])
     ]
 )
 data class StampPlacementEntity(
@@ -25,6 +26,7 @@ data class StampPlacementEntity(
     val scale: Double = 1.0,
     val rotationDegrees: Double = 0.0,
     val zIndex: Int = 1,
+    val pageId: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 ) {
@@ -39,6 +41,7 @@ data class StampPlacementEntity(
         scale = scale,
         rotationDegrees = rotationDegrees,
         zIndex = zIndex,
+        pageId = pageId,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
@@ -55,6 +58,7 @@ data class StampPlacementEntity(
             scale = domain.scale,
             rotationDegrees = domain.rotationDegrees,
             zIndex = domain.zIndex,
+            pageId = domain.pageId,
             createdAt = if (domain.createdAt > 0L) domain.createdAt else System.currentTimeMillis(),
             updatedAt = if (domain.updatedAt > 0L) domain.updatedAt else System.currentTimeMillis()
         )

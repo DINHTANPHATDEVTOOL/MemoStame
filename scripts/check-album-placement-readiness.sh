@@ -92,7 +92,7 @@ check_step "8" "Checking Android Room entity schemas and Dao" '
 # 9. Android Safe Room Migration 14->15
 check_step "9" "Checking safe non-destructive Room database migration 14->15" '
     grep -q "val MIGRATION_14_15" androidApp/src/main/java/com/mipastudio/memostamp/data/local/MemoStampDatabase.kt && \
-    grep -q "version = 15" androidApp/src/main/java/com/mipastudio/memostamp/data/local/MemoStampDatabase.kt && \
+    grep -E -q "version = 1[5-9]" androidApp/src/main/java/com/mipastudio/memostamp/data/local/MemoStampDatabase.kt && \
     ! grep -q "fallbackToDestructiveMigration" androidApp/src/main/java/com/mipastudio/memostamp/data/local/MemoStampDatabase.kt
 '
 
