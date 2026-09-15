@@ -41,15 +41,21 @@ class StampRepository private constructor(
         }
     }
     suspend fun saveDraft(draft: StampDraft): String = withContext(Dispatchers.IO) {
-        val id = UUID.randomUUID().toString()
+        // Reuse existing id when provided so editor updates don't orphan prior drafts.
+        val id = draft.id.ifBlank { UUID.randomUUID().toString() }
         val currentUserId = authRepo.currentUser.value.userId
+        val existing = if (draft.id.isNotBlank()) {
+            stampDraftDao.getDraftById(id, currentUserId)
+        } else {
+            null
+        }
         val entity = StampDraftEntity(
             id = id,
             ownerId = currentUserId,
             originalImagePath = draft.originalImagePath,
             croppedImagePath = draft.croppedImagePath,
             renderedImagePath = draft.renderedImagePath,
-            createdAt = System.currentTimeMillis(),
+            createdAt = existing?.createdAt ?: System.currentTimeMillis(),
             title = draft.title,
             note = draft.note,
             memoryDate = draft.memoryDate,

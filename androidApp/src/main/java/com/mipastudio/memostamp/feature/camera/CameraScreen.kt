@@ -78,6 +78,11 @@ fun CameraScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    // Reset camera state when entering the screen to prevent unfinished capture bugs
+    LaunchedEffect(Unit) {
+        viewModel.resetState()
+    }
+
     val haptic = LocalHapticFeedback.current
     val repository = remember(context) { StampRepository.getInstance(context) }
 

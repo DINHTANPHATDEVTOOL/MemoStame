@@ -484,9 +484,8 @@ class StampEditorViewModel : ViewModel() {
                     if (!rawBitmap.isRecycled) rawBitmap.recycle()
 
                     val repo = StampRepository.getInstance(context)
-                    val targetDraftId = draftId ?: "draft_${System.currentTimeMillis()}"
                     val newDraft = com.mipastudio.memostamp.domain.model.StampDraft(
-                        id = targetDraftId,
+                        id = draftId.orEmpty(),
                         originalImagePath = origPath,
                         renderedImagePath = renderedFile.absolutePath,
                         title = titleText,
@@ -497,10 +496,11 @@ class StampEditorViewModel : ViewModel() {
                         filterIntensity = state.filterSpec.intensity,
                         filterSpecJson = state.filterSpec.toJson()
                     )
-                    repo.saveDraft(newDraft)
+                    // Prefer returned id so upserted/existing draft is what note screen deletes on save.
+                    val savedDraftId = repo.saveDraft(newDraft)
                     withContext(Dispatchers.Main) {
                         _uiState.update { it.copy(isSaving = false) }
-                        onComplete(targetDraftId)
+                        onComplete(savedDraftId)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
