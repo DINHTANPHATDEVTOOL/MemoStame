@@ -5,8 +5,8 @@ import android.content.SharedPreferences
 import com.mipastudio.memostamp.BuildConfig
 
 object SupabaseConfig {
-    private val DEFAULT_SUPABASE_URL = BuildConfig.SUPABASE_URL
-    private val DEFAULT_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
+    internal val DEFAULT_SUPABASE_URL = BuildConfig.SUPABASE_URL
+    internal val DEFAULT_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
     
     val DEFAULT_PROJECT_ID = BuildConfig.SUPABASE_PROJECT_ID
     val DEFAULT_REGION = BuildConfig.SUPABASE_REGION

@@ -103,7 +103,7 @@ class AppLanguageManager private constructor(context: Context) {
 
     fun resolveEffectiveLocale(mode: AppLanguageMode = _currentMode.value): Locale {
         return when (mode) {
-            AppLanguageMode.VIETNAMESE -> Locale("vi")
+            AppLanguageMode.VIETNAMESE -> Locale.forLanguageTag("vi")
             AppLanguageMode.ENGLISH -> Locale.ENGLISH
             AppLanguageMode.SYSTEM -> resolveSystemLocale()
         }
@@ -113,7 +113,7 @@ class AppLanguageManager private constructor(context: Context) {
         val systemLocales = Resources.getSystem().configuration.locales
         val primary = if (!systemLocales.isEmpty) systemLocales[0] else Locale.getDefault()
         return if (primary.language.equals("vi", ignoreCase = true)) {
-            Locale("vi")
+            Locale.forLanguageTag("vi")
         } else {
             // Default base fallback is English
             Locale.ENGLISH
