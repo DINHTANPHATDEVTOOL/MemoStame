@@ -133,7 +133,7 @@ fun EnvelopeModal(
                             onClick = onDismiss,
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = StampCreamBg)
                         ) {
-                            Text("CLOSE")
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_dbc87420347a))
                         }
 
                         Button(
@@ -145,7 +145,7 @@ fun EnvelopeModal(
                         ) {
                             Icon(Icons.Default.MarkEmailRead, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("SAVE TO ALBUM", fontWeight = FontWeight.Bold)
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_4c5cd913f1a3), fontWeight = FontWeight.Bold)
                         }
                     }
                 }

@@ -73,14 +73,14 @@ fun StampDetailScreen(
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b52b36b7269f))
                     }
                 },
                 actions = {
                     if (stamp != null) {
                         Box {
                             IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Outlined.MoreHoriz, contentDescription = "More")
+                                Icon(Icons.Outlined.MoreHoriz, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_4bab2d8fe13f))
                             }
                             DropdownMenu(
                                 expanded = showMenu,
@@ -88,7 +88,7 @@ fun StampDetailScreen(
                                 containerColor = SurfaceWhite
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Delete memory", color = AccentRed) },
+                                    text = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_bcef2182178d), color = AccentRed) },
                                     onClick = {
                                         showMenu = false
                                         showDeleteConfirm = true
@@ -113,9 +113,9 @@ fun StampDetailScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Memory not found", style = MaterialTheme.typography.headlineMedium)
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_bd56a1afb490), style = MaterialTheme.typography.headlineMedium)
                     Spacer(modifier = Modifier.height(12.dp))
-                    TextButton(onClick = onNavigateBack) { Text("Go back", color = AccentRed) }
+                    TextButton(onClick = onNavigateBack) { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_e84712fbf4ee), color = AccentRed) }
                 }
             }
 
@@ -192,8 +192,8 @@ fun StampDetailScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("MEMOSTAMP POSTCARD", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = SecondaryText)
-                                        Text("★ AIRMAIL ★", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = AccentRed)
+                                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d617ca531d9d), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = SecondaryText)
+                                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_98fe54112064), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = AccentRed)
                                     }
 
                                     HorizontalDivider(color = StampBorderDefault, thickness = 1.dp)
@@ -215,7 +215,7 @@ fun StampDetailScreen(
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text("MỘC BƯU CHÍNH", fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 13.sp)
+                                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_8e6af90730db), fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 13.sp)
                                         Text(formattedDate, color = SecondaryText, fontSize = 11.sp)
                                     }
 
@@ -337,7 +337,7 @@ fun StampDetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(22.dp))
-                    Text("Created by you", color = TertiaryText, fontSize = 11.sp)
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_8c292710d9aa), color = TertiaryText, fontSize = 11.sp)
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
@@ -348,8 +348,8 @@ fun StampDetailScreen(
     if (showDeleteConfirm && currentStamp != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete this memory?", fontWeight = FontWeight.Bold) },
-            text = { Text("This removes the stamp and its local files from your vault.") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_c307cf19f180), fontWeight = FontWeight.Bold) },
+            text = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_7a3422c45586)) },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch {
@@ -360,9 +360,9 @@ fun StampDetailScreen(
                             onFailure = { Toast.makeText(context, it.message ?: "Delete failed", Toast.LENGTH_SHORT).show() }
                         )
                     }
-                }) { Text("Delete", color = AccentRed, fontWeight = FontWeight.Bold) }
+                }) { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f6fdbe48dc54), color = AccentRed, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_77dfd2135f4d)) } },
             containerColor = SurfaceWhite
         )
     }

@@ -92,12 +92,12 @@ fun MemoryNoteScreen(
         containerColor = WarmPaperBg,
         topBar = {
             TopAppBar(
-                title = { Text("Keep this moment", fontWeight = FontWeight.Bold) },
+                title = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_68be0275f570), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = {
                         viewModel.discardDraft(context, draftId) { onNavigateBack() }
                     }) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b52b36b7269f))
                     }
                 },
                 actions = {
@@ -108,7 +108,7 @@ fun MemoryNoteScreen(
                         if (uiState.isSaving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = AccentRed)
                         } else {
-                            Text("Save", color = AccentRed, fontWeight = FontWeight.Bold)
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_efc007a393f6), color = AccentRed, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
@@ -141,7 +141,7 @@ fun MemoryNoteScreen(
                 if (imageFile != null && imageFile.exists()) {
                     Image(
                         painter = rememberAsyncImagePainter(imageFile),
-                        contentDescription = "Stamp preview",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f23bdebb7604),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -325,7 +325,7 @@ fun MemoryNoteScreen(
                             if (selected) {
                                 Icon(
                                     Icons.Outlined.Check,
-                                    contentDescription = "Selected",
+                                    contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_9a976fc228b6),
                                     tint = AccentRed,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -345,7 +345,7 @@ fun MemoryNoteScreen(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Column(modifier = Modifier.padding(22.dp)) {
-                Text("How did this feel?", style = MaterialTheme.typography.headlineMedium)
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_7ce006a802a2), style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
@@ -390,7 +390,7 @@ fun MemoryNoteScreen(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Column(modifier = Modifier.padding(22.dp)) {
-                Text("Choose a collection", style = MaterialTheme.typography.headlineMedium)
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d75554f4c0e3), style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(14.dp))
                 CollectionChoiceRow(
                     iconKey = null,

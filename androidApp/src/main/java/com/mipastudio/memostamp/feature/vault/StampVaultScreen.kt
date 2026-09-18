@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.mipastudio.memostamp.ui.theme.*
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.outlined.People
 import com.mipastudio.memostamp.ui.icon.MemoStampIcon
 import kotlinx.coroutines.launch
 import java.io.File
+import com.mipastudio.memostamp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,22 +65,22 @@ fun StampVaultScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Vault", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground)
-                        Text("Kho tem ký ức của bạn", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.vault_title), style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.onBackground)
+                        Text(stringResource(R.string.vault_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 actions = {
                     IconButton(onClick = { showThemeSelector = true }) {
                         Icon(
                             Icons.Outlined.Palette,
-                            contentDescription = "Chọn giao diện",
+                            contentDescription = stringResource(R.string.friends_theme_select),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     IconButton(onClick = { isSearchActive = !isSearchActive }) {
                         Icon(
                             if (isSearchActive) Icons.Outlined.Close else Icons.Outlined.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(R.string.common_search),
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
@@ -115,10 +117,10 @@ fun StampVaultScreen(
                         Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = AccentRed)
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Your vault is quiet", style = MaterialTheme.typography.headlineMedium)
+                    Text(stringResource(R.string.vault_empty), style = MaterialTheme.typography.headlineMedium)
                     Spacer(modifier = Modifier.height(5.dp))
                     Text(
-                        "Press a moment into a stamp and it will live here.",
+                        stringResource(R.string.vault_empty_description),
                         color = SecondaryText,
                         fontSize = 13.sp
                     )
@@ -130,7 +132,7 @@ fun StampVaultScreen(
                     ) {
                         Icon(Icons.Outlined.PhotoCamera, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Open camera")
+                        Text(stringResource(R.string.vault_open_camera))
                     }
                 }
             }
@@ -173,7 +175,7 @@ fun StampVaultScreen(
                             TextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search memories") },
+                                placeholder = { Text(stringResource(R.string.vault_search_memories)) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(18.dp),
                                 colors = TextFieldDefaults.colors(

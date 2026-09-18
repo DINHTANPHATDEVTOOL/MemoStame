@@ -147,7 +147,7 @@ public struct LocationPickerSheetView: View {
 
                             Spacer()
 
-                            Text("Tự động định vị")
+                            Text(AppLanguageManager.shared.localized("ui_literal_cc86291da27c"))
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(Color.gray.opacity(0.8))
                         }
@@ -190,7 +190,7 @@ public struct LocationPickerSheetView: View {
             .navigationBarTitle("Chọn Địa Điểm", displayMode: .inline)
             .navigationBarItems(
                 leading: Button(action: onDismiss) {
-                    Text("Đóng")
+                    Text(AppLanguageManager.shared.localized("ui_literal_d2b73ab2ada1"))
                         .foregroundColor(MSTheme.Colors.textSecondary)
                 }
             )
@@ -212,7 +212,7 @@ public struct LocationPickerSheetView: View {
         case .searchingNative:
             HStack(spacing: 6) {
                 ProgressView().scaleEffect(0.6)
-                Text("Đang tìm kiếm trên bản đồ...")
+                Text(AppLanguageManager.shared.localized("ui_literal_dd0f03039429"))
                     .font(.caption2)
                     .foregroundColor(MSTheme.Colors.textSecondary)
                 Spacer()
@@ -226,7 +226,7 @@ public struct LocationPickerSheetView: View {
                 Image(systemName: "sparkles")
                     .foregroundColor(MSTheme.Colors.vintageGold)
                     .font(.caption2)
-                Text("Đang tối ưu danh sách với Google Maps AI...")
+                Text(AppLanguageManager.shared.localized("ui_literal_fb2ebde9ee2e"))
                     .font(.caption2.bold())
                     .foregroundColor(MSTheme.Colors.textPrimary)
                 Spacer()
@@ -283,7 +283,7 @@ public struct LocationPickerSheetView: View {
                     Text("Sử dụng: \"\(searchQuery)\"")
                         .font(.subheadline.bold())
                         .foregroundColor(MSTheme.Colors.primaryRed)
-                    Text("Lưu địa điểm thủ công chính xác theo tên bạn nhập")
+                    Text(AppLanguageManager.shared.localized("ui_literal_0731764914ce"))
                         .font(.caption2)
                         .foregroundColor(MSTheme.Colors.textSecondary)
                 }
@@ -331,7 +331,7 @@ public struct LocationPickerSheetView: View {
                         HStack(spacing: 3) {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 10))
-                            Text("Bản đồ AI")
+                            Text(AppLanguageManager.shared.localized("ui_literal_b6b2b6473a4c"))
                                 .font(.system(size: 10, weight: .bold))
                         }
                         .padding(.horizontal, 6)
@@ -387,7 +387,7 @@ public struct LocationPickerSheetView: View {
 
                     Spacer()
 
-                    Text("Chọn ›")
+                    Text(AppLanguageManager.shared.localized("ui_literal_60a79b63cd9a"))
                         .font(.caption.bold())
                         .foregroundColor(MSTheme.Colors.primaryRed)
                 }
@@ -407,11 +407,11 @@ public struct LocationPickerSheetView: View {
                 .foregroundColor(Color.gray.opacity(0.4))
                 .padding(.top, 24)
 
-            Text("Không tìm thấy địa điểm phù hợp")
+            Text(AppLanguageManager.shared.localized("ui_literal_af5c3a71ddb3"))
                 .font(.subheadline.bold())
                 .foregroundColor(MSTheme.Colors.textSecondary)
 
-            Text("Bạn có thể gõ trực tiếp tên địa điểm ở ô tìm kiếm phía trên để lưu thủ công.")
+            Text(AppLanguageManager.shared.localized("ui_literal_ef4e3b743d7d"))
                 .font(.caption)
                 .foregroundColor(Color.gray)
                 .multilineTextAlignment(.center)

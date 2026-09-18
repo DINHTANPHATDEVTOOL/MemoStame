@@ -8371,6 +8371,4182 @@
         }
       }
     },
+    "ui_literal_059e8a1fa9c7": {
+      "comment": "Localization key ui_literal_059e8a1fa9c7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel Offer"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy lời mời"
+          }
+        }
+      }
+    },
+    "ui_literal_06f74d910577": {
+      "comment": "Localization key ui_literal_06f74d910577",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owned"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã sở hữu"
+          }
+        }
+      }
+    },
+    "ui_literal_0731764914ce": {
+      "comment": "Localization key ui_literal_0731764914ce",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save places manually exactly by the name you enter"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu địa điểm thủ công chính xác theo tên bạn nhập"
+          }
+        }
+      }
+    },
+    "ui_literal_0799f2adb20d": {
+      "comment": "Localization key ui_literal_0799f2adb20d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envelopes"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bao thư"
+          }
+        }
+      }
+    },
+    "ui_literal_0a14825a6975": {
+      "comment": "Localization key ui_literal_0a14825a6975",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are no commemorative stamps yet"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có tem kỷ niệm nào"
+          }
+        }
+      }
+    },
+    "ui_literal_0a2ee4189fab": {
+      "comment": "Localization key ui_literal_0a2ee4189fab",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved permanently in Stamp Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu vĩnh viễn trong Kho tem"
+          }
+        }
+      }
+    },
+    "ui_literal_0bb8be06ce3b": {
+      "comment": "Localization key ui_literal_0bb8be06ce3b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EMOTION/MOOD"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CẢM XÚC / MOOD"
+          }
+        }
+      }
+    },
+    "ui_literal_0df34de7cb69": {
+      "comment": "Localization key ui_literal_0df34de7cb69",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✦ Unfinished Memory ✦"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✦ Ký ức dang dở ✦"
+          }
+        }
+      }
+    },
+    "ui_literal_0e8bee709966": {
+      "comment": "Localization key ui_literal_0e8bee709966",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset new password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt lại mật khẩu mới"
+          }
+        }
+      }
+    },
+    "ui_literal_100cc1c9d9b8": {
+      "comment": "Localization key ui_literal_100cc1c9d9b8",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Additional notes (optional, up to 1000 characters)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi chú thêm (tùy chọn, tối đa 1000 ký tự)"
+          }
+        }
+      }
+    },
+    "ui_literal_10b701db2511": {
+      "comment": "Localization key ui_literal_10b701db2511",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Abuse"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo vi phạm"
+          }
+        }
+      }
+    },
+    "ui_literal_120090390419": {
+      "comment": "Localization key ui_literal_120090390419",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to load chat"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tải cuộc trò chuyện"
+          }
+        }
+      }
+    },
+    "ui_literal_156f1ec5e30b": {
+      "comment": "Localization key ui_literal_156f1ec5e30b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send Trade Request"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi yêu cầu giao dịch"
+          }
+        }
+      }
+    },
+    "ui_literal_159fe48505b5": {
+      "comment": "Localization key ui_literal_159fe48505b5",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn bè"
+          }
+        }
+      }
+    },
+    "ui_literal_15e2aac4c6b4": {
+      "comment": "Localization key ui_literal_15e2aac4c6b4",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STAMP VAULT"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VÒI TEM"
+          }
+        }
+      }
+    },
+    "ui_literal_1630fc027a1a": {
+      "comment": "Localization key ui_literal_1630fc027a1a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgot password?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quên mật khẩu?"
+          }
+        }
+      }
+    },
+    "ui_literal_1776fa32f23e": {
+      "comment": "Localization key ui_literal_1776fa32f23e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS"
+          }
+        }
+      }
+    },
+    "ui_literal_1856b976ab3d": {
+      "comment": "Localization key ui_literal_1856b976ab3d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erase this memory?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa ký ức này?"
+          }
+        }
+      }
+    },
+    "ui_literal_19ed23057588": {
+      "comment": "Localization key ui_literal_19ed23057588",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color Filters"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ lọc màu"
+          }
+        }
+      }
+    },
+    "ui_literal_19ee62d7ab19": {
+      "comment": "Localization key ui_literal_19ee62d7ab19",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POSTAL MARK LOCATION (LOCATION)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ĐỊA ĐIỂM DẤU BƯU CHÍNH (LOCATION)"
+          }
+        }
+      }
+    },
+    "ui_literal_1a7ca521a340": {
+      "comment": "Localization key ui_literal_1a7ca521a340",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join MemoStamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tham gia MemoStamp"
+          }
+        }
+      }
+    },
+    "ui_literal_1d23ba9da103": {
+      "comment": "Localization key ui_literal_1d23ba9da103",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cover photo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh bìa"
+          }
+        }
+      }
+    },
+    "ui_literal_1d323d1e9c5b": {
+      "comment": "Localization key ui_literal_1d323d1e9c5b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anniversary day"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngày kỷ niệm"
+          }
+        }
+      }
+    },
+    "ui_literal_1e9d85d892ca": {
+      "comment": "Localization key ui_literal_1e9d85d892ca",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display name"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên hiển thị"
+          }
+        }
+      }
+    },
+    "ui_literal_20a32bc870bf": {
+      "comment": "Localization key ui_literal_20a32bc870bf",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saturation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ bão hòa"
+          }
+        }
+      }
+    },
+    "ui_literal_22cbde199fef": {
+      "comment": "Localization key ui_literal_22cbde199fef",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMORIAL STAMP COLLECTION HANDBOOK"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SỔ TAY BỘ SƯU TẬP TEM KỶ NIỆM"
+          }
+        }
+      }
+    },
+    "ui_literal_2373d32a83a0": {
+      "comment": "Localization key ui_literal_2373d32a83a0",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type in name, cafe, delicious food..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gõ tên, quán cafe, món ngon..."
+          }
+        }
+      }
+    },
+    "ui_literal_2596fbf4d98c": {
+      "comment": "Localization key ui_literal_2596fbf4d98c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm"
+          }
+        }
+      }
+    },
+    "ui_literal_26d0534d5141": {
+      "comment": "Localization key ui_literal_26d0534d5141",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Harassment / Threats"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quấy rối / Đe dọa"
+          }
+        }
+      }
+    },
+    "ui_literal_2862ce847aef": {
+      "comment": "Localization key ui_literal_2862ce847aef",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Commemorative Stamps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo Tem Kỷ Niệm"
+          }
+        }
+      }
+    },
+    "ui_literal_29b21a25e85b": {
+      "comment": "Localization key ui_literal_29b21a25e85b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Features Coming soon"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tính năng Sắp ra mắt"
+          }
+        }
+      }
+    },
+    "ui_literal_2a30a41d948a": {
+      "comment": "Localization key ui_literal_2a30a41d948a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a message or attach a postage stamp for a nostalgic connection! 📮"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm! 📮"
+          }
+        }
+      }
+    },
+    "ui_literal_2b336e9d7138": {
+      "comment": "Localization key ui_literal_2b336e9d7138",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking connection..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kiểm tra kết nối..."
+          }
+        }
+      }
+    },
+    "ui_literal_2cb367c53bea": {
+      "comment": "Localization key ui_literal_2cb367c53bea",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        }
+      }
+    },
+    "ui_literal_2ced57f12591": {
+      "comment": "Localization key ui_literal_2ced57f12591",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trò chuyện"
+          }
+        }
+      }
+    },
+    "ui_literal_2e02623966f9": {
+      "comment": "Localization key ui_literal_2e02623966f9",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục"
+          }
+        }
+      }
+    },
+    "ui_literal_2f2adef1594e": {
+      "comment": "Localization key ui_literal_2f2adef1594e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impersonation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mạo danh"
+          }
+        }
+      }
+    },
+    "ui_literal_2f8d236566d2": {
+      "comment": "Localization key ui_literal_2f8d236566d2",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SYNC"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ĐỒNG BỘ"
+          }
+        }
+      }
+    },
+    "ui_literal_30c4dc820b96": {
+      "comment": "Localization key ui_literal_30c4dc820b96",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CHOOSE A DIE-CUT MOLD"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CHỌN KHUÔN DẬP TEM (DIE-CUT MOLD)"
+          }
+        }
+      }
+    },
+    "ui_literal_31f2bd180e9e": {
+      "comment": "Localization key ui_literal_31f2bd180e9e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Google and Apple will be supported in the next official release. Please use Email & Password."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng nhập bằng Google và Apple sẽ được hỗ trợ trong phiên bản chính thức tiếp theo. Vui lòng sử dụng Email & Mật khẩu."
+          }
+        }
+      }
+    },
+    "ui_literal_34ca764caf22": {
+      "comment": "Localization key ui_literal_34ca764caf22",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy"
+          }
+        }
+      }
+    },
+    "ui_literal_35760d4f09c0": {
+      "comment": "Localization key ui_literal_35760d4f09c0",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POSTMARK COLOR TONE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TÔNG MÀU DẤU BƯU ĐIỆN"
+          }
+        }
+      }
+    },
+    "ui_literal_35be7c277c7b": {
+      "comment": "Localization key ui_literal_35be7c277c7b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuyển đổi mật khẩu"
+          }
+        }
+      }
+    },
+    "ui_literal_3633ceb693a7": {
+      "comment": "Localization key ui_literal_3633ceb693a7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save configuration"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu cấu hình"
+          }
+        }
+      }
+    },
+    "ui_literal_36fff63ccbcd": {
+      "comment": "Localization key ui_literal_36fff63ccbcd",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loại bỏ"
+          }
+        }
+      }
+    },
+    "ui_literal_376d06171f43": {
+      "comment": "Localization key ui_literal_376d06171f43",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sealed with MemoStamp Wax #2026"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bịt kín bằng Sáp MemoStamp #2026"
+          }
+        }
+      }
+    },
+    "ui_literal_3816b94c4104": {
+      "comment": "Localization key ui_literal_3816b94c4104",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select one of your stamps to offer for trade:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn một trong các tem của bạn để chào bán:"
+          }
+        }
+      }
+    },
+    "ui_literal_39fc72124884": {
+      "comment": "Localization key ui_literal_39fc72124884",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác"
+          }
+        }
+      }
+    },
+    "ui_literal_3bbe3c9b1352": {
+      "comment": "Localization key ui_literal_3bbe3c9b1352",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch the stamp to flip to see the back of the postcard ↺"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm vào tem để lật xem mặt sau bưu thiếp ↺"
+          }
+        }
+      }
+    },
+    "ui_literal_3efda14c5e11": {
+      "comment": "Localization key ui_literal_3efda14c5e11",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preset Tune Controls"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điều khiển giai điệu cài sẵn"
+          }
+        }
+      }
+    },
+    "ui_literal_400e491f3189": {
+      "comment": "Localization key ui_literal_400e491f3189",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa con tem này"
+          }
+        }
+      }
+    },
+    "ui_literal_44742187d5d4": {
+      "comment": "Localization key ui_literal_44742187d5d4",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR Code"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mã QR"
+          }
+        }
+      }
+    },
+    "ui_literal_44c57abd888a": {
+      "comment": "Localization key ui_literal_44c57abd888a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt lại"
+          }
+        }
+      }
+    },
+    "ui_literal_471b94d402d1": {
+      "comment": "Localization key ui_literal_471b94d402d1",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm lại"
+          }
+        }
+      }
+    },
+    "ui_literal_481df2ecdf70": {
+      "comment": "Localization key ui_literal_481df2ecdf70",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch camera"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi camera"
+          }
+        }
+      }
+    },
+    "ui_literal_494d0f681c44": {
+      "comment": "Localization key ui_literal_494d0f681c44",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kiểm tra..."
+          }
+        }
+      }
+    },
+    "ui_literal_4b03f554bef7": {
+      "comment": "Localization key ui_literal_4b03f554bef7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp saved to Camera Roll!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu con tem vào Thư viện ảnh!"
+          }
+        }
+      }
+    },
+    "ui_literal_4bab2d8fe13f": {
+      "comment": "Localization key ui_literal_4bab2d8fe13f",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem thêm"
+          }
+        }
+      }
+    },
+    "ui_literal_4be53e9a016e": {
+      "comment": "Localization key ui_literal_4be53e9a016e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check server status"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra trạng thái máy chủ"
+          }
+        }
+      }
+    },
+    "ui_literal_4c3fcca1ef78": {
+      "comment": "Localization key ui_literal_4c3fcca1ef78",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friendships and friend requests will be permanently deleted. The two will no longer be able to send messages or interact with each other."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quan hệ bạn bè và các lời mời kết bạn sẽ bị xóa vĩnh viễn. Cả hai sẽ không thể gửi tin nhắn hoặc tương tác với nhau nữa."
+          }
+        }
+      }
+    },
+    "ui_literal_4c5cd913f1a3": {
+      "comment": "Localization key ui_literal_4c5cd913f1a3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SAVE TO ALBUM"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LƯU VÀO ALBUM"
+          }
+        }
+      }
+    },
+    "ui_literal_4d476c9a960d": {
+      "comment": "Localization key ui_literal_4d476c9a960d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AUDIENCE VISIBILITY"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TẦM NHÌN ĐỐI TƯỢNG"
+          }
+        }
+      }
+    },
+    "ui_literal_4da9c9af9631": {
+      "comment": "Localization key ui_literal_4da9c9af9631",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chụp ảnh"
+          }
+        }
+      }
+    },
+    "ui_literal_5420e152a74e": {
+      "comment": "Localization key ui_literal_5420e152a74e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Albums"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo Album"
+          }
+        }
+      }
+    },
+    "ui_literal_54a985bdbf45": {
+      "comment": "Localization key ui_literal_54a985bdbf45",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“"
+          }
+        }
+      }
+    },
+    "ui_literal_54aa33d6a31e": {
+      "comment": "Localization key ui_literal_54aa33d6a31e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share via System Apps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ qua ứng dụng hệ thống"
+          }
+        }
+      }
+    },
+    "ui_literal_55c05facd64c": {
+      "comment": "Localization key ui_literal_55c05facd64c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Stamp to Send"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn con tem gửi ngay"
+          }
+        }
+      }
+    },
+    "ui_literal_599bb2a1a9f0": {
+      "comment": "Localization key ui_literal_599bb2a1a9f0",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album Description"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mô tả Album"
+          }
+        }
+      }
+    },
+    "ui_literal_5a267b44a275": {
+      "comment": "Localization key ui_literal_5a267b44a275",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create your profile"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo hồ sơ của bạn"
+          }
+        }
+      }
+    },
+    "ui_literal_5d92d0921faa": {
+      "comment": "Localization key ui_literal_5d92d0921faa",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục"
+          }
+        }
+      }
+    },
+    "ui_literal_5e6cdb19e604": {
+      "comment": "Localization key ui_literal_5e6cdb19e604",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notice"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông Báo"
+          }
+        }
+      }
+    },
+    "ui_literal_5ea2ea09176a": {
+      "comment": "Localization key ui_literal_5ea2ea09176a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu Tem"
+          }
+        }
+      }
+    },
+    "ui_literal_5fe9083e52a5": {
+      "comment": "Localization key ui_literal_5fe9083e52a5",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export PNG"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xuất PNG"
+          }
+        }
+      }
+    },
+    "ui_literal_6080b454e595": {
+      "comment": "Localization key ui_literal_6080b454e595",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change Photo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thay đổi ảnh"
+          }
+        }
+      }
+    },
+    "ui_literal_60a79b63cd9a": {
+      "comment": "Localization key ui_literal_60a79b63cd9a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select ›"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ›"
+          }
+        }
+      }
+    },
+    "ui_literal_61ff81c30aa3": {
+      "comment": "Localization key ui_literal_61ff81c30aa3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POST"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BÀI ĐĂNG"
+          }
+        }
+      }
+    },
+    "ui_literal_62095341b455": {
+      "comment": "Localization key ui_literal_62095341b455",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check connection and try again."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra kết nối và thử lại."
+          }
+        }
+      }
+    },
+    "ui_literal_6246eda11839": {
+      "comment": "Localization key ui_literal_6246eda11839",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Element Text"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa văn bản thành phần"
+          }
+        }
+      }
+    },
+    "ui_literal_632f3fa6c124": {
+      "comment": "Localization key ui_literal_632f3fa6c124",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "₫"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "₫"
+          }
+        }
+      }
+    },
+    "ui_literal_63bbfd75f684": {
+      "comment": "Localization key ui_literal_63bbfd75f684",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decline"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Từ chối"
+          }
+        }
+      }
+    },
+    "ui_literal_64803a3da711": {
+      "comment": "Localization key ui_literal_64803a3da711",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have an uncommitted stamp memory draft. Would you like to continue editing or discard it?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có một bản nháp bộ nhớ tem chưa được cam kết. Bạn muốn tiếp tục chỉnh sửa hay loại bỏ nó?"
+          }
+        }
+      }
+    },
+    "ui_literal_67954c6ab406": {
+      "comment": "Localization key ui_literal_67954c6ab406",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Passport Profile"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa hồ sơ hộ chiếu"
+          }
+        }
+      }
+    },
+    "ui_literal_685de584b99e": {
+      "comment": "Localization key ui_literal_685de584b99e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading chat..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải cuộc trò chuyện..."
+          }
+        }
+      }
+    },
+    "ui_literal_68be0275f570": {
+      "comment": "Localization key ui_literal_68be0275f570",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep this moment"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy giữ khoảnh khắc này"
+          }
+        }
+      }
+    },
+    "ui_literal_6b382c66ce54": {
+      "comment": "Localization key ui_literal_6b382c66ce54",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MemoStamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản ghi nhớDấu"
+          }
+        }
+      }
+    },
+    "ui_literal_6c71b6b990fa": {
+      "comment": "Localization key ui_literal_6c71b6b990fa",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SCAN / ENTER OTHER PEOPLE'S QR CODE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QUÉT / NHẬP MÃ QR NGƯỜI KHÁC"
+          }
+        }
+      }
+    },
+    "ui_literal_6fcd855e6f6c": {
+      "comment": "Localization key ui_literal_6fcd855e6f6c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intimate Memory Feed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguồn cấp dữ liệu bộ nhớ thân mật"
+          }
+        }
+      }
+    },
+    "ui_literal_7097a2158c48": {
+      "comment": "Localization key ui_literal_7097a2158c48",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMORIAL LOCATION"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ĐỊA ĐIỂM KỶ NIỆM"
+          }
+        }
+      }
+    },
+    "ui_literal_7168833cc8e1": {
+      "comment": "Localization key ui_literal_7168833cc8e1",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STATUS"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TÌNH TRẠNG"
+          }
+        }
+      }
+    },
+    "ui_literal_719ea396ad92": {
+      "comment": "Localization key ui_literal_719ea396ad92",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa"
+          }
+        }
+      }
+    },
+    "ui_literal_74331068f0a2": {
+      "comment": "Localization key ui_literal_74331068f0a2",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album Name"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên Album"
+          }
+        }
+      }
+    },
+    "ui_literal_77dfd2135f4d": {
+      "comment": "Localization key ui_literal_77dfd2135f4d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy"
+          }
+        }
+      }
+    },
+    "ui_literal_7870062aadae": {
+      "comment": "Localization key ui_literal_7870062aadae",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport Cover"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bìa hộ chiếu"
+          }
+        }
+      }
+    },
+    "ui_literal_79799fc6ec78": {
+      "comment": "Localization key ui_literal_79799fc6ec78",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROFILE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HỒ SƠ"
+          }
+        }
+      }
+    },
+    "ui_literal_7a3422c45586": {
+      "comment": "Localization key ui_literal_7a3422c45586",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This removes the stamp and its local files from your vault."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thao tác này sẽ xóa tem và các tệp cục bộ của nó khỏi kho lưu trữ của bạn."
+          }
+        }
+      }
+    },
+    "ui_literal_7af7cae5a017": {
+      "comment": "Localization key ui_literal_7af7cae5a017",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frozen frame"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khung đông lạnh"
+          }
+        }
+      }
+    },
+    "ui_literal_7ce006a802a2": {
+      "comment": "Localization key ui_literal_7ce006a802a2",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How did this feel?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn cảm thấy thế nào?"
+          }
+        }
+      }
+    },
+    "ui_literal_7d8be9b6b1b6": {
+      "comment": "Localization key ui_literal_7d8be9b6b1b6",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Or choose vintage postal wallpaper:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoặc chọn hình nền bưu chính vintage:"
+          }
+        }
+      }
+    },
+    "ui_literal_7f2083d033e7": {
+      "comment": "Localization key ui_literal_7f2083d033e7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMOSTAMP COLLECTOR ALBUM"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ALBUM BỘ SƯU TẬP MEMOSTAMP"
+          }
+        }
+      }
+    },
+    "ui_literal_826a037eac95": {
+      "comment": "Localization key ui_literal_826a037eac95",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ANNIVERSARY INFORMATION"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "THÔNG TIN KỶ NIỆM"
+          }
+        }
+      }
+    },
+    "ui_literal_834bab943f2a": {
+      "comment": "Localization key ui_literal_834bab943f2a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep memories with people you care about."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu giữ những kỷ niệm với những người bạn quan tâm."
+          }
+        }
+      }
+    },
+    "ui_literal_84add5b29527": {
+      "comment": "Localization key ui_literal_84add5b29527",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Email"
+          }
+        }
+      }
+    },
+    "ui_literal_84c29015de33": {
+      "comment": "Localization key ui_literal_84c29015de33",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Username"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên người dùng"
+          }
+        }
+      }
+    },
+    "ui_literal_8740d9b89d5f": {
+      "comment": "Localization key ui_literal_8740d9b89d5f",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CREATE NEW ALBUM / COLLECTION"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TẠO ALBUM / BỘ SƯU TẬP MỚI"
+          }
+        }
+      }
+    },
+    "ui_literal_8811dc087ddb": {
+      "comment": "Localization key ui_literal_8811dc087ddb",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album icon"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biểu tượng Album"
+          }
+        }
+      }
+    },
+    "ui_literal_881f29151d27": {
+      "comment": "Localization key ui_literal_881f29151d27",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account Settings & Language"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt tài khoản & Ngôn ngữ"
+          }
+        }
+      }
+    },
+    "ui_literal_888c9c47cfe0": {
+      "comment": "Localization key ui_literal_888c9c47cfe0",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu"
+          }
+        }
+      }
+    },
+    "ui_literal_8c292710d9aa": {
+      "comment": "Localization key ui_literal_8c292710d9aa",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created by you"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do bạn tạo"
+          }
+        }
+      }
+    },
+    "ui_literal_8e6af90730db": {
+      "comment": "Localization key ui_literal_8e6af90730db",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MOC POSTAGE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MỘC BƯU CHÍNH"
+          }
+        }
+      }
+    },
+    "ui_literal_8f35653f3748": {
+      "comment": "Localization key ui_literal_8f35653f3748",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intimate Memory Feed & Vintage Stamp Album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bảng tin Kỷ niệm & Sổ Tem Bưu Chính"
+          }
+        }
+      }
+    },
+    "ui_literal_90e2b791d717": {
+      "comment": "Localization key ui_literal_90e2b791d717",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google (Coming Soon)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google (Sắp ra mắt)"
+          }
+        }
+      }
+    },
+    "ui_literal_91863b0069ba": {
+      "comment": "Localization key ui_literal_91863b0069ba",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMOSTAMP"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMOSTAMP"
+          }
+        }
+      }
+    },
+    "ui_literal_921e441dc467": {
+      "comment": "Localization key ui_literal_921e441dc467",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Native"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ bản địa"
+          }
+        }
+      }
+    },
+    "ui_literal_940e39a6c8cf": {
+      "comment": "Localization key ui_literal_940e39a6c8cf",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unblock"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ chặn"
+          }
+        }
+      }
+    },
+    "ui_literal_963057bfa32f": {
+      "comment": "Localization key ui_literal_963057bfa32f",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exclusive communication via Supabase Cloud"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độc bản giao lưu qua Supabase Cloud"
+          }
+        }
+      }
+    },
+    "ui_literal_972d57379db3": {
+      "comment": "Localization key ui_literal_972d57379db3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "trùng lặp"
+          }
+        }
+      }
+    },
+    "ui_literal_977c2f93cd3e": {
+      "comment": "Localization key ui_literal_977c2f93cd3e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punched Memory Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem bộ nhớ đục lỗ"
+          }
+        }
+      }
+    },
+    "ui_literal_97805144ee36": {
+      "comment": "Localization key ui_literal_97805144ee36",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Stamp Template"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn mẫu tem"
+          }
+        }
+      }
+    },
+    "ui_literal_97e2f76159b7": {
+      "comment": "Localization key ui_literal_97e2f76159b7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sent a stamp trade proposal!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gửi lời đề nghị trao đổi tem!"
+          }
+        }
+      }
+    },
+    "ui_literal_982963c1c41c": {
+      "comment": "Localization key ui_literal_982963c1c41c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gắn thẻ"
+          }
+        }
+      }
+    },
+    "ui_literal_989284e8f6d2": {
+      "comment": "Localization key ui_literal_989284e8f6d2",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frame & Photo Settings"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt khung & ảnh"
+          }
+        }
+      }
+    },
+    "ui_literal_98fe54112064": {
+      "comment": "Localization key ui_literal_98fe54112064",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "★ AIRMAIL ★"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "★ đường hàng không ★"
+          }
+        }
+      }
+    },
+    "ui_literal_99d1067d4213": {
+      "comment": "Localization key ui_literal_99d1067d4213",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền riêng tư"
+          }
+        }
+      }
+    },
+    "ui_literal_9a976fc228b6": {
+      "comment": "Localization key ui_literal_9a976fc228b6",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chọn"
+          }
+        }
+      }
+    },
+    "ui_literal_9aa5e7980fa3": {
+      "comment": "Localization key ui_literal_9aa5e7980fa3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other reasons"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lý do khác"
+          }
+        }
+      }
+    },
+    "ui_literal_9c30a3485a58": {
+      "comment": "Localization key ui_literal_9c30a3485a58",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gallery"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư viện ảnh"
+          }
+        }
+      }
+    },
+    "ui_literal_9dca595b1a9c": {
+      "comment": "Localization key ui_literal_9dca595b1a9c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stickers"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhãn dán"
+          }
+        }
+      }
+    },
+    "ui_literal_a03970c65fb4": {
+      "comment": "Localization key ui_literal_a03970c65fb4",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inappropriate Content"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung không phù hợp"
+          }
+        }
+      }
+    },
+    "ui_literal_a0570927ade5": {
+      "comment": "Localization key ui_literal_a0570927ade5",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maps AI"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản đồ AI"
+          }
+        }
+      }
+    },
+    "ui_literal_a14a40459521": {
+      "comment": "Localization key ui_literal_a14a40459521",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Film Grain"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hạt phim"
+          }
+        }
+      }
+    },
+    "ui_literal_a370c0973df1": {
+      "comment": "Localization key ui_literal_a370c0973df1",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. DALAT MEMORY 2026"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ví dụ: KÝ ỨC ĐÀ LẠT 2026"
+          }
+        }
+      }
+    },
+    "ui_literal_a37d68f43528": {
+      "comment": "Localization key ui_literal_a37d68f43528",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block User"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chặn người dùng"
+          }
+        }
+      }
+    },
+    "ui_literal_a39d5f87cbc3": {
+      "comment": "Localization key ui_literal_a39d5f87cbc3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the friend code above to exchange stamps."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập mã kết bạn ở trên để giao lưu tem."
+          }
+        }
+      }
+    },
+    "ui_literal_a3f0d04a7722": {
+      "comment": "Localization key ui_literal_a3f0d04a7722",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure Cloud connection"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cấu hình kết nối Cloud"
+          }
+        }
+      }
+    },
+    "ui_literal_a3f3914fee89": {
+      "comment": "Localization key ui_literal_a3f3914fee89",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Badge"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Huy hiệu"
+          }
+        }
+      }
+    },
+    "ui_literal_a7796079160f": {
+      "comment": "Localization key ui_literal_a7796079160f",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send This Stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi Tem Này"
+          }
+        }
+      }
+    },
+    "ui_literal_a77c8f6dc24d": {
+      "comment": "Localization key ui_literal_a77c8f6dc24d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose photo from phone gallery"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ảnh từ thư viện điện thoại"
+          }
+        }
+      }
+    },
+    "ui_literal_a7ec1f13b2db": {
+      "comment": "Localization key ui_literal_a7ec1f13b2db",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texting"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhắn tin"
+          }
+        }
+      }
+    },
+    "ui_literal_a808005c032b": {
+      "comment": "Localization key ui_literal_a808005c032b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active trade requests"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có yêu cầu giao dịch nào đang hoạt động"
+          }
+        }
+      }
+    },
+    "ui_literal_a9cc1b405dc7": {
+      "comment": "Localization key ui_literal_a9cc1b405dc7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Junk news / Spam"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin rác / Spam"
+          }
+        }
+      }
+    },
+    "ui_literal_aa1d94fc1675": {
+      "comment": "Localization key ui_literal_aa1d94fc1675",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa"
+          }
+        }
+      }
+    },
+    "ui_literal_ab6b0d299fd3": {
+      "comment": "Localization key ui_literal_ab6b0d299fd3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commemorative stamp"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tem kỷ niệm"
+          }
+        }
+      }
+    },
+    "ui_literal_ac10149132ad": {
+      "comment": "Localization key ui_literal_ac10149132ad",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục mật khẩu"
+          }
+        }
+      }
+    },
+    "ui_literal_aeab929da63d": {
+      "comment": "Localization key ui_literal_aeab929da63d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap stamp to flip & view memory note"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhấn vào dấu để lật và xem ghi chú kỷ niệm"
+          }
+        }
+      }
+    },
+    "ui_literal_aed3b8c6a7c0": {
+      "comment": "Localization key ui_literal_aed3b8c6a7c0",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xác minh"
+          }
+        }
+      }
+    },
+    "ui_literal_af5c3a71ddb3": {
+      "comment": "Localization key ui_literal_af5c3a71ddb3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No suitable location found"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy địa điểm phù hợp"
+          }
+        }
+      }
+    },
+    "ui_literal_af74f7c5362a": {
+      "comment": "Localization key ui_literal_af74f7c5362a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép"
+          }
+        }
+      }
+    },
+    "ui_literal_b017803b0d2e": {
+      "comment": "Localization key ui_literal_b017803b0d2e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collection progress"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiến độ sưu tập"
+          }
+        }
+      }
+    },
+    "ui_literal_b0811e470d6b": {
+      "comment": "Localization key ui_literal_b0811e470d6b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trade"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giao lưu"
+          }
+        }
+      }
+    },
+    "ui_literal_b1a4f1611c75": {
+      "comment": "Localization key ui_literal_b1a4f1611c75",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggested vintage style profile pictures:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gợi ý ảnh đại diện phong cách vintage:"
+          }
+        }
+      }
+    },
+    "ui_literal_b31fc969b488": {
+      "comment": "Localization key ui_literal_b31fc969b488",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiểu sử"
+          }
+        }
+      }
+    },
+    "ui_literal_b4a7760049ff": {
+      "comment": "Localization key ui_literal_b4a7760049ff",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMO"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bản ghi nhớ"
+          }
+        }
+      }
+    },
+    "ui_literal_b52b36b7269f": {
+      "comment": "Localization key ui_literal_b52b36b7269f",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quay lại"
+          }
+        }
+      }
+    },
+    "ui_literal_b61633fba6ac": {
+      "comment": "Localization key ui_literal_b61633fba6ac",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMOSTAMP AIRMAIL POSTCARD"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BƯU BƯU ĐIỆN HÀNG KHÔNG GHI NHỚ"
+          }
+        }
+      }
+    },
+    "ui_literal_b62482236f53": {
+      "comment": "Localization key ui_literal_b62482236f53",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flash"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đèn flash"
+          }
+        }
+      }
+    },
+    "ui_literal_b6ae3709f571": {
+      "comment": "Localization key ui_literal_b6ae3709f571",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please enter a new password (minimum 6 characters)."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vui lòng nhập mật khẩu mới (tối thiểu 6 ký tự)."
+          }
+        }
+      }
+    },
+    "ui_literal_b6b2b6473a4c": {
+      "comment": "Localization key ui_literal_b6b2b6473a4c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Map"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản đồ AI"
+          }
+        }
+      }
+    },
+    "ui_literal_b6dc5d469de7": {
+      "comment": "Localization key ui_literal_b6dc5d469de7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User report"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo người dùng"
+          }
+        }
+      }
+    },
+    "ui_literal_b7a4de18a929": {
+      "comment": "Localization key ui_literal_b7a4de18a929",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Postal collection #2026"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập bưu chính #2026"
+          }
+        }
+      }
+    },
+    "ui_literal_b9659feda482": {
+      "comment": "Localization key ui_literal_b9659feda482",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MY COLLECTION & ALBUM"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BỘ SƯU TẬP & ALBUM CỦA TÔI"
+          }
+        }
+      }
+    },
+    "ui_literal_bbc4e7f57f7d": {
+      "comment": "Localization key ui_literal_bbc4e7f57f7d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi"
+          }
+        }
+      }
+    },
+    "ui_literal_bbfa773e5a63": {
+      "comment": "Localization key ui_literal_bbfa773e5a63",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng"
+          }
+        }
+      }
+    },
+    "ui_literal_bc949b8ff6ab": {
+      "comment": "Localization key ui_literal_bc949b8ff6ab",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel request"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy yêu cầu"
+          }
+        }
+      }
+    },
+    "ui_literal_bcb7a57c322c": {
+      "comment": "Localization key ui_literal_bcb7a57c322c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to Storage"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu vào Kho"
+          }
+        }
+      }
+    },
+    "ui_literal_bce06414177f": {
+      "comment": "Localization key ui_literal_bce06414177f",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm kiếm"
+          }
+        }
+      }
+    },
+    "ui_literal_bcef2182178d": {
+      "comment": "Localization key ui_literal_bcef2182178d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete memory"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa bộ nhớ"
+          }
+        }
+      }
+    },
+    "ui_literal_bd56a1afb490": {
+      "comment": "Localization key ui_literal_bd56a1afb490",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memory not found"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy bộ nhớ"
+          }
+        }
+      }
+    },
+    "ui_literal_bfc7ffc72f19": {
+      "comment": "Localization key ui_literal_bfc7ffc72f19",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server Path (URL)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đường dẫn Máy chủ (URL)"
+          }
+        }
+      }
+    },
+    "ui_literal_c0e7f65c5aab": {
+      "comment": "Localization key ui_literal_c0e7f65c5aab",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SEND DIRECT ENVELOPE TO:"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GỬI PHIẾU TRỰC TIẾP ĐẾN:"
+          }
+        }
+      }
+    },
+    "ui_literal_c307cf19f180": {
+      "comment": "Localization key ui_literal_c307cf19f180",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this memory?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa bộ nhớ này?"
+          }
+        }
+      }
+    },
+    "ui_literal_c42e10b2ca21": {
+      "comment": "Localization key ui_literal_c42e10b2ca21",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change your avatar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi ảnh đại diện"
+          }
+        }
+      }
+    },
+    "ui_literal_c4fc37ad99a3": {
+      "comment": "Localization key ui_literal_c4fc37ad99a3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contrast"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tương phản"
+          }
+        }
+      }
+    },
+    "ui_literal_c844392f314d": {
+      "comment": "Localization key ui_literal_c844392f314d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't have any friends yet"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bạn bè nào"
+          }
+        }
+      }
+    },
+    "ui_literal_c9bf73258673": {
+      "comment": "Localization key ui_literal_c9bf73258673",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing saved messages. Unable to sync."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang hiển thị tin nhắn đã lưu. Chưa thể đồng bộ."
+          }
+        }
+      }
+    },
+    "ui_literal_ca41be93069a": {
+      "comment": "Localization key ui_literal_ca41be93069a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chấp nhận"
+          }
+        }
+      }
+    },
+    "ui_literal_cc86291da27c": {
+      "comment": "Localization key ui_literal_cc86291da27c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically locate"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tự động định vị"
+          }
+        }
+      }
+    },
+    "ui_literal_ccc5b0edaae6": {
+      "comment": "Localization key ui_literal_ccc5b0edaae6",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with Google"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục với Google"
+          }
+        }
+      }
+    },
+    "ui_literal_cd8c0438cc9d": {
+      "comment": "Localization key ui_literal_cd8c0438cc9d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Reason"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lý do báo cáo"
+          }
+        }
+      }
+    },
+    "ui_literal_cd8e5e1b536b": {
+      "comment": "Localization key ui_literal_cd8e5e1b536b",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DISPLAY NAME"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TÊN HIỂN THỊ"
+          }
+        }
+      }
+    },
+    "ui_literal_ce3aec24d3cc": {
+      "comment": "Localization key ui_literal_ce3aec24d3cc",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tune filter"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ lọc điều chỉnh"
+          }
+        }
+      }
+    },
+    "ui_literal_cffb3f244524": {
+      "comment": "Localization key ui_literal_cffb3f244524",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan the code to connect and exchange postage stamps"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quét mã để kết nối và trao đổi tem bưu chính"
+          }
+        }
+      }
+    },
+    "ui_literal_d2b73ab2ada1": {
+      "comment": "Localization key ui_literal_d2b73ab2ada1",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đóng"
+          }
+        }
+      }
+    },
+    "ui_literal_d508ce02935e": {
+      "comment": "Localization key ui_literal_d508ce02935e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ONLINE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRỰC TUYẾN"
+          }
+        }
+      }
+    },
+    "ui_literal_d595b9c48bd6": {
+      "comment": "Localization key ui_literal_d595b9c48bd6",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save new password"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu mật khẩu mới"
+          }
+        }
+      }
+    },
+    "ui_literal_d617ca531d9d": {
+      "comment": "Localization key ui_literal_d617ca531d9d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEMOSTAMP POSTCARD"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BƯU THIỂU GHI NHỚ"
+          }
+        }
+      }
+    },
+    "ui_literal_d67da1187675": {
+      "comment": "Localization key ui_literal_d67da1187675",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Custom Text"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm văn bản tùy chỉnh"
+          }
+        }
+      }
+    },
+    "ui_literal_d75554f4c0e3": {
+      "comment": "Localization key ui_literal_d75554f4c0e3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a collection"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn một bộ sưu tập"
+          }
+        }
+      }
+    },
+    "ui_literal_d7b001036e0d": {
+      "comment": "Localization key ui_literal_d7b001036e0d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SAVE TO ALBUM / COLLECTION"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LƯU VÀO ALBUM / BỘ SƯU TẬP"
+          }
+        }
+      }
+    },
+    "ui_literal_d8909ad771bf": {
+      "comment": "Localization key ui_literal_d8909ad771bf",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just me"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mình tôi"
+          }
+        }
+      }
+    },
+    "ui_literal_da55ae804aa3": {
+      "comment": "Localization key ui_literal_da55ae804aa3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Stamp to Place in Message"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn Tem Đặt Trong Tin Nhắn"
+          }
+        }
+      }
+    },
+    "ui_literal_db52b9e829c5": {
+      "comment": "Localization key ui_literal_db52b9e829c5",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viewed ✓✓"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xem ✓✓"
+          }
+        }
+      }
+    },
+    "ui_literal_dbc87420347a": {
+      "comment": "Localization key ui_literal_dbc87420347a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CLOSE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ĐÓNG"
+          }
+        }
+      }
+    },
+    "ui_literal_dc58dd6245d4": {
+      "comment": "Localization key ui_literal_dc58dd6245d4",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make Friends"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết Bạn"
+          }
+        }
+      }
+    },
+    "ui_literal_dd0f03039429": {
+      "comment": "Localization key ui_literal_dd0f03039429",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching on the map..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tìm kiếm trên bản đồ..."
+          }
+        }
+      }
+    },
+    "ui_literal_e1a2b65df8ed": {
+      "comment": "Localization key ui_literal_e1a2b65df8ed",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brightness"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ sáng"
+          }
+        }
+      }
+    },
+    "ui_literal_e1b67c95330c": {
+      "comment": "Localization key ui_literal_e1b67c95330c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for response..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ phản hồi..."
+          }
+        }
+      }
+    },
+    "ui_literal_e2d3986744f0": {
+      "comment": "Localization key ui_literal_e2d3986744f0",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action will remove the stamp from your Collection."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hành động này sẽ xóa con tem khỏi Bộ sưu tập của bạn."
+          }
+        }
+      }
+    },
+    "ui_literal_e353f2f3d366": {
+      "comment": "Localization key ui_literal_e353f2f3d366",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử lại"
+          }
+        }
+      }
+    },
+    "ui_literal_e415fb95aa50": {
+      "comment": "Localization key ui_literal_e415fb95aa50",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BIO NOTE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LƯU Ý SINH HỌC"
+          }
+        }
+      }
+    },
+    "ui_literal_e45714907316": {
+      "comment": "Localization key ui_literal_e45714907316",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không phải bây giờ"
+          }
+        }
+      }
+    },
+    "ui_literal_e67f3e518126": {
+      "comment": "Localization key ui_literal_e67f3e518126",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent ✓"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã gửi ✓"
+          }
+        }
+      }
+    },
+    "ui_literal_e6b927516e56": {
+      "comment": "Localization key ui_literal_e6b927516e56",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Text Element"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+ Yếu tố văn bản"
+          }
+        }
+      }
+    },
+    "ui_literal_e7aab7c6d7ff": {
+      "comment": "Localization key ui_literal_e7aab7c6d7ff",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✦ STAMPED MEMORY ✦"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✦ BỘ NHỚ ĐÓNG ✦"
+          }
+        }
+      }
+    },
+    "ui_literal_e84712fbf4ee": {
+      "comment": "Localization key ui_literal_e84712fbf4ee",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quay lại"
+          }
+        }
+      }
+    },
+    "ui_literal_e93b918b09b9": {
+      "comment": "Localization key ui_literal_e93b918b09b9",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use name: \"$searchQuery\""
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng tên: \"$searchQuery\""
+          }
+        }
+      }
+    },
+    "ui_literal_e9b450d14bc2": {
+      "comment": "Localization key ui_literal_e9b450d14bc2",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong"
+          }
+        }
+      }
+    },
+    "ui_literal_eab9315e0b4a": {
+      "comment": "Localization key ui_literal_eab9315e0b4a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write your memory note or story..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viết ghi chú hoặc câu chuyện kỷ niệm của bạn..."
+          }
+        }
+      }
+    },
+    "ui_literal_edffa6bc73c4": {
+      "comment": "Localization key ui_literal_edffa6bc73c4",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp Mold"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khuôn Dập Tem"
+          }
+        }
+      }
+    },
+    "ui_literal_ef4e3b743d7d": {
+      "comment": "Localization key ui_literal_ef4e3b743d7d",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can directly type the location name in the search box above to save it manually."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể gõ trực tiếp tên địa điểm ở ô tìm kiếm phía trên để lưu thủ công."
+          }
+        }
+      }
+    },
+    "ui_literal_efc007a393f6": {
+      "comment": "Localization key ui_literal_efc007a393f6",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu"
+          }
+        }
+      }
+    },
+    "ui_literal_eff66c2ea708": {
+      "comment": "Localization key ui_literal_eff66c2ea708",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACCOUNT QR CODE"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MÃ QR TÀI KHOẢN"
+          }
+        }
+      }
+    },
+    "ui_literal_f23bdebb7604": {
+      "comment": "Localization key ui_literal_f23bdebb7604",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp preview"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem trước tem"
+          }
+        }
+      }
+    },
+    "ui_literal_f30dedb800b5": {
+      "comment": "Localization key ui_literal_f30dedb800b5",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change profile background"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đổi hình nền hồ sơ"
+          }
+        }
+      }
+    },
+    "ui_literal_f46981ba8152": {
+      "comment": "Localization key ui_literal_f46981ba8152",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understood"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hiểu"
+          }
+        }
+      }
+    },
+    "ui_literal_f4783589dc8e": {
+      "comment": "Localization key ui_literal_f4783589dc8e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Vintage Envelope"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ phong bì cổ điển"
+          }
+        }
+      }
+    },
+    "ui_literal_f48db7e9d3ef": {
+      "comment": "Localization key ui_literal_f48db7e9d3ef",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Name"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên của bạn"
+          }
+        }
+      }
+    },
+    "ui_literal_f5072edb1ff7": {
+      "comment": "Localization key ui_literal_f5072edb1ff7",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OFFICIAL DIE-CUT STAMP"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TEM CẮT CHÍNH THỨC"
+          }
+        }
+      }
+    },
+    "ui_literal_f52167060446": {
+      "comment": "Localization key ui_literal_f52167060446",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamping die pattern"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vân khuôn dập"
+          }
+        }
+      }
+    },
+    "ui_literal_f537c6a8b593": {
+      "comment": "Localization key ui_literal_f537c6a8b593",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "example@domain.com"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ví dụ@domain.com"
+          }
+        }
+      }
+    },
+    "ui_literal_f55a95e7c79a": {
+      "comment": "Localization key ui_literal_f55a95e7c79a",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• 2026 EDITION"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• PHIÊN BẢN 2026"
+          }
+        }
+      }
+    },
+    "ui_literal_f5f4f6d7e68c": {
+      "comment": "Localization key ui_literal_f5f4f6d7e68c",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Text"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa văn bản"
+          }
+        }
+      }
+    },
+    "ui_literal_f69d11b44d48": {
+      "comment": "Localization key ui_literal_f69d11b44d48",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access Key (Anon Key)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khóa truy cập (Anon Key)"
+          }
+        }
+      }
+    },
+    "ui_literal_f6fdbe48dc54": {
+      "comment": "Localization key ui_literal_f6fdbe48dc54",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa"
+          }
+        }
+      }
+    },
+    "ui_literal_f747e230e5ce": {
+      "comment": "Localization key ui_literal_f747e230e5ce",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo and save the commemorative stamp from your camera before sharing in a message!"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy chụp và lưu tem kỷ niệm từ camera trước khi chia sẻ trong tin nhắn!"
+          }
+        }
+      }
+    },
+    "ui_literal_fb2ebde9ee2e": {
+      "comment": "Localization key ui_literal_fb2ebde9ee2e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimizing listings with Google Maps AI..."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tối ưu danh sách với Google Maps AI..."
+          }
+        }
+      }
+    },
+    "ui_literal_fb46e3745fd3": {
+      "comment": "Localization key ui_literal_fb46e3745fd3",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vault"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho tem"
+          }
+        }
+      }
+    },
+    "ui_literal_fb6b417729d5": {
+      "comment": "Localization key ui_literal_fb6b417729d5",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple (Coming Soon)"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple (Sắp ra mắt)"
+          }
+        }
+      }
+    },
+    "ui_literal_fbd2c9b284d0": {
+      "comment": "Localization key ui_literal_fbd2c9b284d0",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or login quickly with"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hoặc đăng nhập nhanh bằng"
+          }
+        }
+      }
+    },
+    "ui_literal_fc13316a4dcf": {
+      "comment": "Localization key ui_literal_fc13316a4dcf",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your account email address. If the account exists, the system will send password reset instructions."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập địa chỉ email tài khoản của bạn. Nếu tài khoản tồn tại, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu."
+          }
+        }
+      }
+    },
+    "ui_literal_fc7b5ce02833": {
+      "comment": "Localization key ui_literal_fc7b5ce02833",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danh mục"
+          }
+        }
+      }
+    },
+    "ui_literal_ff4fc0276e96": {
+      "comment": "Localization key ui_literal_ff4fc0276e96",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồ sơ"
+          }
+        }
+      }
+    },
+    "ui_literal_ff60a485e30e": {
+      "comment": "Localization key ui_literal_ff60a485e30e",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unique collection #2026"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ sưu tập độc bản #2026"
+          }
+        }
+      }
+    },
     "vault_empty": {
       "comment": "Localization key vault_empty",
       "extractionState": "manual",
@@ -8385,6 +12561,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chưa có con tem nào ở đây."
+          }
+        }
+      }
+    },
+    "vault_empty_description": {
+      "comment": "Localization key vault_empty_description",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press a moment into a stamp and it will live here."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu một khoảnh khắc vào tem, và nó sẽ ở đây."
           }
         }
       }
@@ -8421,6 +12615,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bì thư bưu chính"
+          }
+        }
+      }
+    },
+    "vault_open_camera": {
+      "comment": "Localization key vault_open_camera",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open camera"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở máy ảnh"
+          }
+        }
+      }
+    },
+    "vault_search_memories": {
+      "comment": "Localization key vault_search_memories",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search memories"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm kiếm kỷ niệm"
           }
         }
       }

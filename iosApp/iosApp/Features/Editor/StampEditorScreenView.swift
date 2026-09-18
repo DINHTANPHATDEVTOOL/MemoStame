@@ -102,7 +102,7 @@ struct StampEditorScreenView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 24, height: 24)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                    Text("Khuôn Dập Tem")
+                    Text(AppLanguageManager.shared.localized("ui_literal_edffa6bc73c4"))
                         .font(.headline.bold())
                         .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
                 }
@@ -120,7 +120,7 @@ struct StampEditorScreenView: View {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }) {
-                    Text("Tiếp tục")
+                    Text(AppLanguageManager.shared.localized("ui_literal_5d92d0921faa"))
                         .font(.subheadline.bold())
                         .foregroundColor(.white)
                         .padding(.horizontal, 14)
@@ -152,7 +152,7 @@ struct StampEditorScreenView: View {
                         .frame(maxWidth: 320)
                         .padding(.top, 12)
 
-                        Text("Chạm vào tem để lật xem mặt sau bưu thiếp ↺")
+                        Text(AppLanguageManager.shared.localized("ui_literal_3bbe3c9b1352"))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Color(red: 0.55, green: 0.50, blue: 0.45))
                     }
@@ -162,7 +162,7 @@ struct StampEditorScreenView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         // Section 1: Die-Cut Mold Selector
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("CHỌN KHUÔN DẬP TEM (DIE-CUT MOLD)")
+                            Text(AppLanguageManager.shared.localized("ui_literal_30c4dc820b96"))
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundColor(.secondary)
 
@@ -200,7 +200,7 @@ struct StampEditorScreenView: View {
 
                         // Section 2: Stamp Ink Color
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("TÔNG MÀU DẤU BƯU ĐIỆN")
+                            Text(AppLanguageManager.shared.localized("ui_literal_35760d4f09c0"))
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundColor(.secondary)
 
@@ -223,7 +223,7 @@ struct StampEditorScreenView: View {
                                     }
                                 }
                                 Spacer()
-                                Toggle("Vân khuôn dập", isOn: $showMoldOverlay)
+                                Toggle(AppLanguageManager.shared.localized("ui_literal_f52167060446"), isOn: $showMoldOverlay)
                                     .font(.caption.bold())
                                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.85, green: 0.25, blue: 0.20)))
                             }
@@ -232,7 +232,7 @@ struct StampEditorScreenView: View {
                         // Section 3: Stamp Location & Grounding
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("ĐỊA ĐIỂM DẤU BƯU CHÍNH (LOCATION)")
+                                Text(AppLanguageManager.shared.localized("ui_literal_19ee62d7ab19"))
                                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                                     .foregroundColor(.secondary)
                                 Spacer()
@@ -240,7 +240,7 @@ struct StampEditorScreenView: View {
                                     Button(action: {
                                         stampLocation = ""
                                     }) {
-                                        Text("Xóa")
+                                        Text(AppLanguageManager.shared.localized("ui_literal_aa1d94fc1675"))
                                             .font(.caption2.bold())
                                             .foregroundColor(.secondary)
                                     }

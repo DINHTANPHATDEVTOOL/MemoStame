@@ -157,7 +157,7 @@ fun InAppNotificationBannerHost(
                         ) {
                             Icon(
                                 Icons.Outlined.Close,
-                                contentDescription = "Đóng",
+                                contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d2b73ab2ada1),
                                 tint = Color.White.copy(alpha = 0.6f),
                                 modifier = Modifier.size(16.dp)
                             )

@@ -378,7 +378,7 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.app_logo),
-                            contentDescription = "MemoStamp",
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_6b382c66ce54),
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -450,7 +450,7 @@ fun HomeScreen(
                     // Profile avatar button
                     AsyncImage(
                         model = currentUser.avatarUrl.ifBlank { "https://i.pravatar.cc/150?u=${currentUser.userId}" },
-                        contentDescription = "Profile",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_ff4fc0276e96),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .padding(end = 16.dp)

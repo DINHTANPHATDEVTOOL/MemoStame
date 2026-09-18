@@ -328,7 +328,7 @@ fun BlockedUsersManagementDialog(
                                 shape = RoundedCornerShape(12.dp),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, AccentRed)
                             ) {
-                                Text("Bỏ chặn", color = AccentRed, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_940e39a6c8cf), color = AccentRed, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -337,7 +337,7 @@ fun BlockedUsersManagementDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Đóng", color = PrimaryText, fontWeight = FontWeight.Bold)
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d2b73ab2ada1), color = PrimaryText, fontWeight = FontWeight.Bold)
             }
         },
         containerColor = SurfaceWhite,

@@ -807,7 +807,7 @@ struct CameraScreenView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "sparkles")
                             .foregroundColor(MSColors.gold)
-                        Text("✦ STAMPED MEMORY ✦")
+                        Text(AppLanguageManager.shared.localized("ui_literal_e7aab7c6d7ff"))
                             .font(.headline.bold())
                             .foregroundColor(MSColors.gold)
                         Image(systemName: "sparkles")
@@ -1115,7 +1115,7 @@ struct CameraTuneAdjustmentView: View {
             VStack(spacing: 24) {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Contrast")
+                        Text(AppLanguageManager.shared.localized("ui_literal_c4fc37ad99a3"))
                             .font(.subheadline.bold())
                         Spacer()
                         Text("\(String(format: "%.2f", contrast))")
@@ -1127,7 +1127,7 @@ struct CameraTuneAdjustmentView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Brightness")
+                        Text(AppLanguageManager.shared.localized("ui_literal_e1a2b65df8ed"))
                             .font(.subheadline.bold())
                         Spacer()
                         Text("\(String(format: "%.2f", brightness))")
@@ -1139,7 +1139,7 @@ struct CameraTuneAdjustmentView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Saturation")
+                        Text(AppLanguageManager.shared.localized("ui_literal_20a32bc870bf"))
                             .font(.subheadline.bold())
                         Spacer()
                         Text("\(String(format: "%.2f", saturation))")
@@ -1151,7 +1151,7 @@ struct CameraTuneAdjustmentView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Film Grain")
+                        Text(AppLanguageManager.shared.localized("ui_literal_a14a40459521"))
                             .font(.subheadline.bold())
                         Spacer()
                         Text("\(String(format: "%.2f", grain))")
@@ -1164,11 +1164,11 @@ struct CameraTuneAdjustmentView: View {
                 Spacer()
             }
             .padding(24)
-            .navigationTitle("Preset Tune Controls")
+            .navigationTitle(AppLanguageManager.shared.localized("ui_literal_3efda14c5e11"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button(AppLanguageManager.shared.localized("ui_literal_e9b450d14bc2")) {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .font(.body.bold())

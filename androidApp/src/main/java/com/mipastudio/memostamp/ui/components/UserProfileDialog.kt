@@ -140,7 +140,7 @@ fun UserProfileDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("STATUS", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = StampSubtleInk, fontFamily = FontFamily.Monospace)
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_7168833cc8e1), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = StampSubtleInk, fontFamily = FontFamily.Monospace)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = if (isFriend) Icons.Outlined.People else Icons.Outlined.Person,
@@ -154,7 +154,7 @@ fun UserProfileDialog(
                         }
                         Divider(modifier = Modifier.height(24.dp).width(1.dp), color = StampBorderDefault)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("SYNC", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = StampSubtleInk, fontFamily = FontFamily.Monospace)
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_2f8d236566d2), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = StampSubtleInk, fontFamily = FontFamily.Monospace)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
@@ -162,7 +162,7 @@ fun UserProfileDialog(
                                         .background(SuccessGreen, CircleShape)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("ONLINE", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
+                                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d508ce02935e), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = SuccessGreen)
                             }
                         }
                     }

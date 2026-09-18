@@ -98,13 +98,13 @@ struct MemoryNoteScreenView: View {
             // Header
             HStack {
                 Button(action: onCancel) {
-                    Text("Hủy")
+                    Text(AppLanguageManager.shared.localized("ui_literal_34ca764caf22"))
                         .foregroundColor(.gray)
                 }
 
                 Spacer()
 
-                Text("Tạo Tem Kỷ Niệm")
+                Text(AppLanguageManager.shared.localized("ui_literal_2862ce847aef"))
                     .font(.headline.bold())
 
                 Spacer()
@@ -212,7 +212,7 @@ struct MemoryNoteScreenView: View {
                     if isSaving {
                         ProgressView().scaleEffect(0.8)
                     } else {
-                        Text("Lưu Tem")
+                        Text(AppLanguageManager.shared.localized("ui_literal_5ea2ea09176a"))
                             .font(.body.bold())
                             .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
                     }
@@ -242,7 +242,7 @@ struct MemoryNoteScreenView: View {
 
                     // Inputs Section
                     VStack(alignment: .leading, spacing: 14) {
-                        Text("THÔNG TIN KỶ NIỆM")
+                        Text(AppLanguageManager.shared.localized("ui_literal_826a037eac95"))
                             .font(.caption2.bold())
                             .foregroundColor(.secondary)
 
@@ -256,7 +256,7 @@ struct MemoryNoteScreenView: View {
 
                         // Mood Selection Section
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("CẢM XÚC / MOOD")
+                            Text(AppLanguageManager.shared.localized("ui_literal_0bb8be06ce3b"))
                                 .font(.caption2.bold())
                                 .foregroundColor(MSColors.grey)
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -286,7 +286,7 @@ struct MemoryNoteScreenView: View {
                         HStack {
                             Image(systemName: "calendar")
                                 .foregroundColor(MSColors.stamp)
-                            DatePicker("Ngày kỷ niệm", selection: $memoryDate, displayedComponents: [.date])
+                            DatePicker(AppLanguageManager.shared.localized("ui_literal_1d323d1e9c5b"), selection: $memoryDate, displayedComponents: [.date])
                                 .font(.subheadline)
                                 .foregroundColor(MSColors.ink)
                         }
@@ -306,7 +306,7 @@ struct MemoryNoteScreenView: View {
                             .overlay(
                                 Group {
                                     if caption.isEmpty {
-                                        Text("Write your memory note or story...")
+                                        Text(AppLanguageManager.shared.localized("ui_literal_eab9315e0b4a"))
                                             .font(.subheadline)
                                             .foregroundColor(.gray.opacity(0.6))
                                             .padding(.leading, 12)
@@ -318,7 +318,7 @@ struct MemoryNoteScreenView: View {
 
                         // Album Selection Picker
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("LƯU VÀO ALBUM / BỘ SƯU TẬP")
+                            Text(AppLanguageManager.shared.localized("ui_literal_d7b001036e0d"))
                                 .font(.caption2.bold())
                                 .foregroundColor(MSColors.grey)
 
@@ -347,7 +347,7 @@ struct MemoryNoteScreenView: View {
 
                         // Location Section Header
                         HStack {
-                            Text("ĐỊA ĐIỂM KỶ NIỆM")
+                            Text(AppLanguageManager.shared.localized("ui_literal_7097a2158c48"))
                                 .font(.caption2.bold())
                                 .foregroundColor(.secondary)
                             Spacer()
@@ -355,7 +355,7 @@ struct MemoryNoteScreenView: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "map.fill")
                                         .font(.caption2)
-                                    Text("Bản đồ AI")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_b6b2b6473a4c"))
                                         .font(.caption2.bold())
                                 }
                                 .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
@@ -425,7 +425,7 @@ struct MemoryNoteScreenView: View {
                             .cornerRadius(10)
                         }
 
-                        Text("AUDIENCE VISIBILITY")
+                        Text(AppLanguageManager.shared.localized("ui_literal_4d476c9a960d"))
                             .font(.caption2.bold())
                             .foregroundColor(.secondary)
                             .padding(.top, 6)
@@ -480,9 +480,9 @@ struct MemoryNoteScreenView: View {
         }
         .alert(isPresented: $showAlert) {
             Alert(
-                title: Text("Thông Báo"),
+                title: Text(AppLanguageManager.shared.localized("ui_literal_5e6cdb19e604")),
                 message: Text(alertMessage ?? "Có lỗi xảy ra."),
-                dismissButton: .default(Text("Đóng"))
+                dismissButton: .default(Text(AppLanguageManager.shared.localized("ui_literal_d2b73ab2ada1")))
             )
         }
     }

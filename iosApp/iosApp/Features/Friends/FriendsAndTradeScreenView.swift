@@ -535,7 +535,7 @@ struct FriendsAndTradeScreenView: View {
                                 }
                             }
                         }) {
-                            Text("Chấp nhận")
+                            Text(AppLanguageManager.shared.localized("ui_literal_ca41be93069a"))
                                 .font(.caption.bold())
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
@@ -554,7 +554,7 @@ struct FriendsAndTradeScreenView: View {
                                 }
                             }
                         }) {
-                            Text("Từ chối")
+                            Text(AppLanguageManager.shared.localized("ui_literal_63bbfd75f684"))
                                 .font(.caption.bold())
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
@@ -598,7 +598,7 @@ struct FriendsAndTradeScreenView: View {
                             Text("Đã gửi lời mời tới @\(req.recipientUsername.isEmpty ? req.senderUsername : req.recipientUsername)")
                                 .font(.subheadline.bold())
                                 .foregroundColor(MSColors.ink)
-                            Text("Đang chờ phản hồi...")
+                            Text(AppLanguageManager.shared.localized("ui_literal_e1b67c95330c"))
                                 .font(.caption)
                                 .foregroundColor(MSColors.grey)
                         }
@@ -615,7 +615,7 @@ struct FriendsAndTradeScreenView: View {
                                 }
                             }
                         }) {
-                            Text("Hủy lời mời")
+                            Text(AppLanguageManager.shared.localized("ui_literal_059e8a1fa9c7"))
                                 .font(.caption.bold())
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
@@ -639,10 +639,10 @@ struct FriendsAndTradeScreenView: View {
                 Image(systemName: "person.2.slash")
                     .font(.system(size: 38))
                     .foregroundColor(MSColors.stamp.opacity(0.6))
-                Text("Chưa có bạn bè nào")
+                Text(AppLanguageManager.shared.localized("ui_literal_c844392f314d"))
                     .font(.headline)
                     .foregroundColor(MSColors.ink)
-                Text("Nhập mã kết bạn ở trên để giao lưu tem.")
+                Text(AppLanguageManager.shared.localized("ui_literal_a39d5f87cbc3"))
                     .font(.caption)
                     .foregroundColor(MSColors.grey)
             }
@@ -708,7 +708,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "bubble.left.and.bubble.right.fill")
                                     .font(.system(size: 11))
-                                Text("Chat")
+                                Text(AppLanguageManager.shared.localized("ui_literal_2ced57f12591"))
                                     .font(.caption.bold())
                                     .lineLimit(1)
                             }
@@ -732,7 +732,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "arrow.triangle.2.circlepath")
                                     .font(.system(size: 11))
-                                Text("Trade")
+                                Text(AppLanguageManager.shared.localized("ui_literal_b0811e470d6b"))
                                     .font(.caption.bold())
                                     .lineLimit(1)
                             }
@@ -801,7 +801,7 @@ struct FriendsAndTradeScreenView: View {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 38))
                     .foregroundColor(MSColors.gold.opacity(0.6))
-                Text("No active trade requests")
+                Text(AppLanguageManager.shared.localized("ui_literal_a808005c032b"))
                     .font(.headline)
                     .foregroundColor(.secondary)
             }
@@ -820,7 +820,7 @@ struct FriendsAndTradeScreenView: View {
                                 Text(trade.senderDisplayName.isEmpty ? trade.senderUsername : trade.senderDisplayName)
                                     .font(.subheadline.bold())
                                     .foregroundColor(MSColors.ink)
-                                Text("gửi lời đề nghị trao đổi tem!")
+                                Text(AppLanguageManager.shared.localized("ui_literal_97e2f76159b7"))
                                     .font(.subheadline)
                                     .foregroundColor(MSColors.grey)
                                 Spacer()
@@ -845,7 +845,7 @@ struct FriendsAndTradeScreenView: View {
                                     Text(trade.stampName)
                                         .font(.subheadline.bold())
                                         .foregroundColor(MSColors.ink)
-                                    Text("Bộ sưu tập độc bản #2026")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_ff60a485e30e"))
                                         .font(.caption)
                                         .foregroundColor(MSColors.grey)
 
@@ -862,7 +862,7 @@ struct FriendsAndTradeScreenView: View {
                                                     }
                                                 }
                                             }) {
-                                                Text("Chấp nhận")
+                                                Text(AppLanguageManager.shared.localized("ui_literal_ca41be93069a"))
                                                     .font(.caption.bold())
                                                     .frame(maxWidth: .infinity)
                                                     .padding(.vertical, 8)
@@ -882,7 +882,7 @@ struct FriendsAndTradeScreenView: View {
                                                     }
                                                 }
                                             }) {
-                                                Text("Từ chối")
+                                                Text(AppLanguageManager.shared.localized("ui_literal_63bbfd75f684"))
                                                     .font(.caption.bold())
                                                     .padding(.horizontal, 14)
                                                     .padding(.vertical, 8)
@@ -922,10 +922,10 @@ struct FriendsAndTradeScreenView: View {
                                 Text(rStamp.stampName)
                                     .font(.subheadline.bold())
                                     .foregroundColor(MSColors.ink)
-                                Text("Đã lưu vĩnh viễn trong Kho tem")
+                                Text(AppLanguageManager.shared.localized("ui_literal_0a2ee4189fab"))
                                     .font(.caption2)
                                     .foregroundColor(.green)
-                                Text("Độc bản giao lưu qua Supabase Cloud")
+                                Text(AppLanguageManager.shared.localized("ui_literal_963057bfa32f"))
                                     .font(.caption2)
                                     .foregroundColor(MSColors.grey)
                             }
@@ -935,7 +935,7 @@ struct FriendsAndTradeScreenView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark")
                                     .font(.system(size: 10, weight: .bold))
-                                Text("Đã sở hữu")
+                                Text(AppLanguageManager.shared.localized("ui_literal_06f74d910577"))
                             }
                             .font(.caption2.bold())
                             .padding(.horizontal, 8)
@@ -1005,7 +1005,7 @@ struct FriendsAndTradeScreenView: View {
                                             }
                                         }
                                     }) {
-                                        Text("Hủy yêu cầu")
+                                        Text(AppLanguageManager.shared.localized("ui_literal_bc949b8ff6ab"))
                                             .font(.caption.bold())
                                             .padding(.horizontal, 10)
                                             .padding(.vertical, 6)
@@ -1124,11 +1124,11 @@ struct FriendsAndTradeScreenView: View {
 
                             if isMe, let last = lastMsg {
                                 if last.isRead {
-                                    Text("Đã xem ✓✓")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_db52b9e829c5"))
                                         .font(.caption2.bold())
                                         .foregroundColor(MSColors.stamp)
                                 } else {
-                                    Text("Đã gửi ✓")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_e67f3e518126"))
                                         .font(.caption2)
                                         .foregroundColor(MSColors.grey)
                                 }
@@ -1191,10 +1191,10 @@ struct FriendsAndTradeScreenView: View {
                                     Text(rStamp.stampName)
                                         .font(.subheadline.bold())
                                         .foregroundColor(MSColors.ink)
-                                    Text("Đã lưu vĩnh viễn trong Kho tem")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_0a2ee4189fab"))
                                         .font(.caption2)
                                         .foregroundColor(.green)
-                                    Text("Độc bản giao lưu qua Supabase Cloud")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_963057bfa32f"))
                                         .font(.caption2)
                                         .foregroundColor(MSColors.grey)
                                 }
@@ -1204,7 +1204,7 @@ struct FriendsAndTradeScreenView: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 10, weight: .bold))
-                                    Text("Đã sở hữu")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_06f74d910577"))
                                 }
                                 .font(.caption2.bold())
                                 .padding(.horizontal, 8)
@@ -1296,7 +1296,7 @@ struct FriendsAndTradeScreenView: View {
 
                 HStack(spacing: 4) {
                     MemoStampIcon(key: .stamp, size: 12, color: MSColors.stamp)
-                    Text("Tem kỷ niệm")
+                    Text(AppLanguageManager.shared.localized("ui_literal_ab6b0d299fd3"))
                 }
                 .font(.caption2.bold())
                 .padding(.horizontal, 8)
@@ -1367,7 +1367,7 @@ struct FriendsAndTradeScreenView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "xmark")
                             .font(.system(size: 11, weight: .bold))
-                        Text("Từ chối")
+                        Text(AppLanguageManager.shared.localized("ui_literal_63bbfd75f684"))
                             .font(.caption.bold())
                     }
                     .padding(.horizontal, 10)
@@ -1389,7 +1389,7 @@ struct FriendsAndTradeScreenView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "bubble.left.and.bubble.right.fill")
                             .font(.system(size: 11))
-                        Text("Nhắn tin")
+                        Text(AppLanguageManager.shared.localized("ui_literal_a7ec1f13b2db"))
                             .font(.caption.bold())
                     }
                     .padding(.horizontal, 10)
@@ -1434,7 +1434,7 @@ struct FriendsAndTradeScreenView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "square.and.arrow.down.fill")
                             .font(.system(size: 11))
-                        Text("Lưu vào Kho")
+                        Text(AppLanguageManager.shared.localized("ui_literal_bcb7a57c322c"))
                             .font(.caption.bold())
                     }
                     .padding(.horizontal, 12)
@@ -1482,7 +1482,7 @@ struct TradeStampModalView: View {
             Text("Trade Stamp with \(friend.displayName)")
                 .font(.headline.bold())
 
-            Text("Select one of your stamps to offer for trade:")
+            Text(AppLanguageManager.shared.localized("ui_literal_3816b94c4104"))
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -1523,7 +1523,7 @@ struct TradeStampModalView: View {
                     onSendTrade(selectedStampId)
                 }
             }) {
-                Text("Send Trade Request")
+                Text(AppLanguageManager.shared.localized("ui_literal_156f1ec5e30b"))
                     .font(.body.bold())
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -1578,7 +1578,7 @@ struct FriendQrCodeSheetView: View {
                 .frame(width: 36, height: 4)
                 .padding(.top, 8)
 
-            Text("MÃ QR TÀI KHOẢN")
+            Text(AppLanguageManager.shared.localized("ui_literal_eff66c2ea708"))
                 .font(.headline.bold())
                 .foregroundColor(MSColors.ink)
 
@@ -1617,7 +1617,7 @@ struct FriendQrCodeSheetView: View {
 
             // Functional QR Scanner / Friend Invitation Input Field
             VStack(alignment: .leading, spacing: 8) {
-                Text("QUÉT / NHẬP MÃ QR NGƯỜI KHÁC")
+                Text(AppLanguageManager.shared.localized("ui_literal_6c71b6b990fa"))
                     .font(.caption2.bold())
                     .foregroundColor(MSColors.grey)
 
@@ -1642,7 +1642,7 @@ struct FriendQrCodeSheetView: View {
                             }
                         }
                     }) {
-                        Text("Kết Bạn")
+                        Text(AppLanguageManager.shared.localized("ui_literal_dc58dd6245d4"))
                             .font(.caption.bold())
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
@@ -1668,7 +1668,7 @@ struct FriendQrCodeSheetView: View {
             Spacer()
 
             Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                Text("Đóng")
+                Text(AppLanguageManager.shared.localized("ui_literal_d2b73ab2ada1"))
                     .font(.body.bold())
                     .frame(maxWidth: .infinity)
                     .padding()

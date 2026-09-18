@@ -89,14 +89,14 @@ struct HomeScreenView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text("MemoStamp")
+                        Text(AppLanguageManager.shared.localized("ui_literal_6b382c66ce54"))
                             .font(.title2.bold())
                             .foregroundColor(MSColors.stamp)
                         Text("★")
                             .font(.caption2.bold())
                             .foregroundColor(MSColors.gold)
                     }
-                    Text("Intimate Memory Feed")
+                    Text(AppLanguageManager.shared.localized("ui_literal_6fcd855e6f6c"))
                         .font(.caption)
                         .foregroundColor(MSColors.grey)
                 }

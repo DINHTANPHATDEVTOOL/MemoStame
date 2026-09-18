@@ -31,7 +31,7 @@ struct EnvelopeShareModalView: View {
                 Image(systemName: "envelope.badge.shield.halfopen.fill")
                     .font(.title2)
                     .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
-                Text("Share Vintage Envelope")
+                Text(AppLanguageManager.shared.localized("ui_literal_f4783589dc8e"))
                     .font(.title3.bold())
                     .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
                 Spacer()
@@ -53,7 +53,7 @@ struct EnvelopeShareModalView: View {
                     .font(.headline.bold())
                     .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
                 
-                Text("Sealed with MemoStamp Wax #2026")
+                Text(AppLanguageManager.shared.localized("ui_literal_376d06171f43"))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -69,7 +69,7 @@ struct EnvelopeShareModalView: View {
 
             // Recipient Selector
             VStack(alignment: .leading, spacing: 8) {
-                Text("SEND DIRECT ENVELOPE TO:")
+                Text(AppLanguageManager.shared.localized("ui_literal_c0e7f65c5aab"))
                     .font(.caption2.bold())
                     .foregroundColor(.secondary)
                     .padding(.horizontal)
@@ -129,7 +129,7 @@ struct EnvelopeShareModalView: View {
                 }) {
                     HStack {
                         Image(systemName: "square.and.arrow.up.fill")
-                        Text("Share via System Apps")
+                        Text(AppLanguageManager.shared.localized("ui_literal_54aa33d6a31e"))
                             .font(.body.bold())
                     }
                     .frame(maxWidth: .infinity)

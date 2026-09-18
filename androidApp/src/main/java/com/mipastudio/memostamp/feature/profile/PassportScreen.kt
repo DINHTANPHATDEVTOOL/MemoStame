@@ -168,7 +168,7 @@ fun PassportScreen(
                         Icon(Icons.Outlined.Palette, contentDescription = stringResource(R.string.friends_theme_select), tint = MaterialTheme.colorScheme.primary)
                     }
                     IconButton(onClick = { showQrModal = true }) {
-                        Icon(Icons.Outlined.QrCode, contentDescription = "QR Code", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(Icons.Outlined.QrCode, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_44742187d5d4), tint = MaterialTheme.colorScheme.onBackground)
                     }
                     IconButton(onClick = { showSettingsModal = true }) {
                         Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.profile_settings_title), tint = MaterialTheme.colorScheme.onBackground)
@@ -204,7 +204,7 @@ fun PassportScreen(
                     Box(modifier = Modifier.fillMaxSize()) {
                         AsyncImage(
                             model = currentUser.coverUrl.ifBlank { "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200" },
-                            contentDescription = "Cover photo",
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_1d23ba9da103),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -270,7 +270,7 @@ fun PassportScreen(
                                     tint = PrimaryText
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Passport Cover", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_7870062aadae), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                             }
                         }
                     }
@@ -327,7 +327,7 @@ fun PassportScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     Icons.Outlined.Verified,
-                    contentDescription = "Verified",
+                    contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_aed3b8c6a7c0),
                     tint = AccentBlue,
                     modifier = Modifier.size(18.dp)
                 )
@@ -561,7 +561,7 @@ fun PassportScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Wallpaper, contentDescription = null, tint = AccentRed, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Đổi hình nền hồ sơ", fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 17.sp)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f30dedb800b5), fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 17.sp)
                     }
                 },
                 text = {
@@ -592,12 +592,12 @@ fun PassportScreen(
                         ) {
                             Icon(Icons.Outlined.PhotoLibrary, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Chọn ảnh từ thư viện điện thoại", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_a77c8f6dc24d), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
 
                         HorizontalDivider(color = UIBorder)
 
-                        Text("Hoặc chọn hình nền bưu chính vintage:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_7d8be9b6b1b6), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
 
                         // Preset Cover Grid / Column
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -637,7 +637,7 @@ fun PassportScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = { showCoverOptionsModal = false }) {
-                        Text("Đóng")
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d2b73ab2ada1))
                     }
                 },
                 containerColor = SurfaceWhite
@@ -652,7 +652,7 @@ fun PassportScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.AccountCircle, contentDescription = null, tint = AccentRed, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Đổi ảnh đại diện", fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 17.sp)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_c42e10b2ca21), fontWeight = FontWeight.Bold, color = PrimaryText, fontSize = 17.sp)
                     }
                 },
                 text = {
@@ -677,12 +677,12 @@ fun PassportScreen(
                         ) {
                             Icon(Icons.Outlined.PhotoLibrary, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Chọn ảnh từ thư viện điện thoại", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_a77c8f6dc24d), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
 
                         HorizontalDivider(color = UIBorder)
 
-                        Text("Gợi ý ảnh đại diện phong cách vintage:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b1a4f1611c75), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
 
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -719,7 +719,7 @@ fun PassportScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = { showAvatarOptionsModal = false }) {
-                        Text("Đóng")
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d2b73ab2ada1))
                     }
                 },
                 containerColor = SurfaceWhite
@@ -824,7 +824,7 @@ fun PassportScreen(
                 title = { Text(stringResource(R.string.friends_my_qr), fontWeight = FontWeight.Bold, color = PrimaryText) },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Text("Quét mã để kết nối và trao đổi tem bưu chính", fontSize = 13.sp, color = SecondaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_cffb3f244524), fontSize = 13.sp, color = SecondaryText)
                         Spacer(modifier = Modifier.height(16.dp))
                         Box(
                             modifier = Modifier
@@ -865,7 +865,7 @@ fun PassportScreen(
 
             AlertDialog(
                 onDismissRequest = { showSettingsModal = false },
-                title = { Text("Cài đặt tài khoản & Ngôn ngữ", fontWeight = FontWeight.Bold, color = PrimaryText) },
+                title = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_881f29151d27), fontWeight = FontWeight.Bold, color = PrimaryText) },
                 text = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(10.dp),

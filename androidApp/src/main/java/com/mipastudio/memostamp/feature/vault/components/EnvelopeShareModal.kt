@@ -89,7 +89,7 @@ fun EnvelopeShareModal(
                         )
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = StampSubtleInk)
+                        Icon(Icons.Default.Close, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_bbfa773e5a63), tint = StampSubtleInk)
                     }
                 }
 

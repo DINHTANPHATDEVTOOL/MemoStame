@@ -436,7 +436,7 @@ private fun CameraNavButton(onClick: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Outlined.PhotoCamera,
-            contentDescription = "Camera",
+            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_4da9c9af9631),
             tint = Color.White,
             modifier = Modifier.size(25.dp)
         )

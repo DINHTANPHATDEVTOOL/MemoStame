@@ -145,10 +145,10 @@ struct ChatScreenView: View {
 
                 Menu {
                     Button(action: { showReportSheet = true }) {
-                        Label("Báo cáo người dùng", systemImage: "flag.fill")
+                        Label(AppLanguageManager.shared.localized("ui_literal_b6dc5d469de7"), systemImage: "flag.fill")
                     }
                     Button(role: .destructive, action: { showBlockAlert = true }) {
-                        Label("Chặn người dùng", systemImage: "hand.raised.slash.fill")
+                        Label(AppLanguageManager.shared.localized("ui_literal_a37d68f43528"), systemImage: "hand.raised.slash.fill")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -185,7 +185,7 @@ struct ChatScreenView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: MSColors.stamp))
                                     .scaleEffect(1.2)
-                                Text("Đang tải cuộc trò chuyện...")
+                                Text(AppLanguageManager.shared.localized("ui_literal_685de584b99e"))
                                     .font(.caption)
                                     .foregroundColor(MSColors.grey)
                             }
@@ -200,11 +200,11 @@ struct ChatScreenView: View {
                                         .font(.system(size: 26))
                                         .foregroundColor(MSColors.stamp)
                                 }
-                                Text("Không thể tải cuộc trò chuyện")
+                                Text(AppLanguageManager.shared.localized("ui_literal_120090390419"))
                                     .font(.headline.bold())
                                     .foregroundColor(MSColors.ink)
                                     .multilineTextAlignment(.center)
-                                Text("Kiểm tra kết nối và thử lại.")
+                                Text(AppLanguageManager.shared.localized("ui_literal_62095341b455"))
                                     .font(.caption)
                                     .foregroundColor(MSColors.grey)
                                     .multilineTextAlignment(.center)
@@ -218,7 +218,7 @@ struct ChatScreenView: View {
                                             Image(systemName: "arrow.clockwise")
                                                 .font(.caption.bold())
                                         }
-                                        Text("Thử lại")
+                                        Text(AppLanguageManager.shared.localized("ui_literal_e353f2f3d366"))
                                             .font(.caption.bold())
                                     }
                                     .padding(.horizontal, 18)
@@ -246,7 +246,7 @@ struct ChatScreenView: View {
                                     .font(.headline.bold())
                                     .foregroundColor(MSColors.ink)
                                     .multilineTextAlignment(.center)
-                                Text("Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm! 📮")
+                                Text(AppLanguageManager.shared.localized("ui_literal_2a30a41d948a"))
                                     .font(.caption)
                                     .foregroundColor(MSColors.grey)
                                     .multilineTextAlignment(.center)
@@ -255,7 +255,7 @@ struct ChatScreenView: View {
                                     HStack(spacing: 6) {
                                         Image(systemName: "square.stack.3d.up.fill")
                                             .font(.caption.bold())
-                                        Text("Chọn con tem gửi ngay")
+                                        Text(AppLanguageManager.shared.localized("ui_literal_55c05facd64c"))
                                             .font(.caption.bold())
                                     }
                                     .padding(.horizontal, 16)
@@ -278,7 +278,7 @@ struct ChatScreenView: View {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .font(.caption)
                                         .foregroundColor(Color(red: 0.85, green: 0.25, blue: 0.20))
-                                    Text("Đang hiển thị tin nhắn đã lưu. Chưa thể đồng bộ.")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_c9bf73258673"))
                                         .font(.caption)
                                         .foregroundColor(MSColors.ink)
                                     Spacer()
@@ -291,7 +291,7 @@ struct ChatScreenView: View {
                                                 Image(systemName: "arrow.clockwise")
                                                     .font(.caption2.bold())
                                             }
-                                            Text("Thử lại")
+                                            Text(AppLanguageManager.shared.localized("ui_literal_e353f2f3d366"))
                                                 .font(.caption2.bold())
                                         }
                                         .foregroundColor(MSColors.stamp)
@@ -408,21 +408,21 @@ struct ChatScreenView: View {
         .sheet(isPresented: $showStampPicker) {
             VStack(spacing: 16) {
                 HStack {
-                    Text("Chọn Tem Đặt Trong Tin Nhắn")
+                    Text(AppLanguageManager.shared.localized("ui_literal_da55ae804aa3"))
                         .font(.headline)
                         .foregroundColor(MSColors.ink)
                     Spacer()
-                    Button("Đóng") { showStampPicker = false }
+                    Button(AppLanguageManager.shared.localized("ui_literal_d2b73ab2ada1")) { showStampPicker = false }
                         .foregroundColor(MSColors.stamp)
                 }
                 .padding()
 
                 if userStamps.isEmpty {
                     VStack(spacing: 8) {
-                        Text("Chưa có tem kỷ niệm nào")
+                        Text(AppLanguageManager.shared.localized("ui_literal_0a14825a6975"))
                             .font(.headline)
                             .foregroundColor(MSColors.ink)
-                        Text("Hãy chụp và lưu tem kỷ niệm từ camera trước khi chia sẻ trong tin nhắn!")
+                        Text(AppLanguageManager.shared.localized("ui_literal_f747e230e5ce"))
                             .font(.caption)
                             .foregroundColor(MSColors.grey)
                             .multilineTextAlignment(.center)
@@ -451,7 +451,7 @@ struct ChatScreenView: View {
                                         sendStampMessage(stamp: stamp)
                                         showStampPicker = false
                                     }) {
-                                        Text("Gửi Tem Này")
+                                        Text(AppLanguageManager.shared.localized("ui_literal_a7796079160f"))
                                             .font(.caption.bold())
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
@@ -470,8 +470,8 @@ struct ChatScreenView: View {
             .background(MSColors.paper.ignoresSafeArea())
         }
         .alert("Chặn \(recipientName)?", isPresented: $showBlockAlert) {
-            Button("Hủy", role: .cancel) { }
-            Button("Chặn người dùng", role: .destructive) {
+            Button(AppLanguageManager.shared.localized("ui_literal_34ca764caf22"), role: .cancel) { }
+            Button(AppLanguageManager.shared.localized("ui_literal_a37d68f43528"), role: .destructive) {
                 IOSFriendRepository.shared.blockUser(blockedId: recipientUserId) { result in
                     switch result {
                     case .success:
@@ -489,35 +489,35 @@ struct ChatScreenView: View {
                 }
             }
         } message: {
-            Text("Quan hệ bạn bè và các lời mời kết bạn sẽ bị xóa vĩnh viễn. Cả hai sẽ không thể gửi tin nhắn hoặc tương tác với nhau nữa.")
+            Text(AppLanguageManager.shared.localized("ui_literal_4c3fcca1ef78"))
         }
         .sheet(isPresented: $showReportSheet) {
             NavigationView {
                 Form {
-                    Section(header: Text("Lý do báo cáo")) {
-                        Picker("Danh mục", selection: $reportCategory) {
-                            Text("Tin rác / Spam").tag("spam")
-                            Text("Quấy rối / Đe dọa").tag("harassment")
-                            Text("Mạo danh").tag("impersonation")
-                            Text("Nội dung không phù hợp").tag("inappropriate_content")
-                            Text("Lý do khác").tag("other")
+                    Section(header: Text(AppLanguageManager.shared.localized("ui_literal_cd8c0438cc9d"))) {
+                        Picker(AppLanguageManager.shared.localized("ui_literal_fc7b5ce02833"), selection: $reportCategory) {
+                            Text(AppLanguageManager.shared.localized("ui_literal_a9cc1b405dc7")).tag("spam")
+                            Text(AppLanguageManager.shared.localized("ui_literal_26d0534d5141")).tag("harassment")
+                            Text(AppLanguageManager.shared.localized("ui_literal_2f2adef1594e")).tag("impersonation")
+                            Text(AppLanguageManager.shared.localized("ui_literal_a03970c65fb4")).tag("inappropriate_content")
+                            Text(AppLanguageManager.shared.localized("ui_literal_9aa5e7980fa3")).tag("other")
                         }
                         .pickerStyle(.inline)
                     }
 
-                    Section(header: Text("Ghi chú thêm (tùy chọn, tối đa 1000 ký tự)")) {
+                    Section(header: Text(AppLanguageManager.shared.localized("ui_literal_100cc1c9d9b8"))) {
                         TextEditor(text: $reportNote)
                             .frame(height: 100)
                     }
                 }
-                .navigationTitle("Báo cáo vi phạm")
+                .navigationTitle(AppLanguageManager.shared.localized("ui_literal_10b701db2511"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Hủy") { showReportSheet = false }
+                        Button(AppLanguageManager.shared.localized("ui_literal_34ca764caf22")) { showReportSheet = false }
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Gửi") {
+                        Button(AppLanguageManager.shared.localized("ui_literal_bbc4e7f57f7d")) {
                             guard !isSubmittingReport else { return }
                             isSubmittingReport = true
                             IOSFriendRepository.shared.reportUser(

@@ -129,7 +129,7 @@ fun StampEditorScreen(
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back", tint = PrimaryText)
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b52b36b7269f), tint = PrimaryText)
                     }
                 },
                 actions = {
@@ -139,7 +139,7 @@ fun StampEditorScreen(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Outlined.Undo,
-                            contentDescription = "Undo",
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_39fc72124884),
                             tint = if (uiState.undoStack.isNotEmpty()) PrimaryText else SecondaryText.copy(alpha = 0.4f)
                         )
                     }
@@ -149,7 +149,7 @@ fun StampEditorScreen(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Outlined.Redo,
-                            contentDescription = "Redo",
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_471b94d402d1),
                             tint = if (uiState.redoStack.isNotEmpty()) PrimaryText else SecondaryText.copy(alpha = 0.4f)
                         )
                     }
@@ -374,14 +374,14 @@ fun StampEditorScreen(
                                     editingElementId = selectedEl.id
                                     editDialogText = selectedEl.value
                                 }) {
-                                    Icon(Icons.Outlined.Edit, contentDescription = "Edit Text", tint = PrimaryText)
+                                    Icon(Icons.Outlined.Edit, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f5f4f6d7e68c), tint = PrimaryText)
                                 }
                             }
                             IconButton(onClick = { viewModel.duplicateElement(selectedEl.id) }) {
-                                Icon(Icons.Outlined.ContentCopy, contentDescription = "Duplicate", tint = PrimaryText)
+                                Icon(Icons.Outlined.ContentCopy, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_972d57379db3), tint = PrimaryText)
                             }
                             IconButton(onClick = { viewModel.deleteElement(selectedEl.id) }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = AccentRed)
+                                Icon(Icons.Outlined.Delete, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f6fdbe48dc54), tint = AccentRed)
                             }
                         }
                     }
@@ -477,7 +477,7 @@ fun StampEditorScreen(
             ) {
                 when (sheetId) {
                     1 -> { // Template
-                        Text("Select Stamp Template", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_97805144ee36), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                         Spacer(modifier = Modifier.height(16.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             items(StampTemplates.ALL) { template ->
@@ -506,12 +506,12 @@ fun StampEditorScreen(
                         }
                     }
                     2 -> { // Text
-                        Text("Add Custom Text", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d67da1187675), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedTextField(
                             value = customTextVal,
                             onValueChange = { customTextVal = it },
-                            placeholder = { Text("e.g. DALAT MEMORY 2026") },
+                            placeholder = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_a370c0973df1)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -526,7 +526,7 @@ fun StampEditorScreen(
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                             ) {
-                                Text("+ Text Element")
+                                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_e6b927516e56))
                             }
                             Button(
                                 onClick = {
@@ -537,12 +537,12 @@ fun StampEditorScreen(
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
                             ) {
-                                Text("+ Badge")
+                                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_a3f3914fee89))
                             }
                         }
                     }
                     3 -> { // Sticker
-                        Text("Stickers", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_9dca595b1a9c), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                         Spacer(modifier = Modifier.height(16.dp))
                         val stickers = listOf("✿", "♡", "✈️", "☕", "✦", "🏷️", "🧧", "🎓", "🏖️", "⭐", "📮", "✉️", "💌", "🌿", "☀️", "🌊", "📸", "🗺️", "🥐", "🍷", "🌸", "🎏", "🎯", "🎉")
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -561,7 +561,7 @@ fun StampEditorScreen(
                         }
                     }
                     4 -> { // Filter
-                        Text("Color Filters", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_19ed23057588), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                         Spacer(modifier = Modifier.height(16.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             items(com.mipastudio.memostamp.core.processor.FilterPresets.ALL) { spec ->
@@ -582,7 +582,7 @@ fun StampEditorScreen(
                         }
                     }
                     6 -> { // More
-                        Text("Frame & Photo Settings", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_989284e8f6d2), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryText)
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = {
@@ -598,7 +598,7 @@ fun StampEditorScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Change Photo")
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_6080b454e595))
                         }
                     }
                 }
@@ -630,7 +630,7 @@ fun StampEditorScreen(
     editingElementId?.let { elId ->
         AlertDialog(
             onDismissRequest = { editingElementId = null },
-            title = { Text("Edit Element Text", fontWeight = FontWeight.Bold, color = PrimaryText) },
+            title = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_6246eda11839), fontWeight = FontWeight.Bold, color = PrimaryText) },
             text = {
                 OutlinedTextField(
                     value = editDialogText,
@@ -649,12 +649,12 @@ fun StampEditorScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                 ) {
-                    Text("Save")
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_efc007a393f6))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { editingElementId = null }) {
-                    Text("Cancel")
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_77dfd2135f4d))
                 }
             },
             containerColor = SurfaceWhite
