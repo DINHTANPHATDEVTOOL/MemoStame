@@ -502,14 +502,14 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Today’s memory",
+                                text = stringResource(R.string.home_todays_memory),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = PrimaryText
                             )
                             Spacer(modifier = Modifier.height(3.dp))
                             Text(
-                                text = "Capture something worth keeping.",
+                                text = stringResource(R.string.home_capture_worth_keeping),
                                 fontSize = 12.sp,
                                 color = SecondaryText
                             )

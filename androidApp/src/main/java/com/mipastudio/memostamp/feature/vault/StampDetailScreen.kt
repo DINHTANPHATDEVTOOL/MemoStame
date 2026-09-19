@@ -20,6 +20,10 @@ import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.mipastudio.memostamp.R
+
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -311,7 +315,7 @@ fun StampDetailScreen(
                             val isFav = s.favorite
                             DetailAction(
                                 icon = if (isFav) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                                label = if (isFav) "Favorited" else "Favorite",
+                                label = if (isFav) stringResource(R.string.detail_action_favorited) else stringResource(R.string.detail_action_favorite),
                                 tint = if (isFav) AccentRed else PrimaryText
                             ) {
                                 scope.launch {
@@ -319,9 +323,9 @@ fun StampDetailScreen(
                                     stamp = stamp?.copy(favorite = !isFav)
                                 }
                             }
-                            DetailAction(Icons.Outlined.Edit, "Edit", PrimaryText) { onEditStamp(s.id) }
-                            DetailAction(Icons.Outlined.Send, "Send", AccentRed) { showShareModal = true }
-                            DetailAction(Icons.Outlined.Share, "Export", AccentBlue) {
+                            DetailAction(Icons.Outlined.Edit, stringResource(R.string.detail_action_edit), PrimaryText) { onEditStamp(s.id) }
+                            DetailAction(Icons.Outlined.Send, stringResource(R.string.detail_action_send), AccentRed) { showShareModal = true }
+                            DetailAction(Icons.Outlined.Share, stringResource(R.string.detail_action_export), AccentBlue) {
                                 val bmp = BitmapFactory.decodeFile(s.stampImagePath)
                                 if (bmp != null) {
                                     StampExportHelper.exportToGallery(

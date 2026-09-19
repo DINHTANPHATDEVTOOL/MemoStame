@@ -708,5 +708,20 @@
     <string name="vault_subtitle">Những con tem bạn đã sáng tạo và sưu tầm</string>
     <string name="vault_tab_collected">Được tặng (%d)</string>
     <string name="vault_tab_created">Đã tạo (%d)</string>
+    <string name="detail_action_favorite">Yêu thích</string>
+    <string name="detail_action_favorited">Đã yêu thích</string>
+    <string name="editor_tool_template">Mẫu tem</string>
+    <string name="editor_tool_text">Văn bản</string>
+    <string name="editor_tool_sticker">Nhãn dán</string>
+    <string name="editor_tool_filter">Bộ lọc</string>
+    <string name="editor_tool_maps_ai">Bản đồ AI</string>
+    <string name="editor_tool_more">Xem thêm</string>
+    <string name="editor_default_title">Khoảnh khắc kỷ niệm</string>
     <string name="vault_title">Kho tem bưu chính</string>
+    <string name="home_todays_memory">Kỷ niệm hôm nay</string>
+    <string name="home_capture_worth_keeping">Hãy lưu giữ điều xứng đáng để nhớ mãi.</string>
+    <string name="vault_memories_count">%d kỷ niệm</string>
+    <string name="detail_action_edit">Chỉnh sửa</string>
+    <string name="detail_action_send">Gửi</string>
+    <string name="detail_action_export">Xuất</string>
 </resources>

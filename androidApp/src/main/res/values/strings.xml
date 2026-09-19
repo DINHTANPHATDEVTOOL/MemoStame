@@ -708,5 +708,20 @@
     <string name="vault_subtitle">Your minted and collected vintage stamps</string>
     <string name="vault_tab_collected">Collected (%d)</string>
     <string name="vault_tab_created">Created (%d)</string>
+    <string name="detail_action_favorite">Favorite</string>
+    <string name="detail_action_favorited">Favorited</string>
+    <string name="editor_tool_template">Template</string>
+    <string name="editor_tool_text">Text</string>
+    <string name="editor_tool_sticker">Sticker</string>
+    <string name="editor_tool_filter">Filter</string>
+    <string name="editor_tool_maps_ai">Maps AI</string>
+    <string name="editor_tool_more">More</string>
+    <string name="editor_default_title">Memory Moment</string>
     <string name="vault_title">Stamp Vault</string>
+    <string name="home_todays_memory">Today\'s memory</string>
+    <string name="home_capture_worth_keeping">Capture something worth keeping.</string>
+    <string name="vault_memories_count">%d memories</string>
+    <string name="detail_action_edit">Edit</string>
+    <string name="detail_action_send">Send</string>
+    <string name="detail_action_export">Export</string>
 </resources>

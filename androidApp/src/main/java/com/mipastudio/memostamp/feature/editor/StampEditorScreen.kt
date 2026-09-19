@@ -63,6 +63,9 @@ import com.mipastudio.memostamp.core.location.LocationHelper
 import com.mipastudio.memostamp.core.location.LocationPickerModalSheet
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.ui.res.stringResource
+import com.mipastudio.memostamp.R
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +83,8 @@ fun StampEditorScreen(
     val authRepo = remember(context) { com.mipastudio.memostamp.data.repository.UserAuthRepository.getInstance(context) }
     val currentUser by authRepo.currentUser.collectAsState()
 
-    var titleText by remember { mutableStateOf("Memory Moment") }
+    val defaultTitle = stringResource(R.string.editor_default_title)
+    var titleText by remember { mutableStateOf(if (initialPhotoUrl != null || stampId != null) "" else defaultTitle) }
     var locationText by remember { mutableStateOf("Da Lat, Vietnam") }
     var dateText by remember { mutableStateOf("13.08.26") }
     var captionText by remember { mutableStateOf("Một khoảnh khắc đáng nhớ.") }
@@ -404,17 +408,24 @@ fun StampEditorScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
+                    val toolTemplateLabel = stringResource(R.string.editor_tool_template)
+                    val toolTextLabel = stringResource(R.string.editor_tool_text)
+                    val toolStickerLabel = stringResource(R.string.editor_tool_sticker)
+                    val toolFilterLabel = stringResource(R.string.editor_tool_filter)
+                    val toolMapsAiLabel = stringResource(R.string.editor_tool_maps_ai)
+                    val toolMoreLabel = stringResource(R.string.editor_tool_more)
+
                     val isLocationAndNetworkReady = LocationHelper.isLocationAndNetworkReady(context)
                     val tools = remember(isLocationAndNetworkReady) {
                         buildList {
-                            add(Triple(1, "Template", Icons.Outlined.Style to Color(0xFFFF5722)))
-                            add(Triple(2, "Text", Icons.Outlined.TextFields to AccentBlue))
-                            add(Triple(3, "Sticker", Icons.Outlined.SentimentSatisfied to Color(0xFF00BFA5)))
-                            add(Triple(4, "Filter", Icons.Outlined.ColorLens to Color(0xFF8E24AA)))
+                            add(Triple(1, toolTemplateLabel, Icons.Outlined.Style to Color(0xFFFF5722)))
+                            add(Triple(2, toolTextLabel, Icons.Outlined.TextFields to AccentBlue))
+                            add(Triple(3, toolStickerLabel, Icons.Outlined.SentimentSatisfied to Color(0xFF00BFA5)))
+                            add(Triple(4, toolFilterLabel, Icons.Outlined.ColorLens to Color(0xFF8E24AA)))
                             if (isLocationAndNetworkReady) {
-                                add(Triple(5, "Maps AI", Icons.Outlined.Place to Color(0xFF1E88E5)))
+                                add(Triple(5, toolMapsAiLabel, Icons.Outlined.Place to Color(0xFF1E88E5)))
                             }
-                            add(Triple(6, "More", Icons.Outlined.MoreHoriz to Color(0xFFFFB300)))
+                            add(Triple(6, toolMoreLabel, Icons.Outlined.MoreHoriz to Color(0xFFFFB300)))
                         }
                     }
 

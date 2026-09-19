@@ -196,7 +196,7 @@ fun StampVaultScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                "${filteredStamps.size} memories",
+                                stringResource(R.string.vault_memories_count, filteredStamps.size),
                                 color = SecondaryText,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
