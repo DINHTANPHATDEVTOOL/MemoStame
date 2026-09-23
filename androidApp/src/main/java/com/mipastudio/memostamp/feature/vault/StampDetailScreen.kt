@@ -328,13 +328,21 @@ fun StampDetailScreen(
                             DetailAction(Icons.Outlined.Share, stringResource(R.string.detail_action_export), AccentBlue) {
                                 val bmp = BitmapFactory.decodeFile(s.stampImagePath)
                                 if (bmp != null) {
-                                    StampExportHelper.exportToGallery(
+                                    val exportedUri = StampExportHelper.exportToGallery(
                                         context,
                                         bmp,
                                         "STAMP_${s.id}",
                                         StampExportHelper.ExportMode.STAMP_IMAGE
                                     )
-                                    Toast.makeText(context, "Saved to gallery", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(
+                                            if (exportedUri != null) R.string.toast_save_success else R.string.common_error
+                                        ),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    Toast.makeText(context, context.getString(R.string.common_error), Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
@@ -360,8 +368,11 @@ fun StampDetailScreen(
                         val result = StampRepository.getInstance(context).deleteStamp(currentStamp.id)
                         showDeleteConfirm = false
                         result.fold(
-                            onSuccess = { onNavigateBack() },
-                            onFailure = { Toast.makeText(context, it.message ?: "Delete failed", Toast.LENGTH_SHORT).show() }
+                            onSuccess = {
+                                Toast.makeText(context, context.getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show()
+                                onNavigateBack()
+                            },
+                            onFailure = { Toast.makeText(context, it.message ?: context.getString(R.string.common_error), Toast.LENGTH_SHORT).show() }
                         )
                     }
                 }) { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f6fdbe48dc54), color = AccentRed, fontWeight = FontWeight.Bold) }

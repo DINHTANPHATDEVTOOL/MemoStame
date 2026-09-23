@@ -240,7 +240,7 @@ fun MemoryNoteScreen(
                                 tint = SecondaryText
                             )
                         },
-                        title = "Mood",
+                        title = stringResource(R.string.editor_mood_label),
                         value = if (!uiState.mood.isNullOrBlank()) moodDisplayName else "Add",
                         accentValue = !uiState.mood.isNullOrBlank(),
                         onClick = { showMoodSheet = true }

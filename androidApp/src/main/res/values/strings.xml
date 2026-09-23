@@ -189,6 +189,8 @@
     <string name="editor_location_hint">Add a location or place</string>
     <string name="editor_location_label">Location</string>
     <string name="editor_save_success">Stamp saved to vault!</string>
+    <string name="editor_update_success">Stamp updated successfully!</string>
+    <string name="editor_save_error">Failed to save stamp: %1$s</string>
     <string name="editor_shape_circle">Circle</string>
     <string name="editor_shape_classic">Classic</string>
     <string name="editor_shape_diamond">Diamond</string>
@@ -724,4 +726,14 @@
     <string name="detail_action_edit">Edit</string>
     <string name="detail_action_send">Send</string>
     <string name="detail_action_export">Export</string>
+    <string name="editor_default_caption">A memorable moment.</string>
+    <string name="maps_ai_poetic_note">The most beautiful moments always remain in a familiar cafe corner and a sun-drenched street %s.</string>
+    <string name="toast_save_success">Stamp saved successfully!</string>
+    <string name="toast_delete_success">Stamp deleted successfully!</string>
+    <string name="editor_btn_continue">Continue</string>
+    <string name="editor_btn_save">Save Stamp</string>
+    <string name="editor_mood_label">Mood</string>
+    <string name="editor_location_picker_title">Choose Location &amp; Stamp</string>
+    <string name="editor_stamp_suggestion_label">Stamp suggestion: %s</string>
 </resources>
+

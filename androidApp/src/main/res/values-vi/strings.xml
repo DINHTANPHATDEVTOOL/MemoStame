@@ -596,6 +596,7 @@
     <string name="ui_literal_a0570927ade5">Bản đồ AI</string>
     <string name="ui_literal_a14a40459521">Hạt phim</string>
     <string name="ui_literal_a370c0973df1">ví dụ: KÝ ỨC ĐÀ LẠT 2026</string>
+    <string name="editor_mood_label">Tâm trạng</string>
     <string name="ui_literal_a37d68f43528">Chặn người dùng</string>
     <string name="ui_literal_a39d5f87cbc3">Nhập mã kết bạn ở trên để giao lưu tem.</string>
     <string name="ui_literal_a3f0d04a7722">Cấu hình kết nối Cloud</string>
@@ -724,4 +725,14 @@
     <string name="detail_action_edit">Chỉnh sửa</string>
     <string name="detail_action_send">Gửi</string>
     <string name="detail_action_export">Xuất</string>
+    <string name="editor_default_caption">Một khoảnh khắc đáng nhớ.</string>
+    <string name="maps_ai_poetic_note">Những khoảnh khắc đẹp đẽ nhất luôn nằm lại nơi góc quán quen và con đường ngập nắng %s.</string>
+    <string name="toast_save_success">Đã lưu tem thành công!</string>
+    <string name="toast_delete_success">Đã xóa tem thành công!</string>
+    <string name="editor_update_success">Đã cập nhật tem thành công!</string>
+    <string name="editor_save_error">Không thể lưu tem: %1$s</string>
+    <string name="editor_btn_continue">Tiếp tục</string>
+    <string name="editor_btn_save">Lưu Tem</string>
+    <string name="editor_location_picker_title">Chọn Địa Điểm &amp; Dấu Tem</string>
+    <string name="editor_stamp_suggestion_label">Gợi ý tem: %s</string>
 </resources>

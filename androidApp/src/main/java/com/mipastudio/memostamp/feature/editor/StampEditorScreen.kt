@@ -87,7 +87,9 @@ fun StampEditorScreen(
     var titleText by remember { mutableStateOf(if (initialPhotoUrl != null || stampId != null) "" else defaultTitle) }
     var locationText by remember { mutableStateOf("Da Lat, Vietnam") }
     var dateText by remember { mutableStateOf("13.08.26") }
-    var captionText by remember { mutableStateOf("Một khoảnh khắc đáng nhớ.") }
+    val defaultCaption = stringResource(R.string.editor_default_caption)
+    var captionText by remember { mutableStateOf(if (initialPhotoUrl != null || stampId != null) "" else defaultCaption) }
+
 
     LaunchedEffect(stampId, initialPhotoUrl, draftId) {
         val repo = com.mipastudio.memostamp.data.repository.StampRepository.getInstance(context)
@@ -195,11 +197,21 @@ fun StampEditorScreen(
                                             caption = entity.note,
                                             type = StampType.PERSONAL
                                         )
-                                        Toast.makeText(context, "Stamp saved!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(
+                                                if (!stampId.isNullOrBlank()) R.string.editor_update_success else R.string.editor_save_success
+                                            ),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                         onStampSaved(newStamp)
                                     },
                                     onError = { msg ->
-                                        Toast.makeText(context, "Save error: $msg", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.editor_save_error, msg),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 )
                             }
@@ -209,7 +221,16 @@ fun StampEditorScreen(
                         if (uiState.isSaving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), color = AccentRed)
                         } else {
-                            Text(if (!draftId.isNullOrBlank() || stampId.isNullOrBlank()) "Tiếp tục" else "Lưu Tem", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AccentRed)
+                            Text(
+                                text = if (!draftId.isNullOrBlank() || stampId.isNullOrBlank()) {
+                                    stringResource(R.string.editor_btn_continue)
+                                } else {
+                                    stringResource(R.string.editor_btn_save)
+                                },
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentRed
+                            )
                         }
                     }
                 },
@@ -629,7 +650,7 @@ fun StampEditorScreen(
                 }
                 // Add a vintage location badge to canvas
                 viewModel.addElement("badge", locationName.take(18), "#D94E41")
-                if (story != null && captionText == "Một khoảnh khắc đáng nhớ.") {
+                if (story != null && captionText == "") {
                     captionText = story.poeticNote
                 }
                 showLocationPickerSheet = false

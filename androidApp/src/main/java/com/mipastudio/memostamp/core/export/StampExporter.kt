@@ -10,6 +10,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.mipastudio.memostamp.R
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -52,10 +53,10 @@ object StampExporter {
                 imageUri = Uri.fromFile(imageFile)
             }
 
-            Toast.makeText(context, "Stamp saved to Gallery! 🖼️", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_save_success), Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "Failed to save stamp: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.common_error) + ": " + e.message, Toast.LENGTH_SHORT).show()
         }
 
         return imageUri
@@ -87,7 +88,7 @@ object StampExporter {
             context.startActivity(chooser)
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "Failed to share stamp: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.common_error) + ": " + e.message, Toast.LENGTH_SHORT).show()
         }
     }
 }

@@ -31,6 +31,8 @@ import com.mipastudio.memostamp.ui.theme.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,7 +158,7 @@ fun LocationPickerModalSheet(
             ) {
                 Column {
                     Text(
-                        text = "Chọn Địa Điểm & Dấu Tem",
+                        text = stringResource(com.mipastudio.memostamp.R.string.editor_location_picker_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryText
@@ -588,7 +590,7 @@ private fun GroundedPlaceCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Gợi ý tem: ${place.stampTitleSuggestion}",
+                            text = stringResource(com.mipastudio.memostamp.R.string.editor_stamp_suggestion_label, place.stampTitleSuggestion),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF8D6E1A)
