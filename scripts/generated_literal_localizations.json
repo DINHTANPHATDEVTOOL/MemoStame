@@ -1,0 +1,930 @@
+{
+  "ui_literal_a3f3914fee89": [
+    "+ Badge",
+    "+ Huy hiệu"
+  ],
+  "ui_literal_e6b927516e56": [
+    "+ Text Element",
+    "+ Yếu tố văn bản"
+  ],
+  "ui_literal_4d476c9a960d": [
+    "AUDIENCE VISIBILITY",
+    "TẦM NHÌN ĐỐI TƯỢNG"
+  ],
+  "ui_literal_d67da1187675": [
+    "Add Custom Text",
+    "Thêm văn bản tùy chỉnh"
+  ],
+  "ui_literal_fb6b417729d5": [
+    "Apple (Coming Soon)",
+    "Apple (Sắp ra mắt)"
+  ],
+  "ui_literal_e415fb95aa50": [
+    "BIO NOTE",
+    "LƯU Ý SINH HỌC"
+  ],
+  "ui_literal_b52b36b7269f": [
+    "Back",
+    "Quay lại"
+  ],
+  "ui_literal_0799f2adb20d": [
+    "Envelopes",
+    "Bao thư"
+  ],
+  "ui_literal_b31fc969b488": [
+    "Bio",
+    "Tiểu sử"
+  ],
+  "ui_literal_8811dc087ddb": [
+    "Album icon",
+    "Biểu tượng Album"
+  ],
+  "ui_literal_e1a2b65df8ed": [
+    "Brightness",
+    "Độ sáng"
+  ],
+  "ui_literal_b6dc5d469de7": [
+    "User report",
+    "Báo cáo người dùng"
+  ],
+  "ui_literal_10b701db2511": [
+    "Report Abuse",
+    "Báo cáo vi phạm"
+  ],
+  "ui_literal_159fe48505b5": [
+    "Friends",
+    "Bạn bè"
+  ],
+  "ui_literal_ef4e3b743d7d": [
+    "You can directly type the location name in the search box above to save it manually.",
+    "Bạn có thể gõ trực tiếp tên địa điểm ở ô tìm kiếm phía trên để lưu thủ công."
+  ],
+  "ui_literal_b6b2b6473a4c": [
+    "AI Map",
+    "Bản đồ AI"
+  ],
+  "ui_literal_8f35653f3748": [
+    "Intimate Memory Feed & Vintage Stamp Album",
+    "Bảng tin Kỷ niệm & Sổ Tem Bưu Chính"
+  ],
+  "ui_literal_940e39a6c8cf": [
+    "Unblock",
+    "Bỏ chặn"
+  ],
+  "ui_literal_b9659feda482": [
+    "MY COLLECTION & ALBUM",
+    "BỘ SƯU TẬP & ALBUM CỦA TÔI"
+  ],
+  "ui_literal_b7a4de18a929": [
+    "Postal collection #2026",
+    "Bộ sưu tập bưu chính #2026"
+  ],
+  "ui_literal_ff60a485e30e": [
+    "Unique collection #2026",
+    "Bộ sưu tập độc bản #2026"
+  ],
+  "ui_literal_30c4dc820b96": [
+    "CHOOSE A DIE-CUT MOLD",
+    "CHỌN KHUÔN DẬP TEM (DIE-CUT MOLD)"
+  ],
+  "ui_literal_dbc87420347a": [
+    "CLOSE",
+    "ĐÓNG"
+  ],
+  "ui_literal_4da9c9af9631": [
+    "Camera",
+    "Chụp ảnh"
+  ],
+  "ui_literal_77dfd2135f4d": [
+    "Cancel",
+    "Hủy"
+  ],
+  "ui_literal_6080b454e595": [
+    "Change Photo",
+    "Thay đổi ảnh"
+  ],
+  "ui_literal_2ced57f12591": [
+    "Chat",
+    "Trò chuyện"
+  ],
+  "ui_literal_494d0f681c44": [
+    "Checking...",
+    "Đang kiểm tra..."
+  ],
+  "ui_literal_d75554f4c0e3": [
+    "Choose a collection",
+    "Chọn một bộ sưu tập"
+  ],
+  "ui_literal_c844392f314d": [
+    "Don't have any friends yet",
+    "Chưa có bạn bè nào"
+  ],
+  "ui_literal_0a14825a6975": [
+    "There are no commemorative stamps yet",
+    "Chưa có tem kỷ niệm nào"
+  ],
+  "ui_literal_3bbe3c9b1352": [
+    "Touch the stamp to flip to see the back of the postcard ↺",
+    "Chạm vào tem để lật xem mặt sau bưu thiếp ↺"
+  ],
+  "ui_literal_ca41be93069a": [
+    "Accept",
+    "Chấp nhận"
+  ],
+  "ui_literal_a37d68f43528": [
+    "Block User",
+    "Chặn người dùng"
+  ],
+  "ui_literal_da55ae804aa3": [
+    "Select Stamp to Place in Message",
+    "Chọn Tem Đặt Trong Tin Nhắn"
+  ],
+  "ui_literal_55c05facd64c": [
+    "Choose Stamp to Send",
+    "Chọn con tem gửi ngay"
+  ],
+  "ui_literal_a77c8f6dc24d": [
+    "Choose photo from phone gallery",
+    "Chọn ảnh từ thư viện điện thoại"
+  ],
+  "ui_literal_60a79b63cd9a": [
+    "Select ›",
+    "Chọn ›"
+  ],
+  "ui_literal_719ea396ad92": [
+    "Clear",
+    "Xóa"
+  ],
+  "ui_literal_bbfa773e5a63": [
+    "Close",
+    "Đóng"
+  ],
+  "ui_literal_19ed23057588": [
+    "Color Filters",
+    "Bộ lọc màu"
+  ],
+  "ui_literal_2e02623966f9": [
+    "Continue",
+    "Tiếp tục"
+  ],
+  "ui_literal_ccc5b0edaae6": [
+    "Continue with Google",
+    "Tiếp tục với Google"
+  ],
+  "ui_literal_c4fc37ad99a3": [
+    "Contrast",
+    "tương phản"
+  ],
+  "ui_literal_af74f7c5362a": [
+    "Copy",
+    "Sao chép"
+  ],
+  "ui_literal_1d23ba9da103": [
+    "Cover photo",
+    "Ảnh bìa"
+  ],
+  "ui_literal_5a267b44a275": [
+    "Create your profile",
+    "Tạo hồ sơ của bạn"
+  ],
+  "ui_literal_8c292710d9aa": [
+    "Created by you",
+    "Do bạn tạo"
+  ],
+  "ui_literal_881f29151d27": [
+    "Account Settings & Language",
+    "Cài đặt tài khoản & Ngôn ngữ"
+  ],
+  "ui_literal_0bb8be06ce3b": [
+    "EMOTION/MOOD",
+    "CẢM XÚC / MOOD"
+  ],
+  "ui_literal_a3f0d04a7722": [
+    "Configure Cloud connection",
+    "Cấu hình kết nối Cloud"
+  ],
+  "ui_literal_cd8e5e1b536b": [
+    "DISPLAY NAME",
+    "TÊN HIỂN THỊ"
+  ],
+  "ui_literal_fc7b5ce02833": [
+    "Category",
+    "Danh mục"
+  ],
+  "ui_literal_f6fdbe48dc54": [
+    "Delete",
+    "Xóa"
+  ],
+  "ui_literal_bcef2182178d": [
+    "Delete memory",
+    "Xóa bộ nhớ"
+  ],
+  "ui_literal_c307cf19f180": [
+    "Delete this memory?",
+    "Xóa bộ nhớ này?"
+  ],
+  "ui_literal_36fff63ccbcd": [
+    "Discard",
+    "Loại bỏ"
+  ],
+  "ui_literal_e9b450d14bc2": [
+    "Done",
+    "Xong"
+  ],
+  "ui_literal_972d57379db3": [
+    "Duplicate",
+    "trùng lặp"
+  ],
+  "ui_literal_e93b918b09b9": [
+    "Use name: \"$searchQuery\"",
+    "Dùng tên: \"$searchQuery\""
+  ],
+  "ui_literal_6246eda11839": [
+    "Edit Element Text",
+    "Chỉnh sửa văn bản thành phần"
+  ],
+  "ui_literal_67954c6ab406": [
+    "Edit Passport Profile",
+    "Chỉnh sửa hồ sơ hộ chiếu"
+  ],
+  "ui_literal_f5f4f6d7e68c": [
+    "Edit Text",
+    "Chỉnh sửa văn bản"
+  ],
+  "ui_literal_84add5b29527": [
+    "Email",
+    "Email"
+  ],
+  "ui_literal_5fe9083e52a5": [
+    "Export PNG",
+    "Xuất PNG"
+  ],
+  "ui_literal_a14a40459521": [
+    "Film Grain",
+    "Hạt phim"
+  ],
+  "ui_literal_b62482236f53": [
+    "Flash",
+    "đèn flash"
+  ],
+  "ui_literal_989284e8f6d2": [
+    "Frame & Photo Settings",
+    "Cài đặt khung & ảnh"
+  ],
+  "ui_literal_7af7cae5a017": [
+    "Frozen frame",
+    "Khung đông lạnh"
+  ],
+  "ui_literal_1776fa32f23e": [
+    "GPS",
+    "GPS"
+  ],
+  "ui_literal_9c30a3485a58": [
+    "Gallery",
+    "Thư viện ảnh"
+  ],
+  "ui_literal_100cc1c9d9b8": [
+    "Additional notes (optional, up to 1000 characters)",
+    "Ghi chú thêm (tùy chọn, tối đa 1000 ký tự)"
+  ],
+  "ui_literal_e84712fbf4ee": [
+    "Go back",
+    "Quay lại"
+  ],
+  "ui_literal_90e2b791d717": [
+    "Google (Coming Soon)",
+    "Google (Sắp ra mắt)"
+  ],
+  "ui_literal_2373d32a83a0": [
+    "Type in name, cafe, delicious food...",
+    "Gõ tên, quán cafe, món ngon..."
+  ],
+  "ui_literal_b1a4f1611c75": [
+    "Suggested vintage style profile pictures:",
+    "Gợi ý ảnh đại diện phong cách vintage:"
+  ],
+  "ui_literal_bbc4e7f57f7d": [
+    "Send",
+    "Gửi"
+  ],
+  "ui_literal_a7796079160f": [
+    "Send This Stamp",
+    "Gửi Tem Này"
+  ],
+  "ui_literal_2a30a41d948a": [
+    "Send a message or attach a postage stamp for a nostalgic connection! 📮",
+    "Gửi tin nhắn hoặc đính kèm một con tem bưu chính để kết nối hoài niệm! 📮"
+  ],
+  "ui_literal_7ce006a802a2": [
+    "How did this feel?",
+    "Bạn cảm thấy thế nào?"
+  ],
+  "ui_literal_7d8be9b6b1b6": [
+    "Or choose vintage postal wallpaper:",
+    "Hoặc chọn hình nền bưu chính vintage:"
+  ],
+  "ui_literal_e2d3986744f0": [
+    "This action will remove the stamp from your Collection.",
+    "Hành động này sẽ xóa con tem khỏi Bộ sưu tập của bạn."
+  ],
+  "ui_literal_f747e230e5ce": [
+    "Take a photo and save the commemorative stamp from your camera before sharing in a message!",
+    "Hãy chụp và lưu tem kỷ niệm từ camera trước khi chia sẻ trong tin nhắn!"
+  ],
+  "ui_literal_34ca764caf22": [
+    "Cancel",
+    "Hủy"
+  ],
+  "ui_literal_059e8a1fa9c7": [
+    "Cancel Offer",
+    "Hủy lời mời"
+  ],
+  "ui_literal_bc949b8ff6ab": [
+    "Cancel request",
+    "Hủy yêu cầu"
+  ],
+  "ui_literal_6fcd855e6f6c": [
+    "Intimate Memory Feed",
+    "Nguồn cấp dữ liệu bộ nhớ thân mật"
+  ],
+  "ui_literal_1a7ca521a340": [
+    "Join MemoStamp",
+    "Tham gia MemoStamp"
+  ],
+  "ui_literal_834bab943f2a": [
+    "Keep memories with people you care about.",
+    "Lưu giữ những kỷ niệm với những người bạn quan tâm."
+  ],
+  "ui_literal_68be0275f570": [
+    "Keep this moment",
+    "Hãy giữ khoảnh khắc này"
+  ],
+  "ui_literal_edffa6bc73c4": [
+    "Stamp Mold",
+    "Khuôn Dập Tem"
+  ],
+  "ui_literal_f69d11b44d48": [
+    "Access Key (Anon Key)",
+    "Khóa truy cập (Anon Key)"
+  ],
+  "ui_literal_ac10149132ad": [
+    "Reset Password",
+    "Khôi phục mật khẩu"
+  ],
+  "ui_literal_120090390419": [
+    "Unable to load chat",
+    "Không thể tải cuộc trò chuyện"
+  ],
+  "ui_literal_af5c3a71ddb3": [
+    "No suitable location found",
+    "Không tìm thấy địa điểm phù hợp"
+  ],
+  "ui_literal_62095341b455": [
+    "Check connection and try again.",
+    "Kiểm tra kết nối và thử lại."
+  ],
+  "ui_literal_4be53e9a016e": [
+    "Check server status",
+    "Kiểm tra trạng thái máy chủ"
+  ],
+  "ui_literal_dc58dd6245d4": [
+    "Make Friends",
+    "Kết Bạn"
+  ],
+  "ui_literal_cd8c0438cc9d": [
+    "Report Reason",
+    "Lý do báo cáo"
+  ],
+  "ui_literal_9aa5e7980fa3": [
+    "Other reasons",
+    "Lý do khác"
+  ],
+  "ui_literal_d7b001036e0d": [
+    "SAVE TO ALBUM / COLLECTION",
+    "LƯU VÀO ALBUM / BỘ SƯU TẬP"
+  ],
+  "ui_literal_5ea2ea09176a": [
+    "Save Stamp",
+    "Lưu Tem"
+  ],
+  "ui_literal_3633ceb693a7": [
+    "Save configuration",
+    "Lưu cấu hình"
+  ],
+  "ui_literal_d595b9c48bd6": [
+    "Save new password",
+    "Lưu mật khẩu mới"
+  ],
+  "ui_literal_bcb7a57c322c": [
+    "Save to Storage",
+    "Lưu vào Kho"
+  ],
+  "ui_literal_0731764914ce": [
+    "Save places manually exactly by the name you enter",
+    "Lưu địa điểm thủ công chính xác theo tên bạn nhập"
+  ],
+  "ui_literal_b4a7760049ff": [
+    "MEMO",
+    "bản ghi nhớ"
+  ],
+  "ui_literal_91863b0069ba": [
+    "MEMOSTAMP",
+    "MEMOSTAMP"
+  ],
+  "ui_literal_b61633fba6ac": [
+    "MEMOSTAMP AIRMAIL POSTCARD",
+    "BƯU BƯU ĐIỆN HÀNG KHÔNG GHI NHỚ"
+  ],
+  "ui_literal_7f2083d033e7": [
+    "MEMOSTAMP COLLECTOR ALBUM",
+    "ALBUM BỘ SƯU TẬP MEMOSTAMP"
+  ],
+  "ui_literal_d617ca531d9d": [
+    "MEMOSTAMP POSTCARD",
+    "BƯU THIỂU GHI NHỚ"
+  ],
+  "ui_literal_a0570927ade5": [
+    "Maps AI",
+    "Bản đồ AI"
+  ],
+  "ui_literal_6b382c66ce54": [
+    "MemoStamp",
+    "Bản ghi nhớDấu"
+  ],
+  "ui_literal_bd56a1afb490": [
+    "Memory not found",
+    "Không tìm thấy bộ nhớ"
+  ],
+  "ui_literal_4bab2d8fe13f": [
+    "More",
+    "Xem thêm"
+  ],
+  "ui_literal_eff66c2ea708": [
+    "ACCOUNT QR CODE",
+    "MÃ QR TÀI KHOẢN"
+  ],
+  "ui_literal_d8909ad771bf": [
+    "Just me",
+    "Mình tôi"
+  ],
+  "ui_literal_599bb2a1a9f0": [
+    "Album Description",
+    "Mô tả Album"
+  ],
+  "ui_literal_2f2adef1594e": [
+    "Impersonation",
+    "Mạo danh"
+  ],
+  "ui_literal_888c9c47cfe0": [
+    "Password",
+    "Mật khẩu"
+  ],
+  "ui_literal_8e6af90730db": [
+    "MOC POSTAGE",
+    "MỘC BƯU CHÍNH"
+  ],
+  "ui_literal_1d323d1e9c5b": [
+    "Anniversary day",
+    "Ngày kỷ niệm"
+  ],
+  "ui_literal_a39d5f87cbc3": [
+    "Enter the friend code above to exchange stamps.",
+    "Nhập mã kết bạn ở trên để giao lưu tem."
+  ],
+  "ui_literal_fc13316a4dcf": [
+    "Enter your account email address. If the account exists, the system will send password reset instructions.",
+    "Nhập địa chỉ email tài khoản của bạn. Nếu tài khoản tồn tại, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu."
+  ],
+  "ui_literal_a7ec1f13b2db": [
+    "Texting",
+    "Nhắn tin"
+  ],
+  "ui_literal_a808005c032b": [
+    "No active trade requests",
+    "Không có yêu cầu giao dịch nào đang hoạt động"
+  ],
+  "ui_literal_e45714907316": [
+    "Not now",
+    "Không phải bây giờ"
+  ],
+  "ui_literal_a03970c65fb4": [
+    "Inappropriate Content",
+    "Nội dung không phù hợp"
+  ],
+  "ui_literal_f5072edb1ff7": [
+    "OFFICIAL DIE-CUT STAMP",
+    "TEM CẮT CHÍNH THỨC"
+  ],
+  "ui_literal_d508ce02935e": [
+    "ONLINE",
+    "TRỰC TUYẾN"
+  ],
+  "ui_literal_61ff81c30aa3": [
+    "POST",
+    "BÀI ĐĂNG"
+  ],
+  "ui_literal_79799fc6ec78": [
+    "PROFILE",
+    "HỒ SƠ"
+  ],
+  "ui_literal_7870062aadae": [
+    "Passport Cover",
+    "Bìa hộ chiếu"
+  ],
+  "ui_literal_3efda14c5e11": [
+    "Preset Tune Controls",
+    "Điều khiển giai điệu cài sẵn"
+  ],
+  "ui_literal_ff4fc0276e96": [
+    "Profile",
+    "Hồ sơ"
+  ],
+  "ui_literal_977c2f93cd3e": [
+    "Punched Memory Stamp",
+    "Tem bộ nhớ đục lỗ"
+  ],
+  "ui_literal_44742187d5d4": [
+    "QR Code",
+    "Mã QR"
+  ],
+  "ui_literal_6c71b6b990fa": [
+    "SCAN / ENTER OTHER PEOPLE'S QR CODE",
+    "QUÉT / NHẬP MÃ QR NGƯỜI KHÁC"
+  ],
+  "ui_literal_4c3fcca1ef78": [
+    "Friendships and friend requests will be permanently deleted. The two will no longer be able to send messages or interact with each other.",
+    "Quan hệ bạn bè và các lời mời kết bạn sẽ bị xóa vĩnh viễn. Cả hai sẽ không thể gửi tin nhắn hoặc tương tác với nhau nữa."
+  ],
+  "ui_literal_99d1067d4213": [
+    "Privacy",
+    "Quyền riêng tư"
+  ],
+  "ui_literal_cffb3f244524": [
+    "Scan the code to connect and exchange postage stamps",
+    "Quét mã để kết nối và trao đổi tem bưu chính"
+  ],
+  "ui_literal_1630fc027a1a": [
+    "Forgot password?",
+    "Quên mật khẩu?"
+  ],
+  "ui_literal_26d0534d5141": [
+    "Harassment / Threats",
+    "Quấy rối / Đe dọa"
+  ],
+  "ui_literal_471b94d402d1": [
+    "Redo",
+    "Làm lại"
+  ],
+  "ui_literal_44c57abd888a": [
+    "Reset",
+    "Đặt lại"
+  ],
+  "ui_literal_4c5cd913f1a3": [
+    "SAVE TO ALBUM",
+    "LƯU VÀO ALBUM"
+  ],
+  "ui_literal_c0e7f65c5aab": [
+    "SEND DIRECT ENVELOPE TO:",
+    "GỬI PHIẾU TRỰC TIẾP ĐẾN:"
+  ],
+  "ui_literal_15e2aac4c6b4": [
+    "STAMP VAULT",
+    "VÒI TEM"
+  ],
+  "ui_literal_7168833cc8e1": [
+    "STATUS",
+    "TÌNH TRẠNG"
+  ],
+  "ui_literal_2f8d236566d2": [
+    "SYNC",
+    "ĐỒNG BỘ"
+  ],
+  "ui_literal_20a32bc870bf": [
+    "Saturation",
+    "Độ bão hòa"
+  ],
+  "ui_literal_efc007a393f6": [
+    "Save",
+    "Lưu"
+  ],
+  "ui_literal_376d06171f43": [
+    "Sealed with MemoStamp Wax #2026",
+    "Bịt kín bằng Sáp MemoStamp #2026"
+  ],
+  "ui_literal_bce06414177f": [
+    "Search",
+    "Tìm kiếm"
+  ],
+  "ui_literal_97805144ee36": [
+    "Select Stamp Template",
+    "Chọn mẫu tem"
+  ],
+  "ui_literal_3816b94c4104": [
+    "Select one of your stamps to offer for trade:",
+    "Chọn một trong các tem của bạn để chào bán:"
+  ],
+  "ui_literal_9a976fc228b6": [
+    "Selected",
+    "Đã chọn"
+  ],
+  "ui_literal_156f1ec5e30b": [
+    "Send Trade Request",
+    "Gửi yêu cầu giao dịch"
+  ],
+  "ui_literal_921e441dc467": [
+    "Share Native",
+    "Chia sẻ bản địa"
+  ],
+  "ui_literal_f4783589dc8e": [
+    "Share Vintage Envelope",
+    "Chia sẻ phong bì cổ điển"
+  ],
+  "ui_literal_54aa33d6a31e": [
+    "Share via System Apps",
+    "Chia sẻ qua ứng dụng hệ thống"
+  ],
+  "ui_literal_f23bdebb7604": [
+    "Stamp preview",
+    "Xem trước tem"
+  ],
+  "ui_literal_9dca595b1a9c": [
+    "Stickers",
+    "Nhãn dán"
+  ],
+  "ui_literal_481df2ecdf70": [
+    "Switch camera",
+    "Đổi camera"
+  ],
+  "ui_literal_22cbde199fef": [
+    "MEMORIAL STAMP COLLECTION HANDBOOK",
+    "SỔ TAY BỘ SƯU TẬP TEM KỶ NIỆM"
+  ],
+  "ui_literal_826a037eac95": [
+    "ANNIVERSARY INFORMATION",
+    "THÔNG TIN KỶ NIỆM"
+  ],
+  "ui_literal_982963c1c41c": [
+    "Tag",
+    "Gắn thẻ"
+  ],
+  "ui_literal_aeab929da63d": [
+    "Tap stamp to flip & view memory note",
+    "Nhấn vào dấu để lật và xem ghi chú kỷ niệm"
+  ],
+  "ui_literal_ab6b0d299fd3": [
+    "Commemorative stamp",
+    "Tem kỷ niệm"
+  ],
+  "ui_literal_7a3422c45586": [
+    "This removes the stamp and its local files from your vault.",
+    "Thao tác này sẽ xóa tem và các tệp cục bộ của nó khỏi kho lưu trữ của bạn."
+  ],
+  "ui_literal_5e6cdb19e604": [
+    "Notice",
+    "Thông Báo"
+  ],
+  "ui_literal_e353f2f3d366": [
+    "Retry",
+    "Thử lại"
+  ],
+  "ui_literal_a9cc1b405dc7": [
+    "Junk news / Spam",
+    "Tin rác / Spam"
+  ],
+  "ui_literal_b017803b0d2e": [
+    "Collection progress",
+    "Tiến độ sưu tập"
+  ],
+  "ui_literal_5d92d0921faa": [
+    "Continue",
+    "Tiếp tục"
+  ],
+  "ui_literal_35be7c277c7b": [
+    "Toggle password",
+    "Chuyển đổi mật khẩu"
+  ],
+  "ui_literal_b0811e470d6b": [
+    "Trade",
+    "Giao lưu"
+  ],
+  "ui_literal_ce3aec24d3cc": [
+    "Tune filter",
+    "Bộ lọc điều chỉnh"
+  ],
+  "ui_literal_35760d4f09c0": [
+    "POSTMARK COLOR TONE",
+    "TÔNG MÀU DẤU BƯU ĐIỆN"
+  ],
+  "ui_literal_74331068f0a2": [
+    "Album Name",
+    "Tên Album"
+  ],
+  "ui_literal_1e9d85d892ca": [
+    "Display name",
+    "Tên hiển thị"
+  ],
+  "ui_literal_2596fbf4d98c": [
+    "Find",
+    "Tìm"
+  ],
+  "ui_literal_29b21a25e85b": [
+    "Features Coming soon",
+    "Tính năng Sắp ra mắt"
+  ],
+  "ui_literal_8740d9b89d5f": [
+    "CREATE NEW ALBUM / COLLECTION",
+    "TẠO ALBUM / BỘ SƯU TẬP MỚI"
+  ],
+  "ui_literal_5420e152a74e": [
+    "Create Albums",
+    "Tạo Album"
+  ],
+  "ui_literal_2862ce847aef": [
+    "Create Commemorative Stamps",
+    "Tạo Tem Kỷ Niệm"
+  ],
+  "ui_literal_63bbfd75f684": [
+    "Decline",
+    "Từ chối"
+  ],
+  "ui_literal_cc86291da27c": [
+    "Automatically locate",
+    "Tự động định vị"
+  ],
+  "ui_literal_39fc72124884": [
+    "Undo",
+    "Hoàn tác"
+  ],
+  "ui_literal_84c29015de33": [
+    "Username",
+    "Tên người dùng"
+  ],
+  "ui_literal_fb46e3745fd3": [
+    "Vault",
+    "Kho tem"
+  ],
+  "ui_literal_aed3b8c6a7c0": [
+    "Verified",
+    "Đã xác minh"
+  ],
+  "ui_literal_b6ae3709f571": [
+    "Please enter a new password (minimum 6 characters).",
+    "Vui lòng nhập mật khẩu mới (tối thiểu 6 ký tự)."
+  ],
+  "ui_literal_f52167060446": [
+    "Stamping die pattern",
+    "Vân khuôn dập"
+  ],
+  "ui_literal_eab9315e0b4a": [
+    "Write your memory note or story...",
+    "Viết ghi chú hoặc câu chuyện kỷ niệm của bạn..."
+  ],
+  "ui_literal_aa1d94fc1675": [
+    "Delete",
+    "Xóa"
+  ],
+  "ui_literal_400e491f3189": [
+    "Delete this stamp",
+    "Xóa con tem này"
+  ],
+  "ui_literal_1856b976ab3d": [
+    "Erase this memory?",
+    "Xóa ký ức này?"
+  ],
+  "ui_literal_64803a3da711": [
+    "You have an uncommitted stamp memory draft. Would you like to continue editing or discard it?",
+    "Bạn có một bản nháp bộ nhớ tem chưa được cam kết. Bạn muốn tiếp tục chỉnh sửa hay loại bỏ nó?"
+  ],
+  "ui_literal_f48db7e9d3ef": [
+    "Your Name",
+    "Tên của bạn"
+  ],
+  "ui_literal_a370c0973df1": [
+    "e.g. DALAT MEMORY 2026",
+    "ví dụ: KÝ ỨC ĐÀ LẠT 2026"
+  ],
+  "ui_literal_f537c6a8b593": [
+    "example@domain.com",
+    "ví dụ@domain.com"
+  ],
+  "ui_literal_2cb367c53bea": [
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  ],
+  "ui_literal_97e2f76159b7": [
+    "sent a stamp trade proposal!",
+    "gửi lời đề nghị trao đổi tem!"
+  ],
+  "ui_literal_fbd2c9b284d0": [
+    "or login quickly with",
+    "hoặc đăng nhập nhanh bằng"
+  ],
+  "ui_literal_e1b67c95330c": [
+    "Waiting for response...",
+    "Đang chờ phản hồi..."
+  ],
+  "ui_literal_c9bf73258673": [
+    "Showing saved messages. Unable to sync.",
+    "Đang hiển thị tin nhắn đã lưu. Chưa thể đồng bộ."
+  ],
+  "ui_literal_2b336e9d7138": [
+    "Checking connection...",
+    "Đang kiểm tra kết nối..."
+  ],
+  "ui_literal_dd0f03039429": [
+    "Searching on the map...",
+    "Đang tìm kiếm trên bản đồ..."
+  ],
+  "ui_literal_685de584b99e": [
+    "Loading chat...",
+    "Đang tải cuộc trò chuyện..."
+  ],
+  "ui_literal_fb2ebde9ee2e": [
+    "Optimizing listings with Google Maps AI...",
+    "Đang tối ưu danh sách với Google Maps AI..."
+  ],
+  "ui_literal_e67f3e518126": [
+    "Sent ✓",
+    "Đã gửi ✓"
+  ],
+  "ui_literal_f46981ba8152": [
+    "Understood",
+    "Đã hiểu"
+  ],
+  "ui_literal_4b03f554bef7": [
+    "Stamp saved to Camera Roll!",
+    "Đã lưu con tem vào Thư viện ảnh!"
+  ],
+  "ui_literal_0a2ee4189fab": [
+    "Saved permanently in Stamp Vault",
+    "Đã lưu vĩnh viễn trong Kho tem"
+  ],
+  "ui_literal_06f74d910577": [
+    "Owned",
+    "Đã sở hữu"
+  ],
+  "ui_literal_db52b9e829c5": [
+    "Viewed ✓✓",
+    "Đã xem ✓✓"
+  ],
+  "ui_literal_d2b73ab2ada1": [
+    "Close",
+    "Đóng"
+  ],
+  "ui_literal_31f2bd180e9e": [
+    "Sign in with Google and Apple will be supported in the next official release. Please use Email & Password.",
+    "Đăng nhập bằng Google và Apple sẽ được hỗ trợ trong phiên bản chính thức tiếp theo. Vui lòng sử dụng Email & Mật khẩu."
+  ],
+  "ui_literal_bfc7ffc72f19": [
+    "Server Path (URL)",
+    "Đường dẫn Máy chủ (URL)"
+  ],
+  "ui_literal_0e8bee709966": [
+    "Reset new password",
+    "Đặt lại mật khẩu mới"
+  ],
+  "ui_literal_19ee62d7ab19": [
+    "POSTAL MARK LOCATION (LOCATION)",
+    "ĐỊA ĐIỂM DẤU BƯU CHÍNH (LOCATION)"
+  ],
+  "ui_literal_7097a2158c48": [
+    "MEMORIAL LOCATION",
+    "ĐỊA ĐIỂM KỶ NIỆM"
+  ],
+  "ui_literal_f30dedb800b5": [
+    "Change profile background",
+    "Đổi hình nền hồ sơ"
+  ],
+  "ui_literal_c42e10b2ca21": [
+    "Change your avatar",
+    "Đổi ảnh đại diện"
+  ],
+  "ui_literal_963057bfa32f": [
+    "Exclusive communication via Supabase Cloud",
+    "Độc bản giao lưu qua Supabase Cloud"
+  ],
+  "ui_literal_54a985bdbf45": [
+    "“",
+    "“"
+  ],
+  "ui_literal_f55a95e7c79a": [
+    "• 2026 EDITION",
+    "• PHIÊN BẢN 2026"
+  ],
+  "ui_literal_632f3fa6c124": [
+    "₫",
+    "₫"
+  ],
+  "ui_literal_98fe54112064": [
+    "★ AIRMAIL ★",
+    "★ đường hàng không ★"
+  ],
+  "ui_literal_e7aab7c6d7ff": [
+    "✦ STAMPED MEMORY ✦",
+    "✦ BỘ NHỚ ĐÓNG ✦"
+  ],
+  "ui_literal_0df34de7cb69": [
+    "✦ Unfinished Memory ✦",
+    "✦ Ký ức dang dở ✦"
+  ]
+}

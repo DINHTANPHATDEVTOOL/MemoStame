@@ -1,6 +1,8 @@
 package com.mipastudio.memostamp.feature.vault
 
 import android.content.Context
+import android.widget.Toast
+import com.mipastudio.memostamp.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mipastudio.memostamp.data.local.StampEntity
@@ -62,6 +64,7 @@ class StampVaultViewModel : ViewModel() {
                     if (_selectedStamp.value?.id == stampId) {
                         _selectedStamp.value = null
                     }
+                    Toast.makeText(context, context.getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show()
                     onDeleted()
                 }
             } catch (e: Exception) {

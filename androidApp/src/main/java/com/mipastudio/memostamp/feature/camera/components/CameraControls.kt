@@ -115,7 +115,7 @@ fun CameraControls(
                 ) {
                     Icon(
                         Icons.Outlined.FlipCameraAndroid,
-                        contentDescription = "Switch camera",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_481df2ecdf70),
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
@@ -132,7 +132,7 @@ fun CameraControls(
                     }
                     Icon(
                         icon,
-                        contentDescription = "Flash",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b62482236f53),
                         tint = if (flashMode == ImageCapture.FLASH_MODE_ON) Color.White else Color.White.copy(alpha = 0.82f),
                         modifier = Modifier.size(20.dp)
                     )
@@ -211,7 +211,7 @@ fun CameraControls(
                 GlassCameraButton(onClick = onGalleryClick, enabled = isEnabled, size = 48.dp) {
                     Icon(
                         Icons.Outlined.PhotoLibrary,
-                        contentDescription = "Gallery",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_9c30a3485a58),
                         tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )
@@ -253,7 +253,7 @@ fun CameraControls(
                 GlassCameraButton(onClick = onVaultClick, enabled = isEnabled, size = 48.dp) {
                     Icon(
                         Icons.Outlined.Collections,
-                        contentDescription = "Vault",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_fb46e3745fd3),
                         tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )

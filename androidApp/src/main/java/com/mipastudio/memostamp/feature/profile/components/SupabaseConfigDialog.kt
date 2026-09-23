@@ -47,7 +47,7 @@ fun SupabaseConfigDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.CloudSync, contentDescription = null, tint = AccentRed, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Cấu hình kết nối Cloud", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryText)
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_a3f0d04a7722), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryText)
             }
         },
         text = {
@@ -66,7 +66,7 @@ fun SupabaseConfigDialog(
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text("Đường dẫn Máy chủ (URL)") },
+                    label = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_bfc7ffc72f19)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
@@ -75,8 +75,8 @@ fun SupabaseConfigDialog(
                 OutlinedTextField(
                     value = anonKey,
                     onValueChange = { anonKey = it },
-                    label = { Text("Khóa truy cập (Anon Key)") },
-                    placeholder = { Text("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...") },
+                    label = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f69d11b44d48)) },
+                    placeholder = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_2cb367c53bea)) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
@@ -103,11 +103,11 @@ fun SupabaseConfigDialog(
                     if (isTesting) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = PrimaryText)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Đang kiểm tra kết nối...", fontSize = 12.sp)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_2b336e9d7138), fontSize = 12.sp)
                     } else {
                         Icon(Icons.Outlined.Speed, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Kiểm tra trạng thái máy chủ", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_4be53e9a016e), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -157,12 +157,12 @@ fun SupabaseConfigDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
             ) {
-                Text("Lưu cấu hình")
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_3633ceb693a7))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Đóng")
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_d2b73ab2ada1))
             }
         },
         containerColor = SurfaceWhite

@@ -47,13 +47,13 @@ fun AdvancedTuneBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Tune filter", style = MaterialTheme.typography.headlineMedium)
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_ce3aec24d3cc), style = MaterialTheme.typography.headlineMedium)
                     Text(activeFilter.name, color = SecondaryText, fontSize = 12.sp)
                 }
                 TextButton(onClick = {
                     onReset()
                     exp = 0f; con = 0f; sat = 0f; wrm = 0f; fde = 0f; grn = 0f; vig = 0f
-                }) { Text("Reset", color = AccentRed, fontWeight = FontWeight.Bold) }
+                }) { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_44c57abd888a), color = AccentRed, fontWeight = FontWeight.Bold) }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

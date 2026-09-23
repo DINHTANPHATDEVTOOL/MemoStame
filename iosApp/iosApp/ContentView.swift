@@ -67,7 +67,7 @@ struct ContentView: View {
                             .foregroundColor(MSColors.stamp)
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: MSColors.stamp))
-                        Text("MemoStamp")
+                        Text(AppLanguageManager.shared.localized("ui_literal_6b382c66ce54"))
                             .font(.headline.bold())
                             .foregroundColor(MSColors.ink)
                     }
@@ -247,6 +247,8 @@ struct ContentView: View {
                 }
             }
         }
+        // Use the app-selected locale for SwiftUI's literal-key controls too.
+        .environment(\.locale, langManager.activeLocale)
         .onAppear {
             LocationManager.shared.requestLocationPermission()
             bootstrapSessionIfNeeded()
@@ -319,7 +321,6 @@ struct ContentView: View {
                 )
             }
         }
-        .environment(\.locale, langManager.activeLocale)
     }
 
     private func bootstrapSessionIfNeeded() {

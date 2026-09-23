@@ -161,7 +161,7 @@ fun AuthScreen(
                 navigationIcon = {
                     if (canNavigateBack) {
                         IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back", tint = PrimaryText)
+                            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b52b36b7269f), tint = PrimaryText)
                         }
                     }
                 },
@@ -380,7 +380,7 @@ fun AuthScreen(
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                            contentDescription = "Toggle password"
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_35be7c277c7b)
                         )
                     }
                 },
@@ -496,7 +496,7 @@ fun AuthScreen(
                                 value = recoveryEmailInput,
                                 onValueChange = { recoveryEmailInput = it },
                                 label = { Text(stringResource(R.string.recovery_registered_email)) },
-                                placeholder = { Text("example@domain.com") },
+                                placeholder = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_f537c6a8b593)) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
@@ -603,7 +603,7 @@ fun AuthScreen(
                                 IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
                                     Icon(
                                         imageVector = if (newPasswordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                                        contentDescription = "Toggle password"
+                                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_35be7c277c7b)
                                     )
                                 }
                             },

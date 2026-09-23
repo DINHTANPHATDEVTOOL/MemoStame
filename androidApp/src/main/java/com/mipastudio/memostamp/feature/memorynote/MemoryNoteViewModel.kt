@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mipastudio.memostamp.R
 import com.mipastudio.memostamp.data.local.StampEntity
 import com.mipastudio.memostamp.data.repository.FeedRepository
 import com.mipastudio.memostamp.data.repository.StampRepository
@@ -157,12 +158,14 @@ class MemoryNoteViewModel : ViewModel() {
                                     replyToPostId = state.replyToPostId
                                 )
                                 feedRepository.reconcileFeedFromCloud()
+                                Toast.makeText(context, context.getString(R.string.editor_save_success), Toast.LENGTH_SHORT).show()
                                 onSuccess(entity)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 Toast.makeText(context, "Lưu tem thành công nhưng gửi phản hồi thất bại: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         } else {
+                            Toast.makeText(context, context.getString(R.string.editor_save_success), Toast.LENGTH_SHORT).show()
                             onSuccess(entity)
                         }
                     },

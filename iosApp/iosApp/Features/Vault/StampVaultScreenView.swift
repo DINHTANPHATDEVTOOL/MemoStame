@@ -89,7 +89,7 @@ struct StampVaultScreenView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("STAMP VAULT")
+                        Text(AppLanguageManager.shared.localized("ui_literal_15e2aac4c6b4"))
                             .font(.title2.bold())
                             .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
                         Text("\(stamps.count) Collected Memories")
@@ -160,14 +160,14 @@ struct StampVaultScreenView: View {
                                     Image(systemName: "book.fill")
                                         .font(.caption.bold())
                                         .foregroundColor(MSColors.gold)
-                                    Text("SỔ TAY BỘ SƯU TẬP TEM KỶ NIỆM")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_22cbde199fef"))
                                         .font(.caption.bold())
                                         .foregroundColor(MSColors.gold)
-                                    Text("• 2026 EDITION")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_f55a95e7c79a"))
                                         .font(.caption2.bold())
                                         .foregroundColor(MSColors.grey)
                                 }
-                                Text("MEMOSTAMP COLLECTOR ALBUM")
+                                Text(AppLanguageManager.shared.localized("ui_literal_7f2083d033e7"))
                                     .font(.headline.bold())
                                     .foregroundColor(MSColors.ink)
                             }
@@ -185,7 +185,7 @@ struct StampVaultScreenView: View {
                         // Progress Bar & Stats
                         VStack(spacing: 6) {
                             HStack {
-                                Text("Tiến độ sưu tập")
+                                Text(AppLanguageManager.shared.localized("ui_literal_b017803b0d2e"))
                                     .font(.caption.bold())
                                     .foregroundColor(MSColors.ink)
                                 Spacer()
@@ -233,7 +233,7 @@ struct StampVaultScreenView: View {
                     // Album Collections & Privacy Management Row
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("BỘ SƯU TẬP & ALBUM CỦA TÔI")
+                            Text(AppLanguageManager.shared.localized("ui_literal_b9659feda482"))
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
                             Spacer()
@@ -241,7 +241,7 @@ struct StampVaultScreenView: View {
                                 HStack(spacing: 3) {
                                     Image(systemName: "plus.circle.fill")
                                         .font(.system(size: 11))
-                                    Text("Tạo Album")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_5420e152a74e"))
                                         .font(.caption2.bold())
                                 }
                                 .padding(.horizontal, 8)
@@ -466,7 +466,7 @@ struct StampDetailModalView: View {
             .padding(.horizontal)
 
             HStack(spacing: 4) {
-                Text("Tap stamp to flip & view memory note")
+                Text(AppLanguageManager.shared.localized("ui_literal_aeab929da63d"))
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -478,7 +478,7 @@ struct StampDetailModalView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.green)
-                    Text("Đã lưu con tem vào Thư viện ảnh!")
+                    Text(AppLanguageManager.shared.localized("ui_literal_4b03f554bef7"))
                 }
                 .font(.caption.bold())
                 .foregroundColor(.white)
@@ -522,7 +522,7 @@ struct StampDetailModalView: View {
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: "square.and.arrow.down")
-                            Text("Export PNG")
+                            Text(AppLanguageManager.shared.localized("ui_literal_5fe9083e52a5"))
                                 .font(.subheadline.bold())
                         }
                         .frame(maxWidth: .infinity)
@@ -549,7 +549,7 @@ struct StampDetailModalView: View {
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: "square.and.arrow.up")
-                            Text("Share Native")
+                            Text(AppLanguageManager.shared.localized("ui_literal_921e441dc467"))
                                 .font(.subheadline.bold())
                         }
                         .frame(maxWidth: .infinity)
@@ -562,7 +562,7 @@ struct StampDetailModalView: View {
                     Button(action: onShare) {
                         HStack(spacing: 6) {
                             Image(systemName: "envelope.fill")
-                            Text("Bao thư")
+                            Text(AppLanguageManager.shared.localized("ui_literal_0799f2adb20d"))
                                 .font(.subheadline.bold())
                         }
                         .frame(maxWidth: .infinity)
@@ -576,7 +576,7 @@ struct StampDetailModalView: View {
                 Button(action: { showDeleteConfirm = true }) {
                     HStack(spacing: 6) {
                         Image(systemName: "trash")
-                        Text("Xóa con tem này")
+                        Text(AppLanguageManager.shared.localized("ui_literal_400e491f3189"))
                             .font(.caption.bold())
                     }
                     .foregroundColor(.red.opacity(0.8))
@@ -588,9 +588,9 @@ struct StampDetailModalView: View {
         }
         .alert(isPresented: $showDeleteConfirm) {
             Alert(
-                title: Text("Xóa ký ức này?"),
-                message: Text("Hành động này sẽ xóa con tem khỏi Bộ sưu tập của bạn."),
-                primaryButton: .destructive(Text("Xóa")) {
+                title: Text(AppLanguageManager.shared.localized("ui_literal_1856b976ab3d")),
+                message: Text(AppLanguageManager.shared.localized("ui_literal_e2d3986744f0")),
+                primaryButton: .destructive(Text(AppLanguageManager.shared.localized("ui_literal_aa1d94fc1675"))) {
                     let authUid = SupabaseAuthService.shared.currentUserId ?? ""
                     guard IOSLocalPersistenceStore.shared.isValidAuthenticatedUserId(authUid) else { return }
                     _ = repository.deleteStamp(stampId: stamp.id)
@@ -624,13 +624,13 @@ struct CreateAlbumSheetView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("TẠO ALBUM / BỘ SƯU TẬP MỚI")
+                    Text(AppLanguageManager.shared.localized("ui_literal_8740d9b89d5f"))
                         .font(.headline.bold())
                         .foregroundColor(MSColors.ink)
                         .padding(.top, 8)
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Tên Album")
+                        Text(AppLanguageManager.shared.localized("ui_literal_74331068f0a2"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         TextField("Ví dụ: Chuyến đi Hà Nội 2026", text: $albumName)
@@ -643,7 +643,7 @@ struct CreateAlbumSheetView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Mô tả Album")
+                        Text(AppLanguageManager.shared.localized("ui_literal_599bb2a1a9f0"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         TextField("Mô tả ngắn gọn...", text: $albumDesc)
@@ -656,7 +656,7 @@ struct CreateAlbumSheetView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Biểu tượng Album")
+                        Text(AppLanguageManager.shared.localized("ui_literal_8811dc087ddb"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -676,14 +676,14 @@ struct CreateAlbumSheetView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Quyền riêng tư")
+                        Text(AppLanguageManager.shared.localized("ui_literal_99d1067d4213"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         HStack(spacing: 12) {
                             Button(action: { selectedPrivacy = "FRIENDS" }) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "person.2.fill")
-                                    Text("Bạn bè")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_159fe48505b5"))
                                 }
                                 .font(.caption.bold())
                                 .foregroundColor(selectedPrivacy == "FRIENDS" ? .white : MSColors.ink)
@@ -697,7 +697,7 @@ struct CreateAlbumSheetView: View {
                             Button(action: { selectedPrivacy = "ONLY_ME" }) {
                                 HStack(spacing: 4) {
                                     Image(systemName: "lock.fill")
-                                    Text("Mình tôi")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_d8909ad771bf"))
                                 }
                                 .font(.caption.bold())
                                 .foregroundColor(selectedPrivacy == "ONLY_ME" ? .white : MSColors.ink)
@@ -721,7 +721,7 @@ struct CreateAlbumSheetView: View {
                             presentationMode.wrappedValue.dismiss()
                         }
                     }) {
-                        Text("Tạo Album")
+                        Text(AppLanguageManager.shared.localized("ui_literal_5420e152a74e"))
                             .font(.body.bold())
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -737,7 +737,7 @@ struct CreateAlbumSheetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Hủy") {
+                    Button(AppLanguageManager.shared.localized("ui_literal_34ca764caf22")) {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .foregroundColor(MSColors.stamp)

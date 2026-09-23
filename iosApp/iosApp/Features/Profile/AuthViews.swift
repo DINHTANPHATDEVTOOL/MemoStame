@@ -35,7 +35,7 @@ struct AuthLoginScreenView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .shadow(color: MSColors.stamp.opacity(0.3), radius: 10, x: 0, y: 5)
 
-                    Text("MemoStamp")
+                    Text(AppLanguageManager.shared.localized("ui_literal_6b382c66ce54"))
                         .font(.system(size: 32, weight: .bold, design: .serif))
                         .foregroundColor(MSColors.ink)
 
@@ -43,7 +43,7 @@ struct AuthLoginScreenView: View {
                         Image(systemName: "envelope.badge.fill")
                             .font(.subheadline)
                             .foregroundColor(MSColors.stamp)
-                        Text("Bảng tin Kỷ niệm & Sổ Tem Bưu Chính")
+                        Text(AppLanguageManager.shared.localized("ui_literal_8f35653f3748"))
                             .font(.subheadline)
                             .foregroundColor(MSColors.grey)
                     }
@@ -63,7 +63,7 @@ struct AuthLoginScreenView: View {
 
                     if isSignUpMode {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Tên hiển thị")
+                            Text(AppLanguageManager.shared.localized("ui_literal_1e9d85d892ca"))
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
                             HStack {
@@ -81,7 +81,7 @@ struct AuthLoginScreenView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Email")
+                        Text(AppLanguageManager.shared.localized("ui_literal_84add5b29527"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         HStack {
@@ -100,7 +100,7 @@ struct AuthLoginScreenView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Mật khẩu")
+                        Text(AppLanguageManager.shared.localized("ui_literal_888c9c47cfe0"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         HStack {
@@ -127,7 +127,7 @@ struct AuthLoginScreenView: View {
                         HStack {
                             Spacer()
                             Button(action: { showForgotPasswordSheet = true }) {
-                                Text("Quên mật khẩu?")
+                                Text(AppLanguageManager.shared.localized("ui_literal_1630fc027a1a"))
                                     .font(.caption)
                                     .foregroundColor(MSColors.stamp)
                             }
@@ -174,7 +174,7 @@ struct AuthLoginScreenView: View {
 
                 // Or Continue with Social Logins
                 VStack(spacing: 12) {
-                    Text("hoặc đăng nhập nhanh bằng")
+                    Text(AppLanguageManager.shared.localized("ui_literal_fbd2c9b284d0"))
                         .font(.caption2)
                         .foregroundColor(MSColors.grey)
 
@@ -182,7 +182,7 @@ struct AuthLoginScreenView: View {
                         Button(action: { showSocialNotice = true }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "g.circle.fill")
-                                Text("Google (Sắp ra mắt)")
+                                Text(AppLanguageManager.shared.localized("ui_literal_90e2b791d717"))
                                     .font(.subheadline.bold())
                             }
                             .foregroundColor(MSColors.grey)
@@ -197,7 +197,7 @@ struct AuthLoginScreenView: View {
                         Button(action: { showSocialNotice = true }) {
                             HStack(spacing: 8) {
                                 Image(systemName: "applelogo")
-                                Text("Apple (Sắp ra mắt)")
+                                Text(AppLanguageManager.shared.localized("ui_literal_fb6b417729d5"))
                                     .font(.subheadline.bold())
                             }
                             .foregroundColor(MSColors.grey)
@@ -219,9 +219,9 @@ struct AuthLoginScreenView: View {
         }
         .alert(isPresented: $showSocialNotice) {
             Alert(
-                title: Text("Tính năng Sắp ra mắt"),
-                message: Text("Đăng nhập bằng Google và Apple sẽ được hỗ trợ trong phiên bản chính thức tiếp theo. Vui lòng sử dụng Email & Mật khẩu."),
-                dismissButton: .default(Text("Đã hiểu"))
+                title: Text(AppLanguageManager.shared.localized("ui_literal_29b21a25e85b")),
+                message: Text(AppLanguageManager.shared.localized("ui_literal_31f2bd180e9e")),
+                dismissButton: .default(Text(AppLanguageManager.shared.localized("ui_literal_f46981ba8152")))
             )
         }
     }
@@ -345,12 +345,12 @@ struct AuthLoginSheetView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "seal.fill")
                         .foregroundColor(MSColors.stamp)
-                    Text("Join MemoStamp")
+                    Text(AppLanguageManager.shared.localized("ui_literal_1a7ca521a340"))
                         .font(.title2.bold())
                         .foregroundColor(MSColors.ink)
                 }
 
-                Text("Keep memories with people you care about.")
+                Text(AppLanguageManager.shared.localized("ui_literal_834bab943f2a"))
                     .font(.subheadline)
                     .foregroundColor(MSColors.grey)
                     .multilineTextAlignment(.center)
@@ -363,7 +363,7 @@ struct AuthLoginSheetView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "g.circle.fill")
                             .font(.title3)
-                        Text("Continue with Google")
+                        Text(AppLanguageManager.shared.localized("ui_literal_ccc5b0edaae6"))
                             .font(.body.bold())
                     }
                     .foregroundColor(.white)
@@ -375,7 +375,7 @@ struct AuthLoginSheetView: View {
                 }
 
                 Button(action: onDismiss) {
-                    Text("Not now")
+                    Text(AppLanguageManager.shared.localized("ui_literal_e45714907316"))
                         .font(.subheadline.bold())
                         .foregroundColor(MSColors.grey)
                         .padding(.vertical, 6)
@@ -411,7 +411,7 @@ struct ProfileSetupScreenView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Create your profile")
+                Text(AppLanguageManager.shared.localized("ui_literal_5a267b44a275"))
                     .font(.title2.bold())
                     .foregroundColor(Color(red: 0.15, green: 0.15, blue: 0.18))
                 Spacer()
@@ -434,7 +434,7 @@ struct ProfileSetupScreenView: View {
 
                     // Display Name
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Your Name")
+                        Text(AppLanguageManager.shared.localized("ui_literal_f48db7e9d3ef"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         TextField("Ví dụ: Nguyễn Văn A", text: $displayName)
@@ -449,12 +449,12 @@ struct ProfileSetupScreenView: View {
                     // Username Input (@phat)
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("Username")
+                            Text(AppLanguageManager.shared.localized("ui_literal_84c29015de33"))
                                 .font(.caption.bold())
                                 .foregroundColor(MSColors.ink)
                             Spacer()
                             if isCheckingUsername {
-                                Text("Checking...")
+                                Text(AppLanguageManager.shared.localized("ui_literal_494d0f681c44"))
                                     .font(.caption2)
                                     .foregroundColor(.orange)
                             } else if !username.isEmpty {
@@ -485,7 +485,7 @@ struct ProfileSetupScreenView: View {
 
                     // Bio Input
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Bio")
+                        Text(AppLanguageManager.shared.localized("ui_literal_b31fc969b488"))
                             .font(.caption.bold())
                             .foregroundColor(MSColors.ink)
                         TextField("A little about you...", text: $bio)
@@ -519,7 +519,7 @@ struct ProfileSetupScreenView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             } else {
-                                Text("Continue")
+                                Text(AppLanguageManager.shared.localized("ui_literal_2e02623966f9"))
                                     .font(.body.bold())
                             }
                         }
@@ -572,11 +572,11 @@ struct ForgotPasswordSheetView: View {
 
                 VStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Khôi phục mật khẩu")
+                        Text(AppLanguageManager.shared.localized("ui_literal_ac10149132ad"))
                             .font(.title2.bold())
                             .foregroundColor(MSColors.ink)
 
-                        Text("Nhập địa chỉ email tài khoản của bạn. Nếu tài khoản tồn tại, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu.")
+                        Text(AppLanguageManager.shared.localized("ui_literal_fc13316a4dcf"))
                             .font(.subheadline)
                             .foregroundColor(MSColors.grey)
                     }
@@ -645,7 +645,7 @@ struct ForgotPasswordSheetView: View {
                 .padding(.horizontal, 24)
             }
             .navigationBarItems(
-                trailing: Button("Đóng") {
+                trailing: Button(AppLanguageManager.shared.localized("ui_literal_d2b73ab2ada1")) {
                     presentationMode.wrappedValue.dismiss()
                 }
                 .foregroundColor(MSColors.stamp)
@@ -713,7 +713,7 @@ struct ResetPasswordSheetView: View {
 
                 VStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Đặt lại mật khẩu mới")
+                        Text(AppLanguageManager.shared.localized("ui_literal_0e8bee709966"))
                             .font(.title2.bold())
                             .foregroundColor(MSColors.ink)
 
@@ -721,7 +721,7 @@ struct ResetPasswordSheetView: View {
                             .font(.subheadline.bold())
                             .foregroundColor(MSColors.stamp)
 
-                        Text("Vui lòng nhập mật khẩu mới (tối thiểu 6 ký tự).")
+                        Text(AppLanguageManager.shared.localized("ui_literal_b6ae3709f571"))
                             .font(.caption)
                             .foregroundColor(MSColors.grey)
                     }
@@ -770,7 +770,7 @@ struct ResetPasswordSheetView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             } else {
-                                Text("Lưu mật khẩu mới")
+                                Text(AppLanguageManager.shared.localized("ui_literal_d595b9c48bd6"))
                                     .font(.headline)
                             }
                         }
@@ -787,7 +787,7 @@ struct ResetPasswordSheetView: View {
                 .padding(.horizontal, 24)
             }
             .navigationBarItems(
-                leading: Button("Hủy") {
+                leading: Button(AppLanguageManager.shared.localized("ui_literal_34ca764caf22")) {
                     presentationMode.wrappedValue.dismiss()
                     coordinator.resetState()
                 }

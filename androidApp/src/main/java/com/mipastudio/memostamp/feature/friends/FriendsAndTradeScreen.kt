@@ -437,7 +437,7 @@ fun FriendsAndTradeScreen(
                                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                                 ) {
-                                    Icon(Icons.Outlined.ContentCopy, contentDescription = "Copy", tint = Color.White, modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Outlined.ContentCopy, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_af74f7c5362a), tint = Color.White, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(stringResource(R.string.common_copy), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
@@ -491,7 +491,7 @@ fun FriendsAndTradeScreen(
                                         onClick = { searchQuery = "" },
                                         modifier = Modifier.size(28.dp)
                                     ) {
-                                        Icon(Icons.Outlined.Clear, contentDescription = "Clear", tint = SecondaryText, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Outlined.Clear, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_719ea396ad92), tint = SecondaryText, modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
@@ -894,7 +894,7 @@ fun FriendsAndTradeScreen(
                                                     if (!trade.note.isNullOrBlank()) {
                                                         Text("“${trade.note}”", fontSize = 11.sp, color = SecondaryText)
                                                     }
-                                                    Text("Bộ sưu tập bưu chính #2026", fontSize = 10.sp, color = AccentBlue)
+                                                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b7a4de18a929), fontSize = 10.sp, color = AccentBlue)
                                                 }
                                             }
                                             Spacer(modifier = Modifier.height(10.dp))
@@ -1635,7 +1635,7 @@ fun FriendsAndTradeScreen(
                                                     .background(AccentRed.copy(alpha = 0.4f)),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Icon(Icons.Outlined.CheckCircle, contentDescription = "Selected", tint = Color.White)
+                                                Icon(Icons.Outlined.CheckCircle, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_9a976fc228b6), tint = Color.White)
                                             }
                                         }
                                     }
@@ -1838,7 +1838,7 @@ private fun FriendCard(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = "Chat", tint = Color.White, modifier = Modifier.size(13.dp))
+                                    Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_2ced57f12591), tint = Color.White, modifier = Modifier.size(13.dp))
                                     Spacer(modifier = Modifier.width(3.dp))
                                     Text(stringResource(R.string.friends_tab_chat), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 }
@@ -1853,7 +1853,7 @@ private fun FriendCard(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Outlined.SwapHoriz, contentDescription = "Trade", tint = AccentRed, modifier = Modifier.size(13.dp))
+                                    Icon(Icons.Outlined.SwapHoriz, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_b0811e470d6b), tint = AccentRed, modifier = Modifier.size(13.dp))
                                     Spacer(modifier = Modifier.width(2.dp))
                                     Text(stringResource(R.string.trade_btn), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = PrimaryText)
                                 }

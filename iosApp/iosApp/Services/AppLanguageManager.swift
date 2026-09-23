@@ -8,14 +8,6 @@ enum AppLanguageMode: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
-        switch self {
-        case .system: return "System default"
-        case .vietnamese: return "Tiếng Việt"
-        case .english: return "English"
-        }
-    }
-
     static func from(code: String?) -> AppLanguageMode {
         guard let clean = code?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() else {
             return .system
@@ -76,6 +68,17 @@ class AppLanguageManager: ObservableObject {
 
     func setLanguage(_ mode: AppLanguageMode) {
         setLanguageMode(mode)
+    }
+
+    func displayName(for mode: AppLanguageMode) -> String {
+        switch mode {
+        case .system:
+            return localized("settings_language_system")
+        case .vietnamese:
+            return localized("settings_language_vi")
+        case .english:
+            return localized("settings_language_en")
+        }
     }
 
     var effectiveLanguageCode: String {

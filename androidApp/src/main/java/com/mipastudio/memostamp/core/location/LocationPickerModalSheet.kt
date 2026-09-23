@@ -31,6 +31,8 @@ import com.mipastudio.memostamp.ui.theme.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,7 +158,7 @@ fun LocationPickerModalSheet(
             ) {
                 Column {
                     Text(
-                        text = "Chọn Địa Điểm & Dấu Tem",
+                        text = stringResource(com.mipastudio.memostamp.R.string.editor_location_picker_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryText
@@ -175,7 +177,7 @@ fun LocationPickerModalSheet(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.AutoAwesome,
-                                    contentDescription = "Maps AI",
+                                    contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_a0570927ade5),
                                     tint = Color(0xFF1A73E8),
                                     modifier = Modifier.size(12.dp)
                                 )
@@ -195,7 +197,7 @@ fun LocationPickerModalSheet(
                     onClick = onDismiss,
                     modifier = Modifier.size(32.dp)
                 ) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Close", tint = SecondaryText)
+                    Icon(Icons.Outlined.Close, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_bbfa773e5a63), tint = SecondaryText)
                 }
             }
 
@@ -210,9 +212,9 @@ fun LocationPickerModalSheet(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Gõ tên, quán cafe, món ngon...", fontSize = 13.sp) },
+                    placeholder = { Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_2373d32a83a0), fontSize = 13.sp) },
                     leadingIcon = {
-                        Icon(Icons.Outlined.Search, contentDescription = "Search", tint = AccentRed, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Outlined.Search, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_bce06414177f), tint = AccentRed, modifier = Modifier.size(20.dp))
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
@@ -220,7 +222,7 @@ fun LocationPickerModalSheet(
                                 searchQuery = ""
                                 performSearch("", selectedCityChip, isDeepAiSearch = false)
                             }) {
-                                Icon(Icons.Outlined.Clear, contentDescription = "Clear", modifier = Modifier.size(18.dp))
+                                Icon(Icons.Outlined.Clear, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_719ea396ad92), modifier = Modifier.size(18.dp))
                             }
                         }
                     },
@@ -247,7 +249,7 @@ fun LocationPickerModalSheet(
                 ) {
                     Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Tìm", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_2596fbf4d98c), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -286,7 +288,7 @@ fun LocationPickerModalSheet(
                 if (isLocatingGps) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = AccentRed)
                 } else {
-                    Icon(Icons.Outlined.MyLocation, contentDescription = "GPS", tint = AccentRed, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.MyLocation, contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_1776fa32f23e), tint = AccentRed, modifier = Modifier.size(18.dp))
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -410,7 +412,7 @@ fun LocationPickerModalSheet(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Outlined.LocationOff, contentDescription = null, tint = SecondaryText, modifier = Modifier.size(36.dp))
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Không tìm thấy địa điểm phù hợp", color = SecondaryText, fontSize = 13.sp)
+                            Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_af5c3a71ddb3), color = SecondaryText, fontSize = 13.sp)
                             if (searchQuery.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Button(
@@ -421,7 +423,7 @@ fun LocationPickerModalSheet(
                                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                                     shape = RoundedCornerShape(14.dp)
                                 ) {
-                                    Text("Dùng tên: \"$searchQuery\"")
+                                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_e93b918b09b9))
                                 }
                             }
                         }
@@ -582,13 +584,13 @@ private fun GroundedPlaceCard(
                     ) {
                         Icon(
                             Icons.Outlined.Loyalty,
-                            contentDescription = "Tag",
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_982963c1c41c),
                             tint = AccentGold,
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Gợi ý tem: ${place.stampTitleSuggestion}",
+                            text = stringResource(com.mipastudio.memostamp.R.string.editor_stamp_suggestion_label, place.stampTitleSuggestion),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF8D6E1A)

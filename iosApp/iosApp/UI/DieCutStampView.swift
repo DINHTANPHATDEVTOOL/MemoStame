@@ -181,7 +181,7 @@ struct DieCutStampView: View {
                                     Image(systemName: shape.contains("heart") ? "heart.fill" : (shape.contains("royal") ? "crown.fill" : "photo.artframe"))
                                         .font(.system(size: fittedInGrid ? 18 : 28))
                                         .foregroundColor(shapeThemeColor)
-                                    Text("MEMOSTAMP")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_91863b0069ba"))
                                         .font(.system(size: fittedInGrid ? 6 : 8, weight: .bold, design: .monospaced))
                                         .foregroundColor(Color(red: 0.65, green: 0.55, blue: 0.45))
                                 }
@@ -244,11 +244,11 @@ struct DieCutStampView: View {
                                             .stroke(Color.white.opacity(0.5), lineWidth: 1.0)
                                             .frame(width: 34, height: 34)
                                         VStack(spacing: 0) {
-                                            Text("MEMO")
+                                            Text(AppLanguageManager.shared.localized("ui_literal_b4a7760049ff"))
                                                 .font(.system(size: 7, weight: .black))
                                             Text(shape.contains("royal") ? "★ ROYAL ★" : (shape.contains("heart") ? "♥ LOVE ♥" : "★ AIR ★"))
                                                 .font(.system(size: 5, weight: .bold))
-                                            Text("POST")
+                                            Text(AppLanguageManager.shared.localized("ui_literal_61ff81c30aa3"))
                                                 .font(.system(size: 6, weight: .black))
                                         }
                                         .foregroundColor(Color.white.opacity(0.95))
@@ -265,7 +265,7 @@ struct DieCutStampView: View {
                                         .font(.system(size: fittedInGrid ? 9 : 12, weight: .bold, design: .serif))
                                         .foregroundColor(.white)
                                         .lineLimit(1)
-                                    Text("OFFICIAL DIE-CUT STAMP")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_f5072edb1ff7"))
                                         .font(.system(size: fittedInGrid ? 5 : 7, weight: .bold, design: .monospaced))
                                         .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.65))
                                 }
@@ -273,7 +273,7 @@ struct DieCutStampView: View {
 
                                 // Vintage Value Denomination Badge
                                 HStack(spacing: 1) {
-                                    Text("₫")
+                                    Text(AppLanguageManager.shared.localized("ui_literal_632f3fa6c124"))
                                         .font(.system(size: fittedInGrid ? 7 : 9, weight: .bold))
                                     Text("2026")
                                         .font(.system(size: fittedInGrid ? 8 : 10, weight: .heavy, design: .monospaced))
@@ -295,7 +295,7 @@ struct DieCutStampView: View {
                             Image(systemName: "envelope.badge.fill")
                                 .foregroundColor(shapeThemeColor)
                                 .font(.system(size: fittedInGrid ? 8 : 10))
-                            Text("MEMOSTAMP AIRMAIL POSTCARD")
+                            Text(AppLanguageManager.shared.localized("ui_literal_b61633fba6ac"))
                                 .font(.system(size: fittedInGrid ? 7 : 9, weight: .bold, design: .monospaced))
                                 .foregroundColor(MSColors.grey)
                             Spacer()
@@ -310,7 +310,7 @@ struct DieCutStampView: View {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.system(size: fittedInGrid ? 16 : (effectiveLandscape ? 20 : 26)))
                                 .foregroundColor(shapeThemeColor)
-                            Text("MỘC BƯU CHÍNH")
+                            Text(AppLanguageManager.shared.localized("ui_literal_8e6af90730db"))
                                 .font(.system(size: fittedInGrid ? 9 : 12, weight: .bold, design: .monospaced))
                                 .foregroundColor(MSColors.ink)
                             Text(dateStr)

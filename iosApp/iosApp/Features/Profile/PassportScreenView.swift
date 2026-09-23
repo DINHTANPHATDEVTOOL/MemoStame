@@ -68,7 +68,7 @@ struct PassportScreenView: View {
 
                 Spacer()
 
-                Text("PROFILE")
+                Text(AppLanguageManager.shared.localized("ui_literal_79799fc6ec78"))
                     .font(.headline.bold())
                     .foregroundColor(MSColors.ink)
 
@@ -121,7 +121,7 @@ struct PassportScreenView: View {
                             .font(.subheadline)
                             .foregroundColor(MSColors.grey)
 
-                        Text("“" + user.bio + "”")
+                        Text(AppLanguageManager.shared.localized("ui_literal_54a985bdbf45") + user.bio + "”")
                             .font(.caption)
                             .italic()
                             .foregroundColor(MSColors.grey)
@@ -247,19 +247,19 @@ struct EditProfileSheetView: View {
                 .frame(width: 36, height: 4)
                 .padding(.top, 8)
 
-            Text("Edit Passport Profile")
+            Text(AppLanguageManager.shared.localized("ui_literal_67954c6ab406"))
                 .font(.headline.bold())
                 .foregroundColor(MSColors.ink)
 
             VStack(alignment: .leading, spacing: 14) {
-                Text("DISPLAY NAME")
+                Text(AppLanguageManager.shared.localized("ui_literal_cd8e5e1b536b"))
                     .font(.caption2.bold())
                     .foregroundColor(MSColors.grey)
 
                 TextField("Enter Display Name", text: $displayName)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
 
-                Text("BIO NOTE")
+                Text(AppLanguageManager.shared.localized("ui_literal_e415fb95aa50"))
                     .font(.caption2.bold())
                     .foregroundColor(MSColors.grey)
 
@@ -456,7 +456,7 @@ struct ProfileSettingsSheetView: View {
                                 }) {
                                     VStack(spacing: 2) {
                                         HStack(spacing: 4) {
-                                            Text(mode.displayName)
+                                            Text(langManager.displayName(for: mode))
                                                 .font(.system(size: 12, weight: .bold))
                                             if langManager.currentMode == mode {
                                                 Image(systemName: "checkmark.circle.fill")

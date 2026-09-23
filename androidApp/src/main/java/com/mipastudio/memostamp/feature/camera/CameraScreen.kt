@@ -155,10 +155,10 @@ fun CameraScreen(
         AlertDialog(
             onDismissRequest = { },
             title = {
-                Text("✦ Unfinished Memory ✦", fontWeight = FontWeight.Bold, color = StampDarkInk)
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_0df34de7cb69), fontWeight = FontWeight.Bold, color = StampDarkInk)
             },
             text = {
-                Text("You have an uncommitted stamp memory draft. Would you like to continue editing or discard it?", fontSize = 14.sp)
+                Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_64803a3da711), fontSize = 14.sp)
             },
             confirmButton = {
                 Button(
@@ -169,7 +169,7 @@ fun CameraScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PostalRed)
                 ) {
-                    Text("Continue", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_2e02623966f9), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -182,7 +182,7 @@ fun CameraScreen(
                         }
                     }
                 ) {
-                    Text("Discard", color = Color.Gray)
+                    Text(androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_36fff63ccbcd), color = Color.Gray)
                 }
             },
             containerColor = StampPaperCard
@@ -315,7 +315,7 @@ fun CameraScreen(
                 if (freeze != null && !freeze.isRecycled && (captureState == CaptureState.PRESSING || captureState == CaptureState.REVEALING)) {
                     Image(
                         bitmap = freeze.asImageBitmap(),
-                        contentDescription = "Frozen frame",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_7af7cae5a017),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -456,7 +456,7 @@ fun CameraScreen(
                         val imageFile = File(draft!!.renderedImagePath)
                         Image(
                             painter = rememberAsyncImagePainter(model = imageFile),
-                            contentDescription = "Punched Memory Stamp",
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_977c2f93cd3e),
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize()
                         )

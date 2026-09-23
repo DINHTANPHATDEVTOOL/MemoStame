@@ -2,6 +2,7 @@
 import json
 import xml.etree.ElementTree as ET
 import os
+from pathlib import Path
 
 new_keys = {
     "trade_offer_status_pending": ("Pending Offer", "Đang chờ chấp nhận"),
@@ -113,7 +114,10 @@ new_keys = {
     "post_detail_stamp_replies": ("Stamp Replies (%d)", "Tem phản hồi (%d)"),
     "post_detail_no_comments": ("No comments yet. Start the conversation!", "Chưa có bình luận nào. Hãy bắt đầu cuộc trò chuyện!"),
     "post_detail_comment_placeholder": ("Write a comment...", "Viết bình luận..."),
-    "post_detail_title": ("Memory Stamp", "Dấu tem kỷ niệm")
+    "post_detail_title": ("Memory Stamp", "Dấu tem kỷ niệm"),
+    "vault_empty_description": ("Press a moment into a stamp and it will live here.", "Lưu một khoảnh khắc vào tem, và nó sẽ ở đây."),
+    "vault_open_camera": ("Open camera", "Mở máy ảnh"),
+    "vault_search_memories": ("Search memories", "Tìm kiếm kỷ niệm")
 }
 
 def escape_xml(s: str) -> str:
@@ -155,6 +159,14 @@ def main():
     # Add new keys
     for k, (en_v, vi_v) in new_keys.items():
         pairs[k] = [en_v, vi_v]
+
+    # Generated aliases for UI literals that predate the resource-based
+    # localization architecture. Keeping these in a checked-in data file makes
+    # the migration reproducible and guarantees iOS/Android stay in parity.
+    literal_path = Path('scripts/generated_literal_localizations.json')
+    if literal_path.exists():
+        for key, values in json.loads(literal_path.read_text(encoding='utf-8')).items():
+            pairs[key] = values
 
     print(f"Total unique keys to write: {len(pairs)}")
 

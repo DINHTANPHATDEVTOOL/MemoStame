@@ -378,7 +378,7 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.app_logo),
-                            contentDescription = "MemoStamp",
+                            contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_6b382c66ce54),
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -450,7 +450,7 @@ fun HomeScreen(
                     // Profile avatar button
                     AsyncImage(
                         model = currentUser.avatarUrl.ifBlank { "https://i.pravatar.cc/150?u=${currentUser.userId}" },
-                        contentDescription = "Profile",
+                        contentDescription = androidx.compose.ui.res.stringResource(com.mipastudio.memostamp.R.string.ui_literal_ff4fc0276e96),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .padding(end = 16.dp)
@@ -502,14 +502,14 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Today’s memory",
+                                text = stringResource(R.string.home_todays_memory),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = PrimaryText
                             )
                             Spacer(modifier = Modifier.height(3.dp))
                             Text(
-                                text = "Capture something worth keeping.",
+                                text = stringResource(R.string.home_capture_worth_keeping),
                                 fontSize = 12.sp,
                                 color = SecondaryText
                             )
